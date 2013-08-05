@@ -1,0 +1,22 @@
+{
+  "name": "rdlowrey/alert",
+  "homepage": "https://github.com/rdlowrey/alert",
+  "description": "Event loops for event-driven/async PHP",
+  "keywords": ["non-blocking", "events", "libevent", "async"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Daniel Lowrey",
+      "email": "rdlowrey@gmail.com",
+      "role": "Creator / Lead Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0"
+  },
+  "autoload": {
+    "psr-0": {
+      "Alert": "src"
+    }
+  }
+}
