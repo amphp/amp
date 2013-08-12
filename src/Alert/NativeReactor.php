@@ -110,18 +110,18 @@ class NativeReactor implements Reactor {
 
         foreach ($this->alarmOrder as $watcherId => $executionCutoff) {
             if ($executionCutoff <= $now) {
-                $this->doAlarmCallback($watcherId, $now);
+                $this->doAlarmCallback($watcherId);
             } else {
                 break;
             }
         }
     }
 
-    private function doAlarmCallback($watcherId, $now) {
+    private function doAlarmCallback($watcherId) {
         list($callback, $nextExecution, $interval, $isRepeating) = $this->alarms[$watcherId];
 
         if ($isRepeating) {
-            $nextExecution = $now + $interval;
+            $nextExecution += $interval;
             $this->alarms[$watcherId] = [$callback, $nextExecution, $interval, $isRepeating];
             $this->alarmOrder[$watcherId] = $nextExecution;
         } else {
@@ -130,7 +130,7 @@ class NativeReactor implements Reactor {
                 $this->alarmOrder[$watcherId]
             );
         }
-        
+
         $callback($watcherId);
     }
 
