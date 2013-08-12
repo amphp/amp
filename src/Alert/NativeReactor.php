@@ -120,8 +120,6 @@ class NativeReactor implements Reactor {
     private function doAlarmCallback($watcherId, $now) {
         list($callback, $nextExecution, $interval, $isRepeating) = $this->alarms[$watcherId];
 
-        $callback($watcherId);
-
         if ($isRepeating) {
             $nextExecution = $now + $interval;
             $this->alarms[$watcherId] = [$callback, $nextExecution, $interval, $isRepeating];
@@ -132,6 +130,8 @@ class NativeReactor implements Reactor {
                 $this->alarmOrder[$watcherId]
             );
         }
+        
+        $callback($watcherId);
     }
 
     function at(callable $callback, $timeString) {
