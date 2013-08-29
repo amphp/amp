@@ -254,7 +254,19 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->skipIfMissingExtLibevent();
 
         $reactor = new LibeventReactor();
-        $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.8);
+        $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.1);
+        $reactor->run();
+    }
+
+    function testAfterForkReinitializesWatchers() {
+        $this->skipIfMissingExtLibevent();
+
+        $reactor = new LibeventReactor();
+
+        $reactor->onWritable(STDOUT, function() use ($reactor) { $reactor->stop(); });
+        $reactor->beforeFork();
+        $reactor->afterFork();
+
         $reactor->run();
     }
 
