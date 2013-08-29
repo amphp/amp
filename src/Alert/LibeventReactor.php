@@ -2,7 +2,7 @@
 
 namespace Alert;
 
-class LibeventReactor implements Reactor {
+class LibeventReactor implements Reactor, Forkable {
 
     private $base;
     private $watchers = [];
@@ -15,6 +15,10 @@ class LibeventReactor implements Reactor {
 
     function __construct() {
         $this->base = event_base_new();
+        $this->initializeGc();
+    }
+
+    private function initializeGc() {
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
         event_base_set($this->gcEvent, $this->base);
@@ -46,19 +50,19 @@ class LibeventReactor implements Reactor {
     function stop() {
         event_base_loopexit($this->base);
     }
-    
+
     function at(callable $callback, $timeString) {
         $now = time();
         $executeAt = @strtotime($timeString);
-        
+
         if ($executeAt === FALSE && $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
         }
-        
+
         $delay = $executeAt - $now;
-        
+
         return $this->once($callback, $delay);
     }
 
@@ -137,7 +141,7 @@ class LibeventReactor implements Reactor {
 
         event_set($event, $stream, $flags, $wrapper);
         event_base_set($event, $this->base);
-        
+
         if ($enableNow) {
             event_add($event);
         }
@@ -205,4 +209,25 @@ class LibeventReactor implements Reactor {
         $this->isGCScheduled = FALSE;
         event_del($this->gcEvent);
     }
+
+    function beforeFork() {
+        $this->collectGarbage();
+    }
+
+    function afterFork() {
+        $this->base = event_base_new();
+        $this->initializeGc();
+
+        foreach ($this->watchers as $watcherId => $watcherStruct) {
+            list($event, $enableNow) = $watcherStruct;
+            event_base_set($event, $this->base);
+
+            if ($enableNow) {
+                event_add($event);
+            }
+
+            $this->watchers[$watcherId][0] = $event;
+        }
+    }
 }
+
