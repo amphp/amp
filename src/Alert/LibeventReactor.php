@@ -77,7 +77,7 @@ class LibeventReactor implements Reactor, Forkable {
 
         $wrapper = function() use ($callback, $watcherId) {
             try {
-                $callback($watcherId);
+                $callback($watcherId, $this);
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -101,7 +101,7 @@ class LibeventReactor implements Reactor, Forkable {
 
         $wrapper = function() use ($callback, $event, $interval, $watcherId) {
             try {
-                $callback($watcherId);
+                $callback($watcherId, $this);
                 event_add($event, $interval);
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -132,7 +132,7 @@ class LibeventReactor implements Reactor, Forkable {
 
         $wrapper = function($stream) use ($callback, $watcherId) {
             try {
-                $callback($watcherId, $stream);
+                $callback($watcherId, $stream, $this);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();

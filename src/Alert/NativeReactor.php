@@ -91,13 +91,13 @@ class NativeReactor implements Reactor {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($watcherId, $readableStream);
+                    $callback($watcherId, $readableStream, $this);
                 }
             }
             foreach ($w as $writableStream) {
                 $streamId = (int) $writableStream;
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($watcherId, $writableStream);
+                    $callback($watcherId, $writableStream, $this);
                 }
             }
         }
@@ -131,7 +131,7 @@ class NativeReactor implements Reactor {
             );
         }
 
-        $callback($watcherId);
+        $callback($watcherId, $this);
     }
 
     function at(callable $callback, $timeString) {
