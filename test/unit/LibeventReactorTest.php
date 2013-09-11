@@ -36,6 +36,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         }, $delay = 0.01);
 
         $reactor->run();
+        
         $this->assertEquals(1, $testIncrement);
     }
 
@@ -120,6 +121,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
                 $reactor->stop();
             }
         }, $delay = 0.001);
+        
         $reactor->run();
 
         $this->assertEquals(10, $testIncrement);

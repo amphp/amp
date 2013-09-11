@@ -13,12 +13,20 @@ class LibeventReactor implements Reactor, Forkable {
     private $gcEvent;
     private $stopException;
 
+    private static $TYPE_STREAM = 0;
+    private static $TYPE_ONCE = 1;
+    private static $TYPE_REPEATING = 2;
+
     function __construct() {
-        $this->base = event_base_new();
-        $this->initializeGc();
+        $this->initialize();
     }
 
-    private function initializeGc() {
+    /**
+     * Normally this would go into the __construct() function but it's split out into its own
+     * method because we also have to initialize() when calling afterFork().
+     */
+    private function initialize() {
+        $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
         event_base_set($this->gcEvent, $this->base);
@@ -72,10 +80,32 @@ class LibeventReactor implements Reactor, Forkable {
 
     function once(callable $callback, $delay) {
         $watcherId = $this->getNextWatcherId();
-        $event = event_new();
+        $eventResource = event_new();
         $delay = ($delay > 0) ? ($delay * $this->resolution) : 0;
 
-        $wrapper = function() use ($callback, $watcherId) {
+        $watcher = new LibeventWatcher;
+        $watcher->id = $watcherId;
+        $watcher->type = self::$TYPE_ONCE;
+        $watcher->eventResource = $eventResource;
+        $watcher->interval = $delay;
+        $watcher->callback = $callback;
+
+        $watcher->wrapper = $this->wrapOnceCallback($watcher);
+
+        $this->watchers[$watcherId] = $watcher;
+
+        event_timer_set($eventResource, $watcher->wrapper);
+        event_base_set($eventResource, $this->base);
+        event_add($eventResource, $delay);
+
+        return $watcherId;
+    }
+
+    private function wrapOnceCallback(LibeventWatcher $watcher) {
+        $callback = $watcher->callback;
+        $watcherId = $watcher->id;
+
+        return function() use ($callback, $watcherId) {
             try {
                 $callback($watcherId, $this);
                 $this->cancel($watcherId);
@@ -84,38 +114,47 @@ class LibeventReactor implements Reactor, Forkable {
                 $this->stop();
             }
         };
-
-        $this->watchers[$watcherId] = [$event, $isEnabled = TRUE, $wrapper, $delay];
-
-        event_timer_set($event, $wrapper);
-        event_base_set($event, $this->base);
-        event_add($event, $delay);
-
-        return $watcherId;
     }
 
     function repeat(callable $callback, $interval) {
         $watcherId = $this->getNextWatcherId();
-        $event = event_new();
         $interval = ($interval > 0) ? ($interval * $this->resolution) : 0;
+        $eventResource = event_new();
 
-        $wrapper = function() use ($callback, $event, $interval, $watcherId) {
+        $watcher = new LibeventWatcher;
+        $watcher->id = $watcherId;
+        $watcher->type = self::$TYPE_REPEATING;
+        $watcher->eventResource = $eventResource;
+        $watcher->interval = $interval;
+        $watcher->callback = $callback;
+        $watcher->isRepeating = TRUE;
+        
+        $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
+
+        $this->watchers[$watcherId] = $watcher;
+
+        event_timer_set($eventResource, $watcher->wrapper);
+        event_base_set($eventResource, $this->base);
+        event_add($eventResource, $interval);
+
+        return $watcherId;
+    }
+
+    private function wrapRepeatingCallback(LibeventWatcher $watcher) {
+        $callback = $watcher->callback;
+        $watcherId = $watcher->id;
+        $eventResource = $watcher->eventResource;
+        $interval = $watcher->interval;
+
+        return function() use ($callback, $eventResource, $interval, $watcherId) {
             try {
                 $callback($watcherId, $this);
-                event_add($event, $interval);
+                event_add($eventResource, $interval);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
             }
         };
-
-        $this->watchers[$watcherId] = [$event, $isEnabled = TRUE, $wrapper, $interval];
-
-        event_timer_set($event, $wrapper);
-        event_base_set($event, $this->base);
-        event_add($event, $interval);
-
-        return $watcherId;
     }
 
     function onReadable($stream, callable $callback, $enableNow = TRUE) {
@@ -128,9 +167,35 @@ class LibeventReactor implements Reactor, Forkable {
 
     private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
         $watcherId = $this->getNextWatcherId();
-        $event = event_new();
+        $eventResource = event_new();
 
-        $wrapper = function($stream) use ($callback, $watcherId) {
+        $watcher = new LibeventWatcher;
+        $watcher->id = $watcherId;
+        $watcher->type = self::$TYPE_STREAM;
+        $watcher->stream = $stream;
+        $watcher->streamFlags = $flags;
+        $watcher->callback = $callback;
+        $watcher->wrapper = $this->wrapStreamCallback($watcher);
+        $watcher->isEnabled = (bool) $enableNow;
+        $watcher->eventResource = $eventResource;
+
+        $this->watchers[$watcherId] = $watcher;
+
+        event_set($eventResource, $stream, $flags, $watcher->wrapper);
+        event_base_set($eventResource, $this->base);
+
+        if ($enableNow) {
+            event_add($eventResource);
+        }
+
+        return $watcherId;
+    }
+
+    private function wrapStreamCallback(LibeventWatcher $watcher) {
+        $callback = $watcher->callback;
+        $watcherId = $watcher->id;
+
+        return function($stream) use ($callback, $watcherId) {
             try {
                 $callback($watcherId, $stream, $this);
             } catch (\Exception $e) {
@@ -138,27 +203,18 @@ class LibeventReactor implements Reactor, Forkable {
                 $this->stop();
             }
         };
-
-        event_set($event, $stream, $flags, $wrapper);
-        event_base_set($event, $this->base);
-
-        if ($enableNow) {
-            event_add($event);
-        }
-
-        $this->watchers[$watcherId] = [$event, $enableNow, $wrapper, $interval = -1];
-
-        return $watcherId;
     }
 
     function cancel($watcherId) {
-        if (isset($this->watchers[$watcherId])) {
-            $watcherStruct = $this->watchers[$watcherId];
-            event_del($watcherStruct[0]);
-            $this->garbage[] = $watcherStruct;
-            $this->scheduleGarbageCollection();
-            unset($this->watchers[$watcherId]);
+        if (!isset($this->watchers[$watcherId])) {
+            return;
         }
+
+        $watcher = $this->watchers[$watcherId];
+        event_del($watcher->eventResource);
+        $this->garbage[] = $watcher;
+        $this->scheduleGarbageCollection();
+        unset($this->watchers[$watcherId]);
     }
 
     function disable($watcherId) {
@@ -166,12 +222,10 @@ class LibeventReactor implements Reactor, Forkable {
             return;
         }
 
-        list($event, $isEnabled, $wrapper, $interval) = $this->watchers[$watcherId];
-
-        if ($isEnabled) {
-            event_del($event);
-            $isEnabled = FALSE;
-            $this->watchers[$watcherId] = [$event, $isEnabled, $wrapper, $interval];
+        $watcher = $this->watchers[$watcherId];
+        if ($watcher->isEnabled) {
+            event_del($watcher->eventResource);
+            $watcher->isEnabled = FALSE;
         }
     }
 
@@ -180,12 +234,11 @@ class LibeventReactor implements Reactor, Forkable {
             return;
         }
 
-        list($event, $isEnabled, $wrapper, $interval) = $this->watchers[$watcherId];
+        $watcher = $this->watchers[$watcherId];
 
-        if (!$isEnabled) {
-            event_add($event, $interval);
-            $isEnabled = TRUE;
-            $this->watchers[$watcherId] = [$event, $isEnabled, $wrapper, $interval];
+        if (!$watcher->isEnabled) {
+            event_add($watcher->eventResource, $watcher->interval);
+            $watcher->isEnabled = TRUE;
         }
     }
 
@@ -215,19 +268,36 @@ class LibeventReactor implements Reactor, Forkable {
     }
 
     function afterFork() {
-        $this->base = event_base_new();
-        $this->initializeGc();
+        $this->initialize();
 
-        foreach ($this->watchers as $watcherId => $watcherStruct) {
-            list($event, $enableNow) = $watcherStruct;
-            event_base_set($event, $this->base);
+        foreach ($this->watchers as $watcherId => $watcher) {
+            $eventResource = event_new();
+            $watcher->eventResource = $eventResource;
 
-            if ($enableNow) {
-                event_add($event);
+            switch ($watcher->type) {
+                case self::$TYPE_STREAM:
+                    $wrapper = $this->wrapStreamCallback($watcher);
+                    event_set($eventResource, $watcher->stream, $watcher->streamFlags, $wrapper);
+                    break;
+
+                case self::$TYPE_ONCE:
+                    $wrapper = $this->wrapOnceCallback($watcher);
+                    event_timer_set($eventResource, $wrapper);
+                    break;
+
+                case self::$TYPE_REPEATING:
+                    $wrapper = $this->wrapRepeatingCallback($watcher);
+                    event_timer_set($eventResource, $wrapper);
+                    break;
             }
 
-            $this->watchers[$watcherId][0] = $event;
+            $watcher->wrapper = $wrapper;
+            event_base_set($eventResource, $this->base);
+
+            if ($watcher->isEnabled) {
+                event_add($eventResource, $watcher->interval);
+            }
         }
     }
-}
 
+}
