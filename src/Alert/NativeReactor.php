@@ -12,6 +12,7 @@ class NativeReactor implements Reactor {
     private $writeCallbacks = [];
     private $watcherIdReadStreamIdMap = [];
     private $watcherIdWriteStreamIdMap = [];
+    private $disabledWatchers = array();
     private $microsecondResolution = 1000000;
     private $lastWatcherId = 0;
     private $isRunning = FALSE;
