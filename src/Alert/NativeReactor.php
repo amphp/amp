@@ -84,8 +84,8 @@ class NativeReactor implements Reactor {
     }
 
     private function selectActionableStreams($sec, $usec) {
-        $r = $this->readStreams ?: [];
-        $w = $this->writeStreams ?: [];
+        $r = $this->readStreams;
+        $w = $this->writeStreams;
         $e = NULL;
 
         if (stream_select($r, $w, $e, $sec, $usec)) {
