@@ -57,7 +57,7 @@ class NativeReactor implements Reactor {
             $this->enableAlarms();
         }
 
-        $timeToNextAlarm = $this->alarms
+        $timeToNextAlarm = $this->alarmOrder
             ? round(min($this->alarmOrder) - microtime(TRUE), 4)
             : '1.0';
 
