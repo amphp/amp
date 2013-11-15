@@ -59,19 +59,10 @@ class NativeReactor implements Reactor {
 
         $timeToNextAlarm = $this->alarmOrder
             ? round(min($this->alarmOrder) - microtime(TRUE), 4)
-            : '1.0';
-
-        if ($timeToNextAlarm <= 0) {
-            $sec = 0;
-            $usec = 0;
-        } else {
-            $parts = explode('.', (string) $timeToNextAlarm);
-            $sec = (int) $parts[0];
-            $usec = isset($parts[1]) ? ($parts[1] * 100) : 0;
-        }
+            : 1;
 
         if ($this->readStreams || $this->writeStreams) {
-            $this->selectActionableStreams($sec, $usec);
+            $this->selectActionableStreams($timeToNextAlarm);
         } elseif ($timeToNextAlarm > 0) {
             usleep($timeToNextAlarm * $this->microsecondResolution);
         }
@@ -83,10 +74,18 @@ class NativeReactor implements Reactor {
         $this->garbage = [];
     }
 
-    private function selectActionableStreams($sec, $usec) {
+    private function selectActionableStreams($timeout) {
         $r = $this->readStreams;
         $w = $this->writeStreams;
         $e = NULL;
+
+        if ($timeout <= 0) {
+            $sec = 0;
+            $usec = 0;
+        } else {
+            $sec = floor($timeout);
+            $usec = ($timeout - $sec) * $this->microsecondResolution;
+        }
 
         if (stream_select($r, $w, $e, $sec, $usec)) {
             foreach ($r as $readableStream) {
