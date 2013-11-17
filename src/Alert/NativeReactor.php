@@ -15,7 +15,6 @@ class NativeReactor implements Reactor {
     private $microsecondResolution = 1000000;
     private $lastWatcherId = 0;
     private $isRunning = FALSE;
-    private $garbage = [];
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
@@ -78,8 +77,6 @@ class NativeReactor implements Reactor {
         if ($this->alarmOrder) {
             $this->executeAlarms();
         }
-
-        $this->garbage = [];
     }
 
     private function selectActionableStreams($sec, $usec) {
@@ -225,8 +222,6 @@ class NativeReactor implements Reactor {
     private function cancelReadWatcher($watcherId) {
         $streamId = $this->watcherIdReadStreamIdMap[$watcherId];
 
-        $this->garbage[] = $this->readCallbacks[$streamId][$watcherId];
-
         unset(
             $this->readCallbacks[$streamId][$watcherId],
             $this->watcherIdReadStreamIdMap[$watcherId],
@@ -240,8 +235,6 @@ class NativeReactor implements Reactor {
 
     private function cancelWriteWatcher($watcherId) {
         $streamId = $this->watcherIdWriteStreamIdMap[$watcherId];
-
-        $this->garbage[] = $this->writeCallbacks[$streamId][$watcherId];
 
         unset(
             $this->writeCallbacks[$streamId][$watcherId],

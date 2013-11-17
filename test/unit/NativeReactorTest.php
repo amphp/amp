@@ -266,6 +266,16 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, $delay = 0.01);
         $reactor->run();
     }
+    
+    function testCancellationFromInsideWatcherCallback() {
+        $reactor = new NativeReactor;
+        $callback = function($watcherId, $reactor) {
+            $reactor->cancel($watcherId);
+            $reactor->stop();
+        };
+        $watcherId = $reactor->repeat($callback, $delay = 0.1);
+        $reactor->run();
+    }
 
     function testOnWritableWatcher() {
         $reactor = new NativeReactor;
