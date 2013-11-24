@@ -1,7 +1,9 @@
-#### master
+v0.3.0
+------
 
 - Timed event callbacks now passed the reactor instance at param 2 upon invocation
 - IO callbacks now passed the reactor instance at param 3 upon invocation
+- Minor bugfixes/improvements
 
 v0.2.0
 ------
