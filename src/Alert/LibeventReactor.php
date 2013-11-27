@@ -128,7 +128,7 @@ class LibeventReactor implements Reactor, Forkable {
         $watcher->interval = $interval;
         $watcher->callback = $callback;
         $watcher->isRepeating = TRUE;
-        
+
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
 
         $this->watchers[$watcherId] = $watcher;

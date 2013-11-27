@@ -41,10 +41,10 @@ interface Reactor {
      * @param float $interval The interval in seconds to observe between callback executions (zero is allowed)
      */
     function repeat(callable $callback, $interval);
-    
+
     /**
      * Schedule an event to trigger once at the specified time
-     * 
+     *
      * @param callable $callback Any valid PHP callable
      * @param string $timeString Any string that can be parsed by strtotime() and is in the future
      */
