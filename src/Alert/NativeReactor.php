@@ -325,9 +325,11 @@ class NativeReactor implements Reactor {
     }
 
     private function getNextWatcherId() {
-        if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
-            $this->lastWatcherId = 0;
-        }
+        do {
+            if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
+                $this->lastWatcherId = 0;
+            }
+        } while (isset($this->alarms[$watcherId]));
 
         return $watcherId;
     }
