@@ -243,9 +243,11 @@ class LibeventReactor implements Reactor, Forkable {
     }
 
     private function getNextWatcherId() {
-        if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
-            $this->lastWatcherId = 0;
-        }
+        do {
+            if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
+                $this->lastWatcherId = 0;
+            }
+        } while (isset($this->watchers[$watcherId]));
 
         return $watcherId;
     }
