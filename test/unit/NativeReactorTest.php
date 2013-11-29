@@ -66,22 +66,24 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
     function testImmediatelyReturnsWatcherId() {
         $reactor = new NativeReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->immediately(function(){});
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->immediately(function(){});
-        $this->assertSame(2, $watcherId);
+        $this->assertSame($firstWatcherId + 1, $watcherId);
 
         $watcherId = $reactor->immediately(function(){});
-        $this->assertSame(3, $watcherId);
+        $this->assertSame($firstWatcherId + 2, $watcherId);
     }
 
     function testOnceReturnsWatcherId() {
         $reactor = new NativeReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->once(function(){}, $delay = 0);
 
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
     }
 
     function testReactorDoesntSwallowOnceCallbackException() {
@@ -100,8 +102,9 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
 
     function testScheduleReturnsWatcherId() {
         $reactor = new NativeReactor;
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->repeat(function(){}, $interval = 1);
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
     }
 
     function testImmediatelyAlarmAssignmentWhileAlreadyRunning() {
@@ -124,21 +127,23 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
     function testOnReadableReturnsWatcherId() {
         $reactor = new NativeReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->onReadable(STDIN, function(){});
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->onReadable(STDIN, function(){});
-        $this->assertSame(2, $watcherId);
+        $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
     function testOnWritableReturnsWatcherId() {
         $reactor = new NativeReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->onWritable(STDOUT, function(){});
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->onWritable(STDOUT, function(){});
-        $this->assertSame(2, $watcherId);
+        $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
     function testOnReadableCancellation() {
@@ -266,7 +271,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, $delay = 0.01);
         $reactor->run();
     }
-    
+
     function testCancellationFromInsideWatcherCallback() {
         $reactor = new NativeReactor;
         $callback = function($watcherId, $reactor) {

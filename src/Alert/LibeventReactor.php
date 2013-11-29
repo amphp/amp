@@ -6,7 +6,7 @@ class LibeventReactor implements Reactor, Forkable {
 
     private $base;
     private $watchers = [];
-    private $lastWatcherId = 0;
+    private $lastWatcherId;
     private $resolution = 1000000;
     private $isRunning = FALSE;
     private $isGCScheduled = FALSE;
@@ -18,6 +18,7 @@ class LibeventReactor implements Reactor, Forkable {
     private static $TYPE_REPEATING = 2;
 
     function __construct() {
+        $this->lastWatcherId = PHP_INT_MAX * -1;
         $this->initialize();
     }
 
@@ -79,7 +80,7 @@ class LibeventReactor implements Reactor, Forkable {
     }
 
     function once(callable $callback, $delay) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
         $eventResource = event_new();
         $delay = ($delay > 0) ? ($delay * $this->resolution) : 0;
 
@@ -117,7 +118,7 @@ class LibeventReactor implements Reactor, Forkable {
     }
 
     function repeat(callable $callback, $interval) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
         $interval = ($interval > 0) ? ($interval * $this->resolution) : 0;
         $eventResource = event_new();
 
@@ -166,7 +167,7 @@ class LibeventReactor implements Reactor, Forkable {
     }
 
     private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
         $eventResource = event_new();
 
         $watcher = new LibeventWatcher;
@@ -240,14 +241,6 @@ class LibeventReactor implements Reactor, Forkable {
             event_add($watcher->eventResource, $watcher->interval);
             $watcher->isEnabled = TRUE;
         }
-    }
-
-    private function getNextWatcherId() {
-        if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
-            $this->lastWatcherId = 0;
-        }
-
-        return $watcherId;
     }
 
     private function scheduleGarbageCollection() {

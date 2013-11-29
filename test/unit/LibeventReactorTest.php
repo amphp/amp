@@ -36,7 +36,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         }, $delay = 0.01);
 
         $reactor->run();
-        
+
         $this->assertEquals(1, $testIncrement);
     }
 
@@ -121,7 +121,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
                 $reactor->stop();
             }
         }, $delay = 0.001);
-        
+
         $reactor->run();
 
         $this->assertEquals(10, $testIncrement);
@@ -131,11 +131,12 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->once(function(){}, $delay = 0);
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->once(function(){}, $delay = 0);
-        $this->assertSame(2, $watcherId);
+        $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
     /**
@@ -175,9 +176,10 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
+        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->repeat(function(){}, $interval = 1);
 
-        $this->assertSame(1, $watcherId);
+        $this->assertSame($firstWatcherId, $watcherId);
     }
 
     function testCancelRemovesWatcher() {

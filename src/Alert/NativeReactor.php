@@ -14,12 +14,16 @@ class NativeReactor implements Reactor {
     private $watcherIdWriteStreamIdMap = [];
     private $disabledWatchers = array();
     private $microsecondResolution = 1000000;
-    private $lastWatcherId = 0;
+    private $lastWatcherId;
     private $isRunning = FALSE;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
+
+    function __construct() {
+        $this->lastWatcherId = PHP_INT_MAX * -1;
+    }
 
     function run() {
         if (!$this->isRunning) {
@@ -159,7 +163,7 @@ class NativeReactor implements Reactor {
     }
 
     private function scheduleAlarm($callback, $delay, $isRepeating) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
 
         if ($this->isRunning) {
             $nextExecution = (microtime(TRUE) + $delay);
@@ -175,7 +179,7 @@ class NativeReactor implements Reactor {
     }
 
     function onReadable($stream, callable $callback, $enableNow = TRUE) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
 
         if ($enableNow) {
             $streamId = (int) $stream;
@@ -190,7 +194,7 @@ class NativeReactor implements Reactor {
     }
 
     function onWritable($stream, callable $callback, $enableNow = TRUE) {
-        $watcherId = $this->getNextWatcherId();
+        $watcherId = ++$this->lastWatcherId;
 
         if ($enableNow) {
             $streamId = (int) $stream;
@@ -322,14 +326,6 @@ class NativeReactor implements Reactor {
 
             $this->disabledWatchers[$watcherId] = [self::$DISABLED_WRITE, [$stream, $callback]];
         }
-    }
-
-    private function getNextWatcherId() {
-        if (($watcherId = ++$this->lastWatcherId) === PHP_INT_MAX) {
-            $this->lastWatcherId = 0;
-        }
-
-        return $watcherId;
     }
 
 }

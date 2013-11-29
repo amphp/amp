@@ -1,3 +1,7 @@
+#### master
+
+- Altered watcher ID generation to avoid potential collisions
+
 v0.3.0
 ------
 
