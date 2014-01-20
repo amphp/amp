@@ -6,8 +6,10 @@ interface Reactor {
 
     /**
      * Start the event reactor and assume program flow control
+     * 
+     * @param $onStart Optional callback to invoke immediately upon reactor start
      */
-    function run();
+    function run(callable $onStart = NULL);
 
     /**
      * Execute a single event loop iteration

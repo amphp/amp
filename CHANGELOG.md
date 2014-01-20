@@ -1,6 +1,7 @@
 #### master
 
 - Altered watcher ID generation to avoid potential collisions
+- Added optional $onStart callback parameter to Reactor::run() implementations
 
 v0.3.0
 ------

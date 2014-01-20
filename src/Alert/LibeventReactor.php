@@ -33,10 +33,16 @@ class LibeventReactor implements Reactor, Forkable {
         event_base_set($this->gcEvent, $this->base);
     }
 
-    function run() {
-        if (!$this->isRunning) {
-            $this->doRun();
+    function run(callable $onStart = NULL) {
+        if ($this->isRunning) {
+            return;
         }
+
+        if ($onStart) {
+            $this->immediately($onStart);
+        }
+
+        $this->doRun();
     }
 
     function tick() {

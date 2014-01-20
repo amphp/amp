@@ -25,13 +25,18 @@ class NativeReactor implements Reactor {
         $this->lastWatcherId = PHP_INT_MAX * -1;
     }
 
-    function run() {
-        if (!$this->isRunning) {
-            $this->isRunning = TRUE;
-            $this->enableAlarms();
-            while ($this->isRunning) {
-                $this->tick();
-            }
+    function run(callable $onStart = NULL) {
+        if ($this->isRunning) {
+            return;
+        }
+        
+        $this->isRunning = TRUE;
+        if ($onStart) {
+            $this->immediately($onStart);
+        }
+        $this->enableAlarms();
+        while ($this->isRunning) {
+            $this->tick();
         }
     }
 
