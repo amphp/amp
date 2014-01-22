@@ -2,7 +2,7 @@
 
 namespace Alert;
 
-class LibeventReactor implements Reactor, Forkable {
+class LibeventReactor implements Reactor {
 
     private $base;
     private $watchers = [];
