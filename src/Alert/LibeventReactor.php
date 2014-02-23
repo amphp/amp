@@ -19,14 +19,6 @@ class LibeventReactor implements Reactor {
 
     function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
-        $this->initialize();
-    }
-
-    /**
-     * Normally this would go into the __construct() function but it's split out into its own
-     * method because we also have to initialize() when calling afterFork().
-     */
-    private function initialize() {
         $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
@@ -260,43 +252,6 @@ class LibeventReactor implements Reactor {
         $this->garbage = [];
         $this->isGCScheduled = FALSE;
         event_del($this->gcEvent);
-    }
-
-    function beforeFork() {
-        $this->collectGarbage();
-    }
-
-    function afterFork() {
-        $this->initialize();
-
-        foreach ($this->watchers as $watcherId => $watcher) {
-            $eventResource = event_new();
-            $watcher->eventResource = $eventResource;
-
-            switch ($watcher->type) {
-                case self::$TYPE_STREAM:
-                    $wrapper = $this->wrapStreamCallback($watcher);
-                    event_set($eventResource, $watcher->stream, $watcher->streamFlags, $wrapper);
-                    break;
-
-                case self::$TYPE_ONCE:
-                    $wrapper = $this->wrapOnceCallback($watcher);
-                    event_timer_set($eventResource, $wrapper);
-                    break;
-
-                case self::$TYPE_REPEATING:
-                    $wrapper = $this->wrapRepeatingCallback($watcher);
-                    event_timer_set($eventResource, $wrapper);
-                    break;
-            }
-
-            $watcher->wrapper = $wrapper;
-            event_base_set($eventResource, $this->base);
-
-            if ($watcher->isEnabled) {
-                event_add($eventResource, $watcher->interval);
-            }
-        }
     }
 
 }
