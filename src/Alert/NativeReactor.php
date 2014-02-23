@@ -15,22 +15,22 @@ class NativeReactor implements Reactor {
     private $disabledWatchers = array();
     private $microsecondResolution = 1000000;
     private $lastWatcherId;
-    private $isRunning = FALSE;
+    private $isRunning = false;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
 
-    function __construct() {
+    public function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
     }
 
-    function run(callable $onStart = NULL) {
+    public function run(callable $onStart = NULL) {
         if ($this->isRunning) {
             return;
         }
         
-        $this->isRunning = TRUE;
+        $this->isRunning = true;
         if ($onStart) {
             $this->immediately($onStart);
         }
@@ -41,7 +41,7 @@ class NativeReactor implements Reactor {
     }
 
     private function enableAlarms() {
-        $now = microtime(TRUE);
+        $now = microtime(true);
         $enabled = 0;
         foreach ($this->alarms as $watcherId => $alarmStruct) {
             $nextExecution = $alarmStruct[1];
@@ -56,17 +56,17 @@ class NativeReactor implements Reactor {
         }
     }
 
-    function stop() {
-        $this->isRunning = FALSE;
+    public function stop() {
+        $this->isRunning = false;
     }
 
-    function tick() {
+    public function tick() {
         if (!$this->isRunning) {
             $this->enableAlarms();
         }
 
         $timeToNextAlarm = $this->alarmOrder
-            ? round(min($this->alarmOrder) - microtime(TRUE), 4)
+            ? round(min($this->alarmOrder) - microtime(true), 4)
             : 1;
 
         if ($this->readStreams || $this->writeStreams) {
@@ -110,7 +110,7 @@ class NativeReactor implements Reactor {
     }
 
     private function executeAlarms() {
-        $now = microtime(TRUE);
+        $now = microtime(true);
 
         asort($this->alarmOrder);
 
@@ -140,11 +140,11 @@ class NativeReactor implements Reactor {
         $callback($watcherId, $this);
     }
 
-    function at(callable $callback, $timeString) {
+    public function at(callable $callback, $timeString) {
         $now = time();
         $executeAt = @strtotime($timeString);
 
-        if ($executeAt === FALSE && $executeAt <= $now) {
+        if ($executeAt === false && $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
@@ -155,23 +155,23 @@ class NativeReactor implements Reactor {
         return $this->once($callback, $delay);
     }
 
-    function immediately(callable $callback) {
-        return $this->scheduleAlarm($callback, $delay = 0, $isRepeating = FALSE);
+    public function immediately(callable $callback) {
+        return $this->scheduleAlarm($callback, $delay = 0, $isRepeating = false);
     }
 
-    function once(callable $callback, $delay) {
-        return $this->scheduleAlarm($callback, $delay, $isRepeating = FALSE);
+    public function once(callable $callback, $delay) {
+        return $this->scheduleAlarm($callback, $delay, $isRepeating = false);
     }
 
-    function repeat(callable $callback, $interval) {
-        return $this->scheduleAlarm($callback, $interval, $isRepeating = TRUE);
+    public function repeat(callable $callback, $interval) {
+        return $this->scheduleAlarm($callback, $interval, $isRepeating = true);
     }
 
     private function scheduleAlarm($callback, $delay, $isRepeating) {
         $watcherId = ++$this->lastWatcherId;
 
         if ($this->isRunning) {
-            $nextExecution = (microtime(TRUE) + $delay);
+            $nextExecution = (microtime(true) + $delay);
             $this->alarmOrder[$watcherId] = $nextExecution;
         } else {
             $nextExecution = NULL;
@@ -183,7 +183,7 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
-    function onReadable($stream, callable $callback, $enableNow = TRUE) {
+    public function onReadable($stream, callable $callback, $enableNow = true) {
         $watcherId = ++$this->lastWatcherId;
 
         if ($enableNow) {
@@ -198,7 +198,7 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
-    function onWritable($stream, callable $callback, $enableNow = TRUE) {
+    public function onWritable($stream, callable $callback, $enableNow = true) {
         $watcherId = ++$this->lastWatcherId;
 
         if ($enableNow) {
@@ -213,7 +213,7 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
-    function cancel($watcherId) {
+    public function cancel($watcherId) {
         if (isset($this->alarms[$watcherId])) {
             unset(
                 $this->alarms[$watcherId],
@@ -256,7 +256,7 @@ class NativeReactor implements Reactor {
         }
     }
 
-    function enable($watcherId) {
+    public function enable($watcherId) {
         if (!isset($this->disabledWatchers[$watcherId])) {
             return;
         }
@@ -268,7 +268,7 @@ class NativeReactor implements Reactor {
         switch ($type) {
             case self::$DISABLED_ALARM:
                 if (!$nextExecution = $watcherStruct[1]) {
-                    $nextExecution = microtime(TRUE) + $watcherStruct[2];
+                    $nextExecution = microtime(true) + $watcherStruct[2];
                     $watcherStruct[1] = $nextExecution;
                 }
                 $this->alarms[$watcherId] = $watcherStruct;
@@ -291,7 +291,7 @@ class NativeReactor implements Reactor {
         }
     }
 
-    function disable($watcherId) {
+    public function disable($watcherId) {
         if (isset($this->alarms[$watcherId])) {
             $alarmStruct = $this->alarms[$watcherId];
             $this->disabledWatchers[$watcherId] = [self::$DISABLED_ALARM, $alarmStruct];

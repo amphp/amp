@@ -6,15 +6,15 @@ class ReactorFactory {
 
     private $hasExtLibevent;
 
-    function __construct() {
+    public function __construct() {
         $this->hasExtLibevent = extension_loaded('libevent');
     }
 
-    function __invoke() {
+    public function __invoke() {
         return $this->select();
     }
 
-    function select() {
+    public function select() {
         if ($this->hasExtLibevent) {
             $reactor = new LibeventReactor;
         } else {

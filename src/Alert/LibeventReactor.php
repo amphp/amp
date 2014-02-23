@@ -8,8 +8,8 @@ class LibeventReactor implements Reactor {
     private $watchers = [];
     private $lastWatcherId;
     private $resolution = 1000000;
-    private $isRunning = FALSE;
-    private $isGCScheduled = FALSE;
+    private $isRunning = false;
+    private $isGCScheduled = false;
     private $gcEvent;
     private $stopException;
 
@@ -17,7 +17,7 @@ class LibeventReactor implements Reactor {
     private static $TYPE_ONCE = 1;
     private static $TYPE_REPEATING = 2;
 
-    function __construct() {
+    public function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
         $this->base = event_base_new();
         $this->gcEvent = event_new();
@@ -25,7 +25,7 @@ class LibeventReactor implements Reactor {
         event_base_set($this->gcEvent, $this->base);
     }
 
-    function run(callable $onStart = NULL) {
+    public function run(callable $onStart = NULL) {
         if ($this->isRunning) {
             return;
         }
@@ -37,16 +37,16 @@ class LibeventReactor implements Reactor {
         $this->doRun();
     }
 
-    function tick() {
+    public function tick() {
         if (!$this->isRunning) {
             $this->doRun(EVLOOP_ONCE | EVLOOP_NONBLOCK);
         }
     }
 
     private function doRun($flags = 0) {
-        $this->isRunning = TRUE;
+        $this->isRunning = true;
         event_base_loop($this->base, $flags);
-        $this->isRunning = FALSE;
+        $this->isRunning = false;
 
         if ($this->stopException) {
             $e = $this->stopException;
@@ -54,15 +54,15 @@ class LibeventReactor implements Reactor {
         }
     }
 
-    function stop() {
+    public function stop() {
         event_base_loopexit($this->base);
     }
 
-    function at(callable $callback, $timeString) {
+    public function at(callable $callback, $timeString) {
         $now = time();
         $executeAt = @strtotime($timeString);
 
-        if ($executeAt === FALSE && $executeAt <= $now) {
+        if ($executeAt === false && $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
@@ -73,11 +73,11 @@ class LibeventReactor implements Reactor {
         return $this->once($callback, $delay);
     }
 
-    function immediately(callable $callback) {
+    public function immediately(callable $callback) {
         return $this->once($callback, $delay = 0);
     }
 
-    function once(callable $callback, $delay) {
+    public function once(callable $callback, $delay) {
         $watcherId = ++$this->lastWatcherId;
         $eventResource = event_new();
         $delay = ($delay > 0) ? ($delay * $this->resolution) : 0;
@@ -115,7 +115,7 @@ class LibeventReactor implements Reactor {
         };
     }
 
-    function repeat(callable $callback, $interval) {
+    public function repeat(callable $callback, $interval) {
         $watcherId = ++$this->lastWatcherId;
         $interval = ($interval > 0) ? ($interval * $this->resolution) : 0;
         $eventResource = event_new();
@@ -126,7 +126,7 @@ class LibeventReactor implements Reactor {
         $watcher->eventResource = $eventResource;
         $watcher->interval = $interval;
         $watcher->callback = $callback;
-        $watcher->isRepeating = TRUE;
+        $watcher->isRepeating = true;
 
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
 
@@ -156,11 +156,11 @@ class LibeventReactor implements Reactor {
         };
     }
 
-    function onReadable($stream, callable $callback, $enableNow = TRUE) {
+    public function onReadable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_READ | EV_PERSIST, $callback, $enableNow);
     }
 
-    function onWritable($stream, callable $callback, $enableNow = TRUE) {
+    public function onWritable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_WRITE | EV_PERSIST, $callback, $enableNow);
     }
 
@@ -204,7 +204,7 @@ class LibeventReactor implements Reactor {
         };
     }
 
-    function cancel($watcherId) {
+    public function cancel($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -216,7 +216,7 @@ class LibeventReactor implements Reactor {
         unset($this->watchers[$watcherId]);
     }
 
-    function disable($watcherId) {
+    public function disable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -224,11 +224,11 @@ class LibeventReactor implements Reactor {
         $watcher = $this->watchers[$watcherId];
         if ($watcher->isEnabled) {
             event_del($watcher->eventResource);
-            $watcher->isEnabled = FALSE;
+            $watcher->isEnabled = false;
         }
     }
 
-    function enable($watcherId) {
+    public function enable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -237,20 +237,20 @@ class LibeventReactor implements Reactor {
 
         if (!$watcher->isEnabled) {
             event_add($watcher->eventResource, $watcher->interval);
-            $watcher->isEnabled = TRUE;
+            $watcher->isEnabled = true;
         }
     }
 
     private function scheduleGarbageCollection() {
         if (!$this->isGCScheduled) {
             event_add($this->gcEvent, 0);
-            $this->isGCScheduled = TRUE;
+            $this->isGCScheduled = true;
         }
     }
 
     private function collectGarbage() {
         $this->garbage = [];
-        $this->isGCScheduled = FALSE;
+        $this->isGCScheduled = false;
         event_del($this->gcEvent);
     }
 
