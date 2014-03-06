@@ -9,7 +9,7 @@
  * during a given time period. The results are output after the test completes.
  */
 
-require dirname(__DIR__) . '/autoload.php';
+require __DIR__ . '/../src/bootstrap.php';
 
 define('RUN_TIME', 3);
 

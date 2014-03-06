@@ -1,17 +1,17 @@
-<phpunit bootstrap="./autoload.php" colors="true">
+<phpunit bootstrap="./src/unit-test-bootstrap.php" colors="true">
     <testsuites>
-        <testsuite name="Unit">
-            <directory>./test/unit</directory>
+        <testsuite name="Alert Unit Test Suite">
+            <directory>./test</directory>
         </testsuite>
     </testsuites>
     <filter>
         <whitelist addUncoveredFilesFromWhitelist="true">
-            <directory>./src/Alert</directory>
+            <directory>./lib/Alert</directory>
         </whitelist>
     </filter>
 
     <logging>
-
+<!--
         <log
             type="coverage-html"
             target="./test/coverage"
@@ -21,7 +21,7 @@
             highLowerBound="70"
             showUncoveredFiles="true"
         />
-
+-->
         <log
             type="coverage-text"
             target="php://stdout"

@@ -1,10 +1,10 @@
 <?php
 
-use Alert\NativeReactor;
+namespace Alert;
 
-class NativeReactorTest extends PHPUnit_Framework_TestCase {
+class NativeReactorTest extends \PHPUnit_Framework_TestCase {
 
-    function testImmediateExecution() {
+    public function testImmediateExecution() {
         $reactor = new NativeReactor;
 
         $testIncrement = 0;
@@ -17,7 +17,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testWatcherIsNeverNotifiedIfStreamIsNeverReadable() {
+    public function testWatcherIsNeverNotifiedIfStreamIsNeverReadable() {
         $reactor = new NativeReactor;
         $stream = STDIN;
         $increment = 0;
@@ -33,7 +33,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(0, $increment);
     }
 
-    function testTickExecutesReadyEvents() {
+    public function testTickExecutesReadyEvents() {
         $reactor = new NativeReactor;
 
         $testIncrement = 0;
@@ -46,7 +46,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testRunExecutesEventsUntilExplicitlyStopped() {
+    public function testRunExecutesEventsUntilExplicitlyStopped() {
         $reactor = new NativeReactor;
 
         $testIncrement = 0;
@@ -63,7 +63,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(10, $testIncrement);
     }
 
-    function testImmediatelyReturnsWatcherId() {
+    public function testImmediatelyReturnsWatcherId() {
         $reactor = new NativeReactor;
 
         $firstWatcherId = (PHP_INT_MAX * -1) + 1;
@@ -77,7 +77,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame($firstWatcherId + 2, $watcherId);
     }
 
-    function testOnceReturnsWatcherId() {
+    public function testOnceReturnsWatcherId() {
         $reactor = new NativeReactor;
 
         $firstWatcherId = (PHP_INT_MAX * -1) + 1;
@@ -86,28 +86,28 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame($firstWatcherId, $watcherId);
     }
 
-    function testReactorDoesntSwallowOnceCallbackException() {
+    public function testReactorDoesntSwallowOnceCallbackException() {
         $reactor = new NativeReactor;
 
         $reactor->repeat(function(){}, $delay = 1);
-        $reactor->once(function(){ throw new Exception('test'); }, $delay = 0);
+        $reactor->once(function(){ throw new \Exception('test'); }, $delay = 0);
 
         try {
             $reactor->tick();
             $this->fail('Expected exception not thrown');
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // woot! this is what we wanted
         }
     }
 
-    function testScheduleReturnsWatcherId() {
+    public function testScheduleReturnsWatcherId() {
         $reactor = new NativeReactor;
         $firstWatcherId = (PHP_INT_MAX * -1) + 1;
         $watcherId = $reactor->repeat(function(){}, $interval = 1);
         $this->assertSame($firstWatcherId, $watcherId);
     }
 
-    function testImmediatelyAlarmAssignmentWhileAlreadyRunning() {
+    public function testImmediatelyAlarmAssignmentWhileAlreadyRunning() {
         $reactor = new NativeReactor;
         $counter = 0;
         $nestedCounter = 0;
@@ -124,7 +124,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(1, $nestedCounter);
     }
 
-    function testOnReadableReturnsWatcherId() {
+    public function testOnReadableReturnsWatcherId() {
         $reactor = new NativeReactor;
 
         $firstWatcherId = (PHP_INT_MAX * -1) + 1;
@@ -135,7 +135,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
-    function testOnWritableReturnsWatcherId() {
+    public function testOnWritableReturnsWatcherId() {
         $reactor = new NativeReactor;
 
         $firstWatcherId = (PHP_INT_MAX * -1) + 1;
@@ -146,7 +146,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
-    function testOnReadableCancellation() {
+    public function testOnReadableCancellation() {
         $reactor = new NativeReactor;
         $watcherId = $reactor->onReadable(STDIN, function(){});
         $reactor->immediately(function() use ($reactor, $watcherId) { $reactor->cancel($watcherId); });
@@ -154,7 +154,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testOnWritableCancellation() {
+    public function testOnWritableCancellation() {
         $reactor = new NativeReactor;
         $watcherId = $reactor->onWritable(STDOUT, function(){});
         $reactor->immediately(function() use ($reactor, $watcherId) { $reactor->cancel($watcherId); });
@@ -162,27 +162,27 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testReactorDoesntSwallowExceptionOnRecurringScheduledAlarm() {
+    public function testReactorDoesntSwallowExceptionOnRecurringScheduledAlarm() {
         $reactor = new NativeReactor;
 
-        $reactor->repeat(function(){ throw new Exception('test'); }, $interval = 0);
+        $reactor->repeat(function(){ throw new \Exception('test'); }, $interval = 0);
 
         try {
             $reactor->run();
             $this->fail('Expected exception not thrown');
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // woot! this is what we wanted
         }
     }
 
-    function testEnableDoesNothingIfWatcherIdDoesntExistOrIsAlreadyEnabled() {
+    public function testEnableDoesNothingIfWatcherIdDoesntExistOrIsAlreadyEnabled() {
         $reactor = new NativeReactor;
         $watcherId = $reactor->immediately(function() use ($reactor) { $reactor->stop(); });
         $reactor->enable($watcherId);
         $reactor->run();
     }
 
-    function testAlarmWatcherDisable() {
+    public function testAlarmWatcherDisable() {
         $reactor = new NativeReactor;
         $watcherId = $reactor->immediately(function() use ($reactor) { $reactor->stop(); });
         $reactor->disable($watcherId);
@@ -190,7 +190,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testEnableReadableStreamWatcher() {
+    public function testEnableReadableStreamWatcher() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -203,7 +203,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testEnableWritableStreamWatcher() {
+    public function testEnableWritableStreamWatcher() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -216,7 +216,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($increment > 0);
     }
 
-    function testAlarmResortIfModifiedDuringStreamWatcherInvocation() {
+    public function testAlarmResortIfModifiedDuringStreamWatcherInvocation() {
         $reactor = new NativeReactor;
         $reactor->onWritable(STDOUT, function() use ($reactor) {
             $reactor->immediately(function() use ($reactor) { $reactor->stop(); });
@@ -224,7 +224,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testCancelRemovesDisabledWatcher() {
+    public function testCancelRemovesDisabledWatcher() {
         $reactor = new NativeReactor;
         $increment = 0;
         $watcherId = $reactor->immediately(function() use ($increment) { $increment++; });
@@ -236,7 +236,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testOnWritableDisable() {
+    public function testOnWritableDisable() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -248,7 +248,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testOnReadableDisable() {
+    public function testOnReadableDisable() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -260,7 +260,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testCancellation() {
+    public function testCancellation() {
         $reactor = new NativeReactor;
 
         $watcherId = $reactor->once(function(){
@@ -272,7 +272,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testCancellationFromInsideWatcherCallback() {
+    public function testCancellationFromInsideWatcherCallback() {
         $reactor = new NativeReactor;
         $callback = function($watcherId, $reactor) {
             $reactor->cancel($watcherId);
@@ -282,7 +282,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testOnWritableWatcher() {
+    public function testOnWritableWatcher() {
         $reactor = new NativeReactor;
 
         $flag = FALSE;
@@ -297,14 +297,14 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($flag);
     }
 
-    function testOnReadableWatcher() {
+    public function testOnReadableWatcher() {
         $reactor = new NativeReactor;
         $reactor->onWritable(STDIN, function() {});
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.05);
         $reactor->run();
     }
 
-    function testInitiallyDisabledWriteWatcher() {
+    public function testInitiallyDisabledWriteWatcher() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -315,7 +315,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
+    public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
         $reactor = new NativeReactor;
 
         $increment = 0;
@@ -333,7 +333,7 @@ class NativeReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($increment > 0);
     }
 
-    function testGarbageCollection() {
+    public function testGarbageCollection() {
         $reactor = new NativeReactor();
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.1);
         $reactor->run();

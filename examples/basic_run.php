@@ -4,13 +4,13 @@
  * examples/basic_run.php
  */
 
-require dirname(__DIR__) . '/autoload.php';
+require __DIR__ . '/../src/bootstrap.php';
 
 $reactor = (new Alert\ReactorFactory)->select();
 
 stream_set_blocking(STDIN, FALSE);
 
-// Echo back the data each time there is readable data on STDIN
+// Echo back the line each time there is readable data on STDIN
 $reactor->onReadable(STDIN, function() {
     while ($line = fgets(STDIN)) {
         echo "--- $line";
@@ -30,5 +30,5 @@ $reactor->repeat(function() use ($reactor, &$secondsRemaining) {
 echo "Each line you type will be echoed back for the next {$secondsRemaining} seconds ...\n\n";
 
 // Calling Reactor::run() will give control of program execution to the event reactor. The program
-// will not go continue beyond the next line until your code explicity calls Reactor::stop().
+// will not continue beyond the next line until your code explicity calls Reactor::stop().
 $reactor->run();

@@ -1,13 +1,13 @@
 <?php
 
-use Alert\ReactorFactory;
+namespace Alert;
 
-class ReactorFactoryTest extends PHPUnit_Framework_TestCase {
+class ReactorFactoryTest extends \PHPUnit_Framework_TestCase {
 
-    function testSelectReturnsLibeventReactorIfExtensionLoaded() {
+    public function testSelectReturnsLibeventReactorIfExtensionLoaded() {
         if (!extension_loaded('libevent')) {
             $this->markTestSkipped(
-                'libevent extension not available'
+                'ext/libevent extension not loaded'
             );
         }
 
@@ -16,7 +16,7 @@ class ReactorFactoryTest extends PHPUnit_Framework_TestCase {
         $this->assertInstanceOf('Alert\LibeventReactor', $reactor);
     }
 
-    function testMagicInvokeDelegatesToSelectMethod() {
+    public function testMagicInvokeDelegatesToSelectMethod() {
         $rf = $this->getMock('Alert\ReactorFactory', ['select']);
         $rf->expects($this->once())
            ->method('select')
@@ -24,5 +24,4 @@ class ReactorFactoryTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals(42, $rf->__invoke());
     }
-
 }

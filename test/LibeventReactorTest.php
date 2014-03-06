@@ -1,18 +1,18 @@
 <?php
 
-use Alert\LibeventReactor;
+namespace Alert;
 
-class LibeventReactorTest extends PHPUnit_Framework_TestCase {
+class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
 
     private function skipIfMissingExtLibevent() {
         if (!extension_loaded('libevent')) {
             $this->markTestSkipped(
-                'libevent extension not available'
+                'ext/libevent extension not loaded'
             );
         }
     }
 
-    function testEnablingWatcherAllowsSubsequentInvocation() {
+    public function testEnablingWatcherAllowsSubsequentInvocation() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $testIncrement = 0;
@@ -40,7 +40,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testDisablingWatcherPreventsSubsequentInvocation() {
+    public function testDisablingWatcherPreventsSubsequentInvocation() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $testIncrement = 0;
@@ -59,7 +59,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(0, $testIncrement);
     }
 
-    function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
+    public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $testIncrement = 0;
@@ -80,7 +80,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testImmediateExecution() {
+    public function testImmediateExecution() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -94,7 +94,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testTickExecutesReadyEvents() {
+    public function testTickExecutesReadyEvents() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -108,7 +108,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $testIncrement);
     }
 
-    function testRunExecutesEventsUntilExplicitlyStopped() {
+    public function testRunExecutesEventsUntilExplicitlyStopped() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -127,7 +127,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(10, $testIncrement);
     }
 
-    function testOnceReturnsEventWatcher() {
+    public function testOnceReturnsEventWatcher() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -143,7 +143,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
      * @expectedException RuntimeException
      * @expectedExceptionMessage test
      */
-    function testReactorAllowsExceptionToBubbleUpDuringTick() {
+    public function testReactorAllowsExceptionToBubbleUpDuringTick() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $reactor->once(function(){ throw new RuntimeException('test'); }, $delay = 0);
@@ -154,7 +154,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
      * @expectedException RuntimeException
      * @expectedExceptionMessage test
      */
-    function testReactorAllowsExceptionToBubbleUpDuringRun() {
+    public function testReactorAllowsExceptionToBubbleUpDuringRun() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $reactor->once(function(){ throw new RuntimeException('test'); }, $delay = 0);
@@ -165,14 +165,14 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
      * @expectedException RuntimeException
      * @expectedExceptionMessage test
      */
-    function testReactorAllowsExceptionToBubbleUpFromRepeatingAlarmDuringRun() {
+    public function testReactorAllowsExceptionToBubbleUpFromRepeatingAlarmDuringRun() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
         $reactor->repeat(function(){ throw new RuntimeException('test'); }, $interval = 0);
         $reactor->run();
     }
 
-    function testRepeatReturnsEventWatcher() {
+    public function testRepeatReturnsEventWatcher() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -182,7 +182,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame($firstWatcherId, $watcherId);
     }
 
-    function testCancelRemovesWatcher() {
+    public function testCancelRemovesWatcher() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -195,7 +195,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testOnWritableWatcher() {
+    public function testOnWritableWatcher() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -211,7 +211,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($flag);
     }
 
-    function testInitiallyDisabledWriteWatcher() {
+    public function testInitiallyDisabledWriteWatcher() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -223,7 +223,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $this->assertSame(0, $increment);
     }
 
-    function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
+    public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -245,7 +245,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
     /**
      * @expectedException RuntimeException
      */
-    function testStreamWatcherDoesntSwallowExceptions() {
+    public function testStreamWatcherDoesntSwallowExceptions() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
@@ -254,7 +254,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testGarbageCollection() {
+    public function testGarbageCollection() {
         $this->skipIfMissingExtLibevent();
 
         $reactor = new LibeventReactor();
@@ -262,7 +262,7 @@ class LibeventReactorTest extends PHPUnit_Framework_TestCase {
         $reactor->run();
     }
 
-    function testAfterForkReinitializesWatchers() {
+    public function testAfterForkReinitializesWatchers() {
         $this->skipIfMissingExtLibevent();
 
         $reactor = new LibeventReactor();
