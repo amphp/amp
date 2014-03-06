@@ -1,8 +1,12 @@
+v0.4.0
+------
+
 #### master
 
 - Altered watcher ID generation to avoid potential collisions
 - Added optional $onStart callback parameter to Reactor::run() implementations
 - Added Scala-like Future\Promise implementation
+- Remove `Forkable` things originally added in v0.2.0 (unnecessary)
 
 > **BC BREAKS**: *none*
 
