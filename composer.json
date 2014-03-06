@@ -15,11 +15,9 @@
     "php": ">=5.4.0"
   },
   "autoload": {
-    "psr-4": {
-      "Alert": "lib"
-    }
+    "files": ["src/bootstrap.php"]
   },
    "branch-alias": {
-     "dev-master": "0.3.x-dev"
+     "dev-master": "0.4.x-dev"
   }
 }

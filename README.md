@@ -38,7 +38,7 @@ Manually download from the [tagged release][tags] section.
 ###### Composer:
 
 ```bash
-$ php composer.phar require rdlowrey/alert:0.3.*
+$ php composer.phar require rdlowrey/alert:0.4.*
 ```
 
 [tags]: https://github.com/rdlowrey/alert/releases "Tagged Releases"
