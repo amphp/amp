@@ -1,7 +1,18 @@
-v0.4.0
+v0.5.0
 ------
 
-#### master
+- Pare down the Promise/Future APIs
+- Minor performance improvements
+
+> **BC BREAKS**:
+
+- Removed `Future::isPending()`
+- Removed `Future::failed()`
+- Removed `Future::onSuccess()`
+- Removed `Future::onFailure()`
+
+v0.4.0
+------
 
 - Altered watcher ID generation to avoid potential collisions
 - Added optional $onStart callback parameter to Reactor::run() implementations
