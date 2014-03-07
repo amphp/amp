@@ -13,13 +13,14 @@ class NativeReactor implements Reactor {
     private $watcherIdReadStreamIdMap = [];
     private $watcherIdWriteStreamIdMap = [];
     private $disabledWatchers = array();
-    private $microsecondResolution = 1000000;
+    private $resolution = 1000;
     private $lastWatcherId;
     private $isRunning = false;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
+    private static $MICROSECOND = 1000000;
 
     public function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
@@ -29,7 +30,7 @@ class NativeReactor implements Reactor {
         if ($this->isRunning) {
             return;
         }
-        
+
         $this->isRunning = true;
         if ($onStart) {
             $this->immediately($onStart);
@@ -72,7 +73,7 @@ class NativeReactor implements Reactor {
         if ($this->readStreams || $this->writeStreams) {
             $this->selectActionableStreams($timeToNextAlarm);
         } elseif ($timeToNextAlarm > 0) {
-            usleep($timeToNextAlarm * $this->microsecondResolution);
+            usleep($timeToNextAlarm * self::$MICROSECOND);
         }
 
         if ($this->alarmOrder) {
@@ -90,7 +91,7 @@ class NativeReactor implements Reactor {
             $usec = 0;
         } else {
             $sec = floor($timeout);
-            $usec = ($timeout - $sec) * $this->microsecondResolution;
+            $usec = ($timeout - $sec) * self::$MICROSECOND;
         }
 
         if (stream_select($r, $w, $e, $sec, $usec)) {
@@ -144,7 +145,7 @@ class NativeReactor implements Reactor {
         $now = time();
         $executeAt = @strtotime($timeString);
 
-        if ($executeAt === false && $executeAt <= $now) {
+        if ($executeAt === false || $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
@@ -169,6 +170,7 @@ class NativeReactor implements Reactor {
 
     private function scheduleAlarm($callback, $delay, $isRepeating) {
         $watcherId = ++$this->lastWatcherId;
+        $delay = round(($delay / $this->resolution), 3);
 
         if ($this->isRunning) {
             $nextExecution = (microtime(true) + $delay);

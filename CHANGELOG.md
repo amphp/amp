@@ -1,3 +1,14 @@
+v0.6.0
+------
+
+- Time intervals are now expected in milliseconds and not seconds.
+- Cleaned up unit tests
+
+> **BC BREAKS**:
+
+- Existing interval and delay times must be multiplied x 1000 to retain the same behavior.
+
+
 v0.5.0
 ------
 

@@ -13,11 +13,11 @@ $ticker = function() { echo "tick ", time(), PHP_EOL; };
 // Execute in the next event loop iteration
 $reactor->immediately($ticker);
 
-// Execute every $interval seconds until cancelled
-$reactor->repeat($ticker, $interval = 1);
+// Execute every $msInterval seconds until cancelled
+$reactor->repeat($ticker, $msInterval = 1000);
 
-// Execute once after $delay seconds
-$reactor->once(function() use ($reactor) { $reactor->stop(); }, $delay = 3);
+// Execute once after $msDelay milliseconds
+$reactor->once(function() use ($reactor) { $reactor->stop(); }, $msDelay = 3000);
 
 // Release the hounds!
 $reactor->run();

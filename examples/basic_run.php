@@ -25,7 +25,7 @@ $reactor->repeat(function() use ($reactor, &$secondsRemaining) {
     } else {
         $reactor->stop();
     }
-}, $interval = 1);
+}, $msInterval = 1000);
 
 echo "Each line you type will be echoed back for the next {$secondsRemaining} seconds ...\n\n";
 

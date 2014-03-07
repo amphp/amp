@@ -2,16 +2,11 @@
 
 /**
  * examples/native_vs_libevent.php
- * 
- * The libevent reactor will always be much faster than the native reactor. This example
- * demonstrates the speed difference between the native event reactor and the libevent reactor. To
- * gauge the performance difference we use a simple closure to track the number of invocations
- * during a given time period. The results are output after the test completes.
  */
 
 require __DIR__ . '/../src/bootstrap.php';
 
-define('RUN_TIME', 3);
+define('RUN_SECONDS', 3);
 
 // Native event reactor test ---------------------------------------------------------------------->
 
@@ -19,11 +14,11 @@ $reactor = new Alert\NativeReactor;
 $nativeCount = 0;
 $nativeCounter = function() use (&$nativeCount) { $nativeCount++; };
 $reactor->repeat($nativeCounter, $interval = 0);
-$reactor->once(function() use ($reactor) { $reactor->stop(); }, $delay = RUN_TIME);
+$reactor->once([$reactor, 'stop'], $delay = RUN_SECONDS*1000);
 
 echo "Running NativeReactor test ... ";
 $reactor->run();
-$nativeCount = round($nativeCount/RUN_TIME);
+$nativeCount = round($nativeCount/RUN_SECONDS);
 $nativeCount = str_pad(number_format($nativeCount), 10, ' ', STR_PAD_LEFT) . ' per second';
 echo "DONE.\n";
 
@@ -34,11 +29,11 @@ if (extension_loaded('libevent')) {
     $libeventCount = 0;
     $libeventCounter = function() use (&$libeventCount) { $libeventCount++; };
     $reactor->repeat($libeventCounter, $interval = 0);
-    $reactor->once(function() use ($reactor) { $reactor->stop(); }, $delay = RUN_TIME);
-    
+    $reactor->once([$reactor, 'stop'], $delay = RUN_SECONDS*1000);
+
     echo "Running LibeventReactor test ... ";
     $reactor->run();
-    $libeventCount = round($libeventCount/RUN_TIME);
+    $libeventCount = round($libeventCount/RUN_SECONDS);
     $libeventCount = str_pad(number_format($libeventCount), 10, ' ', STR_PAD_LEFT) . ' per second';
     echo "DONE.\n";
 } else {
@@ -59,4 +54,4 @@ LibeventReactor: %s
 
 EOT;
 
-echo sprintf($results, RUN_TIME, $nativeCount, $libeventCount);
+echo sprintf($results, (RUN_SECONDS / 1000), $nativeCount, $libeventCount);

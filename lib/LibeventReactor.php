@@ -7,7 +7,7 @@ class LibeventReactor implements Reactor {
     private $base;
     private $watchers = [];
     private $lastWatcherId;
-    private $resolution = 1000000;
+    private $resolution = 1000;
     private $isRunning = false;
     private $isGCScheduled = false;
     private $gcEvent;
@@ -62,7 +62,7 @@ class LibeventReactor implements Reactor {
         $now = time();
         $executeAt = @strtotime($timeString);
 
-        if ($executeAt === false && $executeAt <= $now) {
+        if ($executeAt === false || $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
