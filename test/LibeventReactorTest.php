@@ -146,7 +146,7 @@ class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
     public function testReactorAllowsExceptionToBubbleUpDuringTick() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
-        $reactor->once(function(){ throw new RuntimeException('test'); }, $delay = 0);
+        $reactor->once(function(){ throw new \RuntimeException('test'); }, $delay = 0);
         $reactor->tick();
     }
 
@@ -157,7 +157,7 @@ class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
     public function testReactorAllowsExceptionToBubbleUpDuringRun() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
-        $reactor->once(function(){ throw new RuntimeException('test'); }, $delay = 0);
+        $reactor->once(function(){ throw new \RuntimeException('test'); }, $delay = 0);
         $reactor->run();
     }
 
@@ -168,7 +168,7 @@ class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
     public function testReactorAllowsExceptionToBubbleUpFromRepeatingAlarmDuringRun() {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
-        $reactor->repeat(function(){ throw new RuntimeException('test'); }, $interval = 0);
+        $reactor->repeat(function(){ throw new \RuntimeException('test'); }, $interval = 0);
         $reactor->run();
     }
 
@@ -249,7 +249,7 @@ class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
         $this->skipIfMissingExtLibevent();
         $reactor = new LibeventReactor;
 
-        $reactor->onWritable(STDOUT, function() { throw new RuntimeException; });
+        $reactor->onWritable(STDOUT, function() { throw new \RuntimeException; });
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.05);
         $reactor->run();
     }
@@ -259,18 +259,6 @@ class LibeventReactorTest extends \PHPUnit_Framework_TestCase {
 
         $reactor = new LibeventReactor();
         $reactor->once(function() use ($reactor) { $reactor->stop(); }, 0.1);
-        $reactor->run();
-    }
-
-    public function testAfterForkReinitializesWatchers() {
-        $this->skipIfMissingExtLibevent();
-
-        $reactor = new LibeventReactor();
-
-        $reactor->onWritable(STDOUT, function() use ($reactor) { $reactor->stop(); });
-        $reactor->beforeFork();
-        $reactor->afterFork();
-
         $reactor->run();
     }
 

@@ -25,7 +25,7 @@ class PromiseTest extends \PHPUnit_Framework_TestCase {
         $reactor = new NativeReactor;
         $promise = new Promise;
         $future = $promise->getFuture();
-        $future->onSuccess(function(Future $f) use ($reactor) {
+        $future->onComplete(function(Future $f) use ($reactor) {
             $this->assertSame(42, $f->getValue());
             $reactor->stop();
         });
@@ -40,7 +40,8 @@ class PromiseTest extends \PHPUnit_Framework_TestCase {
         $promise = new Promise;
         $future = $promise->getFuture();
         $error = new \Exception("test");
-        $future->onFailure(function(Future $f) use ($reactor, $error) {
+        $future->onComplete(function(Future $f) use ($reactor, $error) {
+            $this->assertFalse($f->succeeded());
             $this->assertSame($error, $f->getError());
             $reactor->stop();
         });
@@ -56,6 +57,7 @@ class PromiseTest extends \PHPUnit_Framework_TestCase {
         $future = $promise->getFuture();
         $error = new \Exception("test");
         $future->onComplete(function(Future $f) use ($reactor, $error) {
+            $this->assertFalse($f->succeeded());
             $this->assertSame($error, $f->getError());
             $reactor->stop();
         });
