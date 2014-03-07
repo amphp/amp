@@ -19,7 +19,7 @@ namespace Alert;
  *
  * class MyAsyncProducer {
  *     public function retrieveValueAsynchronously() {
- *         // Create a new promise that needs to be fulfilled
+ *         // Create a new promise that needs to be resolved
  *         $promise = new Alert\Promise;
  *
  *         $future = $promise->getFuture();
@@ -39,7 +39,6 @@ class Promise {
     private $value;
     private $error;
     private $future;
-    private $isResolved = FALSE;
     private $futureResolver;
 
     public function __construct() {
@@ -61,50 +60,6 @@ class Promise {
     }
 
     /**
-     * Resolve the Promise's associated Future placeholder
-     *
-     * @param \Exception $error
-     * @param mixed $value
-     * @return void
-     */
-    public function resolve(\Exception $error = NULL, $value = NULL) {
-        $this->isResolved = TRUE;
-        $futureResolver = $this->futureResolver;
-        $futureResolver($error, $value);
-    }
-
-    /**
-     * Resolve the associated Future but only if it has not previously been resolved
-     *
-     * @param \Exception $error
-     * @param mixed $value
-     * @return bool Returns TRUE if the Future was resolved by this operation or FALSE if the
-     *              relevant Future was previously resolved
-     */
-    public function resolveSafely(\Exception $error = NULL, $value = NULL) {
-        if ($this->future->isPending()) {
-            $this->resolve($error, $value);
-            $fulfilled = TRUE;
-        } else {
-            $fulfilled = FALSE;
-        }
-
-        return $fulfilled;
-    }
-
-    /**
-     * Fail the Promise's associated Future
-     *
-     * @param \Exception $error
-     * @return void
-     */
-    public function fail(\Exception $error) {
-        $this->isResolved = TRUE;
-        $futureResolver = $this->futureResolver;
-        $futureResolver($error, $value = NULL);
-    }
-
-    /**
      * Fufill the Promise's Future value with a successful result
      *
      * @param mixed $value
@@ -116,9 +71,50 @@ class Promise {
                 $this->resolve($f->getError(), $f->getValue());
             });
         } else {
-            $this->isResolved = TRUE;
             $futureResolver = $this->futureResolver;
             $futureResolver($error = NULL, $value);
         }
+    }
+
+    /**
+     * Fail the Promise's associated Future
+     *
+     * @param \Exception $error
+     * @return void
+     */
+    public function fail(\Exception $error) {
+        $futureResolver = $this->futureResolver;
+        $futureResolver($error, $value = NULL);
+    }
+
+    /**
+     * Resolve the Promise's associated Future
+     *
+     * @param \Exception $error
+     * @param mixed $value
+     * @return void
+     */
+    public function resolve(\Exception $error = NULL, $value = NULL) {
+        $futureResolver = $this->futureResolver;
+        $futureResolver($error, $value);
+    }
+
+    /**
+     * Resolve the associated Future but only if it has not previously completed
+     *
+     * @param \Exception $error
+     * @param mixed $value
+     * @return bool Returns TRUE if the Future was resolved by this operation or FALSE if the
+     *              relevant Future was previously resolved
+     */
+    public function resolveSafely(\Exception $error = NULL, $value = NULL) {
+        if ($this->future->isComplete()) {
+            $didResolve = FALSE;
+        } else {
+            $this->resolve($error, $value);
+            $didResolve = TRUE;
+        }
+
+        return $didResolve;
     }
 }
