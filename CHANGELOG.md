@@ -1,4 +1,5 @@
-### master
+v0.7.0
+------
 
 - `Future` is now an interface
 - Add `Unresolved` as the default pending `Future` (`Promise->getFuture()`)
