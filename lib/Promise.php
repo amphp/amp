@@ -45,7 +45,7 @@ class Promise {
         $futureResolver = function(\Exception $error = NULL, $value = NULL) {
             $this->resolve($error, $value);
         };
-        $future = new Future;
+        $future = new Unresolved;
         $this->futureResolver = $futureResolver->bindTo($future, $future);
         $this->future = $future;
     }
@@ -71,8 +71,7 @@ class Promise {
                 $this->resolve($f->getError(), $f->getValue());
             });
         } else {
-            $futureResolver = $this->futureResolver;
-            $futureResolver($error = NULL, $value);
+            call_user_func($this->futureResolver, $error = NULL, $value);
         }
     }
 
@@ -83,8 +82,7 @@ class Promise {
      * @return void
      */
     public function fail(\Exception $error) {
-        $futureResolver = $this->futureResolver;
-        $futureResolver($error, $value = NULL);
+        call_user_func($this->futureResolver, $error, $value = NULL);
     }
 
     /**
@@ -95,8 +93,7 @@ class Promise {
      * @return void
      */
     public function resolve(\Exception $error = NULL, $value = NULL) {
-        $futureResolver = $this->futureResolver;
-        $futureResolver($error, $value);
+        call_user_func($this->futureResolver, $error, $value);
     }
 
     /**
