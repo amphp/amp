@@ -1,3 +1,9 @@
+### master
+
+- `Future` is now an interface
+- Add `Unresolved` as the default pending `Future` (`Promise->getFuture()`)
+- Add immutable resolved `Failure` and `Success` futures
+
 v0.6.0
 ------
 
