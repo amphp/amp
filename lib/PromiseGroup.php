@@ -8,13 +8,12 @@ class PromiseGroup extends Promise {
     private $isComplete = FALSE;
 
     public function __construct(array $futureGroup) {
-        if (empty($futureGroup)) {
-            throw new \RuntimeException(
-                sprintf('Array at %s Argument 1 must not be empty', __METHOD__)
-            );
-        }
-
         parent::__construct();
+        
+        if (!$futureGroup = array_filter($futureGroup)) {
+            $this->succeed();
+            return;
+        }
 
         $this->futureGroup = $futureGroup;
 

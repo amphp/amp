@@ -94,7 +94,7 @@ class NativeReactor implements Reactor {
             $usec = ($timeout - $sec) * self::$MICROSECOND;
         }
 
-        if (stream_select($r, $w, $e, $sec, $usec)) {
+        if (@stream_select($r, $w, $e, $sec, $usec)) {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {

@@ -1,3 +1,8 @@
+#### v0.7.1
+
+- `PromiseGroup` now transparently succeeds instead of throwing on empty futures array
+- `stream_select()` errors suppressed in `NativeReactor` to silence errors on signal interrupts
+
 v0.7.0
 ------
 
