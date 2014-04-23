@@ -1,3 +1,9 @@
+#### master
+
+- Add new `SignalReactor` for capturing and reacting to POSIX signals
+- `LibeventReactor` now implements `SignalReactor`
+
+
 #### v0.7.1
 
 - `PromiseGroup` now transparently succeeds instead of throwing on empty futures array
