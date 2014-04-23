@@ -13,11 +13,6 @@ class LibeventReactor implements Reactor {
     private $gcEvent;
     private $stopException;
 
-    private static $TYPE_STREAM = 0;
-    private static $TYPE_ONCE = 1;
-    private static $TYPE_REPEATING = 2;
-    private static $TYPE_SIGNAL = 3;
-
     public function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
         $this->base = event_base_new();
@@ -85,7 +80,6 @@ class LibeventReactor implements Reactor {
 
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
-        $watcher->type = self::$TYPE_ONCE;
         $watcher->eventResource = $eventResource;
         $watcher->interval = $delay;
         $watcher->callback = $callback;
@@ -123,11 +117,9 @@ class LibeventReactor implements Reactor {
 
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
-        $watcher->type = self::$TYPE_REPEATING;
         $watcher->eventResource = $eventResource;
         $watcher->interval = $interval;
         $watcher->callback = $callback;
-        $watcher->isRepeating = true;
 
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
 
@@ -171,9 +163,7 @@ class LibeventReactor implements Reactor {
 
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
-        $watcher->type = self::$TYPE_STREAM;
         $watcher->stream = $stream;
-        $watcher->streamFlags = $flags;
         $watcher->callback = $callback;
         $watcher->wrapper = $this->wrapStreamCallback($watcher);
         $watcher->isEnabled = (bool) $enableNow;
@@ -210,7 +200,6 @@ class LibeventReactor implements Reactor {
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
-        $watcher->type = self::$TYPE_SIGNAL;
         $watcher->eventResource = $eventResource;
         $watcher->callback = $callback;
 
