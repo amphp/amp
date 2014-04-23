@@ -16,6 +16,7 @@ class LibeventReactor implements Reactor {
     private static $TYPE_STREAM = 0;
     private static $TYPE_ONCE = 1;
     private static $TYPE_REPEATING = 2;
+    private static $TYPE_SIGNAL = 3;
 
     public function __construct() {
         $this->lastWatcherId = PHP_INT_MAX * -1;
@@ -197,6 +198,40 @@ class LibeventReactor implements Reactor {
         return function($stream) use ($callback, $watcherId) {
             try {
                 $callback($watcherId, $stream, $this);
+            } catch (\Exception $e) {
+                $this->stopException = $e;
+                $this->stop();
+            }
+        };
+    }
+
+    public function onSignal($signal, callable $callback) {
+        $watcherId = ++$this->lastWatcherId;
+        $eventResource = event_new();
+        $watcher = new LibeventWatcher;
+        $watcher->id = $watcherId;
+        $watcher->type = self::$TYPE_SIGNAL;
+        $watcher->eventResource = $eventResource;
+        $watcher->callback = $callback;
+
+        $watcher->wrapper = $this->wrapSignalCallback($watcher);
+
+        $this->watchers[$watcherId] = $watcher;
+
+        event_set($eventResource, $signal, EV_SIGNAL | EV_PERSIST, $watcher->wrapper);
+        event_base_set($eventResource, $this->base);
+        event_add($eventResource);
+
+        return $watcherId;
+    }
+
+    private function wrapSignalCallback(LibeventWatcher $watcher) {
+        $callback = $watcher->callback;
+        $watcherId = $watcher->id;
+
+        return function() use ($callback, $watcherId) {
+            try {
+                $callback($watcherId, $this);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
