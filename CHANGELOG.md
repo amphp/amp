@@ -2,7 +2,9 @@
 
 - Add new `SignalReactor` for capturing and reacting to POSIX signals
 - `LibeventReactor` now implements `SignalReactor`
-
+- New `Promisor` interface
+- `Promise` now doubles as both Promisor and Future for improved performance
+- New `SafePromise` should be used if Promisor safety is required
 
 #### v0.7.1
 

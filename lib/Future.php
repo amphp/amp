@@ -6,7 +6,6 @@ namespace Alert;
  * A "placeholder" value that will be resolved at some point in the future.
  */
 interface Future {
-
     /**
      * Pass the Future to the specified callback upon completion regardless of success or failure
      *

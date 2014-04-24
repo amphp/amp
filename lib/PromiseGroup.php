@@ -8,10 +8,8 @@ class PromiseGroup extends Promise {
     private $isComplete = FALSE;
 
     public function __construct(array $futureGroup) {
-        parent::__construct();
-        
-        if (!$futureGroup = array_filter($futureGroup)) {
-            $this->succeed();
+        if (!$futureGroup = array_filter($futureGroup, function($v) { return isset($v); })) {
+            $this->succeed([]);
             return;
         }
 
@@ -48,10 +46,10 @@ class PromiseGroup extends Promise {
         } elseif ($future->succeeded()) {
             $this->resolvedValues[$key] = $future->getValue();
             return ($this->isComplete = empty($this->futureGroup))
-                ? parent::succeed($this->resolvedValues)
+                ? $this->succeed($this->resolvedValues)
                 : FALSE;
         } else {
-            parent::fail($future->getError());
+            $this->fail($future->getError());
             return ($this->isComplete = TRUE);
         }
     }
