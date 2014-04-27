@@ -7,15 +7,15 @@ and servers.
 
 Buffer and event-emmitter abstractions -- though user-friendly -- are unfortunately slow in userland.
 Performant PHP servers cannot compete (in terms of speed) with the likes of Node.js where such features
-are compiled. Alert eschews such features and provides *only* non-blocking IO and timer events to avoid
-enforcing OOP slowness on the overlaid application. It's a stripped down, no-frills event reactor 
-without a learning curve that "just works."
+are compiled. Alert avoids these features and provides *only* non-blocking IO, timer and signal
+events to prevent OOP slowness in the overlying application. It's a stripped down, no-frills event
+reactor that "just works."
 
 #### FEATURES
 
 Alert adds the following functionality to PHP's non-blocking IO space:
 
-- Pausing/resuming *individual* timers or stream IO observers
+- Pausing/resuming *individual* event/signal/IO observers
 - Assigning multiple watchers for individual streams
 
 #### DEPENDENCIES
@@ -38,7 +38,7 @@ Manually download from the [tagged release][tags] section.
 ###### Composer:
 
 ```bash
-$ php composer.phar require rdlowrey/alert:0.4.*
+$ php composer.phar require rdlowrey/alert:0.8.*
 ```
 
 [tags]: https://github.com/rdlowrey/alert/releases "Tagged Releases"

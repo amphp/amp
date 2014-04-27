@@ -1,10 +1,14 @@
-#### master
+v0.8.0
+------
 
 - Add new `SignalReactor` for capturing and reacting to POSIX signals
 - `LibeventReactor` now implements `SignalReactor`
-- New `Promisor` interface
-- `Promise` now doubles as both Promisor and Future for improved performance
-- New `SafePromise` should be used if Promisor safety is required
+- Remove all concurrency primitives (moved to new After repo)
+
+> **BC BREAKS**:
+
+- Any existing code relying on the Future/Promise/etc concurrency primitives must
+  now use the separate After repo as things files are no longer included with Alert.
 
 #### v0.7.1
 
