@@ -5,7 +5,7 @@ namespace Alert;
 interface SignalReactor extends Reactor {
 
     /**
-     * React to POSIX-style signals
+     * React to process control signals
      *
      * @param int $signal The signal to watch for (e.g. 2 for SIGINT)
      * @param callable $onSignal
