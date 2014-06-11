@@ -153,9 +153,9 @@ class NativeReactor implements Reactor {
             );
         }
 
-        $delay = $executeAt - $now;
+        $msDelay = ($executeAt - $now) * $this->resolution;
 
-        return $this->once($callback, $delay);
+        return $this->once($callback, $msDelay);
     }
 
     public function immediately(callable $callback) {
