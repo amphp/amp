@@ -46,6 +46,7 @@ class LibeventReactor implements SignalReactor {
 
         if ($this->stopException) {
             $e = $this->stopException;
+            $this->stopException = NULL;
             throw $e;
         }
     }
