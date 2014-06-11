@@ -1,3 +1,9 @@
+#### v0.8.1
+
+- Fix bug preventing `NativeReactor` from relinquishing control when no timers or
+  stream watchers exist.
+- Fix broken `Reactor::at` millisecond resolution.
+
 v0.8.0
 ------
 
