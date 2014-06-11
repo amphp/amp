@@ -8,7 +8,7 @@ class LibeventReactorTest extends ReactorTest {
             return new LibeventReactor;
         } else {
             $this->markTestSkipped(
-                'ext/libevent extension not loaded'
+                'libevent extension not loaded'
             );
         }
     }

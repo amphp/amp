@@ -14,17 +14,13 @@ class NativeReactor implements Reactor {
     private $watcherIdWriteStreamIdMap = [];
     private $disabledWatchers = array();
     private $resolution = 1000;
-    private $lastWatcherId;
+    private $lastWatcherId = 0;
     private $isRunning = false;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
     private static $MICROSECOND = 1000000;
-
-    public function __construct() {
-        $this->lastWatcherId = PHP_INT_MAX * -1;
-    }
 
     public function run(callable $onStart = NULL) {
         if ($this->isRunning) {
@@ -171,7 +167,7 @@ class NativeReactor implements Reactor {
     }
 
     private function scheduleAlarm($callback, $delay, $isRepeating) {
-        $watcherId = ++$this->lastWatcherId;
+        $watcherId = $this->lastWatcherId++;
         $delay = round(($delay / $this->resolution), 3);
 
         if ($this->isRunning) {
@@ -188,7 +184,7 @@ class NativeReactor implements Reactor {
     }
 
     public function onReadable($stream, callable $callback, $enableNow = true) {
-        $watcherId = ++$this->lastWatcherId;
+        $watcherId = $this->lastWatcherId++;
 
         if ($enableNow) {
             $streamId = (int) $stream;
@@ -203,7 +199,7 @@ class NativeReactor implements Reactor {
     }
 
     public function onWritable($stream, callable $callback, $enableNow = true) {
-        $watcherId = ++$this->lastWatcherId;
+        $watcherId = $this->lastWatcherId++;
 
         if ($enableNow) {
             $streamId = (int) $stream;
@@ -215,6 +211,21 @@ class NativeReactor implements Reactor {
         }
 
         return $watcherId;
+    }
+
+    public function watchStream($stream, $flags, callable $callback) {
+        $flags = (int) $flags;
+        $enableNow = ($flags & self::ENABLE_NOW);
+
+        if ($flags & self::POLL_READ) {
+            return $this->onWritable($stream, $callback, $enableNow);
+        } elseif ($flags & self::POLL_WRITE) {
+            return $this->onWritable($stream, $callback, $enableNow);
+        } else {
+            throw new \DomainException(
+                'Stream watchers must specify either a POLL_READ or POLL_WRITE flag'
+            );
+        }
     }
 
     public function cancel($watcherId) {

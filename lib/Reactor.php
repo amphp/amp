@@ -3,10 +3,14 @@
 namespace Alert;
 
 interface Reactor {
+    const POLL_READ = 1;
+    const POLL_WRITE = 2;
+    const POLL_SOCK = 4;
+    const ENABLE_NOW = 8;
 
     /**
      * Start the event reactor and assume program flow control
-     * 
+     *
      * @param $onStart Optional callback to invoke immediately upon reactor start
      */
     public function run(callable $onStart = NULL);
@@ -34,30 +38,28 @@ interface Reactor {
     /**
      * Schedule a callback to execute once
      *
-     * Time intervals are measured in seconds. Floating point values < 0 denote intervals less than
-     * one second. e.g. $interval = 0.001 means a one millisecond interval.
+     * Time intervals are measured in milliseconds.
      *
      * Though it can't be enforced at the interface level all timer/stream scheduling methods
      * should return a unique integer identifying the relevant watcher.
      *
      * @param callable $callback Any valid PHP callable
-     * @param float $delay The delay in seconds before the callback will be invoked (zero is allowed)
+     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
      */
-    public function once(callable $callback, $delay);
+    public function once(callable $callback, $msDelay);
 
     /**
      * Schedule a recurring callback to execute every $interval seconds until cancelled
      *
-     * Time intervals are measured in seconds. Floating point values < 0 denote intervals less than
-     * one second. e.g. $interval = 0.001 means a one millisecond interval.
+     * Time intervals are measured in milliseconds.
      *
      * Though it can't be enforced at the interface level all timer/stream scheduling methods
      * should return a unique integer identifying the relevant watcher.
      *
      * @param callable $callback Any valid PHP callable
-     * @param float $interval The interval in seconds to observe between callback executions (zero is allowed)
+     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
      */
-    public function repeat(callable $callback, $interval);
+    public function repeat(callable $callback, $msDelay);
 
     /**
      * Schedule an event to trigger once at the specified time
@@ -95,6 +97,15 @@ interface Reactor {
     public function onWritable($stream, callable $callback, $enableNow = TRUE);
 
     /**
+     * Similar to onReadable/onWritable but uses a flag bitmask for extended option assignment
+     *
+     * @param resource $stream A stream resource to watch for writability
+     * @param callable $callback Any valid PHP callable
+     * @param int $flags Option bitmask (Reactor::POLL_READ, Reactor::POLL_WRITE, etc)
+     */
+    public function watchStream($stream, $flags, callable $callback);
+
+    /**
      * Cancel an existing timer/stream watcher
      *
      * @param int $watcherId
@@ -114,5 +125,4 @@ interface Reactor {
      * @param int $watcherId
      */
     public function enable($watcherId);
-
 }

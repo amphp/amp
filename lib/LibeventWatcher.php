@@ -8,6 +8,6 @@ class LibeventWatcher {
     public $stream;
     public $callback;
     public $wrapper;
-    public $interval = -1;
+    public $msDelay = -1;
     public $isEnabled = TRUE;
 }

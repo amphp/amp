@@ -6,7 +6,7 @@ class LibeventReactor implements SignalReactor {
 
     private $base;
     private $watchers = [];
-    private $lastWatcherId;
+    private $lastWatcherId = 0;
     private $resolution = 1000;
     private $isRunning = FALSE;
     private $isGCScheduled = FALSE;
@@ -14,7 +14,6 @@ class LibeventReactor implements SignalReactor {
     private $stopException;
 
     public function __construct() {
-        $this->lastWatcherId = PHP_INT_MAX * -1;
         $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
@@ -71,18 +70,18 @@ class LibeventReactor implements SignalReactor {
     }
 
     public function immediately(callable $callback) {
-        return $this->once($callback, $delay = 0);
+        return $this->once($callback, $msDelay = 0);
     }
 
-    public function once(callable $callback, $delay) {
-        $watcherId = ++$this->lastWatcherId;
+    public function once(callable $callback, $msDelay) {
+        $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
-        $delay = ($delay > 0) ? ($delay * $this->resolution) : 0;
+        $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
 
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
         $watcher->eventResource = $eventResource;
-        $watcher->interval = $delay;
+        $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
 
         $watcher->wrapper = $this->wrapOnceCallback($watcher);
@@ -91,7 +90,7 @@ class LibeventReactor implements SignalReactor {
 
         event_timer_set($eventResource, $watcher->wrapper);
         event_base_set($eventResource, $this->base);
-        event_add($eventResource, $delay);
+        event_add($eventResource, $msDelay);
 
         return $watcherId;
     }
@@ -111,15 +110,15 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
-    public function repeat(callable $callback, $interval) {
-        $watcherId = ++$this->lastWatcherId;
-        $interval = ($interval > 0) ? ($interval * $this->resolution) : 0;
+    public function repeat(callable $callback, $msDelay) {
+        $watcherId = $this->lastWatcherId++;
+        $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
         $eventResource = event_new();
 
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
         $watcher->eventResource = $eventResource;
-        $watcher->interval = $interval;
+        $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
 
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
@@ -128,7 +127,7 @@ class LibeventReactor implements SignalReactor {
 
         event_timer_set($eventResource, $watcher->wrapper);
         event_base_set($eventResource, $this->base);
-        event_add($eventResource, $interval);
+        event_add($eventResource, $msDelay);
 
         return $watcherId;
     }
@@ -137,12 +136,12 @@ class LibeventReactor implements SignalReactor {
         $callback = $watcher->callback;
         $watcherId = $watcher->id;
         $eventResource = $watcher->eventResource;
-        $interval = $watcher->interval;
+        $msDelay = $watcher->msDelay;
 
-        return function() use ($callback, $eventResource, $interval, $watcherId) {
+        return function() use ($callback, $eventResource, $msDelay, $watcherId) {
             try {
                 $callback($watcherId, $this);
-                event_add($eventResource, $interval);
+                event_add($eventResource, $msDelay);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
@@ -159,7 +158,7 @@ class LibeventReactor implements SignalReactor {
     }
 
     private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
-        $watcherId = ++$this->lastWatcherId;
+        $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
 
         $watcher = new LibeventWatcher;
@@ -196,9 +195,24 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
+    public function watchStream($stream, $flags, callable $callback) {
+        $flags = (int) $flags;
+        $enableNow = ($flags & self::ENABLE_NOW);
+
+        if ($flags & self::POLL_READ) {
+            return $this->onWritable($stream, $callback, $enableNow);
+        } elseif ($flags & self::POLL_WRITE) {
+            return $this->onWritable($stream, $callback, $enableNow);
+        } else {
+            throw new \DomainException(
+                'Stream watchers must specify either a POLL_READ or POLL_WRITE flag'
+            );
+        }
+    }
+
     public function onSignal($signal, callable $callback) {
         $signal = (int) $signal;
-        $watcherId = ++$this->lastWatcherId;
+        $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
@@ -262,7 +276,7 @@ class LibeventReactor implements SignalReactor {
         $watcher = $this->watchers[$watcherId];
 
         if (!$watcher->isEnabled) {
-            event_add($watcher->eventResource, $watcher->interval);
+            event_add($watcher->eventResource, $watcher->msDelay);
             $watcher->isEnabled = TRUE;
         }
     }

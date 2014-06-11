@@ -1,3 +1,10 @@
+### master
+
+- Add `Reactor::watchStream()` alternative for IO watching. The `$flags` bitmask
+  paves the way for additional option specs in the forthcoming libuv reactor without
+  needlessly complicating the interface.
+- Internal watcher IDs now increment from zero instead of PHP_INT_MAX*-1
+
 #### v0.8.1
 
 - Fix bug preventing `NativeReactor` from relinquishing control when no timers or

@@ -3,19 +3,14 @@
 namespace Alert;
 
 class ReactorFactory {
-
-    private $hasExtLibevent;
-
-    public function __construct() {
-        $this->hasExtLibevent = extension_loaded('libevent');
-    }
-
     public function __invoke() {
         return $this->select();
     }
 
     public function select() {
-        if ($this->hasExtLibevent) {
+        if (extension_loaded('uv')) {
+            $reactor = new UvReactor;
+        } elseif (extension_loaded('libevent')) {
             $reactor = new LibeventReactor;
         } else {
             $reactor = new NativeReactor;
@@ -23,5 +18,4 @@ class ReactorFactory {
 
         return $reactor;
     }
-
 }

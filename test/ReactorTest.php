@@ -99,7 +99,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testOnceReturnsEventWatcher() {
         $reactor = $this->getReactor();
 
-        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
+        $firstWatcherId = 0;
         $watcherId = $reactor->once(function(){}, $delay = 0);
         $this->assertSame($firstWatcherId, $watcherId);
 
@@ -140,10 +140,12 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testRepeatReturnsEventWatcher() {
         $reactor = $this->getReactor();
 
-        $firstWatcherId = (PHP_INT_MAX * -1) + 1;
+        $firstWatcherId = 0;
         $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
-
         $this->assertSame($firstWatcherId, $watcherId);
+
+        $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
+        $this->assertSame($firstWatcherId + 1, $watcherId);
     }
 
     public function testCancelRemovesWatcher() {

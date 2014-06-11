@@ -3,16 +3,22 @@
 namespace Alert;
 
 class ReactorFactoryTest extends \PHPUnit_Framework_TestCase {
+    /**
+     * @requires extension libevent
+     */
     public function testSelectReturnsLibeventReactorIfExtensionLoaded() {
-        if (extension_loaded('libevent')) {
-            $rf = new ReactorFactory;
-            $reactor = $rf->select();
-            $this->assertInstanceOf('Alert\LibeventReactor', $reactor);
-        } else {
-            $this->markTestSkipped(
-                'ext/libevent extension not loaded'
-            );
-        }
+        $rf = new ReactorFactory;
+        $reactor = $rf->select();
+        $this->assertInstanceOf('Alert\LibeventReactor', $reactor);
+    }
+
+    /**
+     * @requires extension uv
+     */
+    public function testSelectReturnsUvReactorIfExtensionLoaded() {
+        $rf = new ReactorFactory;
+        $reactor = $rf->select();
+        $this->assertInstanceOf('Alert\UvReactor', $reactor);
     }
 
     public function testMagicInvokeDelegatesToSelectMethod() {
