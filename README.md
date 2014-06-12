@@ -21,8 +21,8 @@ Alert adds the following functionality to PHP's non-blocking IO space:
 #### DEPENDENCIES
 
 * PHP 5.4+
-* (optional) [*PECL libevent*][libevent] for faster evented execution and high-volume descriptor
-  reactions. Windows libevent extension DLLs are available [here][win-libevent]
+* (optional) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
+* (optional) [*PECL libevent*][libevent] for libevent backends. Windows libevent extension DLLs available [here][win-libevent]
 
 #### INSTALLATION
 
