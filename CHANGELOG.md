@@ -1,5 +1,7 @@
 ### master
 
+- Add new libuv reactor support (`UvReactor`) via the [php-uv extension](https://github.com/chobie/php-uv).
+  The php-uv extension must be built [against commit 75fd2ff591](https://github.com/chobie/php-uv/commit/75fd2ff591de2d3571985437de4465dfe8687753) or newer.
 - Add `Reactor::watchStream()` alternative for IO watching. The `$flags` bitmask
   paves the way for additional option specs in the forthcoming libuv reactor without
   needlessly complicating the interface.
