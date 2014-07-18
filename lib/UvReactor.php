@@ -39,6 +39,7 @@ class UvReactor implements Reactor {
         }
 
         $this->isRunning = TRUE;
+        $this->immediately(function() use ($onStart) { $onStart($this); });
         uv_run($this->loop);
         $this->isRunning = FALSE;
 

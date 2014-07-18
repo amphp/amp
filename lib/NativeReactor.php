@@ -29,7 +29,7 @@ class NativeReactor implements Reactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately($onStart);
+            $this->immediately(function() use ($onStart) { $onStart($this); });
         }
         $this->enableAlarms();
         while ($this->isRunning) {

@@ -26,7 +26,7 @@ class LibeventReactor implements SignalReactor {
         }
 
         if ($onStart) {
-            $this->immediately($onStart);
+            $this->immediately(function() use ($onStart) { $onStart($this); });
         }
 
         $this->doRun();
