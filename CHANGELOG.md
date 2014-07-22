@@ -1,12 +1,19 @@
 ### master
 
+- none
+
+v0.9.0
+------
+
 - Reactor instance now passed to optional $onStart callbacks when `Reactor::run()` is called.
 - Add new libuv reactor support (`UvReactor`) via the [php-uv extension](https://github.com/chobie/php-uv).
   The php-uv extension must be built [against commit 75fd2ff591](https://github.com/chobie/php-uv/commit/75fd2ff591de2d3571985437de4465dfe8687753) or newer.
 - Add `Reactor::watchStream()` alternative for IO watching. The `$flags` bitmask
-  paves the way for additional option specs in the forthcoming libuv reactor without
-  needlessly complicating the interface.
+  paves the way for additional option specs in the libuv reactor without needlessly complicating the
+  interface.
 - Internal watcher IDs now increment from zero instead of PHP_INT_MAX*-1
+
+> **NO BC BREAKS**
 
 #### v0.8.1
 
