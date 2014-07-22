@@ -26,6 +26,12 @@ Alert adds the following functionality to PHP's non-blocking IO space:
 
 #### INSTALLATION
 
+###### Composer:
+
+```bash
+$ php composer.phar require rdlowrey/alert:0.9.*
+```
+
 ###### Git:
 
 ```bash
@@ -34,12 +40,6 @@ $ git clone https://github.com/rdlowrey/alert.git
 ###### Manual Download:
 
 Manually download from the [tagged release][tags] section.
-
-###### Composer:
-
-```bash
-$ php composer.phar require rdlowrey/alert:0.8.*
-```
 
 [tags]: https://github.com/rdlowrey/alert/releases "Tagged Releases"
 [libevent]: http://pecl.php.net/package/libevent "libevent"

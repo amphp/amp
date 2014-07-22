@@ -1,23 +1,36 @@
 {
-  "name": "rdlowrey/alert",
-  "homepage": "https://github.com/rdlowrey/alert",
-  "description": "Event loops for event-driven/async PHP",
-  "keywords": ["non-blocking", "events", "libevent", "async"],
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Daniel Lowrey",
-      "email": "rdlowrey@php.net",
-      "role": "Creator / Lead Developer"
-    }
-  ],
-  "require": {
-    "php": ">=5.4.0"
-  },
-  "autoload": {
-    "files": ["src/bootstrap.php"]
-  },
-   "branch-alias": {
-     "dev-master": "0.8.x-dev"
-  }
+    "name": "rdlowrey/alert",
+    "homepage": "https://github.com/rdlowrey/alert",
+    "description": "Event loops and stream IO reactors for non-blocking PHP applications",
+    "keywords": [
+        "non-blocking",
+        "libevent",
+        "libuv",
+        "async"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Lowrey",
+            "email": "rdlowrey@php.net",
+            "role": "Creator / Lead Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Alert\\": "lib/"
+        }
+    },
+    "branch-alias": {
+        "dev-master": "0.9.x-dev"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/rdlowrey/Alert.git"
+        }
+    ]
 }

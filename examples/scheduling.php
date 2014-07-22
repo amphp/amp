@@ -4,7 +4,7 @@
  * examples/scheduling.php
  */
 
-require __DIR__ . '/../src/bootstrap.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 $reactor = (new Alert\ReactorFactory)->select();
 

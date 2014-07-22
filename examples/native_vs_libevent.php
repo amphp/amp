@@ -4,7 +4,7 @@
  * examples/native_vs_libevent.php
  */
 
-require __DIR__ . '/../src/bootstrap.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 define('RUN_SECONDS', 3);
 

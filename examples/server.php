@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . '/../src/bootstrap.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 date_default_timezone_set('UTC'); // F U Derick.
 
