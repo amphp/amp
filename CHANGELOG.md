@@ -2,6 +2,21 @@
 
 - none
 
+v0.10.0
+-------
+
+- Added *functions.php* API for reactor use in procedural and functional code.
+- `ReactoryFactory::select()` is now a static singleton method. Single-threaded code should never
+  use multiple event loops. This change is made to ease `Reactor` procurement and minimize bugs
+  from the existence of multiple `Reactor` instances in the same thread. It is *NOT*, however, an
+  excuse to forego dependency injection. Do not abuse the global nature of the event loop. Lazy
+  injection is fine, but laziness on your part as a programmer is not.
+
+> **BC BREAKS:**
+
+- The `ReactorFactory::__invoke()` magic method has been removed. Any code relying on it must migrate
+  references to `ReactoryFactory::select()`
+
 v0.9.0
 ------
 
