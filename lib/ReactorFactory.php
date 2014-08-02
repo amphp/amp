@@ -19,19 +19,19 @@ class ReactorFactory {
      * Select a global event reactor based on the current environment
      *
      * @param callable $factory An optional factory callable to generate the shared reactor yourself
-     * @return Alert\Reactor
+     * @return \Alert\Reactor
      */
     public static function select(callable $factory = null) {
         if (self::$reactor) {
             return self::$reactor;
         } elseif ($factory) {
-            return $self::reactor = $factory();
+            return self::$reactor = $factory();
         } elseif (extension_loaded('uv')) {
-            return $self::reactor = new UvReactor;
+            return self::$reactor = new UvReactor;
         } elseif (extension_loaded('libevent')) {
-            return $self::reactor = new LibeventReactor;
+            return self::$reactor = new LibeventReactor;
         } else {
-            return $self::reactor = new NativeReactor;
+            return self::$reactor = new NativeReactor;
         }
     }
 }
