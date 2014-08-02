@@ -22,7 +22,8 @@
     "autoload": {
         "psr-4": {
             "Alert\\": "lib/"
-        }
+        },
+        "files": ["lib/functions.php"]
     },
     "branch-alias": {
         "dev-master": "0.10.x-dev"
