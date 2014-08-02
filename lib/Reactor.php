@@ -11,9 +11,9 @@ interface Reactor {
     /**
      * Start the event reactor and assume program flow control
      *
-     * @param $onStart Optional callback to invoke immediately upon reactor start
+     * @param callable $onStart Optional callback to invoke immediately upon reactor start
      */
-    public function run(callable $onStart = NULL);
+    public function run(callable $onStart = null);
 
     /**
      * Execute a single event loop iteration
@@ -82,7 +82,7 @@ interface Reactor {
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
      */
-    public function onReadable($stream, callable $callback, $enableNow = TRUE);
+    public function onReadable($stream, callable $callback, $enableNow = true);
 
     /**
      * Watch a stream resource to become writable and trigger the callback when actionable
@@ -94,7 +94,7 @@ interface Reactor {
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
      */
-    public function onWritable($stream, callable $callback, $enableNow = TRUE);
+    public function onWritable($stream, callable $callback, $enableNow = true);
 
     /**
      * Similar to onReadable/onWritable but uses a flag bitmask for extended option assignment
