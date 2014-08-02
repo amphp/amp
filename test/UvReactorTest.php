@@ -1,6 +1,8 @@
 <?php
 
-namespace Alert;
+namespace AlertTest;
+
+use Alert\UvReactor;
 
 class UvReactorTest extends ReactorTest {
     protected function getReactor() {
