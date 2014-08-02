@@ -1,6 +1,8 @@
 ### master
 
-- none
+- Improved perf in procedural functions with static caching to avoid fcall overhead
+- Improved function documentation
+- Unit test cleanup
 
 #### v0.10.1
 
