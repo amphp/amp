@@ -2,6 +2,10 @@
 
 - none
 
+#### v0.10.1
+
+- Fixed syntax goof causing E_PARSE in `Alert\ReactorFactory`
+
 v0.10.0
 -------
 
