@@ -3,9 +3,12 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 date_default_timezone_set('UTC'); // F U Derick.
+define('SERVER_ADDRESS', '127.0.0.1:1337');
 
-$serverAddress = '127.0.0.1:1337';
 
+/**
+ * A simple struct to hold a client's state while it's connected to our server
+ */
 class Client {
     public $id;
     public $socket;
@@ -14,6 +17,10 @@ class Client {
     public $outputBuffer;
 }
 
+
+/**
+ * A simple TCP server that broadcasts the current time once per second to all connected clients
+ */
 class Server {
     private $reactor;
     private $clients = [];
@@ -21,11 +28,10 @@ class Server {
     private $ioGranularity = 8192;
 
     public function __construct(Alert\Reactor $reactor = null) {
-        $this->reactor = $reactor ?: (new Alert\ReactorFactory)->select();
+        $this->reactor = $reactor ?: Alert\reactor();
     }
 
     public function start($address) {
-        $flags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
         if (!$server = @stream_socket_server($address, $errno, $errstr)) {
             throw new RuntimeException(
                 sprintf('Failed binding server on %s; [%d] %s', $address, $errno, $errstr)
@@ -45,7 +51,7 @@ class Server {
             $this->broadcastTime();
         }, $msInterval = 3000);
 
-        // Start the event loop
+        // Release the hounds!
         $this->reactor->run();
     }
 
@@ -64,11 +70,11 @@ class Server {
             $client->writeWatcher = $this->reactor->onWritable($socket, function() use ($client) {
                 $this->writeToClient($client);
             });
-            
+
             // Buffer something to send to the client. The writability watcher we just enabled
             // above will take care of sending this data automatically.
             $client->outputBuffer = "--- Welcome to the example server! ---\n\n";
-            
+
             printf("Client socket accepted: %s\n", $name);
 
             // Store the client using its integer ID
@@ -118,7 +124,8 @@ class Server {
     }
 
     /**
-     * We have to clean up after ourselves or we'll create memory leaks!
+     * We have to clean up after ourselves or we'll create memory leaks. Always be sure to cancel
+     * any stream IO watchers or repeating timer events once they're no longer needed!
      */
     private function unloadClient(Client $client) {
         $this->reactor->cancel($client->readWatcher);
@@ -127,10 +134,9 @@ class Server {
             @fclose($client->socket);
         }
         unset($this->clients[$client->id]);
-        
+
         printf("Client %d disconnected\n", $client->id);
     }
 }
 
-
-(new Server)->start($serverAddress);
+(new Server)->start(SERVER_ADDRESS);
