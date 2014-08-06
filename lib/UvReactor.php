@@ -178,7 +178,7 @@ class UvReactor implements SignalReactor {
     public function onReadable($stream, callable $callback, $enableNow = true) {
         $flags = $enableNow ? (self::WATCH_READ | self::WATCH_NOW) : self::WATCH_READ;
 
-        return $this->watchStream($stream, $flags, $callback);
+        return $this->watchStream($stream, $callback, $flags);
     }
 
     /**
@@ -192,19 +192,19 @@ class UvReactor implements SignalReactor {
     public function onWritable($stream, callable $callback, $enableNow = true) {
         $flags = $enableNow ? (self::WATCH_WRITE | self::WATCH_NOW) : self::WATCH_WRITE;
 
-        return $this->watchStream($stream, $flags, $callback);
+        return $this->watchStream($stream, $callback, $flags);
     }
 
     /**
      * Watch a stream resource for reads or writes (but not both) with additional option flags
      *
      * @param resource $stream
-     * @param int $flags A bitmask of watch flags
      * @param callable $callback
+     * @param int $flags A bitmask of watch flags
      * @throws \DomainException if no read/write flag specified
      * @return int Returns a unique integer watcher ID
      */
-    public function watchStream($stream, $flags, callable $callback) {
+    public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
 
         if ($flags & self::WATCH_READ) {

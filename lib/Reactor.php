@@ -102,7 +102,7 @@ interface Reactor {
      * @param callable $callback Any valid PHP callable
      * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
      */
-    public function watchStream($stream, $flags, callable $callback);
+    public function watchStream($stream, callable $callback, $flags);
 
     /**
      * Cancel an existing timer/stream watcher

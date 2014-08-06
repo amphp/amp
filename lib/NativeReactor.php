@@ -213,7 +213,7 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
-    public function watchStream($stream, $flags, callable $callback) {
+    public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
         $enableNow = ($flags & self::WATCH_NOW);
 

@@ -157,13 +157,13 @@ function onWritable($stream, callable $func, $enableNow = true) {
  * will lead to memory leaks.
  *
  * @param resource $stream A stream resource to watch for IO capability
- * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
  * @param callable $func Any valid PHP callable
+ * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
  */
-function watchStream($stream, $flags, callable $func) {
+function watchStream($stream, callable $func, $flags) {
     static $reactor;
     $reactor = $reactor ?: ReactorFactory::select();
-    return $reactor->watchStream($stream, $flags, $func);
+    return $reactor->watchStream($stream, $func, $flags);
 }
 
 /**
