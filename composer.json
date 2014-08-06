@@ -1,7 +1,7 @@
 {
     "name": "rdlowrey/alert",
     "homepage": "https://github.com/rdlowrey/alert",
-    "description": "Event loops and stream IO reactors for non-blocking PHP applications",
+    "description": "Event loops, stream IO and signal reactors for non-blocking PHP applications",
     "keywords": [
         "non-blocking",
         "libevent",
