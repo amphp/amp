@@ -133,7 +133,7 @@ class UvReactor implements Reactor {
             try {
                 $callback($watcher->id, $this);
                 if ($watcher->mode === self::$MODE_ONCE) {
-                    $this->clearWatcher($watcherId);
+                    $this->clearWatcher($watcher->id);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;
