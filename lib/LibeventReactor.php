@@ -197,15 +197,15 @@ class LibeventReactor implements SignalReactor {
 
     public function watchStream($stream, $flags, callable $callback) {
         $flags = (int) $flags;
-        $enableNow = ($flags & self::ENABLE_NOW);
+        $enableNow = ($flags & self::WATCH_NOW);
 
-        if ($flags & self::POLL_READ) {
+        if ($flags & self::WATCH_READ) {
             return $this->onWritable($stream, $callback, $enableNow);
-        } elseif ($flags & self::POLL_WRITE) {
+        } elseif ($flags & self::WATCH_WRITE) {
             return $this->onWritable($stream, $callback, $enableNow);
         } else {
             throw new \DomainException(
-                'Stream watchers must specify either a POLL_READ or POLL_WRITE flag'
+                'Stream watchers must specify either a WATCH_READ or WATCH_WRITE flag'
             );
         }
     }

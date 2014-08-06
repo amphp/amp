@@ -3,10 +3,9 @@
 namespace Alert;
 
 interface Reactor {
-    const POLL_READ = 1;
-    const POLL_WRITE = 2;
-    const POLL_SOCK = 4;
-    const ENABLE_NOW = 8;
+    const WATCH_READ  = 0b001;
+    const WATCH_WRITE = 0b010;
+    const WATCH_NOW   = 0b100;
 
     /**
      * Start the event reactor and assume program flow control
@@ -101,7 +100,7 @@ interface Reactor {
      *
      * @param resource $stream A stream resource to watch for writability
      * @param callable $callback Any valid PHP callable
-     * @param int $flags Option bitmask (Reactor::POLL_READ, Reactor::POLL_WRITE, etc)
+     * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
      */
     public function watchStream($stream, $flags, callable $callback);
 
