@@ -8,8 +8,9 @@ class LibeventReactor implements SignalReactor {
     private $watchers = [];
     private $lastWatcherId = 0;
     private $resolution = 1000;
-    private $isRunning = FALSE;
-    private $isGCScheduled = FALSE;
+    private $isRunning = false;
+    private $isGCScheduled = false;
+    private $garbage = [];
     private $gcEvent;
     private $stopException;
 
@@ -20,7 +21,7 @@ class LibeventReactor implements SignalReactor {
         event_base_set($this->gcEvent, $this->base);
     }
 
-    public function run(callable $onStart = NULL) {
+    public function run(callable $onStart = null) {
         if ($this->isRunning) {
             return;
         }
@@ -39,13 +40,13 @@ class LibeventReactor implements SignalReactor {
     }
 
     private function doRun($flags = 0) {
-        $this->isRunning = TRUE;
+        $this->isRunning = true;
         event_base_loop($this->base, $flags);
-        $this->isRunning = FALSE;
+        $this->isRunning = false;
 
         if ($this->stopException) {
             $e = $this->stopException;
-            $this->stopException = NULL;
+            $this->stopException = null;
             throw $e;
         }
     }
@@ -58,7 +59,7 @@ class LibeventReactor implements SignalReactor {
         $now = time();
         $executeAt = @strtotime($timeString);
 
-        if ($executeAt === FALSE || $executeAt <= $now) {
+        if ($executeAt === false || $executeAt <= $now) {
             throw new \InvalidArgumentException(
                 'Valid future time string (parsable by strtotime()) required'
             );
@@ -149,11 +150,11 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
-    public function onReadable($stream, callable $callback, $enableNow = TRUE) {
+    public function onReadable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_READ | EV_PERSIST, $callback, $enableNow);
     }
 
-    public function onWritable($stream, callable $callback, $enableNow = TRUE) {
+    public function onWritable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_WRITE | EV_PERSIST, $callback, $enableNow);
     }
 
@@ -264,7 +265,7 @@ class LibeventReactor implements SignalReactor {
         $watcher = $this->watchers[$watcherId];
         if ($watcher->isEnabled) {
             event_del($watcher->eventResource);
-            $watcher->isEnabled = FALSE;
+            $watcher->isEnabled = false;
         }
     }
 
@@ -277,20 +278,20 @@ class LibeventReactor implements SignalReactor {
 
         if (!$watcher->isEnabled) {
             event_add($watcher->eventResource, $watcher->msDelay);
-            $watcher->isEnabled = TRUE;
+            $watcher->isEnabled = true;
         }
     }
 
     private function scheduleGarbageCollection() {
         if (!$this->isGCScheduled) {
             event_add($this->gcEvent, 0);
-            $this->isGCScheduled = TRUE;
+            $this->isGCScheduled = true;
         }
     }
 
     private function collectGarbage() {
         $this->garbage = [];
-        $this->isGCScheduled = FALSE;
+        $this->isGCScheduled = false;
         event_del($this->gcEvent);
     }
 

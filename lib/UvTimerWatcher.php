@@ -9,4 +9,5 @@ class UvTimerWatcher {
     public $msDelay;
     public $msInterval;
     public $mode;
+    public $isEnabled;
 }

@@ -5,6 +5,7 @@ namespace Alert;
 class UvReactor implements SignalReactor {
     private $loop;
     private $lastWatcherId = 0;
+    private $watchers;
     private $gcWatcher;
     private $gcCallback;
     private $garbage = [];
@@ -175,7 +176,7 @@ class UvReactor implements SignalReactor {
      * @return int Returns a unique integer watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
-        $flags = $enableNow ? (self::WATCH_READ | self::WATCH_NOW) : SELF::WATCH_READ;
+        $flags = $enableNow ? (self::WATCH_READ | self::WATCH_NOW) : self::WATCH_READ;
 
         return $this->watchStream($stream, $flags, $callback);
     }
@@ -189,7 +190,7 @@ class UvReactor implements SignalReactor {
      * @return int Returns a unique integer watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
-        $flags = $enableNow ? (self::WATCH_WRITE | self::WATCH_NOW) : SELF::WATCH_WRITE;
+        $flags = $enableNow ? (self::WATCH_WRITE | self::WATCH_NOW) : self::WATCH_WRITE;
 
         return $this->watchStream($stream, $flags, $callback);
     }
@@ -207,8 +208,10 @@ class UvReactor implements SignalReactor {
         $flags = (int) $flags;
 
         if ($flags & self::WATCH_READ) {
+            /** @noinspection PhpUndefinedClassInspection */
             $pollFlag = \UV::READABLE;
         } elseif ($flags & self::WATCH_WRITE) {
+            /** @noinspection PhpUndefinedClassInspection */
             $pollFlag = \UV::WRITABLE;
         } else {
             throw new \DomainException(

@@ -13,7 +13,7 @@ namespace Alert;
 function immediately(callable $func) {
     static $reactor;
     $reactor = $reactor ?: ReactorFactory::select();
-    return $reactor->select()->immediately($func);
+    return $reactor->immediately($func);
 }
 
 /**
@@ -222,10 +222,13 @@ function reactor(callable $factory = null) {
  * @return int Returns a unique integer watcher ID
  */
 function onSignal($signo, callable $onSignal) {
+    /**
+     * @var $reactor \Alert\SignalReactor
+     */
     static $reactor;
     if ($reactor) {
         return $reactor->onSignal($signo, $onSignal);
-    } elseif (!($reactor = ReactorFactory::select() instanceof SignalReactor)) {
+    } elseif (!($reactor = ReactorFactory::select()) instanceof SignalReactor) {
         throw new \RuntimeException(
             'Your PHP environment does not support signal handling. Please install pecl/libevent or the php-uv extension'
         );
