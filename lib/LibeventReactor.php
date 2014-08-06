@@ -3,7 +3,6 @@
 namespace Alert;
 
 class LibeventReactor implements SignalReactor {
-
     private $base;
     private $watchers = [];
     private $lastWatcherId = 0;
@@ -21,6 +20,13 @@ class LibeventReactor implements SignalReactor {
         event_base_set($this->gcEvent, $this->base);
     }
 
+    /**
+     * Start the event reactor and assume program flow control
+     *
+     * @param callable $onStart Optional callback to invoke immediately upon reactor start
+     * @throws \Exception Will throw if code executed during the event loop throws
+     * @return void
+     */
     public function run(callable $onStart = null) {
         if ($this->isRunning) {
             return;
@@ -33,6 +39,12 @@ class LibeventReactor implements SignalReactor {
         $this->doRun();
     }
 
+    /**
+     * Execute a single event loop iteration
+     *
+     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @return void
+     */
     public function tick() {
         if (!$this->isRunning) {
             $this->doRun(EVLOOP_ONCE | EVLOOP_NONBLOCK);
@@ -51,10 +63,23 @@ class LibeventReactor implements SignalReactor {
         }
     }
 
+    /**
+     * Stop the event reactor
+     *
+     * @return void
+     */
     public function stop() {
         event_base_loopexit($this->base);
     }
 
+    /**
+     * Schedule an event to trigger once at the specified time
+     *
+     * @param callable $callback Any valid PHP callable
+     * @param string $timeString Any string that can be parsed by strtotime() and is in the future
+     * @throws \InvalidArgumentException if $timeString parse fails
+     * @return int Returns a unique integer watcher ID
+     */
     public function at(callable $callback, $timeString) {
         $now = time();
         $executeAt = @strtotime($timeString);
@@ -70,10 +95,23 @@ class LibeventReactor implements SignalReactor {
         return $this->once($callback, $msDelay);
     }
 
+    /**
+     * Schedule a callback for immediate invocation in the next event loop iteration
+     *
+     * @param callable $callback Any valid PHP callable
+     * @return int Returns a unique integer watcher ID
+     */
     public function immediately(callable $callback) {
         return $this->once($callback, $msDelay = 0);
     }
 
+    /**
+     * Schedule a callback to execute once
+     *
+     * @param callable $callback Any valid PHP callable
+     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
+     * @return int Returns a unique integer watcher ID
+     */
     public function once(callable $callback, $msDelay) {
         $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
@@ -111,6 +149,13 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
+    /**
+     * Schedule a recurring callback to execute every $interval seconds until cancelled
+     *
+     * @param callable $callback Any valid PHP callable
+     * @param int $msDelay The interval in milliseconds between callback invocations
+     * @return int Returns a unique integer watcher ID
+     */
     public function repeat(callable $callback, $msDelay) {
         $watcherId = $this->lastWatcherId++;
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
@@ -150,10 +195,26 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
+    /**
+     * Watch a stream resource for IO readable data and trigger the callback when actionable
+     *
+     * @param resource $stream A stream resource to watch for readable data
+     * @param callable $callback Any valid PHP callable
+     * @param bool $enableNow Should the watcher be enabled now or held for later use?
+     * @return int Returns a unique integer watcher ID
+     */
     public function onReadable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_READ | EV_PERSIST, $callback, $enableNow);
     }
 
+    /**
+     * Watch a stream resource to become writable and trigger the callback when actionable
+     *
+     * @param resource $stream A stream resource to watch for writability
+     * @param callable $callback Any valid PHP callable
+     * @param bool $enableNow Should the watcher be enabled now or held for later use?
+     * @return int Returns a unique integer watcher ID
+     */
     public function onWritable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_WRITE | EV_PERSIST, $callback, $enableNow);
     }
@@ -196,6 +257,15 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
+    /**
+     * Watch a stream resource for reads or writes (but not both) with additional option flags
+     *
+     * @param resource $stream
+     * @param callable $callback
+     * @param int $flags A bitmask of watch flags
+     * @throws \DomainException if no read/write flag specified
+     * @return int Returns a unique integer watcher ID
+     */
     public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
         $enableNow = ($flags & self::WATCH_NOW);
@@ -211,20 +281,27 @@ class LibeventReactor implements SignalReactor {
         }
     }
 
-    public function onSignal($signal, callable $callback) {
-        $signal = (int) $signal;
+    /**
+     * React to process control signals
+     *
+     * @param int $signo The signal number to watch for (e.g. 2 for Uv::SIGINT)
+     * @param callable $onSignal
+     * @return int Returns a unique integer watcher ID
+     */
+    public function onSignal($signo, callable $onSignal) {
+        $signo = (int) $signo;
         $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
         $watcher->eventResource = $eventResource;
-        $watcher->callback = $callback;
+        $watcher->callback = $onSignal;
 
         $watcher->wrapper = $this->wrapSignalCallback($watcher);
 
         $this->watchers[$watcherId] = $watcher;
 
-        event_set($eventResource, $signal, EV_SIGNAL | EV_PERSIST, $watcher->wrapper);
+        event_set($eventResource, $signo, EV_SIGNAL | EV_PERSIST, $watcher->wrapper);
         event_base_set($eventResource, $this->base);
         event_add($eventResource);
 
@@ -245,6 +322,12 @@ class LibeventReactor implements SignalReactor {
         };
     }
 
+    /**
+     * Cancel an existing watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function cancel($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -257,6 +340,12 @@ class LibeventReactor implements SignalReactor {
         unset($this->watchers[$watcherId]);
     }
 
+    /**
+     * Temporarily disable (but don't cancel) an existing timer/stream watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function disable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -269,6 +358,12 @@ class LibeventReactor implements SignalReactor {
         }
     }
 
+    /**
+     * Enable a disabled timer/stream watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function enable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;

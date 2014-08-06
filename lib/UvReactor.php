@@ -58,6 +58,9 @@ class UvReactor implements SignalReactor {
 
     /**
      * Execute a single event loop iteration
+     *
+     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @return void
      */
     public function tick() {
         $this->isRunning = true;
@@ -73,6 +76,8 @@ class UvReactor implements SignalReactor {
 
     /**
      * Stop the event reactor
+     *
+     * @return void
      */
     public function stop() {
         uv_stop($this->loop);
@@ -150,7 +155,7 @@ class UvReactor implements SignalReactor {
      * @param callable $callback Any valid PHP callable
      * @param string $timeString Any string that can be parsed by strtotime() and is in the future
      * @throws \InvalidArgumentException if $timeString parse fails
-     * @return int
+     * @return int Returns a unique integer watcher ID
      */
     public function at(callable $callback, $timeString) {
         $now = time();
