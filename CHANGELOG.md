@@ -1,7 +1,12 @@
-### master
+##### master
+
+- none
+
+### v0.11.0
 
 - Implement `Alert\SignalReactor` interface in `Alert\UvReactor` for signal handling support
 - Fix UvReactor memory leak where one-time watchers were never cleared
+- Miscellaneous cleanup
 
 > **BC BREAKS:**
 
@@ -10,6 +15,7 @@
     * Reactor::POLL_WRITE -> Reactor::WATCH_WRITE
     * Reactor::ENABLE_NOW -> Reactor::WATCH_NOW
 - The `Reactor::POLL_SOCK` constant has been removed
+- The parameter order in `Reactor::watchStream()` and `watchStream()` has changed.
 
 #### v0.10.2
 
