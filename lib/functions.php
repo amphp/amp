@@ -212,3 +212,24 @@ function reactor(callable $factory = null) {
     static $reactor;
     return ($reactor = $reactor ?: ReactorFactory::select($factory));
 }
+
+/**
+ * React to process control signals
+ *
+ * @param int $signo The signal number to watch for
+ * @param callable $onSignal
+ * @throws \RuntimeException if the current environment cannot support signal handling
+ * @return int Returns a unique integer watcher ID
+ */
+function onSignal($signo, callable $onSignal) {
+    static $reactor;
+    if ($reactor) {
+        return $reactor->onSignal($signo, $onSignal);
+    } elseif (!($reactor = ReactorFactory::select() instanceof SignalReactor)) {
+        throw new \RuntimeException(
+            'Your PHP environment does not support signal handling. Please install pecl/libevent or the php-uv extension'
+        );
+    } else {
+        return $reactor->onSignal($signo, $onSignal);
+    }
+}

@@ -7,9 +7,9 @@ interface SignalReactor extends Reactor {
     /**
      * React to process control signals
      *
-     * @param int $signal The signal to watch for (e.g. 2 for SIGINT)
+     * @param int $signo The signal number to watch for
      * @param callable $onSignal
      * @return int Returns a unique integer watcher ID
      */
-    public function onSignal($signal, callable $onSignal);
+    public function onSignal($signo, callable $onSignal);
 }
