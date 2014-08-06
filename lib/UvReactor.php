@@ -276,7 +276,7 @@ class UvReactor implements SignalReactor {
         $watcher->callback = $this->wrapSignalCallback($watcher, $onSignal);
         $watcher->isEnabled = true;
 
-        uv_signal_start($watcher->uvStruct, $watcher->uvStruct, $watcher->signo);
+        uv_signal_start($watcher->uvStruct, $watcher->callback, $watcher->signo);
 
         $this->watchers[$watcher->id] = $watcher;
 
