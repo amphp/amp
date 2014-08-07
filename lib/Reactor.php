@@ -63,16 +63,14 @@ interface Reactor {
     /**
      * Schedule an event to trigger once at the specified time
      *
-     * Though it can't be enforced at the interface level all timer/stream scheduling methods
-     * should return a unique integer identifying the relevant watcher.
-     *
      * @param callable $callback Any valid PHP callable
-     * @param string $timeString Any string that can be parsed by strtotime() and is in the future
+     * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
+     * @throws \InvalidArgumentException On invalid future time
      */
-    public function at(callable $callback, $timeString);
+    public function at(callable $callback, $unixTimeOrStr);
 
     /**
-     * Watch a stream resource for IO readable data and trigger the callback when actionable
+     * Watch a stream resource for readable data and trigger the callback when actionable
      *
      * Though it can't be enforced at the interface level all timer/stream scheduling methods
      * should return a unique integer identifying the relevant watcher.

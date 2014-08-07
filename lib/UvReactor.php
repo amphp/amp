@@ -153,21 +153,23 @@ class UvReactor implements SignalReactor {
      * Schedule an event to trigger once at the specified time
      *
      * @param callable $callback Any valid PHP callable
-     * @param string $timeString Any string that can be parsed by strtotime() and is in the future
-     * @throws \InvalidArgumentException if $timeString parse fails
+     * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
+     * @throws \InvalidArgumentException On invalid future time
      * @return int Returns a unique integer watcher ID
      */
-    public function at(callable $callback, $timeString) {
+    public function at(callable $callback, $unixTimeOrStr) {
         $now = time();
-        $executeAt = @strtotime($timeString);
-
-        if ($executeAt === false || $executeAt <= $now) {
+        if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
+            $secondsUntil = ($unixTimeOrStr - $now);
+        } elseif (($executeAt = @strtotime($unixTimeOrStr)) && $executeAt > $now) {
+            $secondsUntil = ($executeAt - $now);
+        } else {
             throw new \InvalidArgumentException(
-                'Valid future time string (parsable by strtotime()) required'
+                'Unix timestamp or future time string (parsable by strtotime()) required'
             );
         }
 
-        $msDelay = ($executeAt - $now) * $this->resolution;
+        $msDelay = $secondsUntil * $this->resolution;
 
         return $this->once($callback, $msDelay);
     }
