@@ -22,7 +22,7 @@ class NativeReactor implements Reactor {
     private static $DISABLED_WRITE = 2;
     private static $MICROSECOND = 1000000;
 
-    public function run(callable $onStart = NULL) {
+    public function run(callable $onStart = null) {
         if ($this->isRunning) {
             return;
         }
@@ -82,7 +82,7 @@ class NativeReactor implements Reactor {
     private function selectActionableStreams($timeout) {
         $r = $this->readStreams;
         $w = $this->writeStreams;
-        $e = NULL;
+        $e = null;
 
         if ($timeout <= 0) {
             $sec = 0;
@@ -184,7 +184,7 @@ class NativeReactor implements Reactor {
             $nextExecution = (microtime(true) + $delay);
             $this->alarmOrder[$watcherId] = $nextExecution;
         } else {
-            $nextExecution = NULL;
+            $nextExecution = null;
         }
 
         $alarmStruct = [$callback, $nextExecution, $delay, $isRepeating];
