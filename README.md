@@ -102,6 +102,7 @@ define('RUN_TIME', 10);
         }
     }, $msInterval = 1000);
 });
+```
 
 
 ###### b. The Universal Reactor
