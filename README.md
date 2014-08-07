@@ -34,50 +34,49 @@ $ php composer.phar require rdlowrey/alert:~0.11.x
 The Guide
 ----------------------------------------------------------------------------------------------------
 
-**Event Reactor Concepts**
+[**Event Reactor Concepts**](#event-reactor-concepts)
 
- - Reactor Implementations
- - Reactor == Task Scheduler
- - The Universal Reactor
+ - [Reactor Implementations](#reactor-implementations)
+ - [Reactor == Task Scheduler](#reactor--task-scheduler)
+ - [The Universal Reactor](#the-universal-reactor)
 
-**Controlling the Reactor**
+[**Controlling the Reactor**](#controlling-the-reactor)
 
  - `run()`
  - `tick()`
  - `stop()`
 
-**Timer Watchers**
+[**Timer Watchers**](#timer-watchers)
 
- - `immediately()`
- - `once()`
- - `repeat()`
- - `at()`
+ - [`immediately()`](#immediately)
+ - [`once()`](#once)
+ - [`repeat()`](#repeat)
+ - [`at()`](#at)
 
-**Stream IO Watchers**
+[**Stream IO Watchers**](#stream-io-watchers)
 
- - `onReadable()`
- - `onWritable()`
- - `watchStream()`
+ - [`onReadable()`](#onreadable)
+ - [`onWritable()`](#onwritable)
+ - [`watchStream()`](#watchstream)
 
-**Process Signal Watchers**
+[**Pausing, Resuming and Cancelling Watchers**](#pausing-resuming-and-cancelling-watchers)
 
- - @TODO
+ - [`disable()`](#disable)
+ - [`enable()`](#enable)
+ - [`cancel()`](#cancel)
 
-**Pausing, Resuming and Cancelling Watchers**
+[**Process Signal Watchers**](#process-signal-watchers)
 
- - `disable()`
- - `enable()`
- - `cancel()`
-
-**Common Patterns**
+[**Common Patterns**](#common-patterns)
 
  - @TODO
 
-**Addenda**
+[**Addenda**](#addenda)
 
-- An Important Note on Writability Watchers
-- Process Signal Numbers
-- IO Performance
+- [An Important Note on Writability Watchers](#an-important-note-on-writability)
+- [Process Signal Number Availability](#process-signal-number-availability)
+- [IO Performance](#io-performance)
+
 
 ----------------------------------------------------------------------------------------------------
 
@@ -105,9 +104,13 @@ with underlying performance characteristics. The one capability that the extensi
 *do* offer that's unavailable with the native implementation is the ability to watch for process
 control signals. The current implementations are listed here:
 
- - `Alert\NativeReactor` (native php)
- - `Alert\UvReactor` (libuv via the php-uv extension)
- - `Alert\LibeventReactor` (libevent via pecl/libevent)
+
+| Class                 | Extension                                             |
+| --------------------- | ----------------------------------------------------- |
+| Alert\NativeReactor   | n/a                                                   |
+| Alert\UvReactor       | [php-uv](https://github.com/chobie/php-uv)            |
+| Alert\LibeventReactor | [pecl/libevent](http://pecl.php.net/package/libevent) |
+
 
 As mentioned, only `UvReactor` and `LibeventReactor` implement the `Alert\SignalReactor` interface
 to offer cross-operating system signal handling capabilities. At this time use of the `UvReactor`
@@ -242,17 +245,17 @@ instantiating reactors manually and mixing in calls to the function API.
 
 @TODO
 
-#### a. `run()`
+#### `run()`
 
 @TODO
 
 
-#### b. `tick()`
+#### `tick()`
 
 @TODO
 
 
-#### c. `stop()`
+#### `stop()`
 
 @TODO
 
@@ -260,14 +263,7 @@ instantiating reactors manually and mixing in calls to the function API.
 
 ## Timer Watchers
 
-Alert exposes several ways to schedule timer" events:
-
- - `Alert\Reactor::immediately()` | `Alert\immediately()`
- - `Alert\Reactor::once()` | `Alert\once()`
- - `Alert\Reactor::repeat()` | `Alert\repeat()`
- - `Alert\Reactor::at()` | `Alert\at()`
-
-Let's look at some details for each method ...
+Alert exposes several ways to schedule timer watchers. Let's look at some details for each method ...
 
 #### `immediately()`
 
@@ -399,32 +395,6 @@ $readWatcherId = Alert\watchStream($stream, $myCallbackFunction, $flags);
 > registration time via watchStream() you *must* pass the `WATCH_NOW` flag.
 
 
-## Process Signal Watchers
-
-The `Alert\SignalReactor` extends the base reactor interface to expose an API for handling process
-control signals in your application like any other event. Simply use a compatible event reactor
-implementation (`UvReactor` or `LibeventReactor`, preferably the former) and interact with its
-`SignalReactor::onSignal()` method. Consider:
-
-```php
-<?php
-(new Alert\UvReactor)->run(function($reactor) {
-    // Let's tick off output once per second so we can see activity.
-    $reactor->repeat(function() {
-            echo "tick: ", date('c'), "\n";
-    }, $msInterval = 1000);
-
-    // What to do when a SIGINT signal is received
-    $watcherId = $reactor->onSignal(UV::SIGINT, function() {
-        echo "Caught SIGINT! exiting ...\n";
-        exit;
-    });
-});
-```
-
-As should be clear from the above example, signal watchers may be enabled, disabled and cancelled
-like any other event.
-
 ## Pausing, Resuming and Cancelling Watchers
 
 All watchers, regardless of type, can be temporarily disabled and enabled in addition to being
@@ -506,16 +476,20 @@ class Server {
         $this->reactor->run();
     }
 
-    private function onNewClient($socket) {
-        $socketId = (int) $socket;
+    private function onNewClient($sock) {
+        $socketId = (int) $sock;
         $client = new ClientStruct;
-        $client->socket = $socket;
-        $client->readWatcher = $this->reactor->onReadable($socket, function() use ($client) {
+        $client->socket = $sock;
+        $readWatcher = $this->reactor->onReadable($sock, function() use ($client) {
             $this->onReadable($client);
         });
-        $client->writeWatcher = $this->reactor->onReadable($socket, function() use ($client) {
+        $writeWatcher = $this->reactor->onReadable($sock, function() use ($client) {
             $this->doWrite($client);
-        }, $enableNow = false); // <--- notice how we don't enable the write watcher now
+        }, $enableNow = false); // <-- let's initialize the watcher as "disabled"
+
+        $client->readWatcher = $readWatcher;
+        $client->writeWatcher = $writeWatcher;
+
         $this->clients[$socketId] = $client;
     }
 
@@ -552,9 +526,6 @@ above enable/disable examples:
 
 ```php
 <?php
-
-```php
-<?php
 Alert\run(function() {
     $myWatcherId = Alert\repeat(function() {
         echo "tick\n";
@@ -566,6 +537,32 @@ Alert\run(function() {
     }, $msDelay = 5000);
 });
 ```
+
+## Process Signal Watchers
+
+The `Alert\SignalReactor` extends the base reactor interface to expose an API for handling process
+control signals in your application like any other event. Simply use a compatible event reactor
+implementation (`UvReactor` or `LibeventReactor`, preferably the former) and interact with its
+`SignalReactor::onSignal()` method. Consider:
+
+```php
+<?php
+(new Alert\UvReactor)->run(function($reactor) {
+    // Let's tick off output once per second so we can see activity.
+    $reactor->repeat(function() {
+            echo "tick: ", date('c'), "\n";
+    }, $msInterval = 1000);
+
+    // What to do when a SIGINT signal is received
+    $watcherId = $reactor->onSignal(UV::SIGINT, function() {
+        echo "Caught SIGINT! exiting ...\n";
+        exit;
+    });
+});
+```
+
+As should be clear from the above example, signal watchers may be enabled, disabled and cancelled
+like any other event.
 
 
 ## Common Patterns
