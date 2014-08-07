@@ -1,10 +1,9 @@
 Alert
 =====
 
-Alert provides native, libevent and libuv event reactors for powering event-driven PHP applications
-and servers.
+Alert provides event reactors for powering event-driven, non-blocking PHP applications.
 
-#### Features
+**Features**
 
 Alert adds the following functionality previously absent from the PHP non-blocking space:
 
@@ -12,27 +11,40 @@ Alert adds the following functionality previously absent from the PHP non-blocki
 - Multiple watchers for individual streams
 - Cross-OS process signal handling (yes, even in Windows)
 
-#### Dependencies
+**Dependencies**
 
-* PHP 5.4+
-* (optional) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
-* (optional) [*PECL libevent*][libevent] for libevent backends. Windows libevent extension DLLs are
-  available [here][win-libevent]
+- PHP 5.4+
 
-#### Installation
+Optional PHP extensions for great performance justice:
+
+- (preferred) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
+- [*pecl libevent*][libevent] for libevent backends. Windows libevent extension DLLs are
+  available [here][win-libevent]. php-uv is preferred, but libevent is better than nothing.
+
+**Installation**
+
+Via composer:
 
 ```bash
-$ php composer.phar require rdlowrey/alert:~0.10.x
+$ php composer.phar require rdlowrey/alert:~0.11.x
 ```
 
+
+----------------------------------------------------------------------------------------------------
 The Guide
----------
+----------------------------------------------------------------------------------------------------
 
 **1. Event Reactor Concepts**
 
- - a. Reactor == Task Scheduler
- - b. The Universal Reactor
- - @TODO Discuss the different reactor implementations
+ - a. Reactor Implementations
+ - b. Reactor == Task Scheduler
+ - c. The Universal Reactor
+
+**2. Controlling the Reactor**
+
+ - a. `run()`
+ - b. `tick()`
+ - c. `stop()`
 
 **2. Timer Watchers**
 
@@ -43,10 +55,10 @@ The Guide
 
 **3. Stream IO Watchers**
 
- - a. An Important Note on Writability
- - b. `onReadable()`
- - c. `onWritable()`
- - d. `watchStream()`
+ - a. `onReadable()`
+ - b. `onWritable()`
+ - c. `watchStream()`
+ - d. A Note on Writability
  - e. A Note on IO Performance
 
 **4. Process Signal Watchers**
@@ -59,101 +71,199 @@ The Guide
  - b. `enable()`
  - c. `cancel()`
 
+**6. Common Patterns**
+
+ - @TODO
 
 ----------------------------------------------------------------------------------------------------
 
 
-### 1. Event Reactor Concepts
+## 1. Event Reactor Concepts
 
+##### a. Reactor Implementations
 
-###### a. Reactor == Task Scheduler
+It may surprise people to learn that the PHP standard library already has everything we need to
+write event-driven and non-blocking applications. We only reach the limits of native PHP's
+functionality in this area when we ask it to poll several hundred streams for read/write capability
+at the same time. Even in this case, though, the fault is not with PHP but the underlying system
+`select()` call which is linear in its performance degradation as load increases.
 
-The event reactor is our task scheduler. It controls program flow as long as it runs. In this
-example we run a program that counts down for ten seconds before exiting. Meanwhile, any input
-sent from your console's STDIN stream is echoed back out to demonstrate listening for IO
-availability on a stream. Notice how we explicitly invoke `Reactor::stop()` to end the event
-loop and return flow control back to PHP. The event reactor will automatically return control
-to the PHP script if it has no more timers, streams or signals to watch, and in such cases the
-`Reactor::stop()` call is unnecessary. However, if *any* watchers are still registered (e.g. the
-STDIN stream watcher in this example) the reactor will continue to run until remaining watchers
-are cancelled via `Reactor::cancel($watcherId)` or the reactor is manually stopped.
+For performance that scales out to high volume we require more advanced capabilities currently
+found only in extensions. If you wish to, for example, service 10,000 simultaneous clients in an
+Alert-backed socket server you would definitely need to use one of the reactors based on a PHP
+extension. However, if you're using Alert in a strictly local program for non-blocking concurrency
+or you don't need to handle more than ~100 or so simultaneous clients in a server application the
+native PHP functionality is perfectly adequate.
 
-```php
-<?php
-define('RUN_TIME', 10);
-(new ReactorFactory)->select()->run(function(Reactor $reactor) {
-    // Set the STDIN stream to "non-blocking" mode
-    stream_set_blocking(STDIN, false);
+Alert currently exposes three separate implementations for its standard `Reactor` interface. Each
+behaves exactly the same way from an external API perspective. The main differences have to do
+with underlying performance characteristics. The one capability that the extension-based reactors
+*do* offer that's unavailable with the native implementation is the ability to watch for process
+control signals. The current implementations are listed here:
 
-    // Echo back the line each time there is readable data on STDIN
-    $reactor->onReadable(STDIN, function() {
-        if ($line = fgets(STDIN)) {
-            echo "INPUT> ", $line, "\n";
-        }
-    });
+ - `Alert\NativeReactor` (native php)
+ - `Alert\UvReactor` (libuv via the php-uv extension)
+ - `Alert\LibeventReactor` (libevent via pecl/libevent)
 
-    // Countdown RUN_TIME seconds then end the event loop
-    $secondsRemaining = RUN_TIME;
-    $reactor->repeat(function() use (&$secondsRemaining) {
-        if (--$secondsRemaining > 0) {
-            echo "$secondsRemaining seconds to shutdown\n";
-        } else {
-            $reactor->stop();
-        }
-    }, $msInterval = 1000);
-});
-```
+As mentioned, only `UvReactor` and `LibeventReactor` implement the `Alert\SignalReactor` interface
+to offer cross-operating system signal handling capabilities. At this time use of the `UvReactor`
+is recommended over `LibeventReactor` as the php-uv extension offers more in the way of tangentially
+related (but useful) functionality for robust non-blocking applications than libevent.
 
+##### b. Reactor == Task Scheduler
 
-###### b. The Universal Reactor
+The first thing we need to understand to program effectively using an event loop is this:
 
-In the above example we use the reactor's object API to register watchers. However, Alert also
-exposes a set of global functions to do the same things because it almost never makes sense to
-run multiple event loops in a single-threaded process. Unless your application needs multiple
-event loops (SPOILER ALERT: it almost certainly doesn't) you may prefer to use the global function
-API to interact with the event reactor. The function API uses a single static event reactor instance
-for all operations (universal). Below you'll find the same example from above using the function
-API. Always remember: *bugs arising from the existence of multiple reactor instances are very
-difficult to debug!* You should endeavor to always use the same reactor in your application and
-the function API *may* help you with this:
+> *The event reactor is our task scheduler.*
+
+The reactor controls program flow as long as it runs. Once we tell the reactor to run it will
+control program flow until the application errors out, has nothing left to do, or is explicitly
+stopped. Consider this very simple example:
 
 ```php
-<?php
+<?php // be sure to include the autoload.php file
+echo "-before run()-\n";
 Alert\run(function() {
-    // Set the STDIN stream to "non-blocking" mode
-    stream_set_blocking(STDIN, false);
-
-    // Echo back the line each time there is readable data on STDIN
-    Alert\onReadable(STDIN, function() {
-        if ($line = fgets(STDIN)) {
-            echo "INPUT> ", $line, "\n";
-        }
-    });
-
-    // Countdown RUN_TIME seconds then end the event loop
-    $secondsRemaining = RUN_TIME;
-    Alert\repeat(function() use (&$secondsRemaining) {
-        if (--$secondsRemaining > 0) {
-            echo "$secondsRemaining seconds to shutdown\n";
-        } else {
-            Alert\stop(); // <-- explicitly stop the loop
-        }
-    }, $msInterval = 1000);
+    Alert\repeat(function() { echo "tick\n"; }, $msInterval = 1000);
+    Alert\once(function() { Alert\stop(); }, $msDelay = 5000);
 });
+echo "-after stop()-\n";
 ```
 
-### 2. Timer Watchers
+Upon execution of the above example you should see output like this:
+
+```
+-before run()-
+tick
+tick
+tick
+tick
+tick
+-after stop()-
+```
+
+This simple example should be enough to demonstrate the concept that what happens inside the event
+reactor's run loop is like its own separate program. Your script will not continue past the point
+where `Reactor::run()` unless one of the previously mentioned conditions for stoppage is met.
+
+While an application can and often does take place entirely inside the confines of the run loop,
+we can also use the reactor to do things like the following example which imposes a short-lived
+timeout for interactive console input:
+
+```php
+<?php
+$number = null;
+$stdinWatcher = null;
+stream_set_blocking(STDIN, false);
+
+echo "Please input a random number: ";
+
+Alert\run(function() use (&$stdinWatcher, &$number) {
+    $stdinWatcher = Alert\onReadable(STDIN, function() use (&$number) {
+        $number = fgets(STDIN);
+        Alert\stop(); // <-- we got what we came for; exit the loop
+    });
+    Alert\once(function() {
+        Alert\stop(); // <-- you took too long; exit the loop
+    }, $msInterval = 5000);
+});
+
+if (is_null($number)) {
+    echo "You took too long to respond, so we chose the number, '4' by fair dice roll\n";
+} else {
+    echo "Your number is: ", (int) $number, "\n";
+}
+
+Alert\cancel($stdinWatcher); // <-- clean up after ourselves
+stream_set_blocking(STDIN, true);
+```
+
+The details of what's happening in this example are unimportant and involve functionality that will
+be covered later. For now, the takeaway should simply be that you can move in and out of the event
+loop like a ninja if you wish.
+
+
+##### c. The Universal Reactor
+
+In the above example we use the reactor's procedural API to register stream IO and timere watchers.
+However, Alert also exposes an object API. Though it almost never makes sense to run multiple event
+loop instances in a single-threaded process, instantiating `Reactor` objects in your application
+can make things significantly more testable. Note that the function API uses a single static reactor
+instance for all operations (universal). Below you'll find the same example from above section
+rewritten to use the `Alert\NativeReactor` class .
+
+```php
+<?php
+$number = null;
+$stdinWatcher = null;
+stream_set_blocking(STDIN, false);
+
+echo "Please input a random number: ";
+
+$reactor = new Alert\NativeReactor;
+$reactor->run(function($reactor) use (&$stdinWatcher, &$number) {
+    $stdinWatcher = $reactor->onReadable(STDIN, function() use ($reactor, &$number) {
+        $number = fgets(STDIN);
+        $reactor->stop();
+    });
+    $reactor->once(function() {
+        $reactor->stop();
+    }, $msInterval = 5000);
+});
+
+if (is_null($number)) {
+    echo "You took too long to respond, so we chose '4' by fair dice roll\n";
+} else {
+    echo "Your number is: ", (int) $number, "\n";
+}
+
+$reactor->cancel($stdinWatcher); // <-- clean up after ourselves
+stream_set_blocking(STDIN, true);
+```
+
+Always remember: *bugs arising from the existence of multiple reactor instances are exceedingly
+difficult to debug.* The reason for this should be relatively clear: running one event loop will
+block script execution and prevent others from executing at the same time. This sort of "loop
+starvation" results in events that inexplicably fail to trigger. You should endeavor to always use
+the same reactor instance in your application when you instantiate and use the object API. Because
+the event loop is often a truly global feature of an application the procedural API functions use
+a static instance to ensure the same `Reactor` is reused. Be careful about instantiating reactors
+manually and mixing in calls to the function API.
+
+
+
+## 2. Controlling the Reactor
+
+@TODO
+
+##### a. `run()`
+
+@TODO
+
+
+##### b. `tick()`
+
+@TODO
+
+
+##### c. `stop()`
+
+@TODO
+
+
+
+## 3. Timer Watchers
 
 Alert exposes several ways to schedule future events:
 
-    * `Alert\Reactor::immediately()` | `Alert\immediately()`
-    * `Alert\Reactor::once()` | `Alert\once()`
-    * `Alert\Reactor::repeat()` | `Alert\repeat()`
-    * `Alert\Reactor::at()` | `Alert\at()`
+ - `Alert\Reactor::immediately()` | `Alert\immediately()`
+ - `Alert\Reactor::once()` | `Alert\once()`
+ - `Alert\Reactor::repeat()` | `Alert\repeat()`
+ - `Alert\Reactor::at()` | `Alert\at()`
 
-Each method name accurately describes its purpose. However, let's look at some details ...
+Let's look at the details for these messages ...
 
-###### a. `immediately()`
+##### a. `immediately()`
 
  - Schedule a callback to execute in the next iteration of the event loop
  - This method guarantees a "clean" call stack to avoid starvation of other events in the
@@ -165,7 +275,7 @@ Each method name accurately describes its purpose. However, let's look at some d
    to garbage collect it until it executes. Therefore you must manually cancel an immediately
    watcher yourself if it never actually executes to free associate resources.
 
-###### b. `once()`
+##### b. `once()`
 
  - Schedule a callback to execute after a delay of *n* milliseconds
  - A "once" watcher is also automatically garbage collected by the reactor after execution and
@@ -177,7 +287,7 @@ Each method name accurately describes its purpose. However, let's look at some d
    cancelled to free resources if it never runs due to being disabled by the application after
    creation.
 
-###### c. `repeat()`
+##### c. `repeat()`
 
  - Schedule a callback to repeatedly execute every *n* millisconds.
  - Unlike one-time watchers, "repeat" timer resources must be explicitly cancelled to free
@@ -185,14 +295,14 @@ Each method name accurately describes its purpose. However, let's look at some d
    will result in memory leaks in your application.
  - Like all other watchers, "repeat" timers may be disabled/reenabled at any time.
 
-###### d. `at()`
+##### d. `at()`
 
  - Schedule a callback to execute at a specific time in the future. Future time may either be
    an integer unix timestamp or any string parsable by PHP's `strtotime()` function.
  - In all other respects "at" watchers are the same as "immediately" and "once" timers.
 
 
-### 3. Stream IO Watchers
+## 4. Stream IO Watchers
 
 Stream watchers are how we know that data exists to read or that write buffers are empty. These
 notifications are how we're able to actually *create* things like http servers and asynchronous
@@ -204,7 +314,7 @@ There are two classes of IO watcher:
  - Readability watchers
  - Writability watchers
 
-###### a. An Important Note on Writability
+##### a. An Important Note on Writability
 
 Before continuing we should note one very important point about writability watchers:
 
@@ -217,7 +327,7 @@ Before continuing we should note one very important point about writability watc
 
 Now that's out of the way let's look at how Alert reactors expose IO watcher functionality ...
 
-###### b. `onReadable()`
+##### b. `onReadable()`
 
 Watchers registered via `Reactor::onReadable()` trigger their callbacks in the following situations:
 
@@ -256,7 +366,7 @@ In the above example we've done a few very simple things:
     we've allocated for the storage of this stream. This process should always include calling
     `Reactor::cancel()` on any reactor watchers we registered in relation to the stream.
 
-###### c. `onWritable()`
+##### c. `onWritable()`
 
  - Streams are essentially *"always"* writable. The only time they aren't is when their
    respective write buffers are full.
@@ -268,7 +378,7 @@ A common usage pattern for reacting to writability looks something like this exa
 // @TODO Add example code
 ```
 
-###### d. `watchStream()`
+##### d. `watchStream()`
 
 The `Reactor::watchStream()` functionality exposes both readability and writability watcher
 registration in a single function as a convenience for programmers who wish to use the same
@@ -294,29 +404,29 @@ $readWatcherId = Alert\watchStream($stream, $myCallbackFunction, $flags);
 > registration time via watchStream() you *must* pass the `WATCH_NOW` flag.
 
 
-###### e. A Note on IO Performance
+##### e. A Note on IO Performance
 
 @TODO Talk about why we don't use event emitters, buffers and thenables for low-level operations ...
 
 
-### 4. Process Signal Watchers
+## 5. Process Signal Watchers
 
 @TODO
 
 
-### 5. Pausing, Resuming and Cancelling Watchers
+## 6. Pausing, Resuming and Cancelling Watchers
 
 @TODO
 
-###### a. `disable()`
+##### a. `disable()`
 
 @TODO
 
-###### b. `enable()`
+##### b. `enable()`
 
 @TODO
 
-###### c. `cancel()`
+##### c. `cancel()`
 
 @TODO
 
