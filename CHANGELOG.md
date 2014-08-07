@@ -4,6 +4,8 @@
 
 ### v0.11.0
 
+- `Reactor::at()` implementations now accept unix timestamps in addition to strtotime() parsable
+  strings at parameter 2.
 - Implement `Alert\SignalReactor` interface in `Alert\UvReactor` for signal handling support
 - Fix UvReactor memory leak where one-time watchers were never cleared
 - Miscellaneous cleanup
