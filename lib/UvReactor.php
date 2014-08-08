@@ -151,17 +151,21 @@ class UvReactor implements SignalReactor {
     }
 
     /**
-     * Schedule a recurring callback to execute every $interval seconds until cancelled
+     * Schedule a recurring callback to execute every $msInterval seconds until cancelled
      *
      * @param callable $callback Any valid PHP callable
      * @param int $msInterval The interval in milliseconds between callback invocations
      * @return int Returns a unique integer watcher ID
      */
     public function repeat(callable $callback, $msInterval) {
-        // A zero interval is interpreted as a "non-repeating" timer by php-uv; use 1ms instead.
-        $msInterval = ($msInterval && $msInterval > 0) ? (int) $msInterval : 1;
+        // A zero interval is interpreted as a "non-repeating" timer by php-uv. Here
+        // we use a hack to notify on STDOUT writability for 0 interval repeating
+        // callbacks because it's much more performant than churning 1ms timers.
+        $msInterval = ($msInterval && $msInterval > 0) ? (int) $msInterval : -1;
 
-        return $this->startTimer($callback, $msInterval, $msInterval, self::$MODE_REPEAT);
+        return ($msInterval === -1)
+            ? $this->watchStream(STDOUT, $callback, self::WATCH_WRITE | self::WATCH_NOW)
+            : $this->startTimer($callback, $msInterval, $msInterval, self::$MODE_REPEAT);
     }
 
     private function startTimer($callback, $msDelay, $msInterval, $mode) {
