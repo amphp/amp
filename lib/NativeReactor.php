@@ -4,6 +4,7 @@ namespace Alert;
 
 class NativeReactor implements Reactor {
     private $alarms = [];
+    private $immediates = [];
     private $alarmOrder = [];
     private $readStreams = [];
     private $writeStreams = [];
@@ -11,7 +12,7 @@ class NativeReactor implements Reactor {
     private $writeCallbacks = [];
     private $watcherIdReadStreamIdMap = [];
     private $watcherIdWriteStreamIdMap = [];
-    private $disabledWatchers = array();
+    private $disabledWatchers = [];
     private $resolution = 1000;
     private $lastWatcherId = 0;
     private $isRunning = false;
@@ -19,6 +20,7 @@ class NativeReactor implements Reactor {
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
+    private static $DISABLED_IMMEDIATE = 3;
     private static $MICROSECOND = 1000000;
 
     /**
@@ -77,6 +79,13 @@ class NativeReactor implements Reactor {
     public function tick() {
         if (!$this->isRunning) {
             $this->enableAlarms();
+        }
+
+        if ($immediates = $this->immediates) {
+            $this->immediates = [];
+            foreach ($immediates as $watcherId => $callback) {
+                $callback($watcherId, $this);
+            }
         }
 
         $timeToNextAlarm = $this->alarmOrder
@@ -188,7 +197,10 @@ class NativeReactor implements Reactor {
      * @return int Returns a unique integer watcher ID
      */
     public function immediately(callable $callback) {
-        return $this->scheduleAlarm($callback, $delay = 0, $isRepeating = false);
+        $watcherId = $this->lastWatcherId++;
+        $this->immediates[$watcherId] = $callback;
+
+        return $watcherId;
     }
 
     /**
@@ -318,6 +330,8 @@ class NativeReactor implements Reactor {
             $this->cancelWriteWatcher($watcherId);
         } elseif (isset($this->disabledWatchers[$watcherId])) {
             unset($this->disabledWatchers[$watcherId]);
+        } elseif (isset($this->immediates[$watcherId])) {
+            unset($this->immediates[$watcherId]);
         }
     }
 
@@ -387,6 +401,9 @@ class NativeReactor implements Reactor {
                 $this->watcherIdWriteStreamIdMap[$watcherId] = $streamId;
                 $this->writeStreams[$streamId] = $stream;
                 break;
+            case self::$DISABLED_IMMEDIATE:
+                $this->immediates[$watcherId] = $watcherStruct;
+                break;
         }
     }
 
@@ -435,7 +452,10 @@ class NativeReactor implements Reactor {
             }
 
             $this->disabledWatchers[$watcherId] = [self::$DISABLED_WRITE, [$stream, $callback]];
+
+        } elseif (isset($this->immediates[$watcherId])) {
+            $this->disabledWatchers[$watcherId] =  [self::$DISABLED_IMMEDIATE, $this->immediates[$watcherId]];
+            unset($this->immediates[$watcherId]);
         }
     }
-
 }

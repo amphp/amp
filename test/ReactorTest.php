@@ -49,7 +49,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
             $reactor->stop();
         }, $msDelay = 100);
 
-        $reactor->immediately([$reactor, 'stop']);
+        $reactor->once([$reactor, 'stop'], $msDelay = 0);
         $reactor->run();
         $this->assertEquals(0, $increment);
         usleep(150000);
@@ -62,6 +62,21 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
         $increment = 0;
         $reactor->immediately(function() use (&$increment) { $increment++; });
+        $reactor->tick();
+
+        $this->assertEquals(1, $increment);
+    }
+
+    public function testImmediatelyCallbacksDontRecurseInSameTick() {
+        $reactor = $this->getReactor();
+
+        $increment = 0;
+        $reactor->immediately(function() use (&$increment, $reactor) {
+            $increment++;
+            $reactor->immediately(function() use (&$increment) {
+                $increment++;
+            });
+        });
         $reactor->tick();
 
         $this->assertEquals(1, $increment);
