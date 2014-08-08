@@ -45,7 +45,9 @@ class UvReactor implements SignalReactor {
         }
 
         $this->isRunning = true;
-        $this->immediately(function() use ($onStart) { $onStart($this); });
+        if ($onStart) {
+            $this->immediately(function() use ($onStart) { $onStart($this); });
+        }
         uv_run($this->loop);
         $this->isRunning = false;
 
