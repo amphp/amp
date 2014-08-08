@@ -3,7 +3,6 @@
 namespace Alert;
 
 class NativeReactor implements Reactor {
-
     private $alarms = [];
     private $alarmOrder = [];
     private $readStreams = [];
@@ -22,6 +21,13 @@ class NativeReactor implements Reactor {
     private static $DISABLED_WRITE = 2;
     private static $MICROSECOND = 1000000;
 
+    /**
+     * Start the event reactor and assume program flow control
+     *
+     * @param callable $onStart Optional callback to invoke immediately upon reactor start
+     * @throws \Exception Will throw if code executed during the event loop throws
+     * @return void
+     */
     public function run(callable $onStart = null) {
         if ($this->isRunning) {
             return;
@@ -53,10 +59,21 @@ class NativeReactor implements Reactor {
         }
     }
 
+    /**
+     * Stop the event reactor
+     *
+     * @return void
+     */
     public function stop() {
         $this->isRunning = false;
     }
 
+    /**
+     * Execute a single event loop iteration
+     *
+     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @return void
+     */
     public function tick() {
         if (!$this->isRunning) {
             $this->enableAlarms();
@@ -164,35 +181,63 @@ class NativeReactor implements Reactor {
         return $this->once($callback, $msDelay);
     }
 
+    /**
+     * Schedule a callback for immediate invocation in the next event loop iteration
+     *
+     * @param callable $callback Any valid PHP callable
+     * @return int Returns a unique integer watcher ID
+     */
     public function immediately(callable $callback) {
         return $this->scheduleAlarm($callback, $delay = 0, $isRepeating = false);
     }
 
-    public function once(callable $callback, $delay) {
-        return $this->scheduleAlarm($callback, $delay, $isRepeating = false);
+    /**
+     * Schedule a callback to execute once
+     *
+     * @param callable $callback Any valid PHP callable
+     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
+     * @return int Returns a unique integer watcher ID
+     */
+    public function once(callable $callback, $msDelay) {
+        return $this->scheduleAlarm($callback, $msDelay, $isRepeating = false);
     }
 
-    public function repeat(callable $callback, $interval) {
-        return $this->scheduleAlarm($callback, $interval, $isRepeating = true);
+    /**
+     * Schedule a recurring callback to execute every $interval seconds until cancelled
+     *
+     * @param callable $callback Any valid PHP callable
+     * @param int $msDelay The interval in milliseconds between callback invocations
+     * @return int Returns a unique integer watcher ID
+     */
+    public function repeat(callable $callback, $msDelay) {
+        return $this->scheduleAlarm($callback, $msDelay, $isRepeating = true);
     }
 
-    private function scheduleAlarm($callback, $delay, $isRepeating) {
+    private function scheduleAlarm($callback, $msDelay, $isRepeating) {
         $watcherId = $this->lastWatcherId++;
-        $delay = round(($delay / $this->resolution), 3);
+        $msDelay = round(($msDelay / $this->resolution), 3);
 
         if ($this->isRunning) {
-            $nextExecution = (microtime(true) + $delay);
+            $nextExecution = (microtime(true) + $msDelay);
             $this->alarmOrder[$watcherId] = $nextExecution;
         } else {
             $nextExecution = null;
         }
 
-        $alarmStruct = [$callback, $nextExecution, $delay, $isRepeating];
+        $alarmStruct = [$callback, $nextExecution, $msDelay, $isRepeating];
         $this->alarms[$watcherId] = $alarmStruct;
 
         return $watcherId;
     }
 
+    /**
+     * Watch a stream resource for IO readable data and trigger the callback when actionable
+     *
+     * @param resource $stream A stream resource to watch for readable data
+     * @param callable $callback Any valid PHP callable
+     * @param bool $enableNow Should the watcher be enabled now or held for later use?
+     * @return int Returns a unique integer watcher ID
+     */
     public function onReadable($stream, callable $callback, $enableNow = true) {
         $watcherId = $this->lastWatcherId++;
 
@@ -208,6 +253,14 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
+    /**
+     * Watch a stream resource to become writable and trigger the callback when actionable
+     *
+     * @param resource $stream A stream resource to watch for writability
+     * @param callable $callback Any valid PHP callable
+     * @param bool $enableNow Should the watcher be enabled now or held for later use?
+     * @return int Returns a unique integer watcher ID
+     */
     public function onWritable($stream, callable $callback, $enableNow = true) {
         $watcherId = $this->lastWatcherId++;
 
@@ -223,6 +276,15 @@ class NativeReactor implements Reactor {
         return $watcherId;
     }
 
+    /**
+     * Watch a stream resource for reads or writes (but not both) with additional option flags
+     *
+     * @param resource $stream
+     * @param callable $callback
+     * @param int $flags A bitmask of watch flags
+     * @throws \DomainException if no read/write flag specified
+     * @return int Returns a unique integer watcher ID
+     */
     public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
         $enableNow = ($flags & self::WATCH_NOW);
@@ -238,6 +300,12 @@ class NativeReactor implements Reactor {
         }
     }
 
+    /**
+     * Cancel an existing watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function cancel($watcherId) {
         if (isset($this->alarms[$watcherId])) {
             unset(
@@ -281,6 +349,12 @@ class NativeReactor implements Reactor {
         }
     }
 
+    /**
+     * Enable a disabled timer/stream watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function enable($watcherId) {
         if (!isset($this->disabledWatchers[$watcherId])) {
             return;
@@ -316,6 +390,12 @@ class NativeReactor implements Reactor {
         }
     }
 
+    /**
+     * Temporarily disable (but don't cancel) an existing timer/stream watcher
+     *
+     * @param int $watcherId
+     * @return void
+     */
     public function disable($watcherId) {
         if (isset($this->alarms[$watcherId])) {
             $alarmStruct = $this->alarms[$watcherId];
