@@ -137,12 +137,11 @@ class LibeventReactor implements SignalReactor {
     }
 
     private function wrapOnceCallback(LibeventWatcher $watcher) {
-        $callback = $watcher->callback;
-        $watcherId = $watcher->id;
-
-        return function() use ($callback, $watcherId) {
+        return function() use ($watcher) {
             try {
-                $callback($watcherId, $this);
+                $callback = $watcher->callback;
+                $watcherId = $watcher->id;
+                $callback($this, $watcherId);
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -168,7 +167,6 @@ class LibeventReactor implements SignalReactor {
         $watcher->eventResource = $eventResource;
         $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
-
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
 
         $this->watchers[$watcherId] = $watcher;
@@ -188,7 +186,7 @@ class LibeventReactor implements SignalReactor {
 
         return function() use ($callback, $eventResource, $msDelay, $watcherId) {
             try {
-                $callback($watcherId, $this);
+                $callback($this, $watcherId);
                 event_add($eventResource, $msDelay);
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -248,10 +246,11 @@ class LibeventReactor implements SignalReactor {
     private function wrapStreamCallback(LibeventWatcher $watcher) {
         $callback = $watcher->callback;
         $watcherId = $watcher->id;
+        $stream = $watcher->stream;
 
-        return function($stream) use ($callback, $watcherId) {
+        return function() use ($callback, $watcherId, $stream) {
             try {
-                $callback($watcherId, $stream, $this);
+                $callback($this, $watcherId, $stream);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
@@ -296,6 +295,7 @@ class LibeventReactor implements SignalReactor {
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
+        $watcher->signo = $signo;
         $watcher->eventResource = $eventResource;
         $watcher->callback = $onSignal;
 
@@ -313,10 +313,11 @@ class LibeventReactor implements SignalReactor {
     private function wrapSignalCallback(LibeventWatcher $watcher) {
         $callback = $watcher->callback;
         $watcherId = $watcher->id;
+        $signo = $watcher->signo;
 
-        return function() use ($callback, $watcherId) {
+        return function() use ($callback, $watcherId, $signo) {
             try {
-                $callback($watcherId, $this);
+                $callback($this, $watcherId, $signo);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
@@ -391,5 +392,4 @@ class LibeventReactor implements SignalReactor {
         $this->isGCScheduled = false;
         event_del($this->gcEvent);
     }
-
 }

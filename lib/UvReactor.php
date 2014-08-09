@@ -68,7 +68,7 @@ class UvReactor implements SignalReactor {
     private function doImmediates() {
         $immediates = $this->immediates;
         foreach ($immediates as $watcherId => $callback) {
-            $callback($this);
+            $callback($this, $watcherId);
             unset(
                 $this->immediates[$watcherId],
                 $this->watchers[$watcherId]
@@ -188,7 +188,7 @@ class UvReactor implements SignalReactor {
     private function wrapTimerCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($watcher->id, $this);
+                $callback($this, $watcher->id);
                 if ($watcher->mode === self::$MODE_ONCE) {
                     $this->clearWatcher($watcher->id);
                 }
@@ -309,7 +309,7 @@ class UvReactor implements SignalReactor {
     private function wrapStreamCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($watcher->id, $watcher->stream, $this);
+                $callback($this, $watcher->id, $watcher->stream);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
@@ -343,7 +343,7 @@ class UvReactor implements SignalReactor {
     private function wrapSignalCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($watcher->id, $watcher->signo, $this);
+                $callback($this, $watcher->id, $watcher->signo);
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();

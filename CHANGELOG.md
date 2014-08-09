@@ -1,9 +1,7 @@
 ##### master
 
-- none
-
-### v0.11.0
-
+- `Reactor::immediately()` watchers are now always enacted in a fresh call stack in the next
+  iteration of the event loop. They may still be disabled/enabled/cancelled like any other watcher.
 - `Reactor::at()` implementations now accept unix timestamps in addition to strtotime() parsable
   strings at parameter 2.
 - Implement `Alert\SignalReactor` interface in `Alert\UvReactor` for signal handling support
@@ -17,6 +15,10 @@
     * Reactor::POLL_WRITE -> Reactor::WATCH_WRITE
     * Reactor::ENABLE_NOW -> Reactor::WATCH_NOW
 - The `Reactor::POLL_SOCK` constant has been removed
+- Callback parameter order has changed and is now standardized for all watcher types:
+    - timers = func($reactor, $watcherId)
+    - stream = func($reactor, $watcherId, $stream)
+    - signal = func($reactor, $watcherId, $signo)
 - The parameter order in `Reactor::watchStream()` and `watchStream()` has changed.
 
 #### v0.10.2

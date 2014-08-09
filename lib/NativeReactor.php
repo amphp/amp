@@ -84,7 +84,7 @@ class NativeReactor implements Reactor {
         if ($immediates = $this->immediates) {
             $this->immediates = [];
             foreach ($immediates as $watcherId => $callback) {
-                $callback($watcherId, $this);
+                $callback($this, $watcherId);
             }
         }
 
@@ -122,13 +122,13 @@ class NativeReactor implements Reactor {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($watcherId, $readableStream, $this);
+                    $callback($this, $watcherId, $readableStream);
                 }
             }
             foreach ($w as $writableStream) {
                 $streamId = (int) $writableStream;
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($watcherId, $writableStream, $this);
+                    $callback($this, $watcherId, $writableStream);
                 }
             }
         }
@@ -162,7 +162,7 @@ class NativeReactor implements Reactor {
             );
         }
 
-        $callback($watcherId, $this);
+        $callback($this, $watcherId);
     }
 
     /**

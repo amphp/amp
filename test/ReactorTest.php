@@ -25,6 +25,44 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals(1, $increment);
     }
 
+    public function testTimerWatcherParameterOrder() {
+        $reactor = $this->getReactor();
+        $counter = 0;
+        $reactor->immediately(function($reactorArg, $watcherId) use ($reactor, &$counter) {
+            $this->assertSame($reactor, $reactorArg);
+            $this->assertTrue(is_int($watcherId));
+            if (++$counter === 3) {
+                $reactor->stop();
+            }
+        });
+        $reactor->once(function($reactorArg, $watcherId) use ($reactor, &$counter) {
+            $this->assertSame($reactor, $reactorArg);
+            $this->assertTrue(is_int($watcherId));
+            if (++$counter === 3) {
+                $reactor->stop();
+            }
+        }, $msDelay = 1);
+        $reactor->repeat(function($reactorArg, $watcherId) use ($reactor, &$counter) {
+            $this->assertSame($reactor, $reactorArg);
+            $this->assertTrue(is_int($watcherId));
+            $reactor->cancel($watcherId);
+            if (++$counter === 3) {
+                $reactor->stop();
+            }
+        }, $msDelay = 1);
+
+        $reactor->run();
+    }
+
+    public function testStreamWatcherParameterOrder() {
+        $reactor = $this->getReactor();
+        $reactor->onWritable(STDOUT, function($reactorArg, $watcherId) use ($reactor) {
+            $this->assertSame($reactor, $reactorArg);
+            $this->assertTrue(is_int($watcherId));
+            $reactor->stop();
+        });
+    }
+
     public function testDisablingWatcherPreventsSubsequentInvocation() {
         $reactor = $this->getReactor();
         $increment = 0;
