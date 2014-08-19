@@ -370,12 +370,11 @@ In the above example we've done a few very simple things:
  - Streams are essentially *"always"* writable. The only time they aren't is when their
    respective write buffers are full.
 
-A common usage pattern for reacting to writability looks something like this example:
+A common usage pattern for reacting to writability involves initializing a writability watcher without
+enabling it when a client first connects to a server. Once incomplete writes occur we're then able
+to "unpause" the write watcher using `Reactor::enable()` until data is fully sent without having to
+create and cancel new watcher resources on the same stream multiple times.
 
-```php
-<?php
-// @TODO Add example code
-```
 
 #### `watchStream()`
 
@@ -615,12 +614,9 @@ got a writability watcher that you failed to disable or cancel after you were fi
 
 #### Process Signal Number Availability
 
-@TODO
-
-#### IO Performance
-
-@TODO Talk about why we don't use event emitters, stream abstractions, userland buffers or thenables
-for low-level operations ...
+Using the `SignalReactor` interface is relatively straightforward with the php-uv extension because
+it exposes `UV::SIG*` constants for watchable signals. Applications using the `LibeventReactor` to
+will need to manually specify the appropriate integer signal numbers when registering signal watchers.
 
 
 [libevent]: http://pecl.php.net/package/libevent "libevent"
