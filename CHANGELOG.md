@@ -1,5 +1,6 @@
 ##### master
 
+- Add `UvReactor::getUnderlyingLoop()` for access to lower-level php-uv functionality
 - `Reactor::immediately()` watchers are now always enacted in a fresh call stack in the next
   iteration of the event loop. They may still be disabled/enabled/cancelled like any other watcher.
 - `Reactor::at()` implementations now accept unix timestamps in addition to strtotime() parsable

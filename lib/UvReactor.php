@@ -461,4 +461,17 @@ class UvReactor implements SignalReactor {
 
         $watcher->isEnabled = true;
     }
+
+    /**
+     * Access the underlying php-uv extension loop resource
+     *
+     * This method exists outside the base Reactor API. It provides access to the underlying php-uv
+     * event loop resource for code that wishes to interact with lower-level php-uv extension
+     * functionality.
+     *
+     * @return resource
+     */
+    public function getUnderlyingLoop() {
+        return $this->loop;
+    }
 }
