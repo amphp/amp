@@ -15,7 +15,8 @@ Alert adds the following functionality previously absent from the PHP non-blocki
 
 - PHP 5.4+
 
-Optional PHP extensions for great performance justice:
+Optional PHP extensions may be used for great performance justice. An extension is also necessary
+if you need to watch for process signals in your application:
 
 - (preferred) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
 - [*pecl libevent*][libevent] for libevent backends. Windows libevent extension DLLs are
@@ -42,9 +43,9 @@ The Guide
 
 [**Controlling the Reactor**](#controlling-the-reactor)
 
- - `run()`
- - `tick()`
- - `stop()`
+ - [`run()`](#run)
+ - [`tick()`](#tick)
+ - [`stop()`](#stop)
 
 [**Timer Watchers**](#timer-watchers)
 
@@ -67,12 +68,10 @@ The Guide
 
 [**Process Signal Watchers**](#process-signal-watchers)
 
-[**Common Patterns**](#common-patterns)
-
- - @TODO
-
 [**Addenda**](#addenda)
 
+- [Callback Invocation Parameters](#callback-invocation-parameters)
+- [Watcher Cancellation Safety](#watcher-cancellation-safety)
 - [An Important Note on Writability Watchers](#an-important-note-on-writability)
 - [Process Signal Number Availability](#process-signal-number-availability)
 - [IO Performance](#io-performance)
@@ -243,21 +242,29 @@ instantiating reactors manually and mixing in calls to the function API.
 
 ## Controlling the Reactor
 
-@TODO
-
 #### `run()`
 
-@TODO
+The primary way an application interacts with the event reactor is to schedule events for execution
+and then simply let the program run. Once `Reactor::run()` is invoked the event loop will run
+indefinitely until there are no watchable timer events, IO streams or signals remaining to watch.
+Long-running programs generally execute entirely inside the confines of a single `Reactor::run()`
+call.
 
 
 #### `tick()`
 
-@TODO
+The event loop tick is the basic unit of flow control in a non-blocking application. This method
+will execute a single iteration of the event loop before returning. `Reactor::tick()` may be used
+inside a custom `while` loop to implement "wait" functionality in concurrency primitives such as
+futures and promises.
 
 
 #### `stop()`
 
-@TODO
+The event reactor loop can be stopped at any time while running. When `Reactor::stop()` is invoked
+the reactor loop will return control to the userland script at the end of the current iteration
+of the event loop. This method may be used to yield control from the reactor even if events or
+watchable IO streams are still pending.
 
 
 
@@ -268,14 +275,15 @@ Alert exposes several ways to schedule timer watchers. Let's look at some detail
 #### `immediately()`
 
  - Schedule a callback to execute in the next iteration of the event loop
- - This method guarantees a "clean" call stack to avoid starvation of other events in the
-   current iteration of the loop if called continuously.
+ - This method guarantees a clean call stack to avoid starvation of other events in the
+   current iteration of the loop if called recursively. An "immediately" callback is *always*
+   executed in the next tick of the event loop.
  - After an "immediately" timer watcher executes it is automatically garbage collected by
    the reactor so there is no need for applications to manually cancel the associated watcher ID.
  - Like all watchers, "immediately" timers may be disabled and reenabled. If you disable this
-   watcher between when you first schedule it and when it runs the reactor *will not* be able
-   to garbage collect it until it executes. Therefore you must manually cancel an immediately
-   watcher yourself if it never actually executes to free the associated resources.
+   watcher between the time you schedule it and the time that it actually runs the reactor *will
+   not* be able to garbage collect it until it executes. Therefore you must manually cancel an
+   immediately watcher yourself if it never actually executes to free any associated resources.
 
 #### `once()`
 
@@ -436,9 +444,6 @@ Using `enable()` is just as simple as the `disable()` example we just saw:
 ```php
 <?php
 
-```php
-<?php
-
 $reactor = new Alert\NativeReactor;
 
 // Register a watcher
@@ -565,12 +570,39 @@ As should be clear from the above example, signal watchers may be enabled, disab
 like any other event.
 
 
-## Common Patterns
-
-@TODO
-
 
 ## Addenda
+
+#### Callback Invocation Parameters
+
+All watcher callbacks are invoked using the same standardized parameter order:
+
+| Watcher Type          | Callback Signature                                |
+| --------------------- | --------------------------------------------------|
+| immediately()         | function(Reactor $reactor, $watcherId)            |
+| once()                | function(Reactor $reactor, $watcherId)            |
+| repeat()              | function(Reactor $reactor, $watcherId)            |
+| at()                  | function(Reactor $reactor, $watcherId)            |
+| watchStream()         | function(Reactor $reactor, $watcherId, $stream)   |
+| onReadable()          | function(Reactor $reactor, $watcherId, $stream)   |
+| onWritable()          | function(Reactor $reactor, $watcherId, $stream)   |
+| onSignal()            | function(Reactor $reactor, $watcherId, $signo)    |
+
+
+#### Watcher Cancellation Safety
+
+It is always safe to cancel a watcher from within its own callback. For example:
+
+```php
+<?php
+$increment = 0;
+Alert\repeat(function($reactor, $watcherId) use (&$increment) {
+    echo "tick\n";
+    if (++$increment >= 3) {
+        $reactor->cancel($watcherId); // <-- cancel myself!
+    }
+}, $msDelay = 50);
+```
 
 #### An Important Note on Writability
 
