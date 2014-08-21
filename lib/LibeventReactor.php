@@ -5,7 +5,7 @@ namespace Alert;
 class LibeventReactor implements SignalReactor {
     private $base;
     private $watchers = [];
-    private $lastWatcherId = 0;
+    private $lastWatcherId = 1;
     private $resolution = 1000;
     private $isRunning = false;
     private $isGCScheduled = false;
@@ -78,7 +78,7 @@ class LibeventReactor implements SignalReactor {
      * @param callable $callback Any valid PHP callable
      * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
      * @throws \InvalidArgumentException On invalid future time
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function at(callable $callback, $unixTimeOrStr) {
         $now = time();
@@ -101,7 +101,7 @@ class LibeventReactor implements SignalReactor {
      * Schedule a callback for immediate invocation in the next event loop iteration
      *
      * @param callable $callback Any valid PHP callable
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function immediately(callable $callback) {
         return $this->once($callback, $msDelay = 0);
@@ -112,10 +112,10 @@ class LibeventReactor implements SignalReactor {
      *
      * @param callable $callback Any valid PHP callable
      * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function once(callable $callback, $msDelay) {
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
 
@@ -155,10 +155,10 @@ class LibeventReactor implements SignalReactor {
      *
      * @param callable $callback Any valid PHP callable
      * @param int $msDelay The interval in milliseconds between callback invocations
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function repeat(callable $callback, $msDelay) {
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
         $eventResource = event_new();
 
@@ -201,7 +201,7 @@ class LibeventReactor implements SignalReactor {
      * @param resource $stream A stream resource to watch for readable data
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_READ | EV_PERSIST, $callback, $enableNow);
@@ -213,14 +213,14 @@ class LibeventReactor implements SignalReactor {
      * @param resource $stream A stream resource to watch for writability
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
         return $this->watchIoStream($stream, EV_WRITE | EV_PERSIST, $callback, $enableNow);
     }
 
     private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
 
         $watcher = new LibeventWatcher;
@@ -265,7 +265,7 @@ class LibeventReactor implements SignalReactor {
      * @param callable $callback
      * @param int $flags A bitmask of watch flags
      * @throws \DomainException if no read/write flag specified
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
@@ -287,11 +287,11 @@ class LibeventReactor implements SignalReactor {
      *
      * @param int $signo The signal number to watch for (e.g. 2 for Uv::SIGINT)
      * @param callable $onSignal
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onSignal($signo, callable $onSignal) {
         $signo = (int) $signo;
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
@@ -391,5 +391,18 @@ class LibeventReactor implements SignalReactor {
         $this->garbage = [];
         $this->isGCScheduled = false;
         event_del($this->gcEvent);
+    }
+
+    /**
+     * Access the underlying libevent extension event base
+     *
+     * This method exists outside the base Reactor API. It provides access to the underlying
+     * libevent base for code that wishes to interact with lower-level libevent extension
+     * functionality.
+     *
+     * @return resource
+     */
+    public function getUnderlyingLoop() {
+        return $this->base;
     }
 }

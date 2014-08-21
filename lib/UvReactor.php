@@ -4,7 +4,7 @@ namespace Alert;
 
 class UvReactor implements SignalReactor {
     private $loop;
-    private $lastWatcherId = 0;
+    private $lastWatcherId = 1;
     private $watchers;
     private $gcWatcher;
     private $gcCallback;
@@ -122,10 +122,10 @@ class UvReactor implements SignalReactor {
      * Schedule a callback for immediate invocation in the next event loop iteration
      *
      * @param callable $callback Any valid PHP callable
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function immediately(callable $callback) {
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
         $this->immediates[$watcherId] = $callback;
 
         $watcher = new \StdClass;
@@ -144,7 +144,7 @@ class UvReactor implements SignalReactor {
      *
      * @param callable $callback Any valid PHP callable
      * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function once(callable $callback, $msDelay) {
         return $this->startTimer($callback, $msDelay, $msInterval = 0, self::$MODE_ONCE);
@@ -155,7 +155,7 @@ class UvReactor implements SignalReactor {
      *
      * @param callable $callback Any valid PHP callable
      * @param int $msInterval The interval in milliseconds between callback invocations
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function repeat(callable $callback, $msInterval) {
         // A zero interval is interpreted as a "non-repeating" timer by php-uv. Here
@@ -170,7 +170,7 @@ class UvReactor implements SignalReactor {
 
     private function startTimer($callback, $msDelay, $msInterval, $mode) {
         $watcher = new UvTimerWatcher;
-        $watcher->id = $this->lastWatcherId++;
+        $watcher->id = (string) $this->lastWatcherId++;
         $watcher->mode = $mode;
         $watcher->uvStruct = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
@@ -205,7 +205,7 @@ class UvReactor implements SignalReactor {
      * @param callable $callback Any valid PHP callable
      * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
      * @throws \InvalidArgumentException On invalid future time
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function at(callable $callback, $unixTimeOrStr) {
         $now = time();
@@ -230,7 +230,7 @@ class UvReactor implements SignalReactor {
      * @param resource $stream A stream resource to watch for readable data
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
         $flags = $enableNow ? (self::WATCH_READ | self::WATCH_NOW) : self::WATCH_READ;
@@ -244,7 +244,7 @@ class UvReactor implements SignalReactor {
      * @param resource $stream A stream resource to watch for writability
      * @param callable $callback Any valid PHP callable
      * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
         $flags = $enableNow ? (self::WATCH_WRITE | self::WATCH_NOW) : self::WATCH_WRITE;
@@ -259,7 +259,7 @@ class UvReactor implements SignalReactor {
      * @param callable $callback
      * @param int $flags A bitmask of watch flags
      * @throws \DomainException if no read/write flag specified
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
@@ -282,7 +282,7 @@ class UvReactor implements SignalReactor {
             ? $this->chooseWindowsPollingFunction($stream)
             : 'uv_poll_init';
 
-        $watcherId = $this->lastWatcherId++;
+        $watcherId = (string) $this->lastWatcherId++;
 
         $watcher = new UvIoWatcher;
         $watcher->id = $watcherId;
@@ -322,11 +322,11 @@ class UvReactor implements SignalReactor {
      *
      * @param int $signo The signal number to watch for (e.g. 2 for Uv::SIGINT)
      * @param callable $onSignal
-     * @return int Returns a unique integer watcher ID
+     * @return string Returns a unique watcher ID
      */
     public function onSignal($signo, callable $onSignal) {
         $watcher = new UvSignalWatcher;
-        $watcher->id = $this->lastWatcherId++;
+        $watcher->id = (string) $this->lastWatcherId++;
         $watcher->mode = self::$MODE_SIGNAL;
         $watcher->signo = $signo;
         $watcher->uvStruct = uv_signal_init($this->loop);

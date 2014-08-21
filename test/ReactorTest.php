@@ -30,21 +30,18 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $counter = 0;
         $reactor->immediately(function($reactorArg, $watcherId) use ($reactor, &$counter) {
             $this->assertSame($reactor, $reactorArg);
-            $this->assertTrue(is_int($watcherId));
             if (++$counter === 3) {
                 $reactor->stop();
             }
         });
         $reactor->once(function($reactorArg, $watcherId) use ($reactor, &$counter) {
             $this->assertSame($reactor, $reactorArg);
-            $this->assertTrue(is_int($watcherId));
             if (++$counter === 3) {
                 $reactor->stop();
             }
         }, $msDelay = 1);
         $reactor->repeat(function($reactorArg, $watcherId) use ($reactor, &$counter) {
             $this->assertSame($reactor, $reactorArg);
-            $this->assertTrue(is_int($watcherId));
             $reactor->cancel($watcherId);
             if (++$counter === 3) {
                 $reactor->stop();
@@ -58,7 +55,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor = $this->getReactor();
         $reactor->onWritable(STDOUT, function($reactorArg, $watcherId) use ($reactor) {
             $this->assertSame($reactor, $reactorArg);
-            $this->assertTrue(is_int($watcherId));
+            $this->assertTrue(is_string($watcherId));
             $reactor->stop();
         });
     }
@@ -152,12 +149,12 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testOnceReturnsEventWatcher() {
         $reactor = $this->getReactor();
 
-        $firstWatcherId = 0;
+        $firstWatcherId = '1';
         $watcherId = $reactor->once(function(){}, $delay = 0);
         $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->immediately(function(){});
-        $this->assertSame($firstWatcherId + 1, $watcherId);
+        $this->assertSame((string)($firstWatcherId + 1), $watcherId);
     }
 
     /**
@@ -193,12 +190,12 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testRepeatReturnsEventWatcher() {
         $reactor = $this->getReactor();
 
-        $firstWatcherId = 0;
+        $firstWatcherId = '1';
         $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
         $this->assertSame($firstWatcherId, $watcherId);
 
         $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
-        $this->assertSame($firstWatcherId + 1, $watcherId);
+        $this->assertSame((string)($firstWatcherId + 1), $watcherId);
     }
 
     public function testCancelRemovesWatcher() {

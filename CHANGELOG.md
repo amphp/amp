@@ -1,5 +1,13 @@
 ##### master
 
+- Watcher IDs are now strings to avoid array key collisions after reaching PHP_INT_MAX keys
+- Watcher IDs now begin at one instead of zero making boolean checks for watcher ID
+  existence safe in all scenarios (because a "0" string is never possible)
+- Add `LibeventReactor::getUnderlyingLoop()` for access to lower-level libevent functionality
+
+v1.0.0-rc1
+----------
+
 - Add `UvReactor::getUnderlyingLoop()` for access to lower-level php-uv functionality
 - `Reactor::immediately()` watchers are now always enacted in a fresh call stack in the next
   iteration of the event loop. They may still be disabled/enabled/cancelled like any other watcher.
