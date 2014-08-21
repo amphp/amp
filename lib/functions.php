@@ -181,11 +181,21 @@ function tick() {
  * Start the event reactor and assume program flow control
  *
  * @param callable $onStart Optional callback to invoke immediately upon reactor start
+ * @param array $args Additional arguments to pass to the $onStart callback
  * @return void
  */
-function run(callable $onStart = null) {
+function run(callable $onStart = null, array $args = []) {
     static $reactor;
     $reactor = $reactor ?: ReactorFactory::select();
+
+    if ($onStart && $args) {
+        $wrappedOnStart = function($reactor) use($onStart, $args) {
+            array_unshift($args, $reactor);
+            call_user_func_array($onStart, $args);
+        };
+        $onStart = $wrappedOnStart;
+    }
+
     $reactor->run($onStart);
 }
 
