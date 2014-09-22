@@ -269,4 +269,56 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor->once([$reactor, 'stop'], $msDelay = 100);
         $reactor->run();
     }
+
+    public function testOnStartGeneratorResolvesAutomatically() {
+        $reactor = $this->getReactor();
+        $test = '';
+        $gen = function($reactor) use (&$test) {
+            yield;
+            $test = "Thus Spake Zarathustra";
+            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
+        };
+        $reactor->run($gen);
+        $this->assertSame("Thus Spake Zarathustra", $test);
+    }
+
+    public function testImmediatelyGeneratorResolvesAutomatically() {
+        $reactor = $this->getReactor();
+        $test = '';
+        $gen = function($reactor) use (&$test) {
+            yield;
+            $test = "The abyss will gaze back into you";
+            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
+        };
+        $reactor->immediately($gen);
+        $reactor->run();
+        $this->assertSame("The abyss will gaze back into you", $test);
+    }
+
+    public function testOnceGeneratorResolvesAutomatically() {
+        $reactor = $this->getReactor();
+        $test = '';
+        $gen = function($reactor) use (&$test) {
+            yield;
+            $test = "There are no facts, only interpretations.";
+            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
+        };
+        $reactor->once($gen, 1);
+        $reactor->run();
+        $this->assertSame("There are no facts, only interpretations.", $test);
+    }
+
+    public function testRepeatGeneratorResolvesAutomatically() {
+        $reactor = $this->getReactor();
+        $test = '';
+        $gen = function($reactor, $watcherId) use (&$test) {
+            $reactor->cancel($watcherId);
+            yield;
+            $test = "Art is the supreme task";
+            $reactor->stop();
+        };
+        $reactor->repeat($gen, 50);
+        $reactor->run();
+        $this->assertSame("Art is the supreme task", $test);
+    }
 }

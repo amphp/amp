@@ -16,12 +16,23 @@ class NativeReactor implements Reactor {
     private $resolution = 1000;
     private $lastWatcherId = 1;
     private $isRunning = false;
+    private $resolver;
+    private $onGeneratorError;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
     private static $DISABLED_IMMEDIATE = 3;
     private static $MICROSECOND = 1000000;
+
+    public function __construct() {
+        $this->resolver = new Resolver($this);
+        $this->onGeneratorError = function($e, $r) {
+            if ($e) {
+                throw $e;
+            }
+        };
+    }
 
     /**
      * Start the event reactor and assume program flow control
@@ -37,7 +48,12 @@ class NativeReactor implements Reactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately(function() use ($onStart) { $onStart($this); });
+            $this->immediately(function() use ($onStart) {
+                $result = $onStart($this);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
+            });
         }
         $this->enableAlarms();
         while ($this->isRunning) {
@@ -84,7 +100,10 @@ class NativeReactor implements Reactor {
         if ($immediates = $this->immediates) {
             $this->immediates = [];
             foreach ($immediates as $watcherId => $callback) {
-                $callback($this, $watcherId);
+                $result = $callback($this, $watcherId);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
             }
         }
 
@@ -122,13 +141,19 @@ class NativeReactor implements Reactor {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($this, $watcherId, $readableStream);
+                    $result = $callback($this, $watcherId, $readableStream);
+                    if ($result instanceof \Generator) {
+                        $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    }
                 }
             }
             foreach ($w as $writableStream) {
                 $streamId = (int) $writableStream;
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
-                    $callback($this, $watcherId, $writableStream);
+                    $result = $callback($this, $watcherId, $writableStream);
+                    if ($result instanceof \Generator) {
+                        $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    }
                 }
             }
         }
@@ -136,33 +161,31 @@ class NativeReactor implements Reactor {
 
     private function executeAlarms() {
         $now = microtime(true);
-
         asort($this->alarmOrder);
 
         foreach ($this->alarmOrder as $watcherId => $executionCutoff) {
-            if ($executionCutoff <= $now) {
-                $this->doAlarmCallback($watcherId);
-            } else {
+            if ($executionCutoff > $now) {
                 break;
             }
+
+            list($callback, $nextExecution, $interval, $isRepeating) = $this->alarms[$watcherId];
+
+            if ($isRepeating) {
+                $nextExecution += $interval;
+                $this->alarms[$watcherId] = [$callback, $nextExecution, $interval, $isRepeating];
+                $this->alarmOrder[$watcherId] = $nextExecution;
+            } else {
+                unset(
+                    $this->alarms[$watcherId],
+                    $this->alarmOrder[$watcherId]
+                );
+            }
+
+            $result = $callback($this, $watcherId);
+            if ($result instanceof \Generator) {
+                $this->resolver->resolve($result)->when($this->onGeneratorError);
+            }
         }
-    }
-
-    private function doAlarmCallback($watcherId) {
-        list($callback, $nextExecution, $interval, $isRepeating) = $this->alarms[$watcherId];
-
-        if ($isRepeating) {
-            $nextExecution += $interval;
-            $this->alarms[$watcherId] = [$callback, $nextExecution, $interval, $isRepeating];
-            $this->alarmOrder[$watcherId] = $nextExecution;
-        } else {
-            unset(
-                $this->alarms[$watcherId],
-                $this->alarmOrder[$watcherId]
-            );
-        }
-
-        $callback($this, $watcherId);
     }
 
     /**

@@ -15,6 +15,8 @@ class UvReactor implements SignalReactor {
     private $resolution = 1000;
     private $isWindows;
     private $immediates = [];
+    private $onGeneratorError;
+    private $resolver;
 
     private static $MODE_ONCE = 0;
     private static $MODE_REPEAT = 1;
@@ -27,6 +29,12 @@ class UvReactor implements SignalReactor {
         $this->gcWatcher = uv_timer_init($this->loop);
         $this->gcCallback = function() { $this->collectGarbage(); };
         $this->isWindows = (stripos(PHP_OS, 'win') === 0);
+        $this->resolver = new Resolver($this);
+        $this->onGeneratorError = function($e, $r) {
+            if ($e) {
+                throw $e;
+            }
+        };
     }
 
     private function collectGarbage() {
@@ -48,7 +56,12 @@ class UvReactor implements SignalReactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately(function() use ($onStart) { $onStart($this); });
+            $this->immediately(function() use ($onStart) {
+                $result = $onStart($this);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
+            });
         }
 
         while ($this->isRunning) {
@@ -68,7 +81,10 @@ class UvReactor implements SignalReactor {
     private function doImmediates() {
         $immediates = $this->immediates;
         foreach ($immediates as $watcherId => $callback) {
-            $callback($this, $watcherId);
+            $result = $callback($this, $watcherId);
+            if ($result instanceof \Generator) {
+                $this->resolver->resolve($result)->when($this->onGeneratorError);
+            }
             unset(
                 $this->immediates[$watcherId],
                 $this->watchers[$watcherId]
@@ -188,7 +204,10 @@ class UvReactor implements SignalReactor {
     private function wrapTimerCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($this, $watcher->id);
+                $result = $callback($this, $watcher->id);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
                 if ($watcher->mode === self::$MODE_ONCE) {
                     $this->clearWatcher($watcher->id);
                 }
@@ -309,7 +328,10 @@ class UvReactor implements SignalReactor {
     private function wrapStreamCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($this, $watcher->id, $watcher->stream);
+                $result = $callback($this, $watcher->id, $watcher->stream);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
@@ -343,7 +365,10 @@ class UvReactor implements SignalReactor {
     private function wrapSignalCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $callback($this, $watcher->id, $watcher->signo);
+                $result = $callback($this, $watcher->id, $watcher->signo);
+                if ($result instanceof \Generator) {
+                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                }
             } catch (\Exception $e) {
                 $this->stopException = $e;
                 $this->stop();
