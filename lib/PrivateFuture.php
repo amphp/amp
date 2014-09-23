@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * A PrivateFuture creates a read-only Promise that may *only* be fulfilled by holders of the
@@ -14,7 +14,7 @@ class PrivateFuture implements Promisor {
     private $promise;
 
     /**
-     * @param \Alert\Reactor $reactor
+     * @param \Amp\Reactor $reactor
      */
     public function __construct(Reactor $reactor = null) {
         $reactor = $reactor ?: ReactorFactory::select();
@@ -33,7 +33,7 @@ class PrivateFuture implements Promisor {
     /**
      * Promise future fulfillment via a temporary placeholder value
      *
-     * @return \Alert\Promise
+     * @return \Amp\Promise
      */
     public function promise() {
         return $this->promise;

@@ -1,22 +1,14 @@
-Alert
+Amp
 =====
 
-Alert provides event reactors for powering event-driven, non-blocking PHP applications.
-
-**Features**
-
-Alert adds the following functionality previously absent from the PHP non-blocking space:
-
-- Pause/resume for individual event/signal/IO observers
-- Multiple watchers for individual streams
-- Cross-OS process signal handling (yes, even in Windows)
+Amp is a non-blocking concurrency framework for PHP applications
 
 **Dependencies**
 
-- PHP 5.4+
+- PHP 5.5+
 
-Optional PHP extensions may be used for great performance justice. An extension is also necessary
-if you need to watch for process signals in your application:
+Optional PHP extensions may be used for improved event loop file descriptor observation performance.
+An extension is also necessary if you need to watch for process signals in your application:
 
 - (preferred) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
 - [*pecl libevent*][libevent] for libevent backends. Windows libevent extension DLLs are
@@ -24,16 +16,18 @@ if you need to watch for process signals in your application:
 
 **Installation**
 
-Via composer:
-
 ```bash
-$ php composer.phar require rdlowrey/alert:~0.11.x
+$ git clone https://github.com/amphp/amp.git
+$ cd amp
+$ composer.phar install
 ```
 
 
 
 The Guide
 ----------------------------------------------------------------------------------------------------
+
+### Using the Event Reactor
 
 [**Event Reactor Concepts**](#event-reactor-concepts)
 
@@ -68,13 +62,20 @@ The Guide
 
 [**Process Signal Watchers**](#process-signal-watchers)
 
+### Managing Concurrency
+
+ - Futures
+ - Promises
+ - Functors
+ - Generators
+ - Avoiding Callback Hell
+
 [**Addenda**](#addenda)
 
 - [Callback Invocation Parameters](#callback-invocation-parameters)
 - [Watcher Cancellation Safety](#watcher-cancellation-safety)
 - [An Important Note on Writability Watchers](#an-important-note-on-writability)
 - [Process Signal Number Availability](#process-signal-number-availability)
-- [IO Performance](#io-performance)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -92,12 +93,12 @@ at the same time. Even in this case, though, the fault is not with PHP but the u
 
 For performance that scales out to high volume we require more advanced capabilities currently
 found only in extensions. If you wish to, for example, service 10,000 simultaneous clients in an
-Alert-backed socket server you would definitely need to use one of the reactors based on a PHP
-extension. However, if you're using Alert in a strictly local program for non-blocking concurrency
+Amp-backed socket server you would definitely need to use one of the reactors based on a PHP
+extension. However, if you're using Amp in a strictly local program for non-blocking concurrency
 or you don't need to handle more than ~100 or so simultaneous clients in a server application the
 native PHP functionality is perfectly adequate.
 
-Alert currently exposes three separate implementations for its standard `Reactor` interface. Each
+Amp currently exposes three separate implementations for its standard `Reactor` interface. Each
 behaves exactly the same way from an external API perspective. The main differences have to do
 with underlying performance characteristics. The one capability that the extension-based reactors
 *do* offer that's unavailable with the native implementation is the ability to watch for process
@@ -106,12 +107,12 @@ control signals. The current implementations are listed here:
 
 | Class                 | Extension                                             |
 | --------------------- | ----------------------------------------------------- |
-| Alert\NativeReactor   | n/a                                                   |
-| Alert\UvReactor       | [php-uv](https://github.com/chobie/php-uv)            |
-| Alert\LibeventReactor | [pecl/libevent](http://pecl.php.net/package/libevent) |
+| Amp\NativeReactor   | n/a                                                   |
+| Amp\UvReactor       | [php-uv](https://github.com/chobie/php-uv)            |
+| Amp\LibeventReactor | [pecl/libevent](http://pecl.php.net/package/libevent) |
 
 
-As mentioned, only `UvReactor` and `LibeventReactor` implement the `Alert\SignalReactor` interface
+As mentioned, only `UvReactor` and `LibeventReactor` implement the `Amp\SignalReactor` interface
 to offer cross-operating system signal handling capabilities. At this time use of the `UvReactor`
 is recommended over `LibeventReactor` as the php-uv extension offers more in the way of tangentially
 related (but useful) functionality for robust non-blocking applications.
@@ -129,9 +130,9 @@ stopped. Consider this very simple example:
 ```php
 <?php // be sure to include the autoload.php file
 echo "-before run()-\n";
-Alert\run(function() {
-    Alert\repeat(function() { echo "tick\n"; }, $msInterval = 1000);
-    Alert\once(function() { Alert\stop(); }, $msDelay = 5000);
+Amp\run(function() {
+    Amp\repeat(function() { echo "tick\n"; }, $msInterval = 1000);
+    Amp\once(function() { Amp\stop(); }, $msDelay = 5000);
 });
 echo "-after stop()-\n";
 ```
@@ -164,13 +165,13 @@ stream_set_blocking(STDIN, false);
 
 echo "Please input a random number: ";
 
-Alert\run(function() use (&$stdinWatcher, &$number) {
-    $stdinWatcher = Alert\onReadable(STDIN, function() use (&$number) {
+Amp\run(function() use (&$stdinWatcher, &$number) {
+    $stdinWatcher = Amp\onReadable(STDIN, function() use (&$number) {
         $number = fgets(STDIN);
-        Alert\stop(); // <-- we got what we came for; exit the loop
+        Amp\stop(); // <-- we got what we came for; exit the loop
     });
-    Alert\once(function() {
-        Alert\stop(); // <-- you took too long; exit the loop
+    Amp\once(function() {
+        Amp\stop(); // <-- you took too long; exit the loop
     }, $msInterval = 5000);
 });
 
@@ -180,7 +181,7 @@ if (is_null($number)) {
     echo "Your number is: ", (int) $number, "\n";
 }
 
-Alert\cancel($stdinWatcher); // <-- clean up after ourselves
+Amp\cancel($stdinWatcher); // <-- clean up after ourselves
 stream_set_blocking(STDIN, true);
 
 // Continue doing regular synchronous things here.
@@ -194,11 +195,11 @@ event loop like a ninja.
 #### The Universal Reactor
 
 In the above example we use the reactor's procedural API to register stream IO and timere watchers.
-However, Alert also exposes an object API. Though it almost never makes sense to run multiple event
+However, Amp also exposes an object API. Though it almost never makes sense to run multiple event
 loop instances in a single-threaded process, instantiating `Reactor` objects in your application
 can make things significantly more testable. Note that the function API uses a single static reactor
 instance for all operations (universal). Below you'll find the same example from above section
-rewritten to use the `Alert\NativeReactor` class .
+rewritten to use the `Amp\NativeReactor` class .
 
 ```php
 <?php
@@ -208,7 +209,7 @@ stream_set_blocking(STDIN, false);
 
 echo "Please input a random number: ";
 
-$reactor = new Alert\NativeReactor;
+$reactor = new Amp\NativeReactor;
 $reactor->run(function($reactor) use (&$stdinWatcher, &$number) {
     $stdinWatcher = $reactor->onReadable(STDIN, function() use ($reactor, &$number) {
         $number = fgets(STDIN);
@@ -270,7 +271,7 @@ watchable IO streams are still pending.
 
 ## Timer Watchers
 
-Alert exposes several ways to schedule timer watchers. Let's look at some details for each method ...
+Amp exposes several ways to schedule timer watchers. Let's look at some details for each method ...
 
 #### `immediately()`
 
@@ -317,7 +318,7 @@ Alert exposes several ways to schedule timer watchers. Let's look at some detail
 Stream watchers are how we know that data exists to read or that write buffers are empty. These
 notifications are how we're able to actually *create* things like http servers and asynchronous
 database libraries using the event reactor. As such, stream IO watchers form the backbone of all
-non-blocking operations with Alert.
+non-blocking operations with Amp.
 
 There are two classes of IO watcher:
 
@@ -341,7 +342,7 @@ function isStreamDead($socket) {
     return !is_resource($socket) || @feof($socket);
 }
 
-$client->watcherId = Alert\onReadable($client->socket, function() use ($client) {
+$client->watcherId = Amp\onReadable($client->socket, function() use ($client) {
     $newData = @fread($client->socket, IO_GRANULARITY);
     if ($newData != "") {
         // There was actually data and not an EOF notification. Let's consume it!
@@ -382,7 +383,7 @@ The `Reactor::watchStream()` functionality exposes both readability and writabil
 registration in a single function as a convenience for programmers who wish to use the same
 API for all IO watchers and specify flags to denote desired behavior.
 
-The `Alert\Reactor` interface exposes the following flags for use with `Reactor::watchStream`:
+The `Amp\Reactor` interface exposes the following flags for use with `Reactor::watchStream`:
 
  - `Reactor::WATCH_READ`
  - `Reactor::WATCH_WRITE`
@@ -393,8 +394,8 @@ immediately you would do so like this:
 
 ```php
 <?php
-$flags = Alert\Reactor::WATCH_READ | Reactor::WATCH_NOW;
-$readWatcherId = Alert\watchStream($stream, $myCallbackFunction, $flags);
+$flags = Amp\Reactor::WATCH_READ | Reactor::WATCH_NOW;
+$readWatcherId = Amp\watchStream($stream, $myCallbackFunction, $flags);
 ```
 
 > **IMPORTANT:** The main difference between watchStream() and the explicity IO watcher registration
@@ -417,7 +418,7 @@ A simple disable example:
 ```php
 <?php
 
-$reactor = new Alert\NativeReactor;
+$reactor = new Amp\NativeReactor;
 
 // Register a watcher we'll disable
 $watcherIdToDisable = $reactor->once(function() {
@@ -443,7 +444,7 @@ Using `enable()` is just as simple as the `disable()` example we just saw:
 ```php
 <?php
 
-$reactor = new Alert\NativeReactor;
+$reactor = new Amp\NativeReactor;
 
 // Register a watcher
 $myWatcherId = $reactor->repeat(function() {
@@ -471,7 +472,7 @@ write watcher that is initially disabled but subsequently enabled as necessary:
 class Server {
     private $reactor;
     private $clients = [];
-    public function __construct(Alert\Reactor $reactor) {
+    public function __construct(Amp\Reactor $reactor) {
         $this->reactor = $reactor;
     }
 
@@ -530,28 +531,28 @@ above enable/disable examples:
 
 ```php
 <?php
-Alert\run(function() {
-    $myWatcherId = Alert\repeat(function() {
+Amp\run(function() {
+    $myWatcherId = Amp\repeat(function() {
         echo "tick\n";
     }, $msInterval = 1000);
 
     // Cancel $myWatcherId in five seconds and exit the reactor loop
-    Alert\once(function() use ($myWatcherId) {
-        Alert\cancel($myWatcherId);
+    Amp\once(function() use ($myWatcherId) {
+        Amp\cancel($myWatcherId);
     }, $msDelay = 5000);
 });
 ```
 
 ## Process Signal Watchers
 
-The `Alert\SignalReactor` extends the base reactor interface to expose an API for handling process
+The `Amp\SignalReactor` extends the base reactor interface to expose an API for handling process
 control signals in your application like any other event. Simply use a compatible event reactor
 implementation (`UvReactor` or `LibeventReactor`, preferably the former) and interact with its
 `SignalReactor::onSignal()` method. Consider:
 
 ```php
 <?php
-(new Alert\UvReactor)->run(function($reactor) {
+(new Amp\UvReactor)->run(function($reactor) {
     // Let's tick off output once per second so we can see activity.
     $reactor->repeat(function() {
             echo "tick: ", date('c'), "\n";
@@ -595,7 +596,7 @@ It is always safe to cancel a watcher from within its own callback. For example:
 ```php
 <?php
 $increment = 0;
-Alert\repeat(function($reactor, $watcherId) use (&$increment) {
+Amp\repeat(function($reactor, $watcherId) use (&$increment) {
     echo "tick\n";
     if (++$increment >= 3) {
         $reactor->cancel($watcherId); // <-- cancel myself!

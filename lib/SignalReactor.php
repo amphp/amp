@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 interface SignalReactor extends Reactor {
 

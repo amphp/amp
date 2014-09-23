@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * Schedule a callback for immediate invocation in the next event loop iteration
@@ -206,7 +206,7 @@ function stop() {
  * Note that the $factory callable is only invoked if no global reactor has yet been initialized.
  *
  * @param callable $factory Optional factory callable for initializing a reactor
- * @return \Alert\Reactor
+ * @return \Amp\Reactor
  */
 function reactor(callable $factory = null) {
     static $reactor;
@@ -223,7 +223,7 @@ function reactor(callable $factory = null) {
  */
 function onSignal($signo, callable $onSignal) {
     /**
-     * @var $reactor \Alert\SignalReactor
+     * @var $reactor \Amp\SignalReactor
      */
     static $reactor;
     if ($reactor) {
@@ -242,8 +242,8 @@ function onSignal($signo, callable $onSignal) {
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
  *
- * @param array[\Alert\Promise] $promises
- * @return \Alert\Promise
+ * @param array[\Amp\Promise] $promises
+ * @return \Amp\Promise
  */
 function all(array $promises) {
     if (empty($promises)) {
@@ -292,8 +292,8 @@ function all(array $promises) {
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
  *
- * @param array[\Alert\Promise] $promises
- * @return \Alert\Promise
+ * @param array[\Amp\Promise] $promises
+ * @return \Amp\Promise
  */
 function some(array $promises) {
     if (empty($promises)) {
@@ -334,8 +334,8 @@ function some(array $promises) {
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  *
- * @param array[\Alert\Promise] $promises
- * @return \Alert\Promise
+ * @param array[\Amp\Promise] $promises
+ * @return \Amp\Promise
  */
 function first(array $promises) {
     if (empty($promises)) {
@@ -373,7 +373,7 @@ function first(array $promises) {
  *
  * @param array $promises
  * @param callable $func
- * @return \Alert\Promise
+ * @return \Amp\Promise
  */
 function map(array $promises, callable $func) {
     if (empty($promises)) {
@@ -459,7 +459,7 @@ function filter(array $promises, callable $func) {
  * generator is used to resolve the returned promise.
  *
  * @param \Generator
- * @return \Alert\Promise
+ * @return \Amp\Promise
  */
 function resolve(\Generator $gen) {
     static $resolver;

@@ -15,7 +15,7 @@
  */
 require __DIR__ . '/vendor/autoload.php';
 
-(new Alert\UvReactor)->run(function($reactor) {
+(new Amp\UvReactor)->run(function($reactor) {
     // Let's tick off output once per second so we can see activity.
     $reactor->repeat(function() {
             echo "tick: ", date('c'), "\n";

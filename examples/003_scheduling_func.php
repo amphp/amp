@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-Alert\run(function() {
+Amp\run(function() {
     $ticker = function() {
         $now = time();
         $vowel = ($now % 2) ? 'i' : 'o';
@@ -12,15 +12,15 @@ Alert\run(function() {
     // Execute the specified callback ASAP in the next event loop iteration. There is no
     // need to clear an "immediately" watcher after execution. The Reactor will automatically
     // garbage collect resources associated with one-time events after they finish executing.
-    Alert\immediately($ticker);
+    Amp\immediately($ticker);
 
     // Execute every $msInterval milliseconds until the resulting $watcherId is cancelled.
     // At some point in the future we need to cancel this watcher or our program will never end.
-    $repeatingWatcherId = Alert\repeat($ticker, $msInterval = 1000);
+    $repeatingWatcherId = Amp\repeat($ticker, $msInterval = 1000);
 
     // Five seconds from now let's cancel the repeating ticker we just registered
-    Alert\once(function() use ($repeatingWatcherId) {
-        Alert\cancel($repeatingWatcherId);
+    Amp\once(function() use ($repeatingWatcherId) {
+        Amp\cancel($repeatingWatcherId);
         echo "Cancelled repeating ticker\n";
     }, $msDelay = 5000);
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * A Promisor represents a contract to resolve a deferred value at some point in the future
@@ -13,7 +13,7 @@ namespace Alert;
  *
  *     function myAsyncProducer() {
  *         // Create a new promise that needs to be resolved
- *         $future = new Alert\Future;
+ *         $future = new Amp\Future;
  *
  *         // When we eventually finish non-blocking value resolution we
  *         // simply call the relevant Promise method to notify any code
@@ -33,7 +33,7 @@ interface Promisor {
     /**
      * Promise future fulfillment via a temporary placeholder value
      *
-     * @return \Alert\Promise
+     * @return \Amp\Promise
      */
     public function promise();
 

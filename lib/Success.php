@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * Represents the successful resolution of a Promisor's future computation

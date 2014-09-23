@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 interface Reactor {
     const WATCH_READ  = 0b001;

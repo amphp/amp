@@ -1,9 +1,9 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\Success;
-use Alert\Failure;
+use Amp\Success;
+use Amp\Failure;
 
 class FunctionsTest extends \PHPUnit_Framework_TestCase {
     public function testAllResolvesWithArrayOfResults() {
@@ -13,7 +13,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         ];
 
         $expected = ['r1' => 42, 'r2' => 41];
-        $results = \Alert\all($promises)->wait();
+        $results = \Amp\all($promises)->wait();
         $this->assertSame($expected, $results);
     }
 
@@ -29,7 +29,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r3' => new Success(40),
         ];
 
-        $results = \Alert\all($promises)->wait();
+        $results = \Amp\all($promises)->wait();
     }
 
     public function testSomeReturnsArrayOfErrorsAndResults() {
@@ -40,7 +40,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r3' => new Success(40),
         ];
 
-        list($errors, $results) = \Alert\some($promises)->wait();
+        list($errors, $results) = \Amp\some($promises)->wait();
 
         $this->assertSame(['r2' => $exception], $errors);
         $this->assertSame(['r1' => 42, 'r3' => 40], $results);
@@ -55,7 +55,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r1' => new Failure(new \RuntimeException),
             'r2' => new Failure(new \RuntimeException),
         ];
-        list($errors, $results) = \Alert\some($promises)->wait();
+        list($errors, $results) = \Amp\some($promises)->wait();
     }
 
     public function testResolveResolvesGeneratorResult() {
@@ -65,7 +65,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             yield ($a * $b);
         };
 
-        $promise = \Alert\resolve($gen());
+        $promise = \Amp\resolve($gen());
         $expected = 42;
         $actual = $promise->wait();
         $this->assertSame($expected, $actual);

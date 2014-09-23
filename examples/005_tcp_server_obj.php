@@ -27,8 +27,8 @@ class Server {
     private $timeBroadcastWatcher;
     private $ioGranularity = 8192;
 
-    public function __construct(Alert\Reactor $reactor = null) {
-        $this->reactor = $reactor ?: Alert\reactor();
+    public function __construct(Amp\Reactor $reactor = null) {
+        $this->reactor = $reactor ?: Amp\reactor();
     }
 
     public function start($address) {

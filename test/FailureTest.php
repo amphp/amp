@@ -1,8 +1,8 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\Failure;
+use Amp\Failure;
 
 class FailureTest extends \PHPUnit_Framework_TestCase {
 

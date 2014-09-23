@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * A placeholder value for the future result of an asynchronous computation

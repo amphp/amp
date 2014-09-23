@@ -1,8 +1,8 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\LibeventReactor;
+use Amp\LibeventReactor;
 
 class LibeventReactorTest extends ReactorTest {
     protected function getReactor() {

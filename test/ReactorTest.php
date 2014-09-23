@@ -1,6 +1,6 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
 abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     abstract protected function getReactor();

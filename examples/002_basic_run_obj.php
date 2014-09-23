@@ -2,27 +2,27 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Alert\ReactorFactory;
-use Alert\Reactor;
+use Amp\ReactorFactory;
+use Amp\Reactor;
 
 /**
- * Running the reactor gives control of program control to the Alert event loop. Once started,
+ * Running the reactor gives control of program control to the Amp event loop. Once started,
  * the reactor will only stop under one of the following two conditions:
  *
  *   (1) No scheduled events remain outstanding and no IO streams are registered for observation
- *   (2) The event reactor is explicitly stopped using Alert\stop() or calling
+ *   (2) The event reactor is explicitly stopped using Amp\stop() or calling
  *       Reactor::stop() on the running Reactor instance.
  *
  * The event reactor is our task scheduler. It controls program flow as long as it runs.
  *
- * This example uses Alert's instance method API to interact with the event loop. Although the
+ * This example uses Amp's instance method API to interact with the event loop. Although the
  * event reactor instance is a true application global it is often useful for testing and API
  * transparency to to pass around the Reactor instance explicitly (as opposed to using the global
  * function API).
  *
  * IMPORTANT: Bugs arising from instantiating multiple Reactor instances in a single-threaded
  * application can be extremely difficult to troubleshoot. Be very careful to pass around only
- * a single shared event Reactor instance when using Alert's object API.
+ * a single shared event Reactor instance when using Amp's object API.
  */
 
 define('RUN_TIME', 10);

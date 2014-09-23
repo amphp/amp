@@ -1,8 +1,8 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\Success;
+use Amp\Success;
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
 

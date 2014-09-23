@@ -1,14 +1,14 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\PrivateFuture;
-use Alert\NativeReactor;
+use Amp\PrivateFuture;
+use Amp\NativeReactor;
 
 class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
     public function testPromiseReturnsUnresolvedInstance() {
-        $future = new PrivateFuture($this->getMock('Alert\Reactor'));
-        $this->assertInstanceOf('Alert\Unresolved', $future->promise());
+        $future = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $this->assertInstanceOf('Amp\Unresolved', $future->promise());
     }
 
     /**
@@ -16,7 +16,7 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -26,7 +26,7 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -36,7 +36,7 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }

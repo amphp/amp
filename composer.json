@@ -1,12 +1,15 @@
 {
-    "name": "rdlowrey/alert",
-    "homepage": "https://github.com/rdlowrey/alert",
-    "description": "Event loops, stream IO and signal reactors for non-blocking PHP applications",
+    "name": "amphp/amp",
+    "homepage": "https://github.com/amphp/amp",
+    "description": "A non-blocking concurrency framework for PHP applications",
     "keywords": [
+        "async",
+        "concurrency",
+        "future",
+        "promise",
         "non-blocking",
         "libevent",
-        "libuv",
-        "async"
+        "libuv"
     ],
     "license": "MIT",
     "authors": [
@@ -17,21 +20,26 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.5.0"
     },
     "autoload": {
         "psr-4": {
-            "Alert\\": "lib/"
+            "Amp\\": "lib/"
         },
         "files": ["lib/functions.php"]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Amp\\Test\\": "test/"
+        }
+    },
     "branch-alias": {
-        "dev-master": "0.10.x-dev"
+        "dev-master": "1.0.x-dev"
     },
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/rdlowrey/Alert.git"
+            "url": "https://github.com/amphp/amp.git"
         }
     ]
 }

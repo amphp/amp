@@ -1,8 +1,8 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\NativeReactor;
+use Amp\NativeReactor;
 
 class NativeReactorTest extends ReactorTest {
     protected function getReactor() {

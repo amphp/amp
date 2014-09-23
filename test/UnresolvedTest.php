@@ -1,14 +1,14 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\PrivateFuture;
-use Alert\Future;
-use Alert\NativeReactor;
+use Amp\PrivateFuture;
+use Amp\Future;
+use Amp\NativeReactor;
 
 class UnresolvedTest extends \PHPUnit_Framework_TestCase {
     public function testWatchInvokesCallbackWithResultIfAlreadySucceeded() {
-        $deferred = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $deferred = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promise = $deferred->promise();
         $deferred->succeed(42);
         $promise->watch(function($p, $e, $r) {
@@ -19,7 +19,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testWatchInvokesCallbackWithErrorIfAlreadyFailed() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
@@ -42,7 +42,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -52,7 +52,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -62,7 +62,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Alert\Reactor'));
+        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }

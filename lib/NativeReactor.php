@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 class NativeReactor implements Reactor {
     private $alarms = [];

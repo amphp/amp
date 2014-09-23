@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 class Future implements Promisor, Promise {
     private $reactor;
@@ -12,7 +12,7 @@ class Future implements Promisor, Promise {
     private $result;
 
     /**
-     * @param \Alert\Reactor $reactor
+     * @param \Amp\Reactor $reactor
      */
     public function __construct(Reactor $reactor = null) {
         $this->reactor = $reactor ?: ReactorFactory::select();
@@ -23,9 +23,9 @@ class Future implements Promisor, Promise {
      *
      * This implementation acts as both Promisor and Promise so we simply return the
      * current instance. If users require a Promisor that can only be resolved by code
-     * holding a reference to the Promisor they may instead use Alert\PrivateFuture.
+     * holding a reference to the Promisor they may instead use Amp\PrivateFuture.
      *
-     * @return \Alert\Promise
+     * @return \Amp\Promise
      */
     public function promise() {
         return $this;

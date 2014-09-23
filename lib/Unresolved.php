@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * A placeholder value that will be resolved at some point in the future by
@@ -16,7 +16,7 @@ class Unresolved implements Promise {
     private $result;
 
     /**
-     * @param \Alert\Reactor $reactor
+     * @param \Amp\Reactor $reactor
      */
     public function __construct(Reactor $reactor = null) {
         $this->reactor = $reactor ?: ReactorFactory::select();

@@ -1,11 +1,11 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\Success;
-use Alert\Failure;
-use Alert\Resolver;
-use Alert\NativeReactor;
+use Amp\Success;
+use Amp\Failure;
+use Amp\Resolver;
+use Amp\NativeReactor;
 
 class ResolverTest extends \PHPUnit_Framework_TestCase {
 

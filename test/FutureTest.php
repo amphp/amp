@@ -1,18 +1,18 @@
 <?php
 
-namespace AlertTest;
+namespace Amp\Test;
 
-use Alert\Future;
-use Alert\NativeReactor;
+use Amp\Future;
+use Amp\NativeReactor;
 
 class FutureTest extends \PHPUnit_Framework_TestCase {
     public function testPromiseReturnsSelf() {
-        $future = new Future($this->getMock('Alert\Reactor'));
+        $future = new Future($this->getMock('Amp\Reactor'));
         $this->assertSame($future, $future->promise());
     }
 
     public function testWhenInvokesCallbackWithResultIfAlreadySucceeded() {
-        $deferred = new Future($this->getMock('Alert\Reactor'));
+        $deferred = new Future($this->getMock('Amp\Reactor'));
         $promise = $deferred->promise();
         $deferred->succeed(42);
         $promise->when(function($e, $r) {
@@ -22,7 +22,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testWhenInvokesCallbackWithErrorIfAlreadyFailed() {
-        $promisor = new Future($this->getMock('Alert\Reactor'));
+        $promisor = new Future($this->getMock('Amp\Reactor'));
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
@@ -44,7 +44,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new Future($this->getMock('Alert\Reactor'));
+        $promisor = new Future($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -54,7 +54,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new Future($this->getMock('Alert\Reactor'));
+        $promisor = new Future($this->getMock('Amp\Reactor'));
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -64,7 +64,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new Future($this->getMock('Alert\Reactor'));
+        $promisor = new Future($this->getMock('Amp\Reactor'));
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }

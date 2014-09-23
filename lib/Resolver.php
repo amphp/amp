@@ -1,15 +1,15 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 class Resolver {
     private $reactor;
 
     /**
-     * @param \Alert\Reactor $reactor
+     * @param \Amp\Reactor $reactor
      */
     public function __construct(Reactor $reactor = null) {
-        $this->reactor = $reactor ?: \Alert\reactor();
+        $this->reactor = $reactor ?: \Amp\reactor();
     }
 
     /**
@@ -33,7 +33,7 @@ class Resolver {
      * });
      *
      * @param \Generator
-     * @return \Alert\Promise
+     * @return \Amp\Promise
      */
     public function resolve(\Generator $gen) {
         $future = new Future($this->reactor);

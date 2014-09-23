@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 /**
  * The event reactor is a truly global thing in single-threaded code. Applications should use
@@ -19,7 +19,7 @@ class ReactorFactory {
      * Select a global event reactor based on the current environment
      *
      * @param callable $factory An optional factory callable to generate the shared reactor yourself
-     * @return \Alert\Reactor
+     * @return \Amp\Reactor
      */
     public static function select(callable $factory = null) {
         if (self::$reactor) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Alert;
+namespace Amp;
 
 class UvReactor implements SignalReactor {
     private $loop;

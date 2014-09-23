@@ -1,7 +1,7 @@
 <?php
 
-use Alert\Reactor;
-use Alert\ReactorFactory;
+use Amp\Reactor;
+use Amp\ReactorFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
