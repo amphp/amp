@@ -1,3 +1,7 @@
+###v0.11.1
+
+- Fix bug causing immediate() callback starvation in NativeReactor
+
 v0.11.0
 -------
 
