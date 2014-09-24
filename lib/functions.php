@@ -201,19 +201,6 @@ function stop() {
 }
 
 /**
- * Get the global event reactor
- *
- * Note that the $factory callable is only invoked if no global reactor has yet been initialized.
- *
- * @param callable $factory Optional factory callable for initializing a reactor
- * @return \Amp\Reactor
- */
-function reactor(callable $factory = null) {
-    static $reactor;
-    return ($reactor = $reactor ?: ReactorFactory::select($factory));
-}
-
-/**
  * React to process control signals
  *
  * @param int $signo The signal number to watch for
@@ -238,6 +225,36 @@ function onSignal($signo, callable $onSignal) {
 }
 
 /**
+ * Get the global event reactor
+ *
+ * Note that the $factory callable is only invoked if no global reactor has yet been initialized.
+ *
+ * @param callable $factory Optional factory callable for initializing a reactor
+ * @return \Amp\Reactor
+ */
+function reactor(callable $factory = null) {
+    static $reactor;
+    return ($reactor = $reactor ?: ReactorFactory::select($factory));
+}
+
+/**
+ * Get a singleton combinator instance
+ *
+ * @param callable $factory
+ * @return \Amp\Combinator
+ */
+function combinator(callable $factory = null) {
+    static $combinator;
+    if ($factory) {
+        return $combinator = $factory();
+    } elseif ($combinator) {
+        return $combinator;
+    } else {
+        return $combinator = new Combinator(reactor());
+    }
+}
+
+/**
  * If any one of the Promises fails the resulting Promise will fail. Otherwise
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
@@ -246,37 +263,7 @@ function onSignal($signo, callable $onSignal) {
  * @return \Amp\Promise
  */
 function all(array $promises) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    $results = [];
-    $count = count($promises);
-    $future = new Future;
-    $done = false;
-
-    foreach ($promises as $key => $promise) {
-        $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
-        $promise->when(function($error, $result) use (&$count, &$results, $key, $future, &$done) {
-            if ($done) {
-                // If the future already failed we don't bother.
-                return;
-            }
-            if ($error) {
-                $done = true;
-                $future->fail($error);
-                return;
-            }
-
-            $results[$key] = $result;
-            if (--$count === 0) {
-                $done = true;
-                $future->succeed($results);
-            }
-        });
-    }
-
-    return $future->promise();
+    return combinator()->all($promises);
 }
 
 /**
@@ -296,38 +283,7 @@ function all(array $promises) {
  * @return \Amp\Promise
  */
 function some(array $promises) {
-    if (empty($promises)) {
-        return new Failure(new \LogicException(
-            'No promises or values provided'
-        ));
-    }
-
-    $results = $errors = [];
-    $count = count($promises);
-    $future = new Future;
-
-    foreach ($promises as $key => $promise) {
-        $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
-        $promise->when(function($error, $result) use (&$count, &$results, &$errors, $key, $future) {
-            if ($error) {
-                $errors[$key] = $error;
-            } else {
-                $results[$key] = $result;
-            }
-
-            if (--$count > 0) {
-                return;
-            } elseif (empty($results)) {
-                $future->fail(new \RuntimeException(
-                    'All promises failed'
-                ));
-            } else {
-                $future->succeed([$errors, $results]);
-            }
-        });
-    }
-
-    return $future->promise();
+    return combinator()->some($promises);
 }
 
 /**
@@ -338,34 +294,7 @@ function some(array $promises) {
  * @return \Amp\Promise
  */
 function first(array $promises) {
-    if (empty($promises)) {
-        return new Failure(new \LogicException(
-            'No promises or values provided'
-        ));
-    }
-
-    $count = count($promises);
-    $done = false;
-    $future = new Future;
-
-    foreach ($promises as $promise) {
-        $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
-        $promise->when(function($error, $result) use (&$count, &$done, $future) {
-            if ($done) {
-                // we don't care about Futures that resolve after the first
-                return;
-            } elseif ($error && --$count === 0) {
-                $future->fail(new \RuntimeException(
-                    'All promises failed'
-                ));
-            } elseif (empty($error)) {
-                $done = true;
-                $this->succeed($result);
-            }
-        });
-    }
-
-    return $future->promise();
+    return combinator()->first($promises);
 }
 
 /**
@@ -376,36 +305,7 @@ function first(array $promises) {
  * @return \Amp\Promise
  */
 function map(array $promises, callable $func) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    $results = [];
-    $count = count($promises);
-    $future = new Future;
-    $done = false;
-
-    foreach ($promises as $key => $promise) {
-        $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
-        $promise->when(function($error, $result) use (&$count, &$results, $key, $future, $func, &$done) {
-            if ($done) {
-                // If the future already failed we don't bother.
-                return;
-            }
-            if ($error) {
-                $done = true;
-                $future->fail($error);
-                return;
-            }
-
-            $results[$key] = $func($result);
-            if (--$count === 0) {
-                $future->succeed($results);
-            }
-        });
-    }
-
-    return $future->promise();
+    return combinator()->map($promises);
 }
 
 /**
@@ -419,37 +319,7 @@ function map(array $promises, callable $func) {
  * @return \Amp\Promise
  */
 function filter(array $promises, callable $func) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    $results = [];
-    $count = count($promises);
-    $future = new Future;
-    $done = false;
-
-    foreach ($promises as $key => $promise) {
-        $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
-        $promise->when(function($error, $result) use (&$count, &$results, $key, $future, $func, &$done) {
-            if ($done) {
-                // If the future result already failed we don't bother.
-                return;
-            }
-            if ($error) {
-                $done = true;
-                $future->fail($error);
-                return;
-            }
-            if ($func($result)) {
-                $results[$key] = $result;
-            }
-            if (--$count === 0) {
-                $future->succeed($results);
-            }
-        });
-    }
-
-    return $future->promise();
+    return combinator()->filter($promises);
 }
 
 /**
