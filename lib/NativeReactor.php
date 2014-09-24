@@ -107,9 +107,13 @@ class NativeReactor implements Reactor {
             }
         }
 
-        $timeToNextAlarm = $this->alarmOrder
-            ? round(min($this->alarmOrder) - microtime(true), 4)
-            : 1;
+        if ($this->immediates) {
+            $timeToNextAlarm = 0;
+        } elseif ($this->alarmOrder) {
+            $timeToNextAlarm = round(min($this->alarmOrder) - microtime(true), 4);
+        } else {
+            $timeToNextAlarm = 1;
+        }
 
         if ($this->readStreams || $this->writeStreams) {
             $this->selectActionableStreams($timeToNextAlarm);
