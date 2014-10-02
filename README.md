@@ -1,5 +1,5 @@
 Amp
-=====
+===
 
 Amp is a non-blocking concurrency framework for PHP applications
 
@@ -7,12 +7,12 @@ Amp is a non-blocking concurrency framework for PHP applications
 
 - PHP 5.5+
 
-Optional PHP extensions may be used for improved event loop file descriptor observation performance.
-An extension is also necessary if you need to watch for process signals in your application:
+Optional PHP extensions may be used to improve performance in production environments. An extension
+is also necessary if you need to watch for process signals in your application:
 
-- (preferred) [php-uv](https://github.com/chobie/php-uv) for libuv backends.
+- [php-uv](https://github.com/chobie/php-uv) for libuv backends.
 - [*pecl libevent*][libevent] for libevent backends. Windows libevent extension DLLs are
-  available [here][win-libevent]. php-uv is preferred, but libevent is better than nothing.
+  available [here][win-libevent].
 
 **Installation**
 
@@ -26,6 +26,20 @@ $ composer.phar install
 
 The Guide
 ----------------------------------------------------------------------------------------------------
+
+### Managing Concurrency
+
+ - [**Promises**](#promises)
+    - [`when()`](#when)
+    - [`watch()`](#watch)
+    - [`wait()`](#wait)
+    
+ - [**Generators**](#generators)
+    - [`resolve()`](#resolver)
+    - [Injected Resolution](#injected-resolution)
+    
+ - [**Functors**](#functors)
+ - [**Promisors**](#promisors)
 
 ### Using the Event Reactor
 
@@ -62,14 +76,6 @@ The Guide
 
 [**Process Signal Watchers**](#process-signal-watchers)
 
-### Managing Concurrency
-
- - Futures
- - Promises
- - Functors
- - Generators
- - Avoiding Callback Hell
-
 [**Addenda**](#addenda)
 
 - [Callback Invocation Parameters](#callback-invocation-parameters)
@@ -79,6 +85,150 @@ The Guide
 
 
 ----------------------------------------------------------------------------------------------------
+
+## Managing Concurrency
+
+The biggest problem with concurrent task execution is our small brains. Period. Human beings simply
+do not think asynchronously or in parallel. We're really good at doing one thing at a time, and the
+world around us generally fits this model. So if we wish to do more than one thing at a time in our
+code we basically have two options:
+
+1. Get smarter (not particularly feasible in the near term);
+2. Develop abstractions to make concurrent tasks feel synchronous so we can reason about them.
+
+#### Promises
+
+The basic unit of concurrency in Amp is the `Amp\Promise`. These objects should be thought of as a
+"placeholder" for a value that isn't ready yet. By using placeholders we're able to reason about the
+results of concurrent operations that may or not have resolved.
+
+> **IMPORTANT:** `Amp\Promise` does *not* follow the "Thenables" abstraction common in javascript
+> promise implementations. It is this author's opinion that chaining .then() calls is no better at
+> avoiding callback hell than other methods. In particular, Amp utilizes generators to accomplish
+> the same thing in a more performant way while exposing a more natural error handling mechanism.
+
+The `Amp\Promise` interface exposes three simple methods for dealing with the eventual result of a
+placeholder value:
+
+
+| Method                | Callback Signature                                |
+| --------------------- | --------------------------------------------------|
+| void when(callable)   | function(Exception $error = null, $result = null) |
+| void watch(callable)  | function($data)                                   |
+| mixed wait()          | n/a                                               |
+
+
+Let's discuss each method in detail ...
+
+
+##### `when()`
+
+`Amp\Promise::when()` accepts an error-first callback. This callback is responsible for reacting to
+the eventual result of the computation represented by the promise placeholder. For example:
+
+```php
+<?php
+$promise = someAsyncFunctionReturningPromise();
+$promise->when(function(Exception $error = null, $result = null) {
+    if ($error) {
+        printf(
+            "Something went wrong:\n%s\n",
+            $e->getMessage()
+        );
+    } else {
+        printf(
+            "Hurray! Our result is:\n%s\n",
+            print_r($result, true)
+        );
+    }
+});
+```
+
+Those readers familiar with javascript-style asynchronous calls might suggest that the above interface
+could quickly devolve into ["callback hell"](http://callbackhell.com/) (and they'd be right). We
+will see how to avoid this problem in the [Generators](#generators) section.
+
+
+##### `watch()`
+
+`Amp\Promise::watch()` affords promise-producers ([Promisors](#promisors)) the ability to broadcast
+progress updates while a placeholder value resolves. Whether or not to actually send progress updates
+is left to individual libraries, but the functionality exists. A simple example:
+
+```php
+<?php
+$promise = someAsyncFunctionWithProgressUpdates();
+$promise->watch(function($update) {
+    printf(
+        "Woot, we got an update of some kind:\n%s\n",
+        print_r($update, true)
+    );
+});
+```
+
+
+##### `wait()`
+
+`Amp\Promise::wait()` allows users to synchronously block script execution until the future value
+of a promise is resolved. If the promise resolves successfully this function will return the
+resolved value. If a promise fails (i.e. the `$error` parameter in its `when()` callback would be
+non-null) the relevant exception is thrown. This means that `wait()` calls on promise instances
+should *always* be wrapped in `try\catch` blocks.
+
+```php
+<?php
+try {
+    $result = someAsyncFunction()->wait();
+} catch (Exception  $e) {
+    echo $e;
+}
+```
+
+> **IMPORTANT:** Non-blocking applications should *never* use `wait()`. This method exists only to
+> simplify the use of async/non-blocking code in synchronous contexts.
+
+
+#### Generators
+
+The addition of Generators in PHP 5.5 trivializes synchronization and error handling in async contexts.
+The Amp event reactor (covered later) builds in co-routine support for all reactor callbacks so we
+can use the `yield` keyword to make async code feel synchronous. Let's look at a simple example
+executing inside the event reactor run loop (covered later):
+
+```php
+<?php
+Amp\run(function() {
+    try {
+        // yield control until the promise returned
+        // by someAsyncFunction() resolves.
+        $a = (yield someAsyncFunction());
+    } catch (Exception $e) {
+        // if something goes wrong the exception
+        // is thrown back to us here.
+    }
+});
+```
+
+As you can see in the above example there is no need for callbacks or javascript-style `.then()`
+chaining.
+
+##### `resolve()`
+
+@TODO
+
+##### Injected Resolution
+
+@TODO
+
+
+#### Functors
+
+@TODO
+
+#### Promisors
+
+@TODO
+
 
 
 ## Event Reactor Concepts
