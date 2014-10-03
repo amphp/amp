@@ -29,17 +29,28 @@ The Guide
 
 ### Managing Concurrency
 
- - [**Promises**](#promises)
-    - [`when()`](#when)
-    - [`watch()`](#watch)
-    - [`wait()`](#wait)
-    
- - [**Generators**](#generators)
-    - [`resolve()`](#resolver)
-    - [Injected Resolution](#injected-resolution)
-    
- - [**Functors**](#functors)
- - [**Promisors**](#promisors)
+[**Promises**](#promises)
+
+  - [`when()`](#when)
+  - [`watch()`](#watch)
+  - [`wait()`](#wait)
+
+[**Generators**](#generators)
+
+  - [Manual Generator Resolution](#manual-generator-resolution)
+
+[**Functors**](#functors)
+
+  - [`all()`](#all)
+  - [`some()`](#some)
+  - [`first()`](#first)
+  - [`map()`](#map)
+  - [`filter()`](#filter)
+
+[**Promisors**](#promisors)
+
+  - [Future](#future)
+  - [PrivateFuture](#privatefuture)
 
 ### Using the Event Reactor
 
@@ -88,27 +99,29 @@ The Guide
 
 ## Managing Concurrency
 
-The biggest problem with concurrent task execution is our small brains. Period. Human beings simply
-do not think asynchronously or in parallel. We're really good at doing one thing at a time, and the
-world around us generally fits this model. So if we wish to do more than one thing at a time in our
-code we basically have two options:
+The biggest difficulty with concurrent processing is humans; we simply don't think asynchronously or
+in parallel. Instead, we're really good at doing one thing at a time -- in order -- and the world
+around us generally fits this model. So to effectively design for concurrent processing in our code
+we have a couple of options:
 
-1. Get smarter (not particularly feasible in the near term);
+1. Get smarter (not particularly feasible), or ...
 2. Develop abstractions to make concurrent tasks feel synchronous so we can reason about them.
 
 #### Promises
 
-The basic unit of concurrency in Amp is the `Amp\Promise`. These objects should be thought of as a
-"placeholder" for a value that isn't ready yet. By using placeholders we're able to reason about the
-results of concurrent operations that may or not have resolved.
+Amp's basic concurrency abstraction is the `Amp\Promise`. These objects should be thought of as
+"placeholders" for values or tasks that aren't yet complete. By using placeholders we're able to
+reason about the results of concurrent operations as if they were simple variables.
 
-> **IMPORTANT:** `Amp\Promise` does *not* follow the "Thenables" abstraction common in javascript
+> **IMPORTANT:** `Amp\Promise` does *not* conform to the "Thenables" abstraction common in javascript
 > promise implementations. It is this author's opinion that chaining .then() calls is no better at
 > avoiding callback hell than other methods. In particular, Amp utilizes generators to accomplish
 > the same thing in a more performant way while exposing a more natural error handling mechanism.
 
-The `Amp\Promise` interface exposes three simple methods for dealing with the eventual result of a
-placeholder value:
+In its simplest form the `Amp\Promise` simply aggregates callbacks for dealing with computational
+results once they eventually complete. While most code will not interact with this API directly thanks
+to the magic of [Generators](#generators), let's take a quick look at the three simple API methods
+exposed on `Amp\Promise` implementations:
 
 
 | Method                | Callback Signature                                |
@@ -118,10 +131,7 @@ placeholder value:
 | mixed wait()          | n/a                                               |
 
 
-Let's discuss each method in detail ...
-
-
-##### `when()`
+##### when()
 
 `Amp\Promise::when()` accepts an error-first callback. This callback is responsible for reacting to
 the eventual result of the computation represented by the promise placeholder. For example:
@@ -144,16 +154,17 @@ $promise->when(function(Exception $error = null, $result = null) {
 });
 ```
 
-Those readers familiar with javascript-style asynchronous calls might suggest that the above interface
-could quickly devolve into ["callback hell"](http://callbackhell.com/) (and they'd be right). We
-will see how to avoid this problem in the [Generators](#generators) section.
+Those familiar with javascript code generally reflect that the above interface quickly devolves into
+["callback hell"](http://callbackhell.com/), and they're correct. We will shortly see how to avoid
+this problem in the [Generators](#generators) section.
 
 
-##### `watch()`
+##### watch()
 
 `Amp\Promise::watch()` affords promise-producers ([Promisors](#promisors)) the ability to broadcast
 progress updates while a placeholder value resolves. Whether or not to actually send progress updates
-is left to individual libraries, but the functionality exists. A simple example:
+is left to individual libraries, but the functionality is available should applications require it.
+A simple example:
 
 ```php
 <?php
@@ -167,7 +178,7 @@ $promise->watch(function($update) {
 ```
 
 
-##### `wait()`
+##### wait()
 
 `Amp\Promise::wait()` allows users to synchronously block script execution until the future value
 of a promise is resolved. If the promise resolves successfully this function will return the
@@ -191,8 +202,8 @@ try {
 #### Generators
 
 The addition of Generators in PHP 5.5 trivializes synchronization and error handling in async contexts.
-The Amp event reactor (covered later) builds in co-routine support for all reactor callbacks so we
-can use the `yield` keyword to make async code feel synchronous. Let's look at a simple example
+The Amp event reactor (covered [later](#run)) builds in co-routine support for all reactor callbacks
+so we can use the `yield` keyword to make async code feel synchronous. Let's look at a simple example
 executing inside the event reactor run loop (covered later):
 
 ```php
@@ -209,26 +220,176 @@ Amp\run(function() {
 });
 ```
 
-As you can see in the above example there is no need for callbacks or javascript-style `.then()`
-chaining.
+As you can see in the above example there is no need for callbacks or `.then()` chaining. Instead,
+we're able to use `yield` statements to control program flow even when future computational results
+are still pending.
 
-##### `resolve()`
+> **IMPORTANT:** Always remember when yielding `Amp\Promise` instances that should the computation
+> fail the relevant exception will be thrown back into your generator. Application authors should
+> generally always wrap their promise yields in `try/catch` blocks.
 
-@TODO
 
-##### Injected Resolution
+| Yieldable        | Description                                                                                                                                                                                                                      |
+| -----------------| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Amp\Promise`    | Any promise instance may be yielded and control will be returned once the promise resolves. If resolution fails the relevant exception is thrown into the generator and must be handled by the application or it will bubble up. |
+| `Generator`      | Any generator instance may also be yielded. The resolution value returned for the yield expression is the final yielded value from generator iteration.                                                                          |
 
-@TODO
+
+##### Manual Generator Resolution
+
+While Amp will automatically resolve generators resulting from its own callbacks, implementing
+co-routines directly in your code is often more useful. Let's look at a very simple server where
+we use `Amp\resolve()` as a co-routine to manually resolve a generator function.
+
+```php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+define('ADDRESS', '127.0.0.1:1337');
+
+function listen($address = null) {
+    $address = $address ?: ADDRESS;
+    if (!$socket = stream_socket_server($address)) {
+        throw new RuntimeException(
+            'Failed binding local server socket'
+        );
+    }
+
+    stream_set_blocking($socket, false);
+    Amp\onReadable($socket, 'accept');
+}
+
+function accept($reactor, $watcherId, $server) {
+    if ($client = @stream_socket_accept($socket)) {
+        $generator = onClient($client);
+        Amp\resolve($generator); // <-- resolve it!
+    }
+}
+
+function onClient($client) {
+    try {
+        $dataToWrite = sprintf('Hello! The current time is %s\n', date('r'));
+        yield write($client, $dataToWrite);
+        // Disconnect the client once our non-blocking write completes
+        @fclose($client);
+    } catch (Exception $e) {
+        // Write failed. This means the client disconnected
+        // so there's nothing left to do here.
+    }
+}
+
+function write($client, $data) {
+    $future = new Amp\Future;
+
+    $bytesWritten = @fwrite($client, $data);
+
+    if ($bytesWritten === strlen($data)) {
+        $future->succeed();
+    } elseif ($bytesWritten !== false) {
+        $data = substr($data, $bytesWritten);
+        Amp\onWritable($client, function($r, $w, $client) use ($data, $future) {
+            $future->succeed(write($client, $data));
+            $r->cancel($w);
+        }
+    } else {
+        $future->fail(new RuntimeException(
+            'Failed writing data to client socket'
+        ));
+    }
+
+    return $future->promise();
+}
+
+Amp\run('listen');
+```
+
+Note that we can also use an `Amp\Resolver` instance instead of the `Amp\resolve()` function in
+object-oriented codebases.
 
 
 #### Functors
 
-@TODO
+##### all()
+
+The `all()` functor combines an array of promise objects into a single promise that will resolve
+when all promises in the group resolve. If any one of the `Amp\Promise` instances fails the
+combinator's `Promise` will fail. Otherwise the resulting `Promise` succeeds with an array matching
+keys from the input array to their resolved values.
+
+The `all()` combinator is extremely powerful because it allows us to concurrently execute many
+asynchronous operations at the same time. Let's look at a simple example using the amp HTTP client
+([artax](https://github.com/amphp/artax)) to retrieve multiple HTTP resources concurrently ...
+
+```php
+<?php
+
+Amp\run(function() {
+    $httpClient = new Amp\Artax\Client;
+    $promiseArray = $httpClient->requestMulti([
+        'google'    => 'http://www.google.com',
+        'news'      => 'http://news.google.com',
+        'bing'      => 'http://www.bing.com',
+        'yahoo'     => 'https://www.yahoo.com',
+    ]);
+
+    try {
+        // magic combinator sauce
+        $responses = (yield Amp\all($promiseArray));
+
+        foreach ($responses as $key => $response) {
+            printf(
+                "%s | HTTP/%s %d %s\n",
+                $key,
+                $response->getProtocol(),
+                $response->getStatus(),
+                $response->getReason()
+            );
+        }
+    } catch (Exception $e) {
+        // If any one of the requests fails the combo
+        // promise returned by Amp\all() will fail and
+        // be thrown back into our generator here.
+        echo $e->getMessage(), "\n";
+    }
+
+    Amp\stop();
+});
+```
+
+
+##### some()
+
+The `some()` functor is the same as `all()` except that it tolerates individual failures. As long
+as at least one promise in the passed array the combined promise will succeed. The successful
+resolution value is an array of the form `[$arrayOfErrors, $arrayOfSuccesses]`. The individual keys
+in the component arrays are preserved from the promise array passed to the functor for evaluation.
+
+##### first()
+
+Resolves with the first successful result. The resulting Promise will only fail if all
+promises in the group fail or if the promise array is empty.
+
+##### map()
+
+Maps eventual promise results using the specified callable.
+
+##### filter()
+
+Filters eventual promise results using the specified callable.
+
+If the functor returns a truthy value the resolved promise result is retained, otherwise it is
+discarded. Array keys are retained for any results not filtered out by the functor.
 
 #### Promisors
 
+##### Future
+
 @TODO
 
+##### PrivateFuture
+
+@TODO
 
 
 ## Event Reactor Concepts
@@ -393,7 +554,7 @@ instantiating reactors manually and mixing in calls to the function API.
 
 ## Controlling the Reactor
 
-#### `run()`
+#### run()
 
 The primary way an application interacts with the event reactor is to schedule events for execution
 and then simply let the program run. Once `Reactor::run()` is invoked the event loop will run
@@ -402,7 +563,7 @@ Long-running programs generally execute entirely inside the confines of a single
 call.
 
 
-#### `tick()`
+#### tick()
 
 The event loop tick is the basic unit of flow control in a non-blocking application. This method
 will execute a single iteration of the event loop before returning. `Reactor::tick()` may be used
@@ -410,7 +571,7 @@ inside a custom `while` loop to implement "wait" functionality in concurrency pr
 futures and promises.
 
 
-#### `stop()`
+#### stop()
 
 The event reactor loop can be stopped at any time while running. When `Reactor::stop()` is invoked
 the reactor loop will return control to the userland script at the end of the current iteration
@@ -423,7 +584,7 @@ watchable IO streams are still pending.
 
 Amp exposes several ways to schedule timer watchers. Let's look at some details for each method ...
 
-#### `immediately()`
+#### immediately()
 
  - Schedule a callback to execute in the next iteration of the event loop
  - This method guarantees a clean call stack to avoid starvation of other events in the
@@ -436,7 +597,7 @@ Amp exposes several ways to schedule timer watchers. Let's look at some details 
    not* be able to garbage collect it until it executes. Therefore you must manually cancel an
    immediately watcher yourself if it never actually executes to free any associated resources.
 
-#### `once()`
+#### once()
 
  - Schedule a callback to execute after a delay of *n* milliseconds
  - A "once" watcher is also automatically garbage collected by the reactor after execution and
@@ -448,7 +609,7 @@ Amp exposes several ways to schedule timer watchers. Let's look at some details 
    cancelled to free resources if it never runs due to being disabled by the application after
    creation.
 
-#### `repeat()`
+#### repeat()
 
  - Schedule a callback to repeatedly execute every *n* millisconds.
  - Unlike one-time watchers, "repeat" timer resources must be explicitly cancelled to free
@@ -456,7 +617,7 @@ Amp exposes several ways to schedule timer watchers. Let's look at some details 
    will result in memory leaks in your application.
  - Like all other watchers, "repeat" timers may be disabled/reenabled at any time.
 
-#### `at()`
+#### at()
 
  - Schedule a callback to execute at a specific time in the future. Future time may either be
    an integer unix timestamp or any string parsable by PHP's `strtotime()` function.
@@ -475,7 +636,7 @@ There are two classes of IO watcher:
  - Readability watchers
  - Writability watchers
 
-#### `onReadable()`
+#### onReadable()
 
 Watchers registered via `Reactor::onReadable()` trigger their callbacks in the following situations:
 
@@ -516,7 +677,7 @@ In the above example we've done a few very simple things:
    we've allocated for the storage of this stream. This process should always include calling
    `Reactor::cancel()` on any reactor watchers we registered in relation to the stream.
 
-#### `onWritable()`
+#### onWritable()
 
  - Streams are essentially *"always"* writable. The only time they aren't is when their
    respective write buffers are full.
@@ -527,7 +688,7 @@ to "unpause" the write watcher using `Reactor::enable()` until data is fully sen
 create and cancel new watcher resources on the same stream multiple times.
 
 
-#### `watchStream()`
+#### watchStream()
 
 The `Reactor::watchStream()` functionality exposes both readability and writability watcher
 registration in a single function as a convenience for programmers who wish to use the same
@@ -561,7 +722,7 @@ acceptance of new socket clients in server applications when simultaneity limits
 general, the performance characteristics of watcher reuse via pause/resume are favorable by
 comparison to repeatedly cancelling and re-registering watchers.
 
-#### `disable()`
+#### disable()
 
 A simple disable example:
 
@@ -587,7 +748,7 @@ $reactor->run();
 After our second watcher callback executes the reactor loop exits because there are no longer any
 enabled watchers registered to process.
 
-#### `enable()`
+#### enable()
 
 Using `enable()` is just as simple as the `disable()` example we just saw:
 
@@ -673,7 +834,7 @@ class Server {
 }
 ```
 
-#### `cancel()`
+#### cancel()
 
 It's important to *always* cancel persistent watchers once you're finished with them or you'll
 create memory leaks in your application. This functionality works in exactly the same way as the
