@@ -15,7 +15,7 @@ class Future implements Promisor, Promise {
      * @param \Amp\Reactor $reactor
      */
     public function __construct(Reactor $reactor = null) {
-        $this->reactor = $reactor ?: ReactorFactory::select();
+        $this->reactor = $reactor ?: reactor()
     }
 
     /**
