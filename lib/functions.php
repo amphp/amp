@@ -305,7 +305,7 @@ function first(array $promises) {
  * @return \Amp\Promise
  */
 function map(array $promises, callable $func) {
-    return combinator()->map($promises);
+    return combinator()->map($promises, $func);
 }
 
 /**
@@ -319,7 +319,7 @@ function map(array $promises, callable $func) {
  * @return \Amp\Promise
  */
 function filter(array $promises, callable $func) {
-    return combinator()->filter($promises);
+    return combinator()->filter($promises, $func);
 }
 
 /**
