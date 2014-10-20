@@ -1,3 +1,7 @@
+### v0.11.4
+
+- Fix syntax error :(
+
 ### v0.11.3
 
 - Fix missing parameters in map/filter
