@@ -1,8 +1,12 @@
-### master
+### v0.11.3
+
+- Fix missing parameters in map/filter
+
+### v0.11.2
 
 - Use global reactor if not passed to Future::__construct()
 
-###v0.11.1
+### v0.11.1
 
 - Fix bug causing immediate() callback starvation in NativeReactor
 
