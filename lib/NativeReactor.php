@@ -48,15 +48,11 @@ class NativeReactor implements Reactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately(function() use ($onStart) {
-                $result = $onStart($this);
-                if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
-                }
-            });
+            $this->immediately($onStart);
         }
+
         $this->enableAlarms();
-        while ($this->isRunning) {
+        while ($this->isRunning || $this->immediates) {
             $this->tick();
         }
     }

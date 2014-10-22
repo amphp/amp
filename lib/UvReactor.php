@@ -56,12 +56,7 @@ class UvReactor implements SignalReactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately(function() use ($onStart) {
-                $result = $onStart($this);
-                if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
-                }
-            });
+            $this->immediately($onStart);
         }
 
         while ($this->isRunning) {
