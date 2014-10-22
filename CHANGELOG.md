@@ -1,3 +1,23 @@
+### master
+
+- n/a
+
+v0.12.0
+-------
+
+- Generator resolution now accepts string keys to simplify reactor operations via yield
+- Fix Promise memory leak + tick starvation when resolving Generator yields inside loops
+- @TODO Fix infinite recursion on nested immediately watchers in `LibeventReactor`
+- Rename `any()` combinator -> `some()`
+- `any()` combinator will now *never* fail.
+
+> **BC BREAKS:**
+
+- The `any()` combinator no longer fails even if all promises fail. Code wishing for
+  the previous behavior should change references to `some()` which will only fail if
+  all promises in the group resolve as failures.
+
+
 ### v0.11.4
 
 - Fix syntax error :(
