@@ -106,6 +106,41 @@ class Combinator {
     }
 
     /**
+     * Resolves with a two-item array delineating successful and failed Promise results.
+     *
+     * This method is exactly the same as some() except it will *never* fail.
+     *
+     * @param array $promises
+     * @return \Amp\Promise
+     */
+    public function any(array $promises) {
+        if (empty($promises)) {
+            return new Success([], []);
+        }
+
+        $results = $errors = [];
+        $count = count($promises);
+        $future = new Future($this->reactor);
+
+        foreach ($promises as $key => $promise) {
+            $promise = ($promise instanceof Promise) ? $promise : new Success($promise);
+            $promise->when(function($error, $result) use (&$count, &$results, &$errors, $key, $future) {
+                if ($error) {
+                    $errors[$key] = $error;
+                } else {
+                    $results[$key] = $result;
+                }
+
+                if ($count-- === 1) {
+                    $future->succeed([$errors, $results]);
+                }
+            });
+        }
+
+        return $future->promise();
+    }
+
+    /**
      * Resolves with the first successful Promise value. The resulting Promise will only fail if all
      * Promise values in the group fail or if the initial Promise array is empty.
      *

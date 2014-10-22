@@ -287,6 +287,19 @@ function some(array $promises) {
 }
 
 /**
+ * Resolves with a two-item array delineating successful and failed Promise results.
+ *
+ * This function is the same as some() with the notable exception that it will never fail even
+ * if all promises in the array resolve unsuccessfully.
+ *
+ * @param array $promises
+ * @return \Amp\Promise
+ */
+function any(array $promises) {
+    return combinator()->any($promises);
+}
+
+/**
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  *
