@@ -5,6 +5,7 @@ namespace Amp;
 class LibeventReactor implements SignalReactor {
     private $base;
     private $watchers = [];
+    private $immediates = [];
     private $lastWatcherId = 1;
     private $resolution = 1000;
     private $isRunning = false;
@@ -40,16 +41,43 @@ class LibeventReactor implements SignalReactor {
             return;
         }
 
+        $this->isRunning = true;
         if ($onStart) {
-            $this->immediately(function() use ($onStart) {
-                $result = $onStart($this);
-                if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
-                }
-            });
+            $this->immediately($onStart);
         }
 
-        $this->doRun();
+        while ($this->isRunning) {
+            if ($this->immediates && !$this->doImmediates()) {
+                break;
+            }
+            event_base_loop($this->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+        }
+
+        if ($this->stopException) {
+            $e = $this->stopException;
+            $this->stopException = null;
+            throw $e;
+        }
+    }
+
+    private function doImmediates() {
+        $immediates = $this->immediates;
+        foreach ($immediates as $watcherId => $callback) {
+            $result = $callback($this, $watcherId);
+            if ($result instanceof \Generator) {
+                $this->resolver->resolve($result)->when($this->onGeneratorError);
+            }
+            unset(
+                $this->immediates[$watcherId],
+                $this->watchers[$watcherId]
+            );
+            if (!$this->isRunning) {
+                // If a watcher stops the reactor break out of the loop
+                break;
+            }
+        }
+
+        return $this->isRunning;
     }
 
     /**
@@ -59,14 +87,16 @@ class LibeventReactor implements SignalReactor {
      * @return void
      */
     public function tick() {
-        if (!$this->isRunning) {
-            $this->doRun(EVLOOP_ONCE | EVLOOP_NONBLOCK);
+        if ($this->isRunning) {
+            return;
         }
-    }
 
-    private function doRun($flags = 0) {
         $this->isRunning = true;
-        event_base_loop($this->base, $flags);
+
+        if (empty($this->immediates) || $this->doImmediates()) {
+            event_base_loop($this->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+        }
+
         $this->isRunning = false;
 
         if ($this->stopException) {
@@ -83,6 +113,7 @@ class LibeventReactor implements SignalReactor {
      */
     public function stop() {
         event_base_loopexit($this->base);
+        $this->isRunning = false;
     }
 
     /**
@@ -111,13 +142,23 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Schedule a callback for immediate invocation in the next event loop iteration
+     * Schedule a callback for immediate invocation in the next event loop tick
      *
      * @param callable $callback Any valid PHP callable
      * @return string Returns a unique watcher ID
      */
     public function immediately(callable $callback) {
-        return $this->once($callback, $msDelay = 0);
+        $watcherId = (string) $this->lastWatcherId++;
+        $this->immediates[$watcherId] = $callback;
+
+        $watcher = new \StdClass;
+        $watcher->id = $watcherId;
+        $watcher->callback = $callback;
+        $watcher->isEnabled = true;
+
+        $this->watchers[$watcher->id] = $watcher;
+
+        return $watcherId;
     }
 
     /**
@@ -357,15 +398,25 @@ class LibeventReactor implements SignalReactor {
      * @return void
      */
     public function cancel($watcherId) {
-        if (!isset($this->watchers[$watcherId])) {
+        if (empty($this->watchers[$watcherId])) {
             return;
         }
 
         $watcher = $this->watchers[$watcherId];
-        event_del($watcher->eventResource);
+
+        if (empty($watcher->eventResource)) {
+            // It's an immediately watcher
+            unset(
+                $this->watchers[$watcherId],
+                $this->immediates[$watcherId]
+            );
+        } else {
+            event_del($watcher->eventResource);
+            unset($this->watchers[$watcherId]);
+        }
+
         $this->garbage[] = $watcher;
         $this->scheduleGarbageCollection();
-        unset($this->watchers[$watcherId]);
     }
 
     /**
@@ -375,12 +426,17 @@ class LibeventReactor implements SignalReactor {
      * @return void
      */
     public function disable($watcherId) {
-        if (!isset($this->watchers[$watcherId])) {
+        if (empty($this->watchers[$watcherId])) {
             return;
         }
 
         $watcher = $this->watchers[$watcherId];
-        if ($watcher->isEnabled) {
+
+        if (empty($watcher->eventResource)) {
+            // It's an immediately watcher
+            unset($this->immediates[$watcherId]);
+            $watcher->isEnabled = false;
+        } elseif ($watcher->isEnabled) {
             event_del($watcher->eventResource);
             $watcher->isEnabled = false;
         }
@@ -393,16 +449,24 @@ class LibeventReactor implements SignalReactor {
      * @return void
      */
     public function enable($watcherId) {
-        if (!isset($this->watchers[$watcherId])) {
+        if (empty($this->watchers[$watcherId])) {
             return;
         }
 
         $watcher = $this->watchers[$watcherId];
 
-        if (!$watcher->isEnabled) {
-            event_add($watcher->eventResource, $watcher->msDelay);
-            $watcher->isEnabled = true;
+        if ($watcher->isEnabled) {
+            return;
         }
+
+        if (empty($watcher->eventResource)) {
+            // It's an immediately watcher
+            $this->immediates[$watcherId] = $watcher->callback;
+        } else {
+            event_add($watcher->eventResource, $watcher->msDelay);
+        }
+
+        $watcher->isEnabled = true;
     }
 
     private function scheduleGarbageCollection() {

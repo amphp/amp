@@ -7,7 +7,7 @@ v0.12.0
 
 - Generator resolution now accepts string keys to simplify reactor operations via yield
 - Fix Promise memory leak + tick starvation when resolving Generator yields inside loops
-- @TODO Fix infinite recursion on nested immediately watchers in `LibeventReactor`
+- Fix infinite loop on nested immediately watchers in `LibeventReactor`
 - Rename `any()` combinator -> `some()`
 - `any()` combinator will now *never* fail.
 
