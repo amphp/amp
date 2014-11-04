@@ -12,7 +12,7 @@ namespace Amp;
  */
 function immediately(callable $func) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->immediately($func);
 }
 
@@ -27,7 +27,7 @@ function immediately(callable $func) {
  */
 function once(callable $func, $msDelay) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->once($func, $msDelay);
 }
 
@@ -44,7 +44,7 @@ function once(callable $func, $msDelay) {
  */
 function repeat(callable $func, $msDelay) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->repeat($func, $msDelay);
 }
 
@@ -59,7 +59,7 @@ function repeat(callable $func, $msDelay) {
  */
 function at(callable $func, $timeString) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->at($func, $timeString);
 }
 
@@ -73,7 +73,7 @@ function at(callable $func, $timeString) {
  */
 function enable($watcherId) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->enable($watcherId);
 }
 
@@ -91,7 +91,7 @@ function enable($watcherId) {
  */
 function disable($watcherId) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->disable($watcherId);
 }
 
@@ -105,7 +105,7 @@ function disable($watcherId) {
  */
 function cancel($watcherId) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->cancel($watcherId);
 }
 
@@ -123,7 +123,7 @@ function cancel($watcherId) {
  */
 function onReadable($stream, callable $func, $enableNow = true) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->onReadable($stream, $func, $enableNow);
 }
 
@@ -145,7 +145,7 @@ function onReadable($stream, callable $func, $enableNow = true) {
  */
 function onWritable($stream, callable $func, $enableNow = true) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->onWritable($stream, $func, $enableNow);
 }
 
@@ -162,7 +162,7 @@ function onWritable($stream, callable $func, $enableNow = true) {
  */
 function watchStream($stream, callable $func, $flags) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     return $reactor->watchStream($stream, $func, $flags);
 }
 
@@ -173,7 +173,7 @@ function watchStream($stream, callable $func, $flags) {
  */
 function tick() {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->tick();
 }
 
@@ -185,7 +185,7 @@ function tick() {
  */
 function run(callable $onStart = null) {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->run($onStart);
 }
 
@@ -196,7 +196,7 @@ function run(callable $onStart = null) {
  */
 function stop() {
     static $reactor;
-    $reactor = $reactor ?: ReactorFactory::select();
+    $reactor = $reactor ?: reactor();
     $reactor->stop();
 }
 
@@ -215,7 +215,7 @@ function onSignal($signo, callable $onSignal) {
     static $reactor;
     if ($reactor) {
         return $reactor->onSignal($signo, $onSignal);
-    } elseif (!($reactor = ReactorFactory::select()) instanceof SignalReactor) {
+    } elseif (!($reactor = reactor()) instanceof SignalReactor) {
         throw new \RuntimeException(
             'Your PHP environment does not support signal handling. Please install pecl/libevent or the php-uv extension'
         );

@@ -2,6 +2,10 @@
 
 - n/a
 
+### v0.12.1
+
+- Use reactor singleton instance in global functions
+
 v0.12.0
 -------
 
