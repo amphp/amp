@@ -3,18 +3,6 @@
 namespace Amp;
 
 class Resolver {
-    const ALL = 'all';
-    const ANY = 'any';
-    const SOME = 'some';
-    const WAIT = 'wait';
-    const ONCE = 'once';
-    const REPEAT = 'repeat';
-    const IMMEDIATELY = 'immediately';
-    const WATCH_STREAM = 'watch-stream';
-    const ENABLE = 'enable';
-    const DISABLE = 'disable';
-    const CANCEL = 'cancel';
-
     private $reactor;
     private $combinator;
 
@@ -62,11 +50,16 @@ class Resolver {
             if ($gen->valid()) {
                 $key = $gen->key();
                 $current = $gen->current();
-                $yieldPromise = $this->promisify($key, $current);
-                $this->reactor->immediately(function() use ($gen, $promisor, $yieldPromise) {
-                    $yieldPromise->when(function($error, $result) use ($gen, $promisor) {
-                        $this->send($gen, $promisor, $error, $result);
-                    });
+                $promiseStruct = $this->promisifyYield($key, $current);
+                $this->reactor->immediately(function() use ($gen, $promisor, $promiseStruct) {
+                    list($promise, $noWait) = $promiseStruct;
+                    if ($noWait) {
+                        $this->send($gen, $promisor, $error = null, $result = null);
+                    } else {
+                        $promise->when(function($error, $result) use ($gen, $promisor) {
+                            $this->send($gen, $promisor, $error, $result);
+                        });
+                    }
                 });
             } else {
                 $promisor->succeed($previousResult);
@@ -76,61 +69,80 @@ class Resolver {
         }
     }
 
-    private function promisify($key, $current) {
-        if ($current instanceof Promise) {
-            return $current;
-        } elseif ($key === (string) $key) {
+    private function promisifyYield($key, $current) {
+        $noWait = false;
+
+        if ($key === (string) $key) {
             goto explicit_key;
         } else {
             goto implicit_key;
         }
 
         explicit_key: {
+            $key = strtolower($key);
+            if ($key[0] === YieldCommands::NOWAIT_PREFIX) {
+                $noWait = true;
+                $key = substr($key, 1);
+            }
+
             switch ($key) {
-                case self::ALL:
+                case YieldCommands::ALL:
                     // fallthrough
-                case self::ANY:
+                case YieldCommands::ANY:
                     // fallthrough
-                case self::SOME:
+                case YieldCommands::SOME:
                     if (is_array($current)) {
                         goto combinator;
                     } else {
-                        return new Failure(new \DomainException(
-                            sprintf('"%s" key expects array; %s yielded', $key, gettype($current))
+                        $promise = new Failure(new \DomainException(
+                            sprintf('"%s" yield command expects array; %s yielded', $key, gettype($current))
                         ));
+                        goto return_struct;
                     }
-                case self::WAIT:
+                case YieldCommands::WAIT:
                     goto wait;
-                case self::IMMEDIATELY:
+                case YieldCommands::IMMEDIATELY:
                     goto immediately;
-                case self::ONCE:
+                case YieldCommands::ONCE:
                     // fallthrough
-                case self::REPEAT:
+                case YieldCommands::REPEAT:
                     goto schedule;
-                case self::WATCH_STREAM:
-                    goto watch_stream;
-                case self::ENABLE:
+                case YieldCommands::ON_READABLE:
+                    $ioWatchMethod = 'onReadable';
+                    goto stream_io_watcher;
+                case YieldCommands::ON_WRITABLE:
+                    $ioWatchMethod = 'onWritable';
+                    goto stream_io_watcher;
+                case YieldCommands::ENABLE:
                     // fallthrough
-                case self::DISABLE:
+                case YieldCommands::DISABLE:
                     // fallthrough
-                case self::CANCEL:
+                case YieldCommands::CANCEL:
                     goto watcher_control;
+                case YieldCommands::NOWAIT:
+                    $noWait = true;
+                    goto implicit_key;
                 default:
-                    return new Failure(new \DomainException(
-                        sprintf('Unknown yield key: %s', $key)
+                    $promise = new Failure(new \DomainException(
+                        sprintf('Unknown or invalid yield key: "%s"', $key)
                     ));
+                    goto return_struct;
             }
         }
 
         implicit_key: {
-            if ($current instanceof \Generator) {
-                return $this->resolve($current);
+            if ($current instanceof Promise) {
+                $promise = $current;
+            } elseif ($current instanceof \Generator) {
+                $promise = $this->resolve($current);
             } elseif (is_array($current)) {
-                $key = self::ALL;
+                $key = YieldCommands::ALL;
                 goto combinator;
             } else {
-                return new Success($current);
+                $promise = new Success($current);
             }
+
+            goto return_struct;
         }
 
         combinator: {
@@ -147,61 +159,62 @@ class Resolver {
                 $promises[$index] = $promise;
             }
 
-            return $this->combinator->{$key}($promises);
+            $promise = $this->combinator->{$key}($promises);
+
+            goto return_struct;
         }
 
         immediately: {
-            if (!is_callable($current)) {
-                return new Failure(new \DomainException(
+            if (is_callable($current)) {
+                $watcherId = $this->reactor->immediately($current);
+                $promise = new Success($watcherId);
+            } else {
+                $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield requires callable; %s provided',
+                        '"%s" yield command requires callable; %s provided',
                         $key,
                         gettype($current)
                     )
                 ));
             }
 
-            $watcherId = $this->reactor->immediately($current);
-
-            return new Success($watcherId);
+            goto return_struct;
         }
 
         schedule: {
-            if (!($current && isset($current[0], $current[1]) && is_array($current))) {
-                return new Failure(new \DomainException(
+            if (is_array($current) && isset($current[0], $current[1]) && is_callable($current[0])) {
+                list($func, $msDelay) = $current;
+                $watcherId = $this->reactor->{$key}($func, $msDelay);
+                $promise = new Success($watcherId);
+            } else {
+                $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield requires [callable $func, int $msDelay]; %s provided',
+                        '"%s" yield command requires [callable $func, int $msDelay]; %s provided',
                         $key,
                         gettype($current)
                     )
                 ));
             }
 
-            list($func, $msDelay) = $current;
-            $watcherId = $this->reactor->{$key}($func, $msDelay);
-
-            return new Success($watcherId);
+            goto return_struct;
         }
 
-        watch_stream: {
-            if (!($current &&
-                isset($current[0], $current[1], $current[2]) &&
-                is_array($current) &&
-                is_callable($current[1])
-            )) {
-                return new Failure(new \DomainException(
-
+        stream_io_watcher: {
+            if (is_array($current) && isset($current[0], $current[1]) && is_callable($current[1])) {
+                list($stream, $func, $enableNow) = $current;
+                $watcherId = $this->reactor->{$ioWatchMethod}($stream, $func, $enableNow);
+                $promise = new Success($watcherId);
+            } else {
+                $promise = new Failure(new \DomainException(
+                    sprintf(
+                        '"%s" yield command requires [resource $stream, callable $func, bool $enableNow]; %s provided',
+                        $key,
+                        gettype($current)
+                    )
                 ));
             }
 
-            list($stream, $callback, $flags) = $current;
-
-            try {
-                $watcherId = $this->reactor->watchStream($stream, $callback, $flags);
-                return new Success($watcherId);
-            } catch (\Exception $error) {
-                return new Failure($error);
-            }
+            goto return_struct;
         }
 
         wait: {
@@ -210,12 +223,20 @@ class Resolver {
                 $promisor->succeed();
             }, (int) $current);
 
-            return $promisor;
+            $promise = $promisor;
+
+            goto return_struct;
         }
 
         watcher_control: {
             $this->reactor->{$key}($current);
-            return new Success;
+            $promise = new Success;
+
+            goto return_struct;
+        }
+
+        return_struct: {
+            return [$promise, $noWait];
         }
     }
 

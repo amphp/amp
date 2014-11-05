@@ -170,7 +170,7 @@ class ResolverTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \DomainException
-     * @expectedExceptionMessage "some" key expects array; string yielded
+     * @expectedExceptionMessage "some" yield command expects array; string yielded
      */
     public function testExplicitCombinatorFailsIfNonArrayYielded() {
         $gen = function() {
