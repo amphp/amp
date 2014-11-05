@@ -1,7 +1,23 @@
 ### master
 
+- n/a
+
+v0.13.0
+-------
+
 - Remove `watchStream()` alias from all reactor implementations. Aliases only cause
   confusion.
+- Formalize generator resolution `YieldCommands`, remove `watch-stream`, add
+  `onreadable` and `onwritable` yield commands.
+- Add new `nowait` yield command and the nowait prefix, `@` to optionally continue
+  generator processing without waiting for individual asynchronous results.
+
+> **BC BREAKS:**
+
+- All code using `watchStream()` must update to use the specific `onReadable()` and
+  `onWritable()` reactor functions as `watchStream()` has been removed.
+- The `watch-stream` yield command has been removed. Code should be updated to use the
+  new `onreadable` and `onwritable` yield commands.
 
 ### v0.12.1
 
