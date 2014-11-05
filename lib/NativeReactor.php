@@ -312,30 +312,6 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Watch a stream resource for reads or writes (but not both) with additional option flags
-     *
-     * @param resource $stream
-     * @param callable $callback
-     * @param int $flags A bitmask of watch flags
-     * @throws \DomainException if no read/write flag specified
-     * @return string Returns a unique watcher ID
-     */
-    public function watchStream($stream, callable $callback, $flags) {
-        $flags = (int) $flags;
-        $enableNow = ($flags & self::WATCH_NOW);
-
-        if ($flags & self::WATCH_READ) {
-            return $this->onWritable($stream, $callback, $enableNow);
-        } elseif ($flags & self::WATCH_WRITE) {
-            return $this->onWritable($stream, $callback, $enableNow);
-        } else {
-            throw new \DomainException(
-                'Stream watchers must specify either a WATCH_READ or WATCH_WRITE flag'
-            );
-        }
-    }
-
-    /**
      * Cancel an existing watcher
      *
      * @param string $watcherId

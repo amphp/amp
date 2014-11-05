@@ -1,6 +1,7 @@
 ### master
 
-- n/a
+- Remove `watchStream()` alias from all reactor implementations. Aliases only cause
+  confusion.
 
 ### v0.12.1
 

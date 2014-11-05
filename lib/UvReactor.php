@@ -266,16 +266,7 @@ class UvReactor implements SignalReactor {
         return $this->watchStream($stream, $callback, $flags);
     }
 
-    /**
-     * Watch a stream resource for reads or writes (but not both) with additional option flags
-     *
-     * @param resource $stream
-     * @param callable $callback
-     * @param int $flags A bitmask of watch flags
-     * @throws \DomainException if no read/write flag specified
-     * @return string Returns a unique watcher ID
-     */
-    public function watchStream($stream, callable $callback, $flags) {
+    private function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
 
         if ($flags & self::WATCH_READ) {

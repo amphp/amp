@@ -150,23 +150,6 @@ function onWritable($stream, callable $func, $enableNow = true) {
 }
 
 /**
- * Similar to onReadable/onWritable but uses a flag bitmask for extended option assignment
- *
- * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
- * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
- * will lead to memory leaks.
- *
- * @param resource $stream A stream resource to watch for IO capability
- * @param callable $func Any valid PHP callable
- * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
- */
-function watchStream($stream, callable $func, $flags) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->watchStream($stream, $func, $flags);
-}
-
-/**
  * Execute a single event loop iteration
  *
  * @return void

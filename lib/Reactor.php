@@ -94,15 +94,6 @@ interface Reactor {
     public function onWritable($stream, callable $callback, $enableNow = true);
 
     /**
-     * Similar to onReadable/onWritable but uses a flag bitmask for extended option assignment
-     *
-     * @param resource $stream A stream resource to watch for writability
-     * @param callable $callback Any valid PHP callable
-     * @param int $flags Option bitmask (Reactor::WATCH_READ, Reactor::WATCH_WRITE, etc)
-     */
-    public function watchStream($stream, callable $callback, $flags);
-
-    /**
      * Cancel an existing timer/stream watcher
      *
      * @param int $watcherId
