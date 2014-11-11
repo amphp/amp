@@ -306,7 +306,9 @@ class UvReactor implements SignalReactor {
     }
 
     private function chooseWindowsPollingFunction($stream) {
-        return (stream_get_meta_data($stream)['stream_type'] === 'tcp_socket/ssl')
+        $streamType = stream_get_meta_data($stream)['stream_type'];
+
+        return ($streamType === 'tcp_socket/ssl' || $streamType === 'tcp_socket')
             ? 'uv_poll_init_socket'
             : 'uv_poll_init';
     }
