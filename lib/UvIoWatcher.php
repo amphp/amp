@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class UvIoWatcher {
+class UvIoWatcher extends Struct {
     public $id;
     public $uvStruct;
     public $callback;

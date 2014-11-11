@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class UvTimerWatcher {
+class UvTimerWatcher extends Struct {
     public $id;
     public $uvStruct;
     public $callback;
