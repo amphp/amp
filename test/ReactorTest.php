@@ -244,11 +244,11 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
             $increment++;
         }, $isEnabled = FALSE);
 
-        $reactor->once(function() use ($reactor, $watcherId) {
+        $reactor->immediately(function() use ($reactor, $watcherId) {
             $reactor->enable($watcherId);
-        }, $msDelay = 10);
+        });
 
-        $reactor->once([$reactor, 'stop'], $msDelay = 100);
+        $reactor->once([$reactor, 'stop'], $msDelay = 250);
         $reactor->run();
 
         $this->assertTrue($increment > 0);
