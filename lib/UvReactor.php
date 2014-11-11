@@ -24,6 +24,10 @@ class UvReactor implements SignalReactor {
     private static $MODE_SIGNAL = 3;
     private static $MODE_IMMEDIATE = 4;
 
+    private static $WATCH_READ  = 0b001;
+    private static $WATCH_WRITE = 0b010;
+    private static $WATCH_NOW   = 0b100;
+
     public function __construct($newLoop = false) {
         $this->loop = $newLoop ? uv_loop_new() : uv_default_loop();
         $this->gcWatcher = uv_timer_init($this->loop);
@@ -175,7 +179,7 @@ class UvReactor implements SignalReactor {
         $msInterval = ($msInterval && $msInterval > 0) ? (int) $msInterval : -1;
 
         return ($msInterval === -1)
-            ? $this->watchStream(STDOUT, $callback, self::WATCH_WRITE | self::WATCH_NOW)
+            ? $this->watchStream(STDOUT, $callback, self::$WATCH_WRITE | self::$WATCH_NOW)
             : $this->startTimer($callback, $msInterval, $msInterval, self::$MODE_REPEAT);
     }
 
@@ -247,7 +251,7 @@ class UvReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
-        $flags = $enableNow ? (self::WATCH_READ | self::WATCH_NOW) : self::WATCH_READ;
+        $flags = $enableNow ? (self::$WATCH_READ | self::$WATCH_NOW) : self::$WATCH_READ;
 
         return $this->watchStream($stream, $callback, $flags);
     }
@@ -261,7 +265,7 @@ class UvReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
-        $flags = $enableNow ? (self::WATCH_WRITE | self::WATCH_NOW) : self::WATCH_WRITE;
+        $flags = $enableNow ? (self::$WATCH_WRITE | self::$WATCH_NOW) : self::$WATCH_WRITE;
 
         return $this->watchStream($stream, $callback, $flags);
     }
@@ -269,10 +273,10 @@ class UvReactor implements SignalReactor {
     private function watchStream($stream, callable $callback, $flags) {
         $flags = (int) $flags;
 
-        if ($flags & self::WATCH_READ) {
+        if ($flags & self::$WATCH_READ) {
             /** @noinspection PhpUndefinedClassInspection */
             $pollFlag = \UV::READABLE;
-        } elseif ($flags & self::WATCH_WRITE) {
+        } elseif ($flags & self::$WATCH_WRITE) {
             /** @noinspection PhpUndefinedClassInspection */
             $pollFlag = \UV::WRITABLE;
         } else {
@@ -296,7 +300,7 @@ class UvReactor implements SignalReactor {
         $watcher->pollFlag = $pollFlag;
         $watcher->uvStruct = $pollStartFunc($this->loop, $stream);
         $watcher->callback = $this->wrapStreamCallback($watcher, $callback);
-        if ($watcher->isEnabled = ($flags & self::WATCH_NOW)) {
+        if ($watcher->isEnabled = ($flags & self::$WATCH_NOW)) {
             uv_poll_start($watcher->uvStruct, $watcher->pollFlag, $watcher->callback);
         }
 

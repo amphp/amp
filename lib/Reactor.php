@@ -3,10 +3,6 @@
 namespace Amp;
 
 interface Reactor {
-    const WATCH_READ  = 0b001;
-    const WATCH_WRITE = 0b010;
-    const WATCH_NOW   = 0b100;
-
     /**
      * Start the event reactor and assume program flow control
      *
