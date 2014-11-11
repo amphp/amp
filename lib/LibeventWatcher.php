@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class LibeventWatcher {
+class LibeventWatcher extends Struct {
     public $id;
     public $eventResource;
     public $stream;

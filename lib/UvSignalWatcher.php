@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class UvSignalWatcher {
+class UvSignalWatcher extends Struct {
     public $id;
     public $mode;
     public $signo;
