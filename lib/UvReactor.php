@@ -65,7 +65,7 @@ class UvReactor implements SignalReactor {
             if ($this->immediates && !$this->doImmediates()) {
                 break;
             }
-            uv_run($this->loop, \UV::RUN_NOWAIT | \UV::RUN_ONCE);
+            uv_run($this->loop, \UV::RUN_ONCE);
         }
 
         if ($this->stopException) {
@@ -290,15 +290,16 @@ class UvReactor implements SignalReactor {
             $poll->writers[$watcherId] = $watcher;
         }
 
-        $preexistingFlags = $poll->flags;
+        $newFlags = 0;
         if ($poll->readers) {
-            $poll->flags |= \UV::READABLE;
+            $newFlags |= \UV::READABLE;
         }
         if ($poll->writers) {
-            $poll->flags |= \UV::WRITABLE;
+            $newFlags |= \UV::WRITABLE;
         }
-        if ($preexistingFlags != $poll->flags) {
-            uv_poll_start($poll->handle, $poll->flags, $poll->callback);
+        if ($newFlags != $poll->flags) {
+            $poll->flags = $newFlags;
+            uv_poll_start($poll->handle, $newFlags, $poll->callback);
         }
 
         return $watcherId;
@@ -503,18 +504,29 @@ class UvReactor implements SignalReactor {
         $poll = $watcher->poll;
         $watcherId = $watcher->id;
 
-        if ($watcher->mode === self::$MODE_READER) {
-            unset($poll->readers[$watcherId]);
-        } else {
-            unset($poll->writers[$watcherId]);
-        }
+        unset(
+            $poll->readers[$watcherId],
+            $poll->writers[$watcherId]
+        );
 
         $poll->disable[$watcherId] = $watcher;
 
-        // If no enabled watchers remain for this stream we need to disable polling
-        $shouldStopPolling = !($poll->readers || $poll->writers);
-        if ($shouldStopPolling) {
+        if (!($poll->readers || $poll->writers)) {
             uv_poll_stop($poll->handle);
+            return;
+        }
+
+        // If we're still here we may need to update the polling flags
+        $newFlags = 0;
+        if ($poll->readers) {
+            $newFlags |= \UV::READABLE;
+        }
+        if ($poll->writers) {
+            $newFlags |= \UV::WRITABLE;
+        }
+        if ($poll->flags != $newFlags) {
+            $poll->flags = $newFlags;
+            uv_poll_start($poll->handle, $newFlags, $poll->callback);
         }
     }
 
