@@ -1,5 +1,6 @@
 Amp
 ===
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/amphp/amp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Amp is a non-blocking concurrency framework for PHP applications
 
