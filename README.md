@@ -5,9 +5,9 @@ Amp is a non-blocking concurrency framework for PHP applications
 
 **Community**
 
-If you have questions stop by the [amp chat](https://gitter.im/amphp/amp).
+If you have questions stop by the [amp chat channel](https://gitter.im/amphp) on Gitter.
 
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/amphp/amp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/amphp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 **Dependencies**
 
