@@ -2,6 +2,18 @@
 
 - n/a
 
+v0.14.0
+-------
+
+- Improve public property struct safety with new `Struct` class
+- Prevent breakage if missing `ext/openssl` with libuv socket watchers in windows
+- Allow multiple IO watchers for streams using the libuv reactor
+- Don't hammer the CPU using NOWAIT ticks in the libuv reactor
+
+> **BC BREAKS:**
+
+- none
+
 v0.13.0
 -------
 
