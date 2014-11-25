@@ -96,7 +96,7 @@ class NativeReactor implements Reactor {
             foreach ($immediates as $watcherId => $callback) {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
             }
         }
@@ -141,7 +141,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $readableStream);
                     if ($result instanceof \Generator) {
-                        resolve($this, $result)->when($this->onGeneratorError);
+                        resolve($result, $this)->when($this->onGeneratorError);
                     }
                 }
             }
@@ -150,7 +150,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $writableStream);
                     if ($result instanceof \Generator) {
-                        resolve($this, $result)->when($this->onGeneratorError);
+                        resolve($result, $this)->when($this->onGeneratorError);
                     }
                 }
             }
@@ -181,7 +181,7 @@ class NativeReactor implements Reactor {
 
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                resolve($this, $result)->when($this->onGeneratorError);
+                resolve($result, $this)->when($this->onGeneratorError);
             }
         }
     }

@@ -15,7 +15,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
         $reactor = new NativeReactor;
         $expected = ['r1' => 42, 'r2' => 41];
-        $results = \Amp\all($reactor, $promises)->wait();
+        $results = \Amp\all($promises, $reactor)->wait();
         $this->assertSame($expected, $results);
     }
 
@@ -32,7 +32,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         ];
 
         $reactor = new NativeReactor;
-        $results = \Amp\all($reactor, $promises)->wait();
+        $results = \Amp\all($promises, $reactor)->wait();
     }
 
     public function testSomeReturnsArrayOfErrorsAndResults() {
@@ -44,7 +44,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         ];
 
         $reactor = new NativeReactor;
-        list($errors, $results) = \Amp\some($reactor, $promises)->wait();
+        list($errors, $results) = \Amp\some($promises, $reactor)->wait();
 
         $this->assertSame(['r2' => $exception], $errors);
         $this->assertSame(['r1' => 42, 'r3' => 40], $results);
@@ -60,7 +60,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r2' => new Failure(new \RuntimeException),
         ];
         $reactor = new NativeReactor;
-        list($errors, $results) = \Amp\some($reactor, $promises)->wait();
+        list($errors, $results) = \Amp\some($promises, $reactor)->wait();
     }
 
     public function testResolveResolvesGeneratorResult() {
@@ -71,7 +71,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        $promise = \Amp\resolve($reactor, $gen());
+        $promise = \Amp\resolve($gen(), $reactor);
         $expected = 42;
         $actual = $promise->wait();
         $this->assertSame($expected, $actual);
@@ -98,7 +98,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $gen = function() { yield 42; };
 
         $reactor = new NativeReactor;
-        $result = \Amp\resolve($reactor, $gen())->wait();
+        $result = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(42, $result);
     }
 
@@ -111,7 +111,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
         $expected = 42;
         $reactor = new NativeReactor;
-        $actual = \Amp\resolve($reactor, $gen())->wait();
+        $actual = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame($expected, $actual);
     }
 
@@ -132,7 +132,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
         $expected = 42;
         $reactor = new NativeReactor;
-        $actual = \Amp\resolve($reactor, $gen())->wait();
+        $actual = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame($expected, $actual);
     }
 
@@ -148,7 +148,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
     }
 
     public function testImplicitAllCombinatorResolution() {
@@ -158,7 +158,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        $result = \Amp\resolve($reactor, $gen())->wait();
+        $result = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(42, $result);
     }
 
@@ -169,7 +169,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        $result = \Amp\resolve($reactor, $gen())->wait();
+        $result = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(420, $result);
     }
 
@@ -186,7 +186,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
     }
 
     public function testImplicitCombinatorResolvesGeneratorInArray() {
@@ -203,7 +203,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        $result = \Amp\resolve($reactor, $gen2())->wait();
+        $result = \Amp\resolve($gen2(), $reactor)->wait();
         $this->assertSame(42, $result);
     }
 
@@ -218,7 +218,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        $result = \Amp\resolve($reactor, $gen())->wait();
+        $result = \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(420, $result);
     }
 
@@ -231,7 +231,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        list($errors, $results) = \Amp\resolve($reactor, $gen())->wait();
+        list($errors, $results) = \Amp\resolve($gen(), $reactor)->wait();
 
         $this->assertSame('test', $errors['b']->getMessage());
         $this->assertSame(21, $results['a']);
@@ -250,7 +250,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
     }
 
     /**
@@ -263,7 +263,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
     }
 
     public function testExplicitImmediatelyYieldResolution() {
@@ -276,7 +276,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(42, $var);
     }
 
@@ -288,7 +288,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(42, $var);
     }
 
@@ -305,7 +305,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         };
 
         $reactor = new NativeReactor;
-        \Amp\resolve($reactor, $gen())->wait();
+        \Amp\resolve($gen(), $reactor)->wait();
         $this->assertSame(2, $var);
     }
 }

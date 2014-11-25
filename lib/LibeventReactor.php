@@ -63,7 +63,7 @@ class LibeventReactor implements SignalReactor {
         foreach ($immediates as $watcherId => $callback) {
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                resolve($this, $result)->when($this->onGeneratorError);
+                resolve($result, $this)->when($this->onGeneratorError);
             }
             unset(
                 $this->immediates[$watcherId],
@@ -195,7 +195,7 @@ class LibeventReactor implements SignalReactor {
                 $watcherId = $watcher->id;
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
@@ -243,7 +243,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
                 event_add($eventResource, $msDelay);
             } catch (\Exception $e) {
@@ -310,7 +310,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $stream);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -356,7 +356,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $signo);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;

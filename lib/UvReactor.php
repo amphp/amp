@@ -78,7 +78,7 @@ class UvReactor implements SignalReactor {
         foreach ($immediates as $watcherId => $callback) {
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                resolve($this, $result)->when($this->onGeneratorError);
+                resolve($result, $this)->when($this->onGeneratorError);
             }
             unset(
                 $this->immediates[$watcherId],
@@ -201,7 +201,7 @@ class UvReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
                 if ($watcher->mode === self::$MODE_ONCE) {
                     $this->clearWatcher($watcher->id);
@@ -343,7 +343,7 @@ class UvReactor implements SignalReactor {
             $callback = $watcher->callback;
             $result = $callback($this, $watcher->id, $watcher->stream);
             if ($result instanceof \Generator) {
-                resolve($this, $result)->when($this->onGeneratorError);
+                resolve($result, $this)->when($this->onGeneratorError);
             }
         } catch (\Exception $e) {
             $this->stopException = $e;
@@ -379,7 +379,7 @@ class UvReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id, $watcher->signo);
                 if ($result instanceof \Generator) {
-                    resolve($this, $result)->when($this->onGeneratorError);
+                    resolve($result, $this)->when($this->onGeneratorError);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;

@@ -20,18 +20,18 @@ function reactor(callable $factory = null) {
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
  *
- * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function all(Reactor $reactor, array $promises) {
+function all(array $promises, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Success([]);
     }
 
     $results    = [];
     $remaining  = count($promises);
-    $promisor   = new Future($reactor);
+    $promisor   = new Future($reactor ?: reactor());
     $isResolved = false;
 
     foreach ($promises as $key => $resolvable) {
@@ -78,11 +78,11 @@ function all(Reactor $reactor, array $promises) {
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
  *
- * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function some(Reactor $reactor, array $promises) {
+function some(array $promises, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -91,7 +91,7 @@ function some(Reactor $reactor, array $promises) {
 
     $results   = $errors = [];
     $remaining = count($promises);
-    $promisor  = new Future($reactor);
+    $promisor  = new Future($reactor ?: reactor());
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -130,11 +130,11 @@ function some(Reactor $reactor, array $promises) {
  * This function is the same as some() with the notable exception that it will never fail even
  * if all promises in the array resolve unsuccessfully.
  *
- * @param \Amp\Reactor $reactor
  * @param array $promises
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function any(Reactor $reactor, array $promises) {
+function any(array $promises, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Success([], []);
     }
@@ -142,7 +142,7 @@ function any(Reactor $reactor, array $promises) {
     $results   = [];
     $errors    = [];
     $remaining = count($promises);
-    $promisor  = new Future($reactor);
+    $promisor  = new Future($reactor ?: reactor());
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -173,11 +173,11 @@ function any(Reactor $reactor, array $promises) {
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  *
- * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function first(Reactor $reactor, array $promises) {
+function first(array $promises, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -186,7 +186,7 @@ function first(Reactor $reactor, array $promises) {
 
     $remaining  = count($promises);
     $isComplete = false;
-    $promisor   = new Future($reactor);
+    $promisor   = new Future($reactor ?: reactor());
 
     foreach ($promises as $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -217,19 +217,19 @@ function first(Reactor $reactor, array $promises) {
 /**
  * Map promised future values using the specified functor
  *
- * @param \Amp\Reactor $reactor
  * @param array $promises
  * @param callable $functor
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function map(Reactor $reactor, array $promises, callable $functor) {
+function map(array $promises, callable $functor, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Success([]);
     }
 
     $results   = [];
     $remaining = count($promises);
-    $promisor  = new Future($reactor);
+    $promisor  = new Future($reactor ?: reactor());
 
     foreach ($promises as $key => $resolvable) {
         $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
@@ -267,19 +267,19 @@ function map(Reactor $reactor, array $promises, callable $functor) {
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
  *
- * @param \Amp\Reactor $reactor
  * @param array $promises
  * @param callable $functor
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function filter(Reactor $reactor, array $promises, callable $functor) {
+function filter(array $promises, callable $functor, Reactor $reactor = null) {
     if (empty($promises)) {
         return new Success([]);
     }
 
     $results   = [];
     $remaining = count($promises);
-    $promisor  = new Future($reactor);
+    $promisor  = new Future($reactor ?: reactor());
 
     foreach ($promises as $key => $resolvable) {
         $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
@@ -314,12 +314,14 @@ function filter(Reactor $reactor, array $promises, callable $functor) {
 /**
  * A co-routine to resolve Generators
  *
- * Returns a promise that will resolve when the generator completes. The final value yielded by
- * the generator is used to resolve the returned Promise on success.
+ * Returns a promise that resolves when the generator completes. The final value
+ * yielded by the generator is used to resolve the returned Promise on success.
  *
  * Example:
  *
  * function anotherGenerator() {
+ *     // wait 100 milliseconds before proceeding
+ *     yield 'wait' => 100;
  *     yield 1;
  * }
  *
@@ -330,16 +332,15 @@ function filter(Reactor $reactor, array $promises, callable $functor) {
  *     yield $a * $b * $c;
  * };
  *
- * $reactor = new Amp\NativeReactor;
- * $result = resolve($reactor, $generator())->wait();
+ * $result = resolve($generator())->wait();
  * var_dump($result); // int(42)
  *
- * @param \Amp\Reactor $reactor
  * @param \Generator $gen
+ * @param \Amp\Reactor $reactor
  * @return \Amp\Promise
  */
-function resolve(Reactor $reactor, \Generator $gen) {
-    $promisor = new Future($reactor);
+function resolve(\Generator $gen, Reactor $reactor = null) {
+    $promisor = new Future($reactor ?: reactor());
     __advanceGenerator($reactor, $gen, $promisor);
 
     return $promisor;
@@ -451,7 +452,7 @@ function __promisifyGeneratorYield(Reactor $reactor, $key, $current) {
             if ($element instanceof Promise) {
                 $promise = $element;
             } elseif ($element instanceof \Generator) {
-                $promise = resolve($reactor, $element);
+                $promise = resolve($element, $reactor);
             } else {
                 $promise = new Success($element);
             }
@@ -460,7 +461,7 @@ function __promisifyGeneratorYield(Reactor $reactor, $key, $current) {
         }
 
         $combinatorFunction = __NAMESPACE__ . "\\{$key}";
-        $promise = $combinatorFunction($reactor, $promises);
+        $promise = $combinatorFunction($promises, $reactor);
 
         goto return_struct;
     }
