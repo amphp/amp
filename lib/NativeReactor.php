@@ -16,7 +16,6 @@ class NativeReactor implements Reactor {
     private $resolution = 1000;
     private $lastWatcherId = 1;
     private $isRunning = false;
-    private $resolver;
     private $onGeneratorError;
 
     private static $DISABLED_ALARM = 0;
@@ -26,7 +25,6 @@ class NativeReactor implements Reactor {
     private static $MICROSECOND = 1000000;
 
     public function __construct() {
-        $this->resolver = new Resolver($this);
         $this->onGeneratorError = function($e, $r) {
             if ($e) {
                 throw $e;
@@ -98,7 +96,7 @@ class NativeReactor implements Reactor {
             foreach ($immediates as $watcherId => $callback) {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    resolve($this, $result)->when($this->onGeneratorError);
                 }
             }
         }
@@ -143,7 +141,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $readableStream);
                     if ($result instanceof \Generator) {
-                        $this->resolver->resolve($result)->when($this->onGeneratorError);
+                        resolve($this, $result)->when($this->onGeneratorError);
                     }
                 }
             }
@@ -152,7 +150,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $writableStream);
                     if ($result instanceof \Generator) {
-                        $this->resolver->resolve($result)->when($this->onGeneratorError);
+                        resolve($this, $result)->when($this->onGeneratorError);
                     }
                 }
             }
@@ -183,7 +181,7 @@ class NativeReactor implements Reactor {
 
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                $this->resolver->resolve($result)->when($this->onGeneratorError);
+                resolve($this, $result)->when($this->onGeneratorError);
             }
         }
     }

@@ -3,212 +3,7 @@
 namespace Amp;
 
 /**
- * Schedule a callback for immediate invocation in the next event loop iteration
- *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function immediately(callable $func) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->immediately($func);
-}
-
-/**
- * Schedule a callback to execute once
- *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function once(callable $func, $msDelay) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->once($func, $msDelay);
-}
-
-/**
- * Schedule a recurring callback to execute every $interval seconds until cancelled
- *
- * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
- * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
- * will lead to memory leaks.
- *
- * @param callable $func Any valid PHP callable
- * @param int $msDelay The delay in milliseconds in-between callback invocations (may be zero)
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function repeat(callable $func, $msDelay) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->repeat($func, $msDelay);
-}
-
-/**
- * Schedule an event to trigger once at the specified time
- *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @param string $timeString Any string that can be parsed by strtotime() and is in the future
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function at(callable $func, $timeString) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->at($func, $timeString);
-}
-
-/**
- * Enable a disabled timer or stream IO watcher
- *
- * Calling enable() on an already-enabled watcher will have no effect.
- *
- * @param int $watcherId
- * @return void
- */
-function enable($watcherId) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->enable($watcherId);
-}
-
-/**
- * Temporarily disable (but don't cancel) an existing timer/stream watcher
- *
- * Calling disable() on a nonexistent or previously-disabled watcher will have no effect.
- *
- * NOTE: Disabling a repeating or stream watcher is not sufficient to free associated resources.
- * When the watcher is no longer needed applications must still use cancel() to clear related
- * memory and avoid leaks.
- *
- * @param int $watcherId
- * @return void
- */
-function disable($watcherId) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->disable($watcherId);
-}
-
-/**
- * Cancel an existing timer/stream watcher
- *
- * Calling cancel() on a non-existent watcher will have no effect.
- *
- * @param int $watcherId
- * @return void
- */
-function cancel($watcherId) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->cancel($watcherId);
-}
-
-/**
- * Watch a stream IO resource for readable data and trigger the specified callback when actionable
- *
- * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
- * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
- * will lead to memory leaks.
- *
- * @param resource $stream A stream resource to watch for readable data
- * @param callable $func Any valid PHP callable
- * @param bool $enableNow Should the watcher be enabled now or held for later use?
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function onReadable($stream, callable $func, $enableNow = true) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->onReadable($stream, $func, $enableNow);
-}
-
-/**
- * Watch a stream IO resource for writability and trigger the specified callback when actionable
- *
- * NOTE: Sockets are essentially "always writable" (as long as their write buffer is not full).
- * Therefore, it's critical that applications disable or cancel write watchers as soon as all data
- * is written or the watcher will trigger endlessly and hammer the CPU.
- *
- * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
- * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
- * will lead to memory leaks.
- *
- * @param resource $stream A stream resource to watch for writable data
- * @param callable $func Any valid PHP callable
- * @param bool $enableNow Should the watcher be enabled now or held for later use?
- * @return int Returns the unique watcher ID for disable/enable/cancel
- */
-function onWritable($stream, callable $func, $enableNow = true) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    return $reactor->onWritable($stream, $func, $enableNow);
-}
-
-/**
- * Execute a single event loop iteration
- *
- * @return void
- */
-function tick() {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->tick();
-}
-
-/**
- * Start the event reactor and assume program flow control
- *
- * @param callable $onStart Optional callback to invoke immediately upon reactor start
- * @return void
- */
-function run(callable $onStart = null) {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->run($onStart);
-}
-
-/**
- * Stop the event reactor
- *
- * @return void
- */
-function stop() {
-    static $reactor;
-    $reactor = $reactor ?: reactor();
-    $reactor->stop();
-}
-
-/**
- * React to process control signals
- *
- * @param int $signo The signal number to watch for
- * @param callable $onSignal
- * @throws \RuntimeException if the current environment cannot support signal handling
- * @return int Returns a unique integer watcher ID
- */
-function onSignal($signo, callable $onSignal) {
-    /**
-     * @var $reactor \Amp\SignalReactor
-     */
-    static $reactor;
-    if ($reactor) {
-        return $reactor->onSignal($signo, $onSignal);
-    } elseif (!($reactor = reactor()) instanceof SignalReactor) {
-        throw new \RuntimeException(
-            'Your PHP environment does not support signal handling. Please install pecl/libevent or the php-uv extension'
-        );
-    } else {
-        return $reactor->onSignal($signo, $onSignal);
-    }
-}
-
-/**
- * Get the global event reactor
+ * Get a singleton event reactor instance
  *
  * Note that the $factory callable is only invoked if no global reactor has yet been initialized.
  *
@@ -221,32 +16,53 @@ function reactor(callable $factory = null) {
 }
 
 /**
- * Get a singleton combinator instance
- *
- * @param callable $factory
- * @return \Amp\Combinator
- */
-function combinator(callable $factory = null) {
-    static $combinator;
-    if ($factory) {
-        return $combinator = $factory();
-    } elseif ($combinator) {
-        return $combinator;
-    } else {
-        return $combinator = new Combinator(reactor());
-    }
-}
-
-/**
  * If any one of the Promises fails the resulting Promise will fail. Otherwise
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
  *
+ * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
  * @return \Amp\Promise
  */
-function all(array $promises) {
-    return combinator()->all($promises);
+function all(Reactor $reactor, array $promises) {
+    if (empty($promises)) {
+        return new Success([]);
+    }
+
+    $results    = [];
+    $remaining  = count($promises);
+    $promisor   = new Future($reactor);
+    $isResolved = false;
+
+    foreach ($promises as $key => $resolvable) {
+        if (!$resolvable instanceof Promise) {
+            $results[$key] = $resolvable;
+            $remaining--;
+            continue;
+        }
+
+        $resolvable->when(function($error, $result) use (&$remaining, &$results, $key, $promisor) {
+            // If the promisor already failed don't bother
+            if (empty($remaining)) {
+                return;
+            }
+
+            if ($error) {
+                $remaining = 0;
+                $promisor->fail($error);
+                return;
+            }
+
+            $results[$key] = $result;
+            if (--$remaining === 0) {
+                $promisor->succeed($results);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
@@ -262,11 +78,50 @@ function all(array $promises) {
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
  *
+ * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
  * @return \Amp\Promise
  */
-function some(array $promises) {
-    return combinator()->some($promises);
+function some(Reactor $reactor, array $promises) {
+    if (empty($promises)) {
+        return new Failure(new \LogicException(
+            'No promises or values provided for resolution'
+        ));
+    }
+
+    $results   = $errors = [];
+    $remaining = count($promises);
+    $promisor  = new Future($reactor);
+
+    foreach ($promises as $key => $resolvable) {
+        if (!$resolvable instanceof Promise) {
+            $results[$key] = $resolvable;
+            $remaining--;
+            continue;
+        }
+
+        $resolvable->when(function($error, $result) use (&$remaining, &$results, &$errors, $key, $promisor) {
+            if ($error) {
+                $errors[$key] = $error;
+            } else {
+                $results[$key] = $result;
+            }
+
+            if (--$remaining > 0) {
+                return;
+            } elseif (empty($results)) {
+                $promisor->fail(new \RuntimeException(
+                    'All promises failed'
+                ));
+            } else {
+                $promisor->succeed([$errors, $results]);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
@@ -275,63 +130,426 @@ function some(array $promises) {
  * This function is the same as some() with the notable exception that it will never fail even
  * if all promises in the array resolve unsuccessfully.
  *
+ * @param \Amp\Reactor $reactor
  * @param array $promises
  * @return \Amp\Promise
  */
-function any(array $promises) {
-    return combinator()->any($promises);
+function any(Reactor $reactor, array $promises) {
+    if (empty($promises)) {
+        return new Success([], []);
+    }
+
+    $results   = [];
+    $errors    = [];
+    $remaining = count($promises);
+    $promisor  = new Future($reactor);
+
+    foreach ($promises as $key => $resolvable) {
+        if (!$resolvable instanceof Promise) {
+            $results[$key] = $resolvable;
+            $remaining--;
+            continue;
+        }
+
+        $resolvable->when(function($error, $result) use (&$remaining, &$results, &$errors, $key, $promisor) {
+            if ($error) {
+                $errors[$key] = $error;
+            } else {
+                $results[$key] = $result;
+            }
+
+            if (--$remaining === 0) {
+                $promisor->succeed([$errors, $results]);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  *
+ * @param \Amp\Reactor $reactor
  * @param array[\Amp\Promise] $promises
  * @return \Amp\Promise
  */
-function first(array $promises) {
-    return combinator()->first($promises);
+function first(Reactor $reactor, array $promises) {
+    if (empty($promises)) {
+        return new Failure(new \LogicException(
+            'No promises or values provided for resolution'
+        ));
+    }
+
+    $remaining  = count($promises);
+    $isComplete = false;
+    $promisor   = new Future($reactor);
+
+    foreach ($promises as $resolvable) {
+        if (!$resolvable instanceof Promise) {
+            $promisor->succeed($resolvable);
+            break;
+        }
+
+        $promise->when(function($error, $result) use (&$remaining, &$isComplete, $promisor) {
+            if ($isComplete) {
+                // we don't care about Futures that resolve after the first
+                return;
+            } elseif ($error && --$remaining === 0) {
+                $promisor->fail(new \RuntimeException(
+                    'All promises failed'
+                ));
+            } elseif (empty($error)) {
+                $isComplete = true;
+                $promisor->succeed($result);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
- * Map future values using the specified callable
+ * Map promised future values using the specified functor
  *
+ * @param \Amp\Reactor $reactor
  * @param array $promises
- * @param callable $func
+ * @param callable $functor
  * @return \Amp\Promise
  */
-function map(array $promises, callable $func) {
-    return combinator()->map($promises, $func);
+function map(Reactor $reactor, array $promises, callable $functor) {
+    if (empty($promises)) {
+        return new Success([]);
+    }
+
+    $results   = [];
+    $remaining = count($promises);
+    $promisor  = new Future($reactor);
+
+    foreach ($promises as $key => $resolvable) {
+        $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
+        $promise->when(function($error, $result) use (&$remaining, &$results, $key, $promisor, $functor) {
+            if (empty($remaining)) {
+                // If the future already failed we don't bother.
+                return;
+            }
+            if ($error) {
+                $remaining = 0;
+                $promisor->fail($error);
+                return;
+            }
+
+            try {
+                $results[$key] = $functor($result);
+                if (--$remaining === 0) {
+                    $promisor->succeed($results);
+                }
+            } catch (\Exception $error) {
+                $remaining = 0;
+                $promisor->fail($error);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
- * Filter future values using the specified callable
+ * Filter future values using the specified functor
  *
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
  *
+ * @param \Amp\Reactor $reactor
  * @param array $promises
- * @param callable $func
+ * @param callable $functor
  * @return \Amp\Promise
  */
-function filter(array $promises, callable $func) {
-    return combinator()->filter($promises, $func);
+function filter(Reactor $reactor, array $promises, callable $functor) {
+    if (empty($promises)) {
+        return new Success([]);
+    }
+
+    $results   = [];
+    $remaining = count($promises);
+    $promisor  = new Future($reactor);
+
+    foreach ($promises as $key => $resolvable) {
+        $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
+        $promise->when(function($error, $result) use (&$remaining, &$results, $key, $promisor, $functor) {
+            if (empty($remaining)) {
+                // If the future result already failed we don't bother.
+                return;
+            }
+            if ($error) {
+                $remaining = 0;
+                $promisor->fail($error);
+                return;
+            }
+            try {
+                if ($functor($result)) {
+                    $results[$key] = $result;
+                }
+                if (--$remaining === 0) {
+                    $promisor->succeed($results);
+                }
+            } catch (\Exception $error) {
+                $promisor->fail($error);
+            }
+        });
+    }
+
+    // We can return $promisor directly because the Future Promisor implementation
+    // also implements Promise for convenience
+    return $promisor;
 }
 
 /**
- * A co-routine to resolve Generators that yield Promise instances
+ * A co-routine to resolve Generators
  *
- * Returns a promise that will resolve when the generator completes. The final value yielded by the
- * generator is used to resolve the returned promise.
+ * Returns a promise that will resolve when the generator completes. The final value yielded by
+ * the generator is used to resolve the returned Promise on success.
  *
- * @param \Generator
+ * Example:
+ *
+ * function anotherGenerator() {
+ *     yield 1;
+ * }
+ *
+ * $generator = function() {
+ *     $a = (yield 2);
+ *     $b = (yield new Success(21));
+ *     $c = (yield anotherGenerator());
+ *     yield $a * $b * $c;
+ * };
+ *
+ * $reactor = new Amp\NativeReactor;
+ * $result = resolve($reactor, $generator())->wait();
+ * var_dump($result); // int(42)
+ *
+ * @param \Amp\Reactor $reactor
+ * @param \Generator $gen
  * @return \Amp\Promise
  */
-function resolve(\Generator $gen) {
-    static $resolver;
-    if (empty($resolver)) {
-        $resolver = new Resolver;
+function resolve(Reactor $reactor, \Generator $gen) {
+    $promisor = new Future($reactor);
+    __advanceGenerator($reactor, $gen, $promisor);
+
+    return $promisor;
+}
+
+function __advanceGenerator(Reactor $reactor, \Generator $gen, Promisor $promisor, $previous = null) {
+    try {
+        if ($gen->valid()) {
+            $key = $gen->key();
+            $current = $gen->current();
+            $promiseStruct = __promisifyGeneratorYield($reactor, $key, $current);
+            $reactor->immediately(function() use ($reactor, $gen, $promisor, $promiseStruct) {
+                list($promise, $noWait) = $promiseStruct;
+                if ($noWait) {
+                    __sendToGenerator($reactor, $gen, $promisor, $error = null, $result = null);
+                } else {
+                    $promise->when(function($error, $result) use ($reactor, $gen, $promisor) {
+                        __sendToGenerator($reactor, $gen, $promisor, $error, $result);
+                    });
+                }
+            });
+        } else {
+            $promisor->succeed($previous);
+        }
+    } catch (\Exception $error) {
+        $promisor->fail($error);
+    }
+}
+
+function __promisifyGeneratorYield(Reactor $reactor, $key, $current) {
+    $noWait = false;
+
+    if ($key === (string) $key) {
+        goto explicit_key;
+    } else {
+        goto implicit_key;
     }
 
-    return $resolver->resolve($gen);
+    explicit_key: {
+        $key = strtolower($key);
+        if ($key[0] === YieldCommands::NOWAIT_PREFIX) {
+            $noWait = true;
+            $key = substr($key, 1);
+        }
+
+        switch ($key) {
+            case YieldCommands::ALL:
+                // fallthrough
+            case YieldCommands::ANY:
+                // fallthrough
+            case YieldCommands::SOME:
+                if (is_array($current)) {
+                    goto combinator;
+                } else {
+                    $promise = new Failure(new \DomainException(
+                        sprintf('"%s" yield command expects array; %s yielded', $key, gettype($current))
+                    ));
+                    goto return_struct;
+                }
+            case YieldCommands::WAIT:
+                goto wait;
+            case YieldCommands::IMMEDIATELY:
+                goto immediately;
+            case YieldCommands::ONCE:
+                // fallthrough
+            case YieldCommands::REPEAT:
+                goto schedule;
+            case YieldCommands::ON_READABLE:
+                $ioWatchMethod = 'onReadable';
+                goto stream_io_watcher;
+            case YieldCommands::ON_WRITABLE:
+                $ioWatchMethod = 'onWritable';
+                goto stream_io_watcher;
+            case YieldCommands::ENABLE:
+                // fallthrough
+            case YieldCommands::DISABLE:
+                // fallthrough
+            case YieldCommands::CANCEL:
+                goto watcher_control;
+            case YieldCommands::NOWAIT:
+                $noWait = true;
+                goto implicit_key;
+            default:
+                $promise = new Failure(new \DomainException(
+                    sprintf('Unknown or invalid yield key: "%s"', $key)
+                ));
+                goto return_struct;
+        }
+    }
+
+    implicit_key: {
+        if ($current instanceof Promise) {
+            $promise = $current;
+        } elseif ($current instanceof \Generator) {
+            $promise = resolve($reactor, $current);
+        } elseif (is_array($current)) {
+            $key = YieldCommands::ALL;
+            goto combinator;
+        } else {
+            $promise = new Success($current);
+        }
+
+        goto return_struct;
+    }
+
+    combinator: {
+        $promises = [];
+        foreach ($current as $index => $element) {
+            if ($element instanceof Promise) {
+                $promise = $element;
+            } elseif ($element instanceof \Generator) {
+                $promise = resolve($reactor, $element);
+            } else {
+                $promise = new Success($element);
+            }
+
+            $promises[$index] = $promise;
+        }
+
+        $combinatorFunction = __NAMESPACE__ . "\\{$key}";
+        $promise = $combinatorFunction($reactor, $promises);
+
+        goto return_struct;
+    }
+
+    immediately: {
+        if (is_callable($current)) {
+            $watcherId = $reactor->immediately($current);
+            $promise = new Success($watcherId);
+        } else {
+            $promise = new Failure(new \DomainException(
+                sprintf(
+                    '"%s" yield command requires callable; %s provided',
+                    $key,
+                    gettype($current)
+                )
+            ));
+        }
+
+        goto return_struct;
+    }
+
+    schedule: {
+        if (is_array($current) && isset($current[0], $current[1]) && is_callable($current[0])) {
+            list($func, $msDelay) = $current;
+            $watcherId = $reactor->{$key}($func, $msDelay);
+            $promise = new Success($watcherId);
+        } else {
+            $promise = new Failure(new \DomainException(
+                sprintf(
+                    '"%s" yield command requires [callable $func, int $msDelay]; %s provided',
+                    $key,
+                    gettype($current)
+                )
+            ));
+        }
+
+        goto return_struct;
+    }
+
+    stream_io_watcher: {
+        if (is_array($current) && isset($current[0], $current[1]) && is_callable($current[1])) {
+            list($stream, $func, $enableNow) = $current;
+            $watcherId = $reactor->{$ioWatchMethod}($stream, $func, $enableNow);
+            $promise = new Success($watcherId);
+        } else {
+            $promise = new Failure(new \DomainException(
+                sprintf(
+                    '"%s" yield command requires [resource $stream, callable $func, bool $enableNow]; %s provided',
+                    $key,
+                    gettype($current)
+                )
+            ));
+        }
+
+        goto return_struct;
+    }
+
+    wait: {
+        $promisor = new Future($reactor);
+        $reactor->once(function() use ($promisor) {
+            $promisor->succeed();
+        }, (int) $current);
+
+        $promise = $promisor;
+
+        goto return_struct;
+    }
+
+    watcher_control: {
+        $reactor->{$key}($current);
+        $promise = new Success;
+
+        goto return_struct;
+    }
+
+    return_struct: {
+        return [$promise, $noWait];
+    }
+}
+
+function __sendToGenerator(Reactor $reactor, \Generator $gen, Promisor $promisor, \Exception $error = null, $result = null) {
+    try {
+        if ($error) {
+            $gen->throw($error);
+        } else {
+            $gen->send($result);
+        }
+        __advanceGenerator($reactor, $gen, $promisor, $result);
+    } catch (\Exception $error) {
+        $promisor->fail($error);
+    }
 }

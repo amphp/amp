@@ -14,14 +14,12 @@ class LibeventReactor implements SignalReactor {
     private $gcEvent;
     private $stopException;
     private $onGeneratorError;
-    private $resolver;
 
     public function __construct() {
         $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
         event_base_set($this->gcEvent, $this->base);
-        $this->resolver = new Resolver($this);
         $this->onGeneratorError = function($e, $r) {
             if ($e) {
                 throw $e;
@@ -65,7 +63,7 @@ class LibeventReactor implements SignalReactor {
         foreach ($immediates as $watcherId => $callback) {
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                $this->resolver->resolve($result)->when($this->onGeneratorError);
+                resolve($this, $result)->when($this->onGeneratorError);
             }
             unset(
                 $this->immediates[$watcherId],
@@ -197,7 +195,7 @@ class LibeventReactor implements SignalReactor {
                 $watcherId = $watcher->id;
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    resolve($this, $result)->when($this->onGeneratorError);
                 }
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
@@ -245,7 +243,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    resolve($this, $result)->when($this->onGeneratorError);
                 }
                 event_add($eventResource, $msDelay);
             } catch (\Exception $e) {
@@ -312,7 +310,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $stream);
                 if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    resolve($this, $result)->when($this->onGeneratorError);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;
@@ -358,7 +356,7 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $signo);
                 if ($result instanceof \Generator) {
-                    $this->resolver->resolve($result)->when($this->onGeneratorError);
+                    resolve($this, $result)->when($this->onGeneratorError);
                 }
             } catch (\Exception $e) {
                 $this->stopException = $e;
