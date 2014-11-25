@@ -16,8 +16,7 @@ class PrivateFuture implements Promisor {
     /**
      * @param \Amp\Reactor $reactor
      */
-    public function __construct(Reactor $reactor = null) {
-        $reactor = $reactor ?: ReactorFactory::select();
+    public function __construct(Reactor $reactor) {
         $unresolved = new Unresolved($reactor);
         $resolver = function(\Exception $error = null, $result = null) {
             $this->resolve($error, $result); // bound to private Unresolved::resolve()

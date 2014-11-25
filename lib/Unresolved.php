@@ -18,8 +18,8 @@ class Unresolved implements Promise {
     /**
      * @param \Amp\Reactor $reactor
      */
-    public function __construct(Reactor $reactor = null) {
-        $this->reactor = $reactor ?: ReactorFactory::select();
+    public function __construct(Reactor $reactor) {
+        $this->reactor = $reactor;
     }
 
     /**
