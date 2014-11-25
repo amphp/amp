@@ -1,6 +1,15 @@
 ### master
 
-- n/a
+- Remove `Combinator` class in favor of combinator functions
+- Remove `Resolver` class in favor of `resolver()` function
+- Remove superfluous Reactor function analogs
+- All `Promisor` implementations now require a `Reactor` constructor parameter.
+  Previously these implementations would lazy-inject the global singleton event
+  reactor instance if no reactor parameter was specified in the constructor.
+
+> **BC BREAKS:**
+
+- All the changes listed above are BC breaks -- please update code accordingly :)
 
 v0.14.0
 -------
