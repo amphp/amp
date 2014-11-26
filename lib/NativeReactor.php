@@ -111,7 +111,7 @@ class NativeReactor implements Reactor {
 
         if ($this->readStreams || $this->writeStreams) {
             $this->selectActionableStreams($timeToNextAlarm);
-        } elseif (!$this->alarmOrder) {
+        } elseif ((!($this->alarmOrder) || !$this->immediates)) {
             $this->stop();
         } elseif ($timeToNextAlarm > 0) {
             usleep($timeToNextAlarm * self::$MICROSECOND);
