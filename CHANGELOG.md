@@ -6,6 +6,9 @@
 - All `Promisor` implementations now require a `Reactor` constructor parameter.
   Previously these implementations would lazy-inject the global singleton event
   reactor instance if no reactor parameter was specified in the constructor.
+- Add optional boolean `Reactor::tick($noWait)` parameter
+- Correctly break out of the `NativeReactor` run loop immediately when
+  `Reactor::stop()` invoked inside immediately watchers.
 
 > **BC BREAKS:**
 

@@ -83,10 +83,10 @@ class NativeReactor implements Reactor {
     /**
      * Execute a single event loop iteration
      *
-     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
      * @return void
      */
-    public function tick() {
+    public function tick($noWait = false) {
         if (!$this->isRunning) {
             $this->enableAlarms();
         }
@@ -104,9 +104,12 @@ class NativeReactor implements Reactor {
         if ($this->immediates) {
             $timeToNextAlarm = 0;
         } elseif ($this->alarmOrder) {
-            $timeToNextAlarm = round(min($this->alarmOrder) - microtime(true), 4);
+            $timeToNextAlarm = $noWait ? 0 : round(min($this->alarmOrder) - microtime(true), 4);
         } else {
-            $timeToNextAlarm = 1;
+            // If an immediately watcher called stop() then isRunning === false. In such
+            // situations we need to complete the tick ASAP and use a timeout of zero.
+            // Otherwise we'll use a stream_select() timeout of one second.
+            $timeToNextAlarm = $noWait ? 0 : (int) $this->isRunning;
         }
 
         if ($this->readStreams || $this->writeStreams) {

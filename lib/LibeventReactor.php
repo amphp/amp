@@ -81,10 +81,10 @@ class LibeventReactor implements SignalReactor {
     /**
      * Execute a single event loop iteration
      *
-     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
      * @return void
      */
-    public function tick() {
+    public function tick($noWait = false) {
         if ($this->isRunning) {
             return;
         }
@@ -92,7 +92,8 @@ class LibeventReactor implements SignalReactor {
         $this->isRunning = true;
 
         if (empty($this->immediates) || $this->doImmediates()) {
-            event_base_loop($this->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+            $flags = $noWait ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
+            event_base_loop($this->base, $flags);
         }
 
         $this->isRunning = false;

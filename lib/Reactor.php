@@ -12,8 +12,10 @@ interface Reactor {
 
     /**
      * Execute a single event loop iteration
+     *
+     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
      */
-    public function tick();
+    public function tick($noWait = false);
 
     /**
      * Stop the event reactor

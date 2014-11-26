@@ -96,10 +96,10 @@ class UvReactor implements SignalReactor {
     /**
      * Execute a single event loop iteration
      *
-     * @throws \Exception will throw any uncaught exception encountered during the loop iteration
+     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
      * @return void
      */
-    public function tick() {
+    public function tick($noWait = false) {
         if ($this->isRunning) {
             return;
         }
@@ -107,7 +107,8 @@ class UvReactor implements SignalReactor {
         $this->isRunning = true;
 
         if (empty($this->immediates) || $this->doImmediates()) {
-            uv_run($this->loop, \UV::RUN_NOWAIT | \UV::RUN_ONCE);
+            $flags = $noWait ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;
+            uv_run($this->loop, $flags);
         }
 
         $this->isRunning = false;
