@@ -18,6 +18,8 @@ class NativeReactor implements Reactor {
     private $isRunning = false;
     private $onGeneratorError;
 
+    private static $instanceCount = 0;
+
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
     private static $DISABLED_WRITE = 2;
@@ -25,11 +27,28 @@ class NativeReactor implements Reactor {
     private static $MICROSECOND = 1000000;
 
     public function __construct() {
+        self::$instanceCount++;
         $this->onGeneratorError = function($e, $r) {
             if ($e) {
                 throw $e;
             }
         };
+    }
+
+    public function __debugInfo() {
+        return [
+            'timers'            => count($this->alarms),
+            'immediates'        => count($this->immediates),
+            'io_readers'        => count($this->readStreams),
+            'io_writers'        => count($this->writeStreams),
+            'disabled'          => count($this->disabledWatchers),
+            'last_watcher_id'   => $this->lastWatcherId,
+            'instances'         => self::$instanceCount,
+        ];
+    }
+
+    public function __destruct() {
+        self::$instanceCount--;
     }
 
     /**

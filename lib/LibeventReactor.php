@@ -15,6 +15,8 @@ class LibeventReactor implements SignalReactor {
     private $stopException;
     private $onGeneratorError;
 
+    private static $instanceCount = 0;
+
     public function __construct() {
         $this->base = event_base_new();
         $this->gcEvent = event_new();
@@ -25,6 +27,7 @@ class LibeventReactor implements SignalReactor {
                 throw $e;
             }
         };
+        self::$instanceCount++;
     }
 
     /**
@@ -152,6 +155,7 @@ class LibeventReactor implements SignalReactor {
 
         $watcher = new \StdClass;
         $watcher->id = $watcherId;
+        $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
         $watcher->isEnabled = true;
 
@@ -172,8 +176,9 @@ class LibeventReactor implements SignalReactor {
         $eventResource = event_new();
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
 
-        $watcher = new LibeventWatcher;
+        $watcher = new LibeventTimerWatcher;
         $watcher->id = $watcherId;
+        $watcher->type = Watcher::TIMER_ONCE;
         $watcher->eventResource = $eventResource;
         $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
@@ -218,8 +223,9 @@ class LibeventReactor implements SignalReactor {
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
         $eventResource = event_new();
 
-        $watcher = new LibeventWatcher;
+        $watcher = new LibeventTimerWatcher;
         $watcher->id = $watcherId;
+        $watcher->type = Watcher::TIMER_REPEAT;
         $watcher->eventResource = $eventResource;
         $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
@@ -263,7 +269,7 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
-        return $this->watchIoStream($stream, EV_READ | EV_PERSIST, $callback, $enableNow);
+        return $this->watchIoStream($stream, Watcher::IO_READER, $callback, $enableNow);
     }
 
     /**
@@ -275,15 +281,18 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
-        return $this->watchIoStream($stream, EV_WRITE | EV_PERSIST, $callback, $enableNow);
+        return $this->watchIoStream($stream, Watcher::IO_WRITER, $callback, $enableNow);
     }
 
-    private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
+    private function watchIoStream($stream, $type, callable $callback, $enableNow) {
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
+        $flags = EV_PERSIST;
+        $flags |= ($type === Watcher::IO_READER) ? EV_READ : EV_WRITE;
 
-        $watcher = new LibeventWatcher;
+        $watcher = new LibeventIoWatcher;
         $watcher->id = $watcherId;
+        $watcher->type = $type;
         $watcher->stream = $stream;
         $watcher->callback = $callback;
         $watcher->wrapper = $this->wrapStreamCallback($watcher);
@@ -333,6 +342,7 @@ class LibeventReactor implements SignalReactor {
         $eventResource = event_new();
         $watcher = new LibeventWatcher;
         $watcher->id = $watcherId;
+        $watcher->type = Watcher::SIGNAL;
         $watcher->signo = $signo;
         $watcher->eventResource = $eventResource;
         $watcher->callback = $onSignal;
@@ -437,8 +447,10 @@ class LibeventReactor implements SignalReactor {
         if (empty($watcher->eventResource)) {
             // It's an immediately watcher
             $this->immediates[$watcherId] = $watcher->callback;
-        } else {
+        } elseif ($watcher->type & Watcher::TIMER) {
             event_add($watcher->eventResource, $watcher->msDelay);
+        } else {
+            event_add($watcher->eventResource);
         }
 
         $watcher->isEnabled = true;
@@ -469,4 +481,72 @@ class LibeventReactor implements SignalReactor {
     public function getUnderlyingLoop() {
         return $this->base;
     }
+
+    public function __destruct() {
+        self::$instanceCount--;
+    }
+
+    public function __debugInfo() {
+        $immediates = $timers = $readers = $writers = $signals = $disabled = 0;
+        foreach ($this->watchers as $watcher) {
+            switch ($watcher->type) {
+                case Watcher::IMMEDIATE:
+                    $immediates++;
+                    break;
+                case Watcher::TIMER_ONCE:
+                case Watcher::TIMER_REPEAT:
+                    $timers++;
+                    break;
+                case Watcher::IO_READER:
+                    $readers++;
+                    break;
+                case Watcher::IO_WRITER:
+                    $writers++;
+                    break;
+                case Watcher::SIGNAL:
+                    $signals++;
+                    break;
+                default:
+                    throw new \DomainException(
+                        "Unexpected watcher type: {$watcher->type}"
+                    );
+            }
+
+            $disabled += !$watcher->isEnabled;
+        }
+
+        return [
+            'timers'            => $timers,
+            'immediates'        => $immediates,
+            'io_readers'        => $readers,
+            'io_writers'        => $writers,
+            'signals'           => $signals,
+            'disabled'          => $disabled,
+            'last_watcher_id'   => $this->lastWatcherId,
+            'instances'         => self::$instanceCount,
+        ];
+    }
+}
+
+class LibeventWatcher extends Watcher {
+    // Inherited from Watcher:
+    // public $id;
+    // public $type;
+    // public $isEnabled;
+
+    public $eventResource;
+    public $callback;
+    public $wrapper;
+}
+
+class LibeventSignalWatcher extends LibeventWatcher {
+    public $signo;
+}
+
+class LibeventIoWatcher extends LibeventWatcher {
+    public $stream;
+}
+
+class LibeventTimerWatcher extends LibeventWatcher {
+    public $msDelay = -1;
 }
