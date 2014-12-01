@@ -3,6 +3,8 @@
 namespace Amp;
 
 class NativeReactor implements Reactor {
+    use GeneratorResolver;
+
     private $alarms = [];
     private $immediates = [];
     private $alarmOrder = [];
@@ -16,7 +18,8 @@ class NativeReactor implements Reactor {
     private $resolution = 1000;
     private $lastWatcherId = 1;
     private $isRunning = false;
-    private $onGeneratorError;
+    private $onError;
+    private $onCallbackResolution;
 
     private static $DISABLED_ALARM = 0;
     private static $DISABLED_READ = 1;
@@ -25,8 +28,12 @@ class NativeReactor implements Reactor {
     private static $MICROSECOND = 1000000;
 
     public function __construct() {
-        $this->onGeneratorError = function($e, $r) {
-            if ($e) {
+        $this->onCallbackResolution = function($e = null, $r = null) {
+            if (empty($e)) {
+                return;
+            } elseif ($onError = $this->onError) {
+                $onError($e);
+            } else {
                 throw $e;
             }
         };
@@ -87,41 +94,46 @@ class NativeReactor implements Reactor {
      * @return void
      */
     public function tick($noWait = false) {
-        if (!$this->isRunning) {
-            $this->enableAlarms();
-        }
+        try {
+            if (!$this->isRunning) {
+                $this->enableAlarms();
+            }
 
-        if ($immediates = $this->immediates) {
-            $this->immediates = [];
-            foreach ($immediates as $watcherId => $callback) {
-                $result = $callback($this, $watcherId);
-                if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onGeneratorError);
+            if ($immediates = $this->immediates) {
+                $this->immediates = [];
+                foreach ($immediates as $watcherId => $callback) {
+                    $result = $callback($this, $watcherId);
+                    if ($result instanceof \Generator) {
+                        $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                    }
                 }
             }
-        }
 
-        if ($this->immediates) {
-            $timeToNextAlarm = 0;
-        } elseif ($this->alarmOrder) {
-            $timeToNextAlarm = $noWait ? 0 : round(min($this->alarmOrder) - microtime(true), 4);
-        } else {
-            // If an immediately watcher called stop() then isRunning === false. In such
-            // situations we need to complete the tick ASAP and use a timeout of zero.
-            // Otherwise we'll use a stream_select() timeout of one second.
-            $timeToNextAlarm = $noWait ? 0 : (int) $this->isRunning;
-        }
+            if ($this->immediates) {
+                $timeToNextAlarm = 0;
+            } elseif ($this->alarmOrder) {
+                $timeToNextAlarm = $noWait ? 0 : round(min($this->alarmOrder) - microtime(true), 4);
+            } else {
+                // If an immediately watcher called stop() then isRunning === false. In such
+                // situations we need to complete the tick ASAP and use a timeout of zero.
+                // Otherwise we'll use a stream_select() timeout of one second.
+                $timeToNextAlarm = $noWait ? 0 : (int) $this->isRunning;
+            }
 
-        if ($this->readStreams || $this->writeStreams) {
-            $this->selectActionableStreams($timeToNextAlarm);
-        } elseif (!($this->alarmOrder || $this->immediates)) {
-            $this->stop();
-        } elseif ($timeToNextAlarm > 0) {
-            usleep($timeToNextAlarm * self::$MICROSECOND);
-        }
+            if ($this->readStreams || $this->writeStreams) {
+                $this->selectActionableStreams($timeToNextAlarm);
+            } elseif (!($this->alarmOrder || $this->immediates)) {
+                $this->stop();
+            } elseif ($timeToNextAlarm > 0) {
+                usleep($timeToNextAlarm * self::$MICROSECOND);
+            }
 
-        if ($this->alarmOrder) {
-            $this->executeAlarms();
+            if ($this->alarmOrder) {
+                $this->executeAlarms();
+            }
+        } catch (\Exception $error) {
+            $errorHandler = $this->onCallbackResolution;
+            $errorHandler($error);
         }
     }
 
@@ -144,7 +156,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $readableStream);
                     if ($result instanceof \Generator) {
-                        resolve($result, $this)->when($this->onGeneratorError);
+                        $this->resolveGenerator($result)->when($this->onCallbackResolution);
                     }
                 }
             }
@@ -153,7 +165,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $writableStream);
                     if ($result instanceof \Generator) {
-                        resolve($result, $this)->when($this->onGeneratorError);
+                        $this->resolveGenerator($result)->when($this->onCallbackResolution);
                     }
                 }
             }
@@ -184,7 +196,7 @@ class NativeReactor implements Reactor {
 
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                resolve($result, $this)->when($this->onGeneratorError);
+                $this->resolveGenerator($result)->when($this->onCallbackResolution);
             }
         }
     }
@@ -457,5 +469,21 @@ class NativeReactor implements Reactor {
             $this->disabledWatchers[$watcherId] =  [self::$DISABLED_IMMEDIATE, $this->immediates[$watcherId]];
             unset($this->immediates[$watcherId]);
         }
+    }
+
+    /**
+     * An optional "last-chance" exception handler for errors resulting during callback invocation
+     *
+     * If a reactor callback throws and no onError() callback is specified the exception will
+     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
+     * exception that resulted in the callback's invocation.
+     *
+     * @param callable $onErrorCallback
+     * @return self
+     */
+    public function onError(callable $onErrorCallback) {
+        $this->onError = $onErrorCallback;
+
+        return $this;
     }
 }

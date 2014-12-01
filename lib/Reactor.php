@@ -111,4 +111,15 @@ interface Reactor {
      * @param int $watcherId
      */
     public function enable($watcherId);
+
+    /**
+     * An optional "last-chance" exception handler for errors resulting during callback invocation
+     *
+     * If a reactor callback throws and no onError() callback is specified the exception will
+     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
+     * exception that resulted in the callback's invocation.
+     *
+     * @param callable $onErrorCallback
+     */
+    public function onError(callable $onErrorCallback);
 }

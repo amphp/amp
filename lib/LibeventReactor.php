@@ -3,25 +3,33 @@
 namespace Amp;
 
 class LibeventReactor implements SignalReactor {
+    use GeneratorResolver;
+
     private $base;
     private $watchers = [];
     private $immediates = [];
     private $lastWatcherId = 1;
+    private $enabledWatcherCount = 0;
     private $resolution = 1000;
     private $isRunning = false;
     private $isGCScheduled = false;
     private $garbage = [];
     private $gcEvent;
     private $stopException;
-    private $onGeneratorError;
+    private $onError;
+    private $onCallbackResolution;
 
     public function __construct() {
         $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
         event_base_set($this->gcEvent, $this->base);
-        $this->onGeneratorError = function($e, $r) {
-            if ($e) {
+        $this->onCallbackResolution = function($e = null, $r = null) {
+            if (empty($e)) {
+                return;
+            } elseif ($onError = $this->onError) {
+                $onError($e);
+            } else {
                 throw $e;
             }
         };
@@ -48,7 +56,10 @@ class LibeventReactor implements SignalReactor {
             if ($this->immediates && !$this->doImmediates()) {
                 break;
             }
-            event_base_loop($this->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+            if (empty($this->enabledWatcherCount)) {
+                break;
+            }
+            event_base_loop($this->base, EVLOOP_ONCE);
         }
 
         if ($this->stopException) {
@@ -61,17 +72,23 @@ class LibeventReactor implements SignalReactor {
     private function doImmediates() {
         $immediates = $this->immediates;
         foreach ($immediates as $watcherId => $callback) {
-            $result = $callback($this, $watcherId);
-            if ($result instanceof \Generator) {
-                resolve($result, $this)->when($this->onGeneratorError);
+            try {
+                $this->enabledWatcherCount--;
+                unset(
+                    $this->immediates[$watcherId],
+                    $this->watchers[$watcherId]
+                );
+                $result = $callback($this, $watcherId);
+                if ($result instanceof \Generator) {
+                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                }
+            } catch (\Exception $e) {
+                $this->handleRunError($e);
             }
-            unset(
-                $this->immediates[$watcherId],
-                $this->watchers[$watcherId]
-            );
+
             if (!$this->isRunning) {
                 // If a watcher stops the reactor break out of the loop
-                break;
+                return false;
             }
         }
 
@@ -147,6 +164,7 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function immediately(callable $callback) {
+        $this->enabledWatcherCount++;
         $watcherId = (string) $this->lastWatcherId++;
         $this->immediates[$watcherId] = $callback;
 
@@ -168,6 +186,7 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function once(callable $callback, $msDelay) {
+        $this->enabledWatcherCount++;
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
@@ -192,18 +211,33 @@ class LibeventReactor implements SignalReactor {
     private function wrapOnceCallback(LibeventWatcher $watcher) {
         return function() use ($watcher) {
             try {
+                $this->enabledWatcherCount--;
                 $callback = $watcher->callback;
                 $watcherId = $watcher->id;
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onGeneratorError);
+                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
-                $this->stopException = $e;
-                $this->stop();
+                $this->handleRunError($e);
             }
         };
+    }
+
+    private function handleRunError(\Exception $e) {
+        try {
+            if (empty($this->onError)) {
+                $this->stopException = $e;
+                $this->stop();
+            } else {
+                $handler = $this->onCallbackResolution;
+                $handler($e);
+            }
+        } catch (\Exception $e) {
+            $this->stopException = $e;
+            $this->stop();
+        }
     }
 
     /**
@@ -214,6 +248,7 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function repeat(callable $callback, $msDelay) {
+        $this->enabledWatcherCount++;
         $watcherId = (string) $this->lastWatcherId++;
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
         $eventResource = event_new();
@@ -244,12 +279,11 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onGeneratorError);
+                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
                 event_add($eventResource, $msDelay);
             } catch (\Exception $e) {
-                $this->stopException = $e;
-                $this->stop();
+                $this->handleRunError($e);
             }
         };
     }
@@ -279,6 +313,7 @@ class LibeventReactor implements SignalReactor {
     }
 
     private function watchIoStream($stream, $flags, callable $callback, $enableNow) {
+        $this->enabledWatcherCount += $enableNow;
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
 
@@ -311,11 +346,10 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $stream);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onGeneratorError);
+                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
-                $this->stopException = $e;
-                $this->stop();
+                $this->handleRunError($e);
             }
         };
     }
@@ -328,6 +362,7 @@ class LibeventReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onSignal($signo, callable $onSignal) {
+        $this->enabledWatcherCount++;
         $signo = (int) $signo;
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
@@ -357,11 +392,10 @@ class LibeventReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $signo);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onGeneratorError);
+                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
-                $this->stopException = $e;
-                $this->stop();
+                $this->handleRunError($e);
             }
         };
     }
@@ -378,6 +412,7 @@ class LibeventReactor implements SignalReactor {
         }
 
         $watcher = $this->watchers[$watcherId];
+        $this->enabledWatcherCount =- $watcher->isEnabled;
 
         if (empty($watcher->eventResource)) {
             // It's an immediately watcher
@@ -406,6 +441,7 @@ class LibeventReactor implements SignalReactor {
         }
 
         $watcher = $this->watchers[$watcherId];
+        $this->enabledWatcherCount--;
 
         if (empty($watcher->eventResource)) {
             // It's an immediately watcher
@@ -433,6 +469,8 @@ class LibeventReactor implements SignalReactor {
         if ($watcher->isEnabled) {
             return;
         }
+
+        $this->enabledWatcherCount++;
 
         if (empty($watcher->eventResource)) {
             // It's an immediately watcher
@@ -468,5 +506,21 @@ class LibeventReactor implements SignalReactor {
      */
     public function getUnderlyingLoop() {
         return $this->base;
+    }
+
+    /**
+     * An optional "last-chance" exception handler for errors resulting during callback invocation
+     *
+     * If a reactor callback throws and no onError() callback is specified the exception will
+     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
+     * exception that resulted in the callback's invocation.
+     *
+     * @param callable $onErrorCallback
+     * @return self
+     */
+    public function onError(callable $onErrorCallback) {
+        $this->onError = $onErrorCallback;
+
+        return $this;
     }
 }

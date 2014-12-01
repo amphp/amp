@@ -1,8 +1,11 @@
 ### master
 
 - Remove `Combinator` class in favor of combinator functions
-- Remove `Resolver` class in favor of `resolver()` function
+- Remove `Resolver` class
 - Remove superfluous Reactor function analogs
+- Add `Reactor::onError()` exception handling hook
+- Correctly exit `UvReactor` and `LibeventReactor` run loop when no outstanding watchers
+  remain active
 - All `Promisor` implementations now require a `Reactor` constructor parameter.
   Previously these implementations would lazy-inject the global singleton event
   reactor instance if no reactor parameter was specified in the constructor.
