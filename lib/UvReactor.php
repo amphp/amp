@@ -25,8 +25,8 @@ class UvReactor implements SignalReactor {
     private static $MODE_SIGNAL = 4;
     private static $MODE_IMMEDIATE = 5;
 
-    public function __construct($newLoop = false) {
-        $this->loop = $newLoop ? uv_loop_new() : uv_default_loop();
+    public function __construct() {
+        $this->loop = uv_loop_new();
         $this->gcWatcher = uv_timer_init($this->loop);
         $this->gcCallback = function() { $this->collectGarbage(); };
         $this->isWindows = (stripos(PHP_OS, 'win') === 0);
