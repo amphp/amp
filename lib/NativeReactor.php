@@ -128,15 +128,17 @@ class NativeReactor implements Reactor {
                 }
             }
 
+            // If an immediately watcher called stop() then pull out here
+            if (!$this->isRunning) {
+                return;
+            }
+
             if ($this->immediates) {
                 $timeToNextAlarm = 0;
             } elseif ($this->alarmOrder) {
                 $timeToNextAlarm = $noWait ? 0 : round(min($this->alarmOrder) - microtime(true), 4);
             } else {
-                // If an immediately watcher called stop() then isRunning === false. In such
-                // situations we need to complete the tick ASAP and use a timeout of zero.
-                // Otherwise we'll use a stream_select() timeout of one second.
-                $timeToNextAlarm = $noWait ? 0 : (int) $this->isRunning;
+                $timeToNextAlarm = $noWait ? 0 : 1;
             }
 
             if ($this->readStreams || $this->writeStreams) {

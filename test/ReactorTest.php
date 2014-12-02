@@ -78,14 +78,15 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
         $reactor = $this->getReactor();
         $increment = 0;
-
-        $reactor->once(function() use (&$increment, $reactor) {
+        $reactor->once(function($reactor) use (&$increment) {
             $increment++;
             $reactor->stop();
-        }, $msDelay = 100);
+        }, $msDelay = 200);
 
-        $reactor->once([$reactor, 'stop'], $msDelay = 0);
-        $reactor->run();
+        $reactor->run(function($reactor) {
+            $reactor->stop();
+        });
+
         $this->assertEquals(0, $increment);
         usleep(150000);
         $reactor->run();
