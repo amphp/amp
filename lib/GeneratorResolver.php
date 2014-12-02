@@ -200,9 +200,9 @@ trait GeneratorResolver {
             if (is_callable($current)) {
                 $promise = new Success(function() use ($current) {
                     $result = call_user_func_array($current, func_get_args());
-                    if ($result instanceof \Generator) {
-                        $this->resolveGenerator($result);
-                    }
+                    return $result instanceof \Generator
+                        ? $this->resolveGenerator($result)
+                        : $result;
                 });
             } else {
                 $promise = new Failure(new \DomainException(

@@ -298,7 +298,8 @@ class GeneratorResolverTest extends \PHPUnit_Framework_TestCase {
             // Because this Generator function is bound to the reactor it should be
             // automatically resolved and our repeating watcher should be cancelled
             // allowing the reactor to stop running.
-            $boundFunc();
+            $result = $boundFunc();
+            $this->assertInstanceOf('Amp\\Promise', $result);
         });
     }
 }
