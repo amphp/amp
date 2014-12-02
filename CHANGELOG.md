@@ -6,6 +6,7 @@
 - Added `Reactor::onError()` exception handling hook
 - Added optional boolean `$noWait` parameter to `Reactor::tick($noWait)`
 - Added `Amp\getReactor()` and `Amp\chooseReactor()` functions
+- Added new `"bind"` yield command
 
 **Bugfixes:**
 
@@ -28,6 +29,10 @@
   instead
 - The `ReactorFactory` class is deprecated and scheduled for removal. Please use
   the `Amp\getReactor()` function instead of `ReactorFactory::select()`
+
+**Other:**
+
+- Changed `"wait"` yield command to `"pause"`
 
 > **BC BREAKS:**
 
