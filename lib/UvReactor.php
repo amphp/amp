@@ -22,12 +22,7 @@ class UvReactor implements SignalReactor {
     private $onError;
     private $onCallbackResolution;
 
-    private static $MODE_ONCE = 0;
-    private static $MODE_REPEAT = 1;
-    private static $MODE_READER = 2;
-    private static $MODE_WRITER = 3;
-    private static $MODE_SIGNAL = 4;
-    private static $MODE_IMMEDIATE = 5;
+    private static $instanceCount = 0;
 
     public function __construct() {
         $this->loop = uv_loop_new();
@@ -43,6 +38,7 @@ class UvReactor implements SignalReactor {
                 throw $e;
             }
         };
+        self::$instanceCount++;
     }
 
     private function collectGarbage() {
@@ -160,7 +156,7 @@ class UvReactor implements SignalReactor {
 
         $watcher = new \StdClass;
         $watcher->id = $watcherId;
-        $watcher->mode = self::$MODE_IMMEDIATE;
+        $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
         $watcher->isEnabled = true;
 
@@ -177,7 +173,7 @@ class UvReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function once(callable $callback, $msDelay) {
-        return $this->startTimer($callback, $msDelay, $msInterval = 0, self::$MODE_ONCE);
+        return $this->startTimer($callback, $msDelay, $msInterval = 0, Watcher::TIMER_ONCE);
     }
 
     /**
@@ -194,15 +190,15 @@ class UvReactor implements SignalReactor {
         $msInterval = ($msInterval && $msInterval > 0) ? (int) $msInterval : -1;
 
         return ($msInterval === -1)
-            ? $this->watchStream(STDOUT, $callback, self::$MODE_WRITER, true)
-            : $this->startTimer($callback, $msInterval, $msInterval, self::$MODE_REPEAT);
+            ? $this->watchStream(STDOUT, $callback, Watcher::IO_WRITER, true)
+            : $this->startTimer($callback, $msInterval, $msInterval, Watcher::TIMER_REPEAT);
     }
 
-    private function startTimer($callback, $msDelay, $msInterval, $mode) {
+    private function startTimer($callback, $msDelay, $msInterval, $type) {
         $this->enabledWatcherCount++;
         $watcher = new UvTimerWatcher;
         $watcher->id = (string) $this->lastWatcherId++;
-        $watcher->mode = $mode;
+        $watcher->type = $type;
         $watcher->uvStruct = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
         $watcher->msDelay = ($msDelay > 0) ? (int) $msDelay : 0;
@@ -223,7 +219,7 @@ class UvReactor implements SignalReactor {
                 if ($result instanceof \Generator) {
                     $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
-                if ($watcher->mode === self::$MODE_ONCE) {
+                if ($watcher->type === Watcher::TIMER_ONCE) {
                     $this->clearWatcher($watcher->id);
                 }
             } catch (\Exception $e) {
@@ -281,7 +277,7 @@ class UvReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onReadable($stream, callable $callback, $enableNow = true) {
-        return $this->watchStream($stream, $callback, self::$MODE_READER, (bool) $enableNow);
+        return $this->watchStream($stream, $callback, Watcher::IO_READER, (bool) $enableNow);
     }
 
     /**
@@ -293,10 +289,10 @@ class UvReactor implements SignalReactor {
      * @return string Returns a unique watcher ID
      */
     public function onWritable($stream, callable $callback, $enableNow = true) {
-        return $this->watchStream($stream, $callback, self::$MODE_WRITER, (bool) $enableNow);
+        return $this->watchStream($stream, $callback, Watcher::IO_WRITER, (bool) $enableNow);
     }
 
-    private function watchStream($stream, callable $callback, $mode, $enableNow) {
+    private function watchStream($stream, callable $callback, $type, $enableNow) {
         $this->enabledWatcherCount += $enableNow;
         $streamId = (int) $stream;
         $poll = isset($this->streamIdPollMap[$streamId])
@@ -306,7 +302,7 @@ class UvReactor implements SignalReactor {
         $watcherId = $this->lastWatcherId;
         $this->watchers[$watcherId] = $watcher = new UvIoWatcher;
         $watcher->id = $watcherId = $this->lastWatcherId++;
-        $watcher->mode = $mode;
+        $watcher->type = $type;
         $watcher->poll = $poll;
         $watcher->stream = $stream;
         $watcher->callback = $callback;
@@ -317,7 +313,7 @@ class UvReactor implements SignalReactor {
             return $watcherId;
         }
 
-        if ($mode === self::$MODE_READER) {
+        if ($type === Watcher::IO_READER) {
             $poll->readers[$watcherId] = $watcher;
         } else {
             $poll->writers[$watcherId] = $watcher;
@@ -396,7 +392,7 @@ class UvReactor implements SignalReactor {
         $this->enabledWatcherCount++;
         $watcher = new UvSignalWatcher;
         $watcher->id = (string) $this->lastWatcherId++;
-        $watcher->mode = self::$MODE_SIGNAL;
+        $watcher->type = Watcher::SIGNAL;
         $watcher->signo = $signo;
         $watcher->uvStruct = uv_signal_init($this->loop);
         $watcher->callback = $this->wrapSignalCallback($watcher, $onSignal);
@@ -440,16 +436,16 @@ class UvReactor implements SignalReactor {
 
         if ($watcher->isEnabled) {
             $this->enabledWatcherCount--;
-            switch ($watcher->mode) {
-                case self::$MODE_READER:
+            switch ($watcher->type) {
+                case Watcher::IO_READER:
                     // fallthrough
-                case self::$MODE_WRITER:
+                case Watcher::IO_WRITER:
                     $this->clearPollFromWatcher($watcher);
                     break;
-                case self::$MODE_SIGNAL:
+                case Watcher::SIGNAL:
                     uv_signal_stop($watcher->uvStruct);
                     break;
-                case self::$MODE_IMMEDIATE:
+                case Watcher::IMMEDIATE:
                     unset($this->immediates[$watcherId]);
                     break;
                 default:
@@ -514,17 +510,16 @@ class UvReactor implements SignalReactor {
         }
 
         $this->enabledWatcherCount--;
-
-        switch ($watcher->mode) {
-            case self::$MODE_READER:
+        switch ($watcher->type) {
+            case Watcher::IO_READER:
                 // fallthrough
-            case self::$MODE_WRITER:
+            case Watcher::IO_WRITER:
                 $this->disablePollFromWatcher($watcher);
                 break;
-            case self::$MODE_SIGNAL:
+            case Watcher::SIGNAL:
                 uv_signal_stop($watcher->uvStruct);
                 break;
-            case self::$MODE_IMMEDIATE:
+            case Watcher::IMMEDIATE:
                 unset($this->immediates[$watcher->id]);
                 break;
             default:
@@ -584,16 +579,16 @@ class UvReactor implements SignalReactor {
 
         $this->enabledWatcherCount++;
 
-        switch ($watcher->mode) {
-            case self::$MODE_READER:
+        switch ($watcher->type) {
+            case Watcher::IO_READER:
                 // fallthrough
-            case self::$MODE_WRITER:
+            case Watcher::IO_WRITER:
                 $this->enablePollFromWatcher($watcher);
                 break;
-            case self::$MODE_SIGNAL:
+            case Watcher::SIGNAL:
                 uv_signal_start($watcher->uvStruct, $watcher->callback, $watcher->signo);
                 break;
-            case self::$MODE_IMMEDIATE:
+            case Watcher::IMMEDIATE:
                 $this->immediates[$watcher->id] = $watcher->callback;
                 break;
             default:
@@ -612,7 +607,7 @@ class UvReactor implements SignalReactor {
 
         $preexistingFlags = $poll->flags;
 
-        if ($watcher->mode === self::$MODE_READER) {
+        if ($watcher->type === Watcher::IO_READER) {
             $poll->flags |= \UV::READABLE;
             $poll->readers[$watcherId] = $watcher;
         } else {
@@ -653,4 +648,89 @@ class UvReactor implements SignalReactor {
 
         return $this;
     }
+
+    public function __destruct() {
+        self::$instanceCount--;
+    }
+
+    public function __debugInfo() {
+        $immediates = $timers = $readers = $writers = $signals = $disabled = 0;
+        foreach ($this->watchers as $watcher) {
+            switch ($watcher->type) {
+                case Watcher::IMMEDIATE:
+                    $immediates++;
+                    break;
+                case Watcher::TIMER_ONCE:
+                case Watcher::TIMER_REPEAT:
+                    $timers++;
+                    break;
+                case Watcher::IO_READER:
+                    $readers++;
+                    break;
+                case Watcher::IO_WRITER:
+                    $writers++;
+                    break;
+                case Watcher::SIGNAL:
+                    $signals++;
+                    break;
+                default:
+                    throw new \DomainException(
+                        "Unexpected watcher type: {$watcher->type}"
+                    );
+            }
+
+            $disabled += !$watcher->isEnabled;
+        }
+
+        return [
+            'timers'            => $timers,
+            'immediates'        => $immediates,
+            'io_readers'        => $readers,
+            'io_writers'        => $writers,
+            'signals'           => $signals,
+            'disabled'          => $disabled,
+            'last_watcher_id'   => $this->lastWatcherId,
+            'instances'         => self::$instanceCount,
+        ];
+    }
+}
+
+class UvIoWatcher extends Watcher {
+    // Inherited:
+    // public $id;
+    // public $type;
+    // public $isEnabled;
+    public $poll;
+    public $stream;
+    public $callback;
+}
+
+class UvPoll extends Struct {
+    public $flags;
+    public $handle;
+    public $callback;
+    public $readers = [];
+    public $writers = [];
+    public $disable = [];
+}
+
+class UvSignalWatcher extends Watcher {
+    // Inherited:
+    // public $id;
+    // public $type;
+    // public $isEnabled;
+    public $signo;
+    public $uvStruct;
+    public $callback;
+}
+
+class UvTimerWatcher extends Watcher {
+    // Inherited:
+    // public $id;
+    // public $type;
+    // public $isEnabled;
+    public $uvStruct;
+    public $callback;
+    public $msDelay;
+    public $msInterval;
 }
