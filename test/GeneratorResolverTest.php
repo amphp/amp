@@ -242,7 +242,7 @@ class GeneratorResolverTest extends \PHPUnit_Framework_TestCase {
             $gen = function() {
                 $var = null;
                 yield 'immediately' => function() use (&$var) { $var = 42; };
-                yield 'wait' => 100; // wait 100ms so the immediately callback executes
+                yield 'pause' => 100; // pause for 100ms so the immediately callback executes
                 yield $var;
             };
             $result = (yield $gen());
@@ -255,7 +255,7 @@ class GeneratorResolverTest extends \PHPUnit_Framework_TestCase {
             $gen = function() {
                 $var = null;
                 yield 'once' => [function() use (&$var) { $var = 42; }, $msDelay = 1];
-                yield 'wait' => 100; // wait 100ms so the once callback executes
+                yield 'pause' => 100; // pause for 100ms so the once callback executes
                 yield $var;
             };
             $result = (yield $gen());
@@ -274,7 +274,7 @@ class GeneratorResolverTest extends \PHPUnit_Framework_TestCase {
 
             $gen = function() use (&$var, $repeatFunc) {
                 yield 'repeat' => [$repeatFunc, $msDelay = 1];
-                yield 'wait'   => 100; // wait 100ms so we can be sure the repeat callback executes
+                yield 'pause'   => 100; // pause for 100ms so we can be sure the repeat callback executes
                 yield $var;
             };
 

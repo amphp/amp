@@ -64,8 +64,8 @@ trait GeneratorResolver {
                         ));
                         goto return_struct;
                     }
-                case YieldCommands::WAIT:
-                    goto wait;
+                case YieldCommands::PAUSE:
+                    goto pause;
                 case YieldCommands::IMMEDIATELY:
                     goto immediately;
                 case YieldCommands::ONCE:
@@ -183,7 +183,7 @@ trait GeneratorResolver {
             goto return_struct;
         }
 
-        wait: {
+        pause: {
             $promisor = new Future;
             $this->once(function() use ($promisor) {
                 $promisor->succeed();
