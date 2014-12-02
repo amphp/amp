@@ -90,6 +90,9 @@ trait GeneratorResolver {
                     $noWait = true;
                     goto implicit_key;
                 default:
+                    if ($noWait) {
+                        goto implicit_key;
+                    }
                     $promise = new Failure(new \DomainException(
                         sprintf('Unknown or invalid yield key: "%s"', $key)
                     ));
