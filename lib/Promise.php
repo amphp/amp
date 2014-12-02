@@ -41,12 +41,4 @@ interface Promise {
      * @return self
      */
     public function watch(callable $func);
-
-    /**
-     * Block script execution indefinitely until the promise resolves
-     *
-     * In the event of promise failure, implementations MUST throw the Exception object used to
-     * fail the Promise. Upon success this method MUST return the successfully resolved value.
-     */
-    public function wait();
 }

@@ -8,9 +8,9 @@ use Amp\NativeReactor;
 
 class UnresolvedTest extends \PHPUnit_Framework_TestCase {
     public function testWatchInvokesCallbackWithResultIfAlreadySucceeded() {
-        $deferred = new PrivateFuture($this->getMock('Amp\Reactor'));
-        $promise = $deferred->promise();
-        $deferred->succeed(42);
+        $promisor = new PrivateFuture;
+        $promise = $promisor->promise();
+        $promisor->succeed(42);
         $promise->watch(function($p, $e, $r) {
             $this->assertSame(42, $r);
             $this->assertNull($p);
@@ -19,7 +19,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testWatchInvokesCallbackWithErrorIfAlreadyFailed() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
@@ -30,19 +30,12 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function testWaitReturnsOnResolution() {
-        $reactor = new NativeReactor;
-        $promisor = new PrivateFuture($reactor);
-        $reactor->once(function() use ($promisor) { $promisor->succeed(42); }, $msDelay = 100);
-        $this->assertSame(42, $promisor->promise()->wait());
-    }
-
     /**
      * @expectedException \LogicException
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -52,7 +45,7 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -62,23 +55,24 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }
 
     public function testSucceedingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new PrivateFuture($reactor);
-        $next = new Future($reactor);
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $next = new Future;
 
-        $reactor->once(function() use ($next) {
-            $next->succeed(42);
-        }, $msDelay = 1);
+            $reactor->once(function() use ($next) {
+                $next->succeed(42);
+            }, $msDelay = 1);
 
-        $promisor->succeed($next->promise());
+            $promisor->succeed($next->promise());
 
-        $this->assertSame(42, $promisor->promise()->wait());
+            $this->assertSame(42, (yield $promisor->promise()));
+        });
     }
 
     /**
@@ -86,15 +80,16 @@ class UnresolvedTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage fugazi
      */
     public function testFailingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new PrivateFuture($reactor);
-        $next = new Future($reactor);
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $next = new Future;
 
-        $reactor->once(function() use ($next) {
-            $next->fail(new \RuntimeException('fugazi'));
-        }, $msDelay = 10);
+            $reactor->once(function() use ($next) {
+                $next->fail(new \RuntimeException('fugazi'));
+            }, $msDelay = 10);
 
-        $promisor->succeed($next->promise());
-        $promisor->promise()->wait();
+            $promisor->succeed($next->promise());
+            yield $promisor->promise();
+        });
     }
 }

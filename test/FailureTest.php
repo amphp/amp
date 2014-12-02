@@ -14,14 +14,4 @@ class FailureTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame($exception, $error);
         });
     }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage test
-     */
-    public function testWaitThrowsImmediately() {
-        $exception = new \RuntimeException('test');
-        $failure = new Failure($exception);
-        $failure->wait();
-    }
 }

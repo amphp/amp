@@ -3,20 +3,11 @@
 namespace Amp;
 
 class Future implements Promisor, Promise {
-    private $reactor;
-    private $isWaiting = false;
     private $isResolved = false;
     private $watchers = [];
     private $whens = [];
     private $error;
     private $result;
-
-    /**
-     * @param \Amp\Reactor $reactor
-     */
-    public function __construct(Reactor $reactor) {
-        $this->reactor = $reactor;
-    }
 
     /**
      * Retrieve the Promise placeholder for this deferred value
@@ -64,32 +55,26 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Block script execution indefinitely until the promise resolves
-     *
-     * @throws \Exception
-     * @return mixed
+     * This method is deprecated. New code should use Amp\wait($promise) instead.
      */
     public function wait() {
-        if ($this->error) {
-            throw $this->error;
-        } elseif ($this->isResolved) {
-            return $this->result;
-        }
+        trigger_error(
+            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
+            'Please update code to use Amp\\wait($promise) instead.',
+            E_USER_DEPRECATED
+        );
 
-        $resolvedError;
-        $resolvedResult;
-
-        $this->whens[] = function($error, $result) use (&$resolvedError, &$resolvedResult) {
+        $isWaiting = true;
+        $resolvedError = $resolvedResult = null;
+        $this->when(function($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
+            $isWaiting = false;
             $resolvedError = $error;
             $resolvedResult = $result;
-            $this->isWaiting = false;
-        };
-
-        $this->isWaiting = true;
-        while ($this->isWaiting) {
-            $this->reactor->tick();
+        });
+        $reactor = getReactor();
+        while ($isWaiting) {
+            $reactor->tick();
         }
-
         if ($resolvedError) {
             throw $resolvedError;
         }

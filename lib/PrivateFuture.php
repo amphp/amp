@@ -13,11 +13,8 @@ class PrivateFuture implements Promisor {
     private $updater;
     private $promise;
 
-    /**
-     * @param \Amp\Reactor $reactor
-     */
-    public function __construct(Reactor $reactor) {
-        $unresolved = new Unresolved($reactor);
+    public function __construct() {
+        $unresolved = new Unresolved;
         $resolver = function(\Exception $error = null, $result = null) {
             $this->resolve($error, $result); // bound to private Unresolved::resolve()
         };

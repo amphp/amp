@@ -14,10 +14,4 @@ class SuccessTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame($value, $result);
         });
     }
-
-    public function testWaitReturnsResolvedValue() {
-        $value = 42;
-        $success = new Success($value);
-        $this->assertSame($value, $success->wait());
-    }
 }

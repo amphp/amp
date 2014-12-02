@@ -7,14 +7,14 @@ use Amp\NativeReactor;
 
 class FutureTest extends \PHPUnit_Framework_TestCase {
     public function testPromiseReturnsSelf() {
-        $future = new Future($this->getMock('Amp\Reactor'));
-        $this->assertSame($future, $future->promise());
+        $promisor = new Future;
+        $this->assertSame($promisor, $promisor->promise());
     }
 
     public function testWhenInvokesCallbackWithResultIfAlreadySucceeded() {
-        $deferred = new Future($this->getMock('Amp\Reactor'));
-        $promise = $deferred->promise();
-        $deferred->succeed(42);
+        $promisor = new Future;
+        $promise = $promisor->promise();
+        $promisor->succeed(42);
         $promise->when(function($e, $r) {
             $this->assertSame(42, $r);
             $this->assertNull($e);
@@ -22,7 +22,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testWhenInvokesCallbackWithErrorIfAlreadyFailed() {
-        $promisor = new Future($this->getMock('Amp\Reactor'));
+        $promisor = new Future;
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
@@ -32,19 +32,12 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function testWaitReturnsOnResolution() {
-        $reactor = new NativeReactor;
-        $promisor = new Future($reactor);
-        $reactor->once(function() use ($promisor) { $promisor->succeed(42); }, $msDelay = 100);
-        $this->assertSame(42, $promisor->promise()->wait());
-    }
-
     /**
      * @expectedException \LogicException
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new Future($this->getMock('Amp\Reactor'));
+        $promisor = new Future;
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -54,7 +47,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new Future($this->getMock('Amp\Reactor'));
+        $promisor = new Future;
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -64,23 +57,20 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new Future($this->getMock('Amp\Reactor'));
+        $promisor = new Future;
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }
 
     public function testSucceedingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new Future($reactor);
-        $next = new Future($reactor);
-
-        $reactor->once(function() use ($next) {
-            $next->succeed(42);
-        }, $msDelay = 1);
-
-        $promisor->succeed($next->promise());
-
-        $this->assertSame(42, $promisor->promise()->wait());
+        (new NativeReactor)->run(function() {
+            $next = new Future;
+            $promisor = new Future;
+            $promisor->succeed($next->promise());
+            yield 'once' => [function() use ($next) { $next->succeed(42); }, $msDelay = 10];
+            $result = (yield $promisor->promise());
+            $this->assertSame(42, $result);
+        });
     }
 
     /**
@@ -88,15 +78,14 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage fugazi
      */
     public function testFailingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new Future($reactor);
-        $next = new Future($reactor);
+        (new NativeReactor)->run(function() {
+            $promisor = new Future;
+            $next = new Future;
+            $once = function() use ($next) { $next->fail(new \RuntimeException('fugazi')); };
+            yield 'once' => [$once, $msDelay = 10];
+            $promisor->succeed($next->promise());
 
-        $reactor->once(function() use ($next) {
-            $next->fail(new \RuntimeException('fugazi'));
-        }, $msDelay = 10);
-
-        $promisor->succeed($next->promise());
-        $promisor->promise()->wait();
+            yield $promisor->promise();
+        });
     }
 }

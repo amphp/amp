@@ -7,8 +7,8 @@ use Amp\NativeReactor;
 
 class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
     public function testPromiseReturnsUnresolvedInstance() {
-        $future = new PrivateFuture($this->getMock('Amp\Reactor'));
-        $this->assertInstanceOf('Amp\Unresolved', $future->promise());
+        $promisor = new PrivateFuture;
+        $this->assertInstanceOf('Amp\Unresolved', $promisor->promise());
     }
 
     /**
@@ -16,7 +16,7 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testSucceedThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promisor->succeed(42);
         $promisor->succeed('zanzibar');
     }
@@ -26,7 +26,7 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage A Promise cannot act as its own resolution result
      */
     public function testSucceedThrowsIfPromiseIsTheResolutionValue() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promise = $promisor->promise();
         $promisor->succeed($promise);
     }
@@ -36,23 +36,22 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise already resolved
      */
     public function testFailThrowsIfAlreadyResolved() {
-        $promisor = new PrivateFuture($this->getMock('Amp\Reactor'));
+        $promisor = new PrivateFuture;
         $promisor->succeed(42);
         $promisor->fail(new \Exception);
     }
 
     public function testSucceedingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new PrivateFuture($reactor);
-        $next = new PrivateFuture($reactor);
-
-        $reactor->once(function() use ($next) {
-            $next->succeed(42);
-        }, $msDelay = 1);
-
-        $promisor->succeed($next->promise());
-
-        $this->assertSame(42, $promisor->promise()->wait());
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $next = new PrivateFuture;
+            $reactor->once(function() use ($next) {
+                $next->succeed(42);
+            }, $msDelay = 1);
+            $promisor->succeed($next->promise());
+            $result = (yield $promisor->promise());
+            $this->assertSame(42, $result);
+        });
     }
 
     /**
@@ -60,15 +59,17 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage fugazi
      */
     public function testFailingWithPromisePipelinesResult() {
-        $reactor = new NativeReactor;
-        $promisor = new PrivateFuture($reactor);
-        $next = new PrivateFuture($reactor);
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $next = new PrivateFuture;
 
-        $reactor->once(function() use ($next) {
-            $next->fail(new \RuntimeException('fugazi'));
-        }, $msDelay = 10);
+            $reactor->once(function() use ($next) {
+                $next->fail(new \RuntimeException('fugazi'));
+            }, $msDelay = 10);
 
-        $promisor->succeed($next->promise());
-        $promisor->promise()->wait();
+            $promisor->succeed($next->promise());
+
+            yield $promisor->promise();
+        });
     }
 }

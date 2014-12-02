@@ -321,4 +321,12 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor->run();
         $this->assertSame("Art is the supreme task", $test);
     }
+
+    public function testOnErrorCallbackInterceptsUncaughtException() {
+        $var = null;
+        $reactor = $this->getReactor();
+        $reactor->onError(function($e) use (&$var) { $var = $e->getMessage(); });
+        $reactor->run(function() { throw new \Exception('test'); });
+        $this->assertSame('test', $var);
+    }
 }

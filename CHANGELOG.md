@@ -1,21 +1,36 @@
 ### master
 
-- Remove `Combinator` class in favor of combinator functions
-- Remove `Resolver` class
-- Remove superfluous Reactor function analogs
-- Add `Reactor::onError()` exception handling hook
-- Correctly exit `UvReactor` and `LibeventReactor` run loop when no outstanding watchers
-  remain active
-- All `Promisor` implementations now require a `Reactor` constructor parameter.
-  Previously these implementations would lazy-inject the global singleton event
-  reactor instance if no reactor parameter was specified in the constructor.
-- Add optional boolean `Reactor::tick($noWait)` parameter
+**Additions**
+
+- Added `Reactor::onError()` exception handling hook
+- Added optional boolean `$noWait` parameter to `Reactor::tick($noWait)`
+- Added `Amp\getReactor()` and `Amp\chooseReactor()` functions
+
+**Bugfixes:**
+
 - Correctly break out of the `NativeReactor` run loop immediately when
-  `Reactor::stop()` invoked inside immediately watchers.
+  `Reactor::stop()` invoked inside immediately watchers
+- Correctly exit `UvReactor` and `LibeventReactor` run loop when no outstanding
+  watchers remain active
+
+**Removals:**
+
+- Removed `Combinator` class in favor of combinator functions
+- Removed `Resolver` class, use `GeneratorResolver` trait internally
+- `Promisor` implementations no longer have any knowledge of the event reactor.
+
+**Deprecations:**
+
+- Deprecated `Promise::wait()`. New code should use `Amp\wait()` to synchronously
+  wait for promise completion
+- Deprecated `Amp\reactor()` function. New code should use `Amp\getReactor()`
+  instead
+- The `ReactorFactory` class is deprecated and scheduled for removal. Please use
+  the `Amp\getReactor()` function instead of `ReactorFactory::select()`
 
 > **BC BREAKS:**
 
-- All the changes listed above are BC breaks -- please update code accordingly :)
+- None
 
 v0.14.0
 -------

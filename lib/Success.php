@@ -39,14 +39,15 @@ class Success implements Promise {
     }
 
     /**
-     * Wait for Future value resolution
-     *
-     * NOTE: because this object represents a successfully resolved Promise it will *always* return
-     * the resolved result immediately.
-     *
-     * @return mixed
+     * This method is deprecated. New code should use Amp\wait($promise) instead.
      */
     public function wait() {
+        trigger_error(
+            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
+            'Please update code to use Amp\\wait($promise) instead.',
+            E_USER_DEPRECATED
+        );
+
         return $this->result;
     }
 }

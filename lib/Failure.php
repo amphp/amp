@@ -39,15 +39,15 @@ class Failure implements Promise {
     }
 
     /**
-     * Wait for Future value resolution
-     *
-     * NOTE: because this object represents a failed Promise it will *always* immediately throw the
-     * exception responsible for resolution failure.
-     *
-     * @throws \Exception
-     * @return void
+     * This method is deprecated. New code should use Amp\wait($promise) instead.
      */
     public function wait() {
+        trigger_error(
+            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
+            'Please update code to use Amp\\wait($promise) instead.',
+            E_USER_DEPRECATED
+        );
+
         throw $this->error;
     }
 }
