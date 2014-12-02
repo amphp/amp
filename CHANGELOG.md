@@ -2,6 +2,7 @@
 
 **Additions**
 
+- Added `Reactor::__debugInfo()` hook to ease debugging.
 - Added `Reactor::onError()` exception handling hook
 - Added optional boolean `$noWait` parameter to `Reactor::tick($noWait)`
 - Added `Amp\getReactor()` and `Amp\chooseReactor()` functions
