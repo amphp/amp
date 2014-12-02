@@ -7,6 +7,7 @@ class YieldCommands {
     const ANY = 'any';
     const SOME = 'some';
     const PAUSE = 'pause';
+    const BIND = 'bind';
     const IMMEDIATELY = 'immediately';
     const ONCE = 'once';
     const REPEAT = 'repeat';

@@ -282,4 +282,23 @@ class GeneratorResolverTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame(2, $result);
         });
     }
+
+    public function testCallableBindYield() {
+        (new NativeReactor)->run(function($reactor) {
+            // Register a repeating callback so the reactor run loop doesn't break
+            // without our intervention.
+            $repeatWatcherId = (yield 'repeat' => [function(){}, 1000]);
+
+            $func = function() use ($repeatWatcherId) {
+                yield "cancel" => $repeatWatcherId;
+            };
+
+            $boundFunc = (yield "bind" => $func);
+
+            // Because this Generator function is bound to the reactor it should be
+            // automatically resolved and our repeating watcher should be cancelled
+            // allowing the reactor to stop running.
+            $boundFunc();
+        });
+    }
 }

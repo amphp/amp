@@ -66,6 +66,8 @@ trait GeneratorResolver {
                     }
                 case YieldCommands::PAUSE:
                     goto pause;
+                case YieldCommands::BIND:
+                    goto bind;
                 case YieldCommands::IMMEDIATELY:
                     goto immediately;
                 case YieldCommands::ONCE:
@@ -190,6 +192,23 @@ trait GeneratorResolver {
             }, (int) $current);
 
             $promise = $promisor;
+
+            goto return_struct;
+        }
+
+        bind: {
+            if (is_callable($current)) {
+                $promise = new Success(function() use ($current) {
+                    $result = call_user_func_array($current, func_get_args());
+                    if ($result instanceof \Generator) {
+                        $this->resolveGenerator($result);
+                    }
+                });
+            } else {
+                $promise = new Failure(new \DomainException(
+                    sprintf('"bind" yield command requires callable; %s provided', gettype($current))
+                ));
+            }
 
             goto return_struct;
         }
