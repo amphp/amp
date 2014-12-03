@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amp: The Guide</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="amp-the-guide">Amp: The Guide</h1>
+
+<blockquote>
+  <p><strong><a href="#table-of-contents">Table of Contents</a></strong></p>
+</blockquote>
+
+<hr>
+
+<h2 id="event-reactor-concepts">Event Reactor Concepts</h2>
+
+
+
+<h3 id="reactor-implementations">Reactor Implementations</h3>
+
+<p>It may surprise people to learn that the PHP standard library already has everything we need to write event-driven and non-blocking applications. We only reach the limits of native PHP’s functionality in this area when we ask it to poll several hundred streams for read/write capability at the same time. Even in this case, though, the fault is not with PHP but the underlying system <code>select()</code> call which is linear in its performance  degradation as load increases.</p>
+
+<p>For performance that scales out to high volume we require more advanced capabilities currently found only in extensions. If you wish to, for example, service 10,000 simultaneous clients in an Amp-backed socket server you would definitely need to use one of the reactors based on a PHP extension. However, if you’re using Amp in a strictly local program for non-blocking concurrency or you don’t need to handle more than ~100 or so simultaneous clients in a server application the native PHP functionality is perfectly adequate.</p>
+
+<p>Amp currently exposes three separate implementations for its standard <code>Reactor</code> interface. Each behaves exactly the same way from an external API perspective. The main differences have to do with underlying performance characteristics. The one capability that the extension-based reactors <em>do</em> offer that’s unavailable with the native implementation is the ability to watch for process control signals. The current implementations are listed here:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Class</th>
+  <th>Extension</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>Amp\NativeReactor</td>
+  <td>n/a</td>
+</tr>
+<tr>
+  <td>Amp\UvReactor</td>
+  <td><a href="https://github.com/chobie/php-uv">php-uv</a></td>
+</tr>
+<tr>
+  <td>Amp\LibeventReactor</td>
+  <td><a href="http://pecl.php.net/package/libevent">pecl/libevent</a></td>
+</tr>
+</tbody></table>
+
+
+<p>As mentioned, only <code>UvReactor</code> and <code>LibeventReactor</code> implement the <code>Amp\SignalReactor</code> interface to offer cross-operating system signal handling capabilities. At this time use of the <code>UvReactor</code> is recommended over <code>LibeventReactor</code> as the php-uv extension offers more in the way of tangentially related (but useful) functionality for robust non-blocking applications.</p>
+
+
+
+<h3 id="reactor-task-scheduler">Reactor == Task Scheduler</h3>
+
+<p>The first thing we need to understand to program effectively using an event loop is this:</p>
+
+<blockquote>
+  <p><em>The event reactor is our task scheduler.</em></p>
+</blockquote>
+
+<p>The reactor controls program flow as long as it runs. Once we tell the reactor to run it will <br>
+control program flow until the application errors out, has nothing left to do, or is explicitly <br>
+stopped. Consider this very simple example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span> <span class="hljs-comment">// be sure to include the autoload.php file</span>
+<span class="hljs-keyword">echo</span> <span class="hljs-string">"-before run()-\n"</span>;
+Amp\run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    Amp\repeat(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span> <span class="hljs-keyword">echo</span> <span class="hljs-string">"tick\n"</span>; }, <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">1000</span>);
+    Amp\once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span> Amp\stop(); }, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">5000</span>);
+});
+<span class="hljs-keyword">echo</span> <span class="hljs-string">"-after stop()-\n"</span>;</code></pre>
+
+<p>Upon execution of the above example you should see output like this:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs livecodeserver">-<span class="hljs-keyword">before</span> run()-
+<span class="hljs-built_in">tick</span>
+<span class="hljs-built_in">tick</span>
+<span class="hljs-built_in">tick</span>
+<span class="hljs-built_in">tick</span>
+<span class="hljs-built_in">tick</span>
+-<span class="hljs-keyword">after</span> stop()-</code></pre>
+
+<p>Hopefully this output demonstrates the concept that what happens inside the event reactor’s run loop is like its own separate program. Your script will not continue past the point of <code>Reactor::run()</code> unless one of the previously mentioned conditions for stoppage is met.</p>
+
+<p>While an application can and often does take place entirely inside the confines of the run loop, we can also use the reactor to do things like the following example which imposes a short-lived timeout for interactive console input:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+<span class="hljs-variable">$number</span> = <span class="hljs-keyword">null</span>;
+<span class="hljs-variable">$stdinWatcher</span> = <span class="hljs-keyword">null</span>;
+stream_set_blocking(STDIN, <span class="hljs-keyword">false</span>);
+
+<span class="hljs-keyword">echo</span> <span class="hljs-string">"Please input a random number: "</span>;
+
+Amp\run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(&amp;<span class="hljs-variable">$stdinWatcher</span>, &amp;<span class="hljs-variable">$number</span>)</span> {</span>
+    <span class="hljs-variable">$stdinWatcher</span> = Amp\onReadable(STDIN, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(&amp;<span class="hljs-variable">$number</span>)</span> {</span>
+        <span class="hljs-variable">$number</span> = fgets(STDIN);
+        Amp\stop(); <span class="hljs-comment">// &lt;-- we got what we came for; exit the loop</span>
+    });
+    Amp\once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        Amp\stop(); <span class="hljs-comment">// &lt;-- you took too long; exit the loop</span>
+    }, <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">5000</span>);
+});
+
+<span class="hljs-keyword">if</span> (is_null(<span class="hljs-variable">$number</span>)) {
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"You took too long so we chose the number '4' by fair dice roll\n"</span>;
+} <span class="hljs-keyword">else</span> {
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"Your number is: "</span>, (int) <span class="hljs-variable">$number</span>, <span class="hljs-string">"\n"</span>;
+}
+
+Amp\cancel(<span class="hljs-variable">$stdinWatcher</span>); <span class="hljs-comment">// &lt;-- clean up after ourselves</span>
+stream_set_blocking(STDIN, <span class="hljs-keyword">true</span>);
+
+<span class="hljs-comment">// Continue doing regular synchronous things here.</span></code></pre>
+
+<p>The details of what’s happening in this example are unimportant and involve functionality that will be covered later. For now, the takeaway should simply be that it’s possible tomove in and out of the event loop like a ninja.</p>
+
+
+
+<h3 id="the-universal-reactor">The Universal Reactor</h3>
+
+<p>In the above example we use the reactor’s procedural API to register stream IO and timere watchers. However, Amp also exposes an object API. Though it almost never makes sense to run multiple event loop instances in a single-threaded process, instantiating <code>Reactor</code> objects in your application can make things significantly more testable. Note that the function API uses a single static reactor instance for all operations (universal). Below you’ll find the same example from above section rewritten to use the <code>Amp\NativeReactor</code> class .</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+<span class="hljs-variable">$number</span> = <span class="hljs-keyword">null</span>;
+<span class="hljs-variable">$stdinWatcher</span> = <span class="hljs-keyword">null</span>;
+stream_set_blocking(STDIN, <span class="hljs-keyword">false</span>);
+
+<span class="hljs-keyword">echo</span> <span class="hljs-string">"Please input a random number: "</span>;
+
+<span class="hljs-variable">$reactor</span> = <span class="hljs-keyword">new</span> Amp\NativeReactor;
+<span class="hljs-variable">$reactor</span>-&gt;run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>)</span> <span class="hljs-title">use</span> <span class="hljs-params">(&amp;<span class="hljs-variable">$stdinWatcher</span>, &amp;<span class="hljs-variable">$number</span>)</span> {</span>
+    <span class="hljs-variable">$stdinWatcher</span> = <span class="hljs-variable">$reactor</span>-&gt;onReadable(STDIN, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$reactor</span>, &amp;<span class="hljs-variable">$number</span>)</span> {</span>
+        <span class="hljs-variable">$number</span> = fgets(STDIN);
+        <span class="hljs-variable">$reactor</span>-&gt;stop();
+    });
+    <span class="hljs-variable">$reactor</span>-&gt;once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        <span class="hljs-variable">$reactor</span>-&gt;stop();
+    }, <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">5000</span>);
+});
+
+<span class="hljs-keyword">if</span> (is_null(<span class="hljs-variable">$number</span>)) {
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"You took too long to respond, so we chose '4' by fair dice roll\n"</span>;
+} <span class="hljs-keyword">else</span> {
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"Your number is: "</span>, (int) <span class="hljs-variable">$number</span>, <span class="hljs-string">"\n"</span>;
+}
+
+<span class="hljs-variable">$reactor</span>-&gt;cancel(<span class="hljs-variable">$stdinWatcher</span>); <span class="hljs-comment">// &lt;-- clean up after ourselves</span>
+stream_set_blocking(STDIN, <span class="hljs-keyword">true</span>);</code></pre>
+
+<p>Always remember: <em>bugs arising from the existence of multiple reactor instances are exceedingly difficult to debug.</em> The reason for this should be relatively clear. It’s because running one event <br>
+loop will block script execution and prevent others from executing at the same time. This sort of “loop starvation” results in events that inexplicably fail to trigger. You should endeavor to always use the same reactor instance in your application when you instantiate and use the object API. Because the event loop is often a truly global feature of an application the procedural API functions use a static instance to ensure the same <code>Reactor</code> is reused. Be careful about instantiating reactors manually and mixing in calls to the function API.</p>
+
+
+
+<h2 id="controlling-the-reactor">Controlling the Reactor</h2>
+
+
+
+<h3 id="run">run()</h3>
+
+<p>The primary way an application interacts with the event reactor is to schedule events for execution <br>
+and then simply let the program run. Once <code>Reactor::run()</code> is invoked the event loop will run <br>
+indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. <br>
+Long-running programs generally execute entirely inside the confines of a single <code>Reactor::run()</code> <br>
+call.</p>
+
+
+
+<h3 id="tick">tick()</h3>
+
+<p>The event loop tick is the basic unit of flow control in a non-blocking application. This method <br>
+will execute a single iteration of the event loop before returning. <code>Reactor::tick()</code> may be used <br>
+inside a custom <code>while</code> loop to implement “wait” functionality in concurrency primitives such as <br>
+futures and promises.</p>
+
+
+
+<h3 id="stop">stop()</h3>
+
+<p>The event reactor loop can be stopped at any time while running. When <code>Reactor::stop()</code> is invoked <br>
+the reactor loop will return control to the userland script at the end of the current iteration <br>
+of the event loop. This method may be used to yield control from the reactor even if events or <br>
+watchable IO streams are still pending.</p>
+
+
+
+<h2 id="timer-watchers">Timer Watchers</h2>
+
+<p>Amp exposes several ways to schedule timer watchers. Let’s look at some details for each method …</p>
+
+
+
+<h3 id="immediately">immediately()</h3>
+
+<ul>
+<li>Schedule a callback to execute in the next iteration of the event loop</li>
+<li>This method guarantees a clean call stack to avoid starvation of other events in the <br>
+current iteration of the loop if called recursively. An “immediately” callback is <em>always</em> <br>
+executed in the next tick of the event loop.</li>
+<li>After an “immediately” timer watcher executes it is automatically garbage collected by <br>
+the reactor so there is no need for applications to manually cancel the associated watcher ID.</li>
+<li>Like all watchers, “immediately” timers may be disabled and reenabled. If you disable this <br>
+watcher between the time you schedule it and the time that it actually runs the reactor *will <br>
+not* be able to garbage collect it until it executes. Therefore you must manually cancel an <br>
+immediately watcher yourself if it never actually executes to free any associated resources.</li>
+</ul>
+
+
+
+<h3 id="once">once()</h3>
+
+<ul>
+<li>Schedule a callback to execute after a delay of <em>n</em> milliseconds</li>
+<li>A “once” watcher is also automatically garbage collected by the reactor after execution and <br>
+applications should not manually cancel it unless they wish to discard the watcher entirely <br>
+prior to execution.</li>
+<li>A “once” watcher that is disabled has its delay time reset so that the original delay time <br>
+starts again from zero once reenabled.</li>
+<li>Like “immediately” watchers, a timer scheduled for one-time execution must be manually <br>
+cancelled to free resources if it never runs due to being disabled by the application after <br>
+creation.</li>
+</ul>
+
+
+
+<h3 id="repeat">repeat()</h3>
+
+<ul>
+<li>Schedule a callback to repeatedly execute every <em>n</em> millisconds.</li>
+<li>Unlike one-time watchers, “repeat” timer resources must be explicitly cancelled to free <br>
+the associated resources. Failure to free “repeat” watchers once their purpose is fulfilled <br>
+will result in memory leaks in your application.</li>
+<li>Like all other watchers, “repeat” timers may be disabled/reenabled at any time.</li>
+</ul>
+
+
+
+<h3 id="at">at()</h3>
+
+<ul>
+<li>Schedule a callback to execute at a specific time in the future. Future time may either be <br>
+an integer unix timestamp or any string parsable by PHP’s <code>strtotime()</code> function.</li>
+<li>In all other respects “at” watchers are the same as “immediately” and “once” timers.</li>
+</ul>
+
+
+
+<h2 id="stream-io-watchers">Stream IO Watchers</h2>
+
+<p>Stream watchers are how we know that data exists to read or that write buffers are empty. These <br>
+notifications are how we’re able to actually <em>create</em> things like http servers and asynchronous <br>
+database libraries using the event reactor. As such, stream IO watchers form the backbone of all <br>
+non-blocking operations with Amp.</p>
+
+<p>There are two classes of IO watcher:</p>
+
+<ul>
+<li>Readability watchers</li>
+<li>Writability watchers</li>
+</ul>
+
+
+
+<h3 id="onreadable">onReadable()</h3>
+
+<p>Watchers registered via <code>Reactor::onReadable()</code> trigger their callbacks in the following situations:</p>
+
+<ul>
+<li>When data is available to read on the stream under observation</li>
+<li>When the stream is at EOF (for sockets, this means the connection is lost)</li>
+</ul>
+
+<p>A common usage pattern for reacting to readable data looks something like this example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+define(<span class="hljs-string">'IO_GRANULARITY'</span>, <span class="hljs-number">32768</span>);
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isStreamDead</span><span class="hljs-params">(<span class="hljs-variable">$socket</span>)</span> {</span>
+    <span class="hljs-keyword">return</span> !is_resource(<span class="hljs-variable">$socket</span>) || @feof(<span class="hljs-variable">$socket</span>);
+}
+
+<span class="hljs-variable">$client</span>-&gt;watcherId = Amp\onReadable(<span class="hljs-variable">$client</span>-&gt;socket, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$client</span>)</span> {</span>
+    <span class="hljs-variable">$newData</span> = @fread(<span class="hljs-variable">$client</span>-&gt;socket, IO_GRANULARITY);
+    <span class="hljs-keyword">if</span> (<span class="hljs-variable">$newData</span> != <span class="hljs-string">""</span>) {
+        <span class="hljs-comment">// There was actually data and not an EOF notification. Let's consume it!</span>
+        parseIncrementalData(<span class="hljs-variable">$client</span>, <span class="hljs-variable">$newData</span>);
+    } <span class="hljs-keyword">elseif</span> (isStreamDead(<span class="hljs-variable">$client</span>-&gt;socket)) {
+        <span class="hljs-comment">// If the read data == "" we need to make sure the stream isn't dead</span>
+        closeClientAndClearAnyAssociatedResources(<span class="hljs-variable">$client</span>);
+    }
+});</code></pre>
+
+<p>In the above example we’ve done a few very simple things:</p>
+
+<ul>
+<li><p>Register a readability watcher for a socket that will trigger our callback when there is <br>
+data available to read.</p></li>
+<li><p>When we read data from the stream in our triggered callback we pass that to a stateful parser <br>
+that does something domain-specific when certain conditions are met.</p></li>
+<li><p>If the <code>fread()</code> call indicates that the socket connection is dead we clean up any resources <br>
+we’ve allocated for the storage of this stream. This process should always include calling <br>
+<code>Reactor::cancel()</code> on any reactor watchers we registered in relation to the stream.</p></li>
+</ul>
+
+
+
+<h3 id="onwritable">onWritable()</h3>
+
+<ul>
+<li>Streams are essentially <em>“always”</em> writable. The only time they aren’t is when their <br>
+respective write buffers are full.</li>
+</ul>
+
+<p>A common usage pattern for reacting to writability involves initializing a writability watcher without enabling it when a client first connects to a server. Once incomplete writes occur we’re then able to “unpause” the write watcher using <code>Reactor::enable()</code> until data is fully sent without having to create and cancel new watcher resources on the same stream multiple times.</p>
+
+
+
+<h2 id="pausing-resuming-and-cancelling-watchers">Pausing, Resuming and Cancelling Watchers</h2>
+
+<p>All watchers, regardless of type, can be temporarily disabled and enabled in addition to being <br>
+cleared via <code>Reactor::cancel()</code>. This allows for advanced capabilities such as disabling the acceptance of new socket clients in server applications when simultaneity limits are reached. In general, the performance characteristics of watcher reuse via pause/resume are favorable by comparison to repeatedly cancelling and re-registering watchers.</p>
+
+
+
+<h3 id="disable">disable()</h3>
+
+<p>A simple disable example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+
+<span class="hljs-variable">$reactor</span> = <span class="hljs-keyword">new</span> Amp\NativeReactor;
+
+<span class="hljs-comment">// Register a watcher we'll disable</span>
+<span class="hljs-variable">$watcherIdToDisable</span> = <span class="hljs-variable">$reactor</span>-&gt;once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"I'll never execute in one second because: disable()\n"</span>;
+}, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">1000</span>);
+
+<span class="hljs-comment">// Register a watcher to perform the disable() operation</span>
+<span class="hljs-variable">$reactor</span>-&gt;once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$watcherIdToDisable</span>, <span class="hljs-variable">$reactor</span>)</span> {</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"Disabling WatcherId: "</span>, <span class="hljs-variable">$watcherIdToDisable</span>, <span class="hljs-string">"\n"</span>;
+    <span class="hljs-variable">$reactor</span>-&gt;disable(<span class="hljs-variable">$watcherIdToDisable</span>);
+}, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">500</span>);
+
+<span class="hljs-variable">$reactor</span>-&gt;run();</code></pre>
+
+<p>After our second watcher callback executes the reactor loop exits because there are no longer any enabled watchers registered to process.</p>
+
+
+
+<h3 id="enable">enable()</h3>
+
+<p>Using <code>enable()</code> is just as simple as the <code>disable()</code> example we just saw:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+
+<span class="hljs-variable">$reactor</span> = <span class="hljs-keyword">new</span> Amp\NativeReactor;
+
+<span class="hljs-comment">// Register a watcher</span>
+<span class="hljs-variable">$myWatcherId</span> = <span class="hljs-variable">$reactor</span>-&gt;repeat(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"tick\n"</span>;
+}, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">1000</span>);
+
+<span class="hljs-comment">// Disable the watcher</span>
+<span class="hljs-variable">$reactor</span>-&gt;disable(<span class="hljs-variable">$myWatcherId</span>);
+
+<span class="hljs-comment">// Remember, nothing happens until the reactor runs, so it doesn't matter that we</span>
+<span class="hljs-comment">// previously created and disabled $myWatcherId</span>
+<span class="hljs-variable">$reactor</span>-&gt;run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>)</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$myWatcherId</span>)</span> {</span>
+    <span class="hljs-comment">// Immediately enable the watcher when the reactor starts</span>
+    <span class="hljs-variable">$reactor</span>-&gt;enable(<span class="hljs-variable">$myWatcherId</span>);
+    <span class="hljs-comment">// Now that it's enabled we'll see tick output in our console every 1000ms.</span>
+});</code></pre>
+
+<p>For a slightly more complex use case, let’s look at a common scenario where a server might create a write watcher that is initially disabled but subsequently enabled as necessary:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Server</span> {</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-variable">$reactor</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-variable">$clients</span> = [];
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">__construct</span><span class="hljs-params">(Amp\Reactor <span class="hljs-variable">$reactor</span>)</span> {</span>
+        <span class="hljs-variable">$this</span>-&gt;reactor = <span class="hljs-variable">$reactor</span>;
+    }
+
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">startServer</span><span class="hljs-params">()</span> {</span>
+        <span class="hljs-comment">// ... server bind and accept logic would exist here</span>
+        <span class="hljs-variable">$this</span>-&gt;reactor-&gt;run();
+    }
+
+    <span class="hljs-keyword">private</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">onNewClient</span><span class="hljs-params">(<span class="hljs-variable">$sock</span>)</span> {</span>
+        <span class="hljs-variable">$socketId</span> = (int) <span class="hljs-variable">$sock</span>;
+        <span class="hljs-variable">$client</span> = <span class="hljs-keyword">new</span> ClientStruct;
+        <span class="hljs-variable">$client</span>-&gt;socket = <span class="hljs-variable">$sock</span>;
+        <span class="hljs-variable">$readWatcher</span> = <span class="hljs-variable">$this</span>-&gt;reactor-&gt;onReadable(<span class="hljs-variable">$sock</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$client</span>)</span> {</span>
+            <span class="hljs-variable">$this</span>-&gt;onReadable(<span class="hljs-variable">$client</span>);
+        });
+        <span class="hljs-variable">$writeWatcher</span> = <span class="hljs-variable">$this</span>-&gt;reactor-&gt;onReadable(<span class="hljs-variable">$sock</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$client</span>)</span> {</span>
+            <span class="hljs-variable">$this</span>-&gt;doWrite(<span class="hljs-variable">$client</span>);
+        }, <span class="hljs-variable">$enableNow</span> = <span class="hljs-keyword">false</span>); <span class="hljs-comment">// &lt;-- let's initialize the watcher as "disabled"</span>
+
+        <span class="hljs-variable">$client</span>-&gt;readWatcher = <span class="hljs-variable">$readWatcher</span>;
+        <span class="hljs-variable">$client</span>-&gt;writeWatcher = <span class="hljs-variable">$writeWatcher</span>;
+
+        <span class="hljs-variable">$this</span>-&gt;clients[<span class="hljs-variable">$socketId</span>] = <span class="hljs-variable">$client</span>;
+    }
+
+    <span class="hljs-comment">// ... other class implementation details here ...</span>
+
+    <span class="hljs-keyword">private</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">writeToClient</span><span class="hljs-params">(<span class="hljs-variable">$client</span>, <span class="hljs-variable">$data</span>)</span> {</span>
+        <span class="hljs-variable">$client</span>-&gt;writeBuffer .= <span class="hljs-variable">$data</span>;
+        <span class="hljs-variable">$this</span>-&gt;doWrite(<span class="hljs-variable">$client</span>);
+    }
+
+    <span class="hljs-keyword">private</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">doWrite</span><span class="hljs-params">(ClientStruct <span class="hljs-variable">$client</span>)</span> {</span>
+        <span class="hljs-variable">$bytesToWrite</span> = strlen(<span class="hljs-variable">$client</span>-&gt;writeBuffer);
+        <span class="hljs-variable">$bytesWritten</span> = @fwrite(<span class="hljs-variable">$client</span>-&gt;socket, <span class="hljs-variable">$client</span>-&gt;writeBuffer);
+
+        <span class="hljs-keyword">if</span> (<span class="hljs-variable">$bytesToWrite</span> === <span class="hljs-variable">$bytesWritten</span>) {
+            <span class="hljs-variable">$this</span>-&gt;reactor-&gt;disable(<span class="hljs-variable">$client</span>-&gt;writeWatcher);
+        } <span class="hljs-keyword">elseif</span> (<span class="hljs-variable">$bytesWritten</span> &gt;= <span class="hljs-number">0</span>) {
+            <span class="hljs-variable">$client</span>-&gt;writeBuffer = substr(<span class="hljs-variable">$client</span>-&gt;writeBuffer, <span class="hljs-variable">$bytesWritten</span>);
+            <span class="hljs-variable">$this</span>-&gt;reactor-&gt;enable(<span class="hljs-variable">$client</span>-&gt;writeWatcher);
+        } <span class="hljs-keyword">elseif</span> (<span class="hljs-variable">$this</span>-&gt;isSocketDead(<span class="hljs-variable">$client</span>-&gt;socket)) {
+            <span class="hljs-variable">$this</span>-&gt;unloadClient(<span class="hljs-variable">$client</span>);
+        }
+    }
+
+    <span class="hljs-comment">// ... other class implementation details here ...</span>
+}</code></pre>
+
+
+
+<h3 id="cancel">cancel()</h3>
+
+<p>It’s important to <em>always</em> cancel persistent watchers once you’re finished with them or you’ll create memory leaks in your application. This functionality works in exactly the same way as  the above enable/disable examples:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+Amp\run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$myWatcherId</span> = Amp\repeat(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        <span class="hljs-keyword">echo</span> <span class="hljs-string">"tick\n"</span>;
+    }, <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">1000</span>);
+
+    <span class="hljs-comment">// Cancel $myWatcherId in five seconds and exit the reactor loop</span>
+    Amp\once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$myWatcherId</span>)</span> {</span>
+        Amp\cancel(<span class="hljs-variable">$myWatcherId</span>);
+    }, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">5000</span>);
+});</code></pre>
+
+
+
+<h2 id="process-signal-watchers">Process Signal Watchers</h2>
+
+<p>The <code>Amp\SignalReactor</code> extends the base reactor interface to expose an API for handling process <br>
+control signals in your application like any other event. Simply use a compatible event reactor <br>
+implementation (<code>UvReactor</code> or <code>LibeventReactor</code>, preferably the former) and interact with its <br>
+<code>SignalReactor::onSignal()</code> method. Consider:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+(<span class="hljs-keyword">new</span> Amp\UvReactor)-&gt;run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>)</span> {</span>
+    <span class="hljs-comment">// Let's tick off output once per second so we can see activity.</span>
+    <span class="hljs-variable">$reactor</span>-&gt;repeat(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+            <span class="hljs-keyword">echo</span> <span class="hljs-string">"tick: "</span>, date(<span class="hljs-string">'c'</span>), <span class="hljs-string">"\n"</span>;
+    }, <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">1000</span>);
+
+    <span class="hljs-comment">// What to do when a SIGINT signal is received</span>
+    <span class="hljs-variable">$watcherId</span> = <span class="hljs-variable">$reactor</span>-&gt;onSignal(UV::SIGINT, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        <span class="hljs-keyword">echo</span> <span class="hljs-string">"Caught SIGINT! exiting ...\n"</span>;
+        <span class="hljs-keyword">exit</span>;
+    });
+});</code></pre>
+
+<p>As should be clear from the above example, signal watchers may be enabled, disabled and cancelled like any other event.</p>
+
+
+
+<h2 id="reactor-addenda">Reactor Addenda</h2>
+
+
+
+<h3 id="callback-invocation-parameters">Callback Invocation Parameters</h3>
+
+<p>All watcher callbacks are invoked using the same standardized parameter order:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Watcher Type</th>
+  <th>Callback Signature</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>immediately()</td>
+  <td><code>function(Reactor $reactor, $watcherId)</code></td>
+</tr>
+<tr>
+  <td>once()</td>
+  <td><code>function(Reactor $reactor, $watcherId)</code></td>
+</tr>
+<tr>
+  <td>repeat()</td>
+  <td><code>function(Reactor $reactor, $watcherId)</code></td>
+</tr>
+<tr>
+  <td>at()</td>
+  <td><code>function(Reactor $reactor, $watcherId)</code></td>
+</tr>
+<tr>
+  <td>watchStream()</td>
+  <td><code>function(Reactor $reactor, $watcherId, $stream)</code></td>
+</tr>
+<tr>
+  <td>onReadable()</td>
+  <td><code>function(Reactor $reactor, $watcherId, $stream)</code></td>
+</tr>
+<tr>
+  <td>onWritable()</td>
+  <td><code>function(Reactor $reactor, $watcherId, $stream)</code></td>
+</tr>
+<tr>
+  <td>onSignal()</td>
+  <td><code>function(Reactor $reactor, $watcherId, $signo)</code></td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="watcher-cancellation-safety">Watcher Cancellation Safety</h3>
+
+<p>It is always safe to cancel a watcher from within its own callback. For example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+<span class="hljs-variable">$increment</span> = <span class="hljs-number">0</span>;
+Amp\repeat(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>)</span> <span class="hljs-title">use</span> <span class="hljs-params">(&amp;<span class="hljs-variable">$increment</span>)</span> {</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">"tick\n"</span>;
+    <span class="hljs-keyword">if</span> (++<span class="hljs-variable">$increment</span> &gt;= <span class="hljs-number">3</span>) {
+        <span class="hljs-variable">$reactor</span>-&gt;cancel(<span class="hljs-variable">$watcherId</span>); <span class="hljs-comment">// &lt;-- cancel myself!</span>
+    }
+}, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">50</span>);</code></pre>
+
+
+
+<h3 id="an-important-note-on-writability">An Important Note on Writability</h3>
+
+<p>Because streams are essentially <em>“always”</em> writable you should only enable writability watchers <br>
+while you have data to send. If you leave these watchers enabled when your application doesn’t have <br>
+anything to write the watcher will trigger endlessly until disabled or cancelled. This will max out <br>
+your CPU. If you’re seeing inexplicably high CPU usage in your application it’s a good bet you’ve <br>
+got a writability watcher that you failed to disable or cancel after you were finished with it.</p>
+
+
+
+<h3 id="process-signal-number-availability">Process Signal Number Availability</h3>
+
+<p>Using the <code>SignalReactor</code> interface is relatively straightforward with the php-uv extension because <br>
+it exposes <code>UV::SIG*</code> constants for watchable signals. Applications using the <code>LibeventReactor</code> to <br>
+will need to manually specify the appropriate integer signal numbers when registering signal watchers.</p>
+
+
+
+<h2 id="managing-concurrency">Managing Concurrency</h2>
+
+<p>The weak link when managing concurrency is humans; we simply don’t think asynchronously or <br>
+in parallel. Instead, we’re really good at doing one thing at a time, in order, and the world <br>
+around us generally fits this model. So to effectively design for concurrent processing in our code <br>
+we have a couple of options:</p>
+
+<ol>
+<li>Get smarter (not particularly feasible);</li>
+<li>Abstract concurrent task execution to make it feel synchronous.</li>
+</ol>
+
+
+
+<h3 id="promises">Promises</h3>
+
+<p>The basic unit of concurrency in an Amp application is the <code>Amp\Promise</code>. These objects should be thought of as “placeholders” for values or tasks that aren’t yet complete. By using placeholders we’re able to reason about the results of concurrent operations as if they were already complete variables.</p>
+
+<blockquote>
+  <p><strong>NOTE</strong></p>
+  
+  <p>Amp promises do <em>not</em> conform to the “Thenables” abstraction common in javascript promise implementations. It is this author’s opinion that chaining .then() calls is a clunky way to avoid callback hell with awkward error handling results. Instead, Amp utilizes PHP 5.5’s generator functionality to accomplish the same thing in a more performant way with superior error handling capabilities.</p>
+</blockquote>
+
+
+
+<h4 id="the-promise-api">The Promise API</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Promise</span> {</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">when</span><span class="hljs-params">(callable <span class="hljs-variable">$func</span>)</span>;</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">watch</span><span class="hljs-params">(callable <span class="hljs-variable">$func</span>)</span>;</span>
+}</code></pre>
+
+<p>In its simplest form the <code>Amp\Promise</code> aggregates callbacks for dealing with computational results once they eventually resolve. While most code will not interact with this API directly thanks to the magic of <a href="#generators">Generators</a>, let’s take a quick look at the two simple API methods exposed on <code>Amp\Promise</code> implementations:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Method</th>
+  <th>Callback Signature</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>void when(callable)</td>
+  <td><code>function(Exception $error = null, $result = null)</code></td>
+</tr>
+<tr>
+  <td>void watch(callable)</td>
+  <td><code>function($data)</code></td>
+</tr>
+</tbody></table>
+
+
+
+
+<h4 id="when">when()</h4>
+
+<p><code>Amp\Promise::when()</code> accepts an error-first callback. This callback is responsible for reacting to the eventual result of the computation represented by the promise placeholder. For example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+<span class="hljs-variable">$promise</span> = someAsyncFunctionThatReturnsAPromise();
+<span class="hljs-variable">$promise</span>-&gt;when(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(Exception <span class="hljs-variable">$error</span> = null, <span class="hljs-variable">$result</span> = null)</span> {</span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-variable">$error</span>) {
+        printf(
+            <span class="hljs-string">"Something went wrong:\n%s\n"</span>,
+            <span class="hljs-variable">$e</span>-&gt;getMessage()
+        );
+    } <span class="hljs-keyword">else</span> {
+        printf(
+            <span class="hljs-string">"Hurray! Our result is:\n%s\n"</span>,
+            print_r(<span class="hljs-variable">$result</span>, <span class="hljs-keyword">true</span>)
+        );
+    }
+});</code></pre>
+
+<p>Those familiar with javascript code generally reflect that the above interface quickly devolves into <a href="http://callbackhell.com/">“callback hell”</a>, and they’re correct. We will shortly see how to avoid this problem in the <a href="#generators">Generators</a> section.</p>
+
+
+
+<h4 id="watch">watch()</h4>
+
+<p><code>Amp\Promise::watch()</code> affords promise-producers (<a href="#promisors">Promisors</a>) the ability to broadcast progress updates while a placeholder value resolves. Whether or not to actually send progress updates is left to individual libraries, but the functionality is available should applications require it. A simple example:</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+<span class="hljs-variable">$promise</span> = someAsyncFunctionWithProgressUpdates();
+<span class="hljs-variable">$promise</span>-&gt;watch(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$update</span>)</span> {</span>
+    printf(
+        <span class="hljs-string">"Woot, we got an update of some kind:\n%s\n"</span>,
+        print_r(<span class="hljs-variable">$update</span>, <span class="hljs-keyword">true</span>)
+    );
+});</code></pre>
+
+
+
+<h3 id="promisors">Promisors</h3>
+
+<p><code>Amp\Promisor</code> is the abstraction responsible for resolving future values once they become available. A library that resolves values asynchronously creates an <code>Amp\Promisor</code> and uses it to return an <code>Amp\Promise</code> to API consumers. Once the async library determines that the value is ready it resolves the promise held by the API consumer using methods on the linked promisor.</p>
+
+
+
+<h4 id="the-promisor-api">The Promisor API</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Promisor</span> {</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">promise</span><span class="hljs-params">()</span>;</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">update</span><span class="hljs-params">(<span class="hljs-variable">$progress</span>)</span>;</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">succeed</span><span class="hljs-params">(<span class="hljs-variable">$result</span> = null)</span>;</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fail</span><span class="hljs-params">(\Exception <span class="hljs-variable">$error</span>)</span>;</span>
+}</code></pre>
+
+<p>Amp provides two base implementations for async value promisors: <code>Amp\Future</code> and <code>Amp\PrivateFuture</code>.</p>
+
+
+
+<h4 id="future-promisor">Future Promisor</h4>
+
+<p>The standard <code>Amp\Future</code> is the more performant option of the two default <code>Amp\Promisor</code> implementations. It acts both as promisor and promise to minimize the number of new object/closure instantiations needed to resolve an async value. The drawback to this approach is that any code with a reference to the <code>Future</code> promisor can resolve the associated Promise.</p>
+
+
+
+<h4 id="privatefuture-promisor">PrivateFuture Promisor</h4>
+
+<p>The <code>Amp\PrivateFuture</code> is more concerned with code safety than performance. It <em>does not</em> act as its own promise. Only code with a reference to a <code>PrivateFuture</code> instance can resolve its associated promise.</p>
+
+
+
+<h4 id="promisor-example">Promisor Example</h4>
+
+<p>Here’s a simple example of an async value producer <code>asyncMultiply()</code> creating a promisor and returning the associated promise to its API consumer. Note that the code below would work exactly the same had we used a <code>PrivateFuture</code> as our promisor instead of the <code>Future</code> employed below.</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span> <span class="hljs-comment">// Example async producer using promisor</span>
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">asyncMultiply</span><span class="hljs-params">(<span class="hljs-variable">$x</span>, <span class="hljs-variable">$y</span>)</span> {</span>
+    <span class="hljs-comment">// Create a new promisor</span>
+    <span class="hljs-variable">$promisor</span> = <span class="hljs-keyword">new</span> Amp\Future;
+
+    <span class="hljs-comment">// Resolve the async result one second from now</span>
+    Amp\once(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$promisor</span>, <span class="hljs-variable">$x</span>, <span class="hljs-variable">$y</span>)</span> {</span>
+        <span class="hljs-variable">$promisor</span>-&gt;succeed(<span class="hljs-variable">$x</span> * <span class="hljs-variable">$y</span>);
+    }, <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">1000</span>);
+
+    <span class="hljs-keyword">return</span> <span class="hljs-variable">$promisor</span>-&gt;promise();
+}
+
+<span class="hljs-variable">$promise</span> = asyncMultiply(<span class="hljs-number">6</span>, <span class="hljs-number">7</span>);
+<span class="hljs-variable">$result</span> = Amp\wait(<span class="hljs-variable">$promise</span>);
+var_dump(<span class="hljs-variable">$result</span>); <span class="hljs-comment">// int(42)</span></code></pre>
+
+
+
+<h3 id="combinators">Combinators</h3>
+
+
+
+<h4 id="all">all()</h4>
+
+<p>The <code>all()</code> functor combines an array of promise objects into a single promise that will resolve <br>
+when all promises in the group resolve. If any one of the <code>Amp\Promise</code> instances fails the <br>
+combinator’s <code>Promise</code> will fail. Otherwise the resulting <code>Promise</code> succeeds with an array matching <br>
+keys from the input array to their resolved values.</p>
+
+<p>The <code>all()</code> combinator is extremely powerful because it allows us to concurrently execute many <br>
+asynchronous operations at the same time. Let’s look at a simple example using the amp HTTP client <br>
+(<a href="https://github.com/amphp/artax">artax</a>) to retrieve multiple HTTP resources concurrently …</p>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+
+Amp\run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$httpClient</span> = <span class="hljs-keyword">new</span> Amp\Artax\Client;
+    <span class="hljs-variable">$promiseArray</span> = <span class="hljs-variable">$httpClient</span>-&gt;requestMulti([
+        <span class="hljs-string">'google'</span>    =&gt; <span class="hljs-string">'http://www.google.com'</span>,
+        <span class="hljs-string">'news'</span>      =&gt; <span class="hljs-string">'http://news.google.com'</span>,
+        <span class="hljs-string">'bing'</span>      =&gt; <span class="hljs-string">'http://www.bing.com'</span>,
+        <span class="hljs-string">'yahoo'</span>     =&gt; <span class="hljs-string">'https://www.yahoo.com'</span>,
+    ]);
+
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-comment">// magic combinator sauce</span>
+        <span class="hljs-variable">$responses</span> = (<span class="hljs-keyword">yield</span> Amp\all(<span class="hljs-variable">$promiseArray</span>));
+
+        <span class="hljs-keyword">foreach</span> (<span class="hljs-variable">$responses</span> <span class="hljs-keyword">as</span> <span class="hljs-variable">$key</span> =&gt; <span class="hljs-variable">$response</span>) {
+            printf(
+                <span class="hljs-string">"%s | HTTP/%s %d %s\n"</span>,
+                <span class="hljs-variable">$key</span>,
+                <span class="hljs-variable">$response</span>-&gt;getProtocol(),
+                <span class="hljs-variable">$response</span>-&gt;getStatus(),
+                <span class="hljs-variable">$response</span>-&gt;getReason()
+            );
+        }
+    } <span class="hljs-keyword">catch</span> (<span class="hljs-keyword">Exception</span> <span class="hljs-variable">$e</span>) {
+        <span class="hljs-comment">// If any one of the requests fails the combo</span>
+        <span class="hljs-comment">// promise returned by Amp\all() will fail and</span>
+        <span class="hljs-comment">// be thrown back into our generator here.</span>
+        <span class="hljs-keyword">echo</span> <span class="hljs-variable">$e</span>-&gt;getMessage(), <span class="hljs-string">"\n"</span>;
+    }
+
+    Amp\stop();
+});</code></pre>
+
+
+
+<h4 id="some">some()</h4>
+
+<p>The <code>some()</code> functor is the same as <code>all()</code> except that it tolerates individual failures. As long <br>
+as at least one promise in the passed array the combined promise will succeed. The successful <br>
+resolution value is an array of the form <code>[$arrayOfErrors, $arrayOfSuccesses]</code>. The individual keys <br>
+in the component arrays are preserved from the promise array passed to the functor for evaluation.</p>
+
+
+
+<h4 id="first">first()</h4>
+
+<p>Resolves with the first successful result. The resulting Promise will only fail if all <br>
+promises in the group fail or if the promise array is empty.</p>
+
+
+
+<h4 id="map">map()</h4>
+
+<p>Maps eventual promise results using the specified callable.</p>
+
+
+
+<h4 id="filter">filter()</h4>
+
+<p>Filters eventual promise results using the specified callable.</p>
+
+<p>If the functor returns a truthy value the resolved promise result is retained, otherwise it is <br>
+discarded. Array keys are retained for any results not filtered out by the functor.</p>
+
+
+
+<h3 id="generators">Generators</h3>
+
+<p>The addition of Generators in PHP 5.5 trivializes synchronization and error handling in async contexts. The Amp event reactor builds in co-routine support for all reactor callbacks so we can use the <code>yield</code> keyword to make async code feel synchronous. Let’s look at a simple example executing inside the event reactor run loop (covered later):</p>
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-preprocessor">&lt;?php</span>
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">asyncMultiply</span><span class="hljs-params">(x, <span class="hljs-variable">$y</span>)</span> {</span>
+    <span class="hljs-comment">// Pause this function's execution for 100ms without</span>
+    <span class="hljs-comment">// blocking the application's event loop.</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">100</span>;
+
+    <span class="hljs-comment">// The final value yielded by a generator is used as</span>
+    <span class="hljs-comment">// its "return value"</span>
+    <span class="hljs-keyword">yield</span> (<span class="hljs-variable">$x</span> * <span class="hljs-variable">$y</span>);
+}
+
+Amp\run(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-comment">// Yield control until the generator resolves.</span>
+        <span class="hljs-variable">$result</span> = (<span class="hljs-keyword">yield</span> asyncMultiply(<span class="hljs-number">2</span>, <span class="hljs-number">21</span>));
+        var_dump(<span class="hljs-variable">$result</span>); <span class="hljs-comment">// int(42)</span>
+    } <span class="hljs-keyword">catch</span> (<span class="hljs-keyword">Exception</span> <span class="hljs-variable">$e</span>) {
+        <span class="hljs-comment">// If promise resolution fails the exception is</span>
+        <span class="hljs-comment">// thrown back to us and we handle it as needed.</span>
+    }
+});</code></pre>
+
+<p>As you can see in the above example there is no need for callbacks or <code>.then()</code> chaining. Instead, <br>
+we’re able to use <code>yield</code> statements to control program flow even when future computational results <br>
+are still pending.</p>
+
+<blockquote>
+  <p><strong>NOTE</strong></p>
+  
+  <p>When yielding <code>Amp\Promise</code> instances that should the computation fail the relevant exception will be thrown back into your generator. Applications should generally wrap their promise yields in <code>try/catch</code> blocks.</p>
+</blockquote>
+
+<h3 id="implicit-yield-behavior">Implicit Yield Behavior</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Yieldable</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><code>Amp\Promise</code></td>
+  <td>Any promise instance may be yielded and control will be returned to the generator once the promise resolves. If resolution fails the relevant exception is thrown into the generator and must be handled by the application or it will bubble up. If resolution succeeds the promise’s resolved value is sent back into the generator.</td>
+</tr>
+<tr>
+  <td><code>Generator</code></td>
+  <td>Any generator instance may be yielded. The resolution value returned to the original yielding generator is the final value yielded from the nested generator. If an error occurs while resolving the nested generator it will be thrown back into the original yielding generator.</td>
+</tr>
+<tr>
+  <td><code>array</code></td>
+  <td>A yielded array with no associated command key is resolved as an <code>all</code> combinator; control is returned when all individual elements of the array are resolved.</td>
+</tr>
+<tr>
+  <td>-</td>
+  <td>Any value that is not an <code>Amp\Promise</code>, <code>\Generator</code> or <code>array</code> is treated as “resolved” and sent back to the original yielding Generator directly .</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="yield-command-reference">Yield Command Reference</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Command</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><a href="#yield-pause">pause</a></td>
+  <td>Pause generator execution for the yielded number of milliseconds</td>
+</tr>
+<tr>
+  <td><a href="#yield-immediately">immediately</a></td>
+  <td>Resolve the yielded callback on the next iteration of the event loop</td>
+</tr>
+<tr>
+  <td><a href="#yield-once">once</a></td>
+  <td>Resolve the yielded callback at array index 0 in array index 1 milliseconds</td>
+</tr>
+<tr>
+  <td><a href="#yield-repeat">repeat</a></td>
+  <td>Repeatedly resolve the yielded callback at array index 0 every array index 1 milliseconds</td>
+</tr>
+<tr>
+  <td><a href="#yield-onreadable">onreadable</a></td>
+  <td>Resolve the yielded callback at array index 1 when the stream resource at index 0 reports as readable</td>
+</tr>
+<tr>
+  <td><a href="#yield-onwritable">onwritable</a></td>
+  <td>Resolve the yielded callback at array index 1 when the stream resource at index 0 reports as writable</td>
+</tr>
+<tr>
+  <td><a href="#yield-enable">enable</a></td>
+  <td>Enable the yielded event watcher ID</td>
+</tr>
+<tr>
+  <td><a href="#yield-disable">disable</a></td>
+  <td>Disable the yielded event watcher ID</td>
+</tr>
+<tr>
+  <td><a href="#yield-cancel">cancel</a></td>
+  <td>Cancel the yielded event watcher ID</td>
+</tr>
+<tr>
+  <td><a href="#yield-all">all</a></td>
+  <td>Flatten the array of promises/generators and return control when all individual elements resolve successfully; fail the result if any individual resolution fails</td>
+</tr>
+<tr>
+  <td><a href="#yield-any">any</a></td>
+  <td>Flatten the array of promises/generators and return control when all individual elements resolve; never fail the result regardless of component failures</td>
+</tr>
+<tr>
+  <td><a href="#yield-some">some</a></td>
+  <td>Flatten the array of promises/generators and return control when all individual elements resolve; only fail the result if all components fail</td>
+</tr>
+<tr>
+  <td><a href="#yield-bind">bind</a></td>
+  <td>Bind a callable to the event reactor so it will be automagically resolved upon invocation</td>
+</tr>
+<tr>
+  <td><a href="#yield-nowait">nowait</a></td>
+  <td>Don’t wait on the yielded promise or generator to resolve before returning control to the generator</td>
+</tr>
+<tr>
+  <td>@ (prefix)</td>
+  <td>Prefixed to another command to indicate the result should not be waited on before returning control to the generator</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="yield-command-examples">Yield Command Examples</h3>
+
+
+
+<h4 id="yield-pause">yield pause</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// yield control for 100 milliseconds</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">100</span>;
+};</code></pre>
+
+
+
+<h4 id="yield-immediately">yield immediately</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Execute the specified $function in the next tick of the</span>
+    <span class="hljs-comment">// event loop; the ID associated with this watcher is sent</span>
+    <span class="hljs-comment">// back to the origin generator.</span>
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>)</span>{</span>};
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'immediately'</span> =&gt; <span class="hljs-variable">$function</span>);
+};</code></pre>
+
+
+
+<h4 id="yield-once">yield once</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Schedule $function for execution in $msDelay milliseconds;</span>
+    <span class="hljs-comment">// the ID associated with this watcher is sent back to the</span>
+    <span class="hljs-comment">// origin generator.</span>
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>)</span>{</span>};
+    <span class="hljs-variable">$msDelay</span> = <span class="hljs-number">100</span>;
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'once'</span> =&gt; [<span class="hljs-variable">$function</span>, <span class="hljs-variable">$msDelay</span>]);
+};</code></pre>
+
+
+
+<h4 id="yield-repeat">yield repeat</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Schedule $function for execution every $msInterval milliseconds;</span>
+    <span class="hljs-comment">// the ID associated with this watcher is sent back to the origin</span>
+    <span class="hljs-comment">// generator where it can later be cancelled.</span>
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>)</span>{</span>};
+    <span class="hljs-variable">$msInterval</span> = <span class="hljs-number">1000</span>;
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'repeat'</span> =&gt; [<span class="hljs-variable">$function</span>, <span class="hljs-variable">$msInterval</span>]);
+};</code></pre>
+
+
+
+<h4 id="yield-onreadable">yield onreadable</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Schedule $function for execution any time $stream has readable data.</span>
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>, <span class="hljs-variable">$stream</span>)</span>{</span>};
+    <span class="hljs-variable">$stream</span> = STDIN;
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'onReadable'</span> =&gt; [<span class="hljs-variable">$stream</span>, <span class="hljs-variable">$function</span>]);
+
+    <span class="hljs-comment">// We can also optionally disable stream watchers at registration time:</span>
+    <span class="hljs-variable">$enableNow</span> = <span class="hljs-keyword">false</span>;
+    <span class="hljs-variable">$watcherId2</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'onReadable'</span> =&gt; [<span class="hljs-variable">$stream</span>, <span class="hljs-variable">$function</span>, <span class="hljs-variable">$enableNow</span>]);
+};</code></pre>
+
+
+
+<h4 id="yield-onwritable">yield onwritable</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Schedule $function for execution any time $stream is writable.</span>
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>, <span class="hljs-variable">$stream</span>)</span>{</span>};
+    <span class="hljs-variable">$stream</span> = STDOUT;
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'onWritable'</span> =&gt; [<span class="hljs-variable">$stream</span>, <span class="hljs-variable">$function</span>]);
+
+    <span class="hljs-comment">// We can also optionally disable stream watchers at registration time:</span>
+    <span class="hljs-variable">$enableNow</span> = <span class="hljs-keyword">false</span>;
+    <span class="hljs-variable">$watcherId2</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'onWritable'</span> =&gt; [<span class="hljs-variable">$stream</span>, <span class="hljs-variable">$function</span>, <span class="hljs-variable">$enableNow</span>]);
+};</code></pre>
+
+
+
+<h4 id="yield-enable">yield enable</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$stream</span> = STDOUT;
+    <span class="hljs-variable">$function</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(<span class="hljs-variable">$reactor</span>, <span class="hljs-variable">$watcherId</span>, <span class="hljs-variable">$stream</span>)</span>{</span>};
+    <span class="hljs-variable">$enableNow</span> = <span class="hljs-keyword">false</span>;
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'onWritable'</span> =&gt; [<span class="hljs-variable">$stream</span>, <span class="hljs-variable">$function</span>, <span class="hljs-variable">$enableNow</span>]);
+
+    <span class="hljs-comment">// ... do some stuff ...</span>
+
+    <span class="hljs-comment">// Lets enable the writability watcher now</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'enable'</span> =&gt; <span class="hljs-variable">$watcherId</span>;
+};</code></pre>
+
+
+
+<h4 id="yield-disable">yield disable</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'repeat'</span> =&gt; [<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span>{</span>}, <span class="hljs-number">100</span>]);
+
+    <span class="hljs-comment">// ... do some stuff ...</span>
+
+    <span class="hljs-comment">// Disable (but don't cancel) our repeating timer watcher</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'disable'</span> =&gt; <span class="hljs-variable">$watcherId</span>;
+};</code></pre>
+
+
+
+<h4 id="yield-cancel">yield cancel</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$watcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'repeat'</span> =&gt; [<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span>{</span>}, <span class="hljs-number">100</span>]);
+
+    <span class="hljs-comment">// ... do some stuff ...</span>
+
+    <span class="hljs-comment">// Cancel our repeating timer watcher and free any associated resources</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'cancel'</span> =&gt; <span class="hljs-variable">$watcherId</span>;
+};</code></pre>
+
+
+
+<h4 id="yield-all">yield all</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">myAsyncThing</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">100</span>;
+    <span class="hljs-keyword">yield</span> <span class="hljs-number">44</span>;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// list()</span>
+    <span class="hljs-keyword">list</span>(<span class="hljs-variable">$a</span>, <span class="hljs-variable">$b</span>, <span class="hljs-variable">$c</span>) = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'all'</span> =&gt; [
+        <span class="hljs-number">42</span>,
+        <span class="hljs-keyword">new</span> Amp\Success(<span class="hljs-number">43</span>),
+        myAsyncThing(),
+    ]);
+    var_dump(<span class="hljs-variable">$a</span>, <span class="hljs-variable">$b</span>, <span class="hljs-variable">$c</span>); <span class="hljs-comment">// int(42), int(43), int(44)</span>
+
+    <span class="hljs-comment">// extract()</span>
+    extract(<span class="hljs-keyword">yield</span> <span class="hljs-string">'all'</span> =&gt; [
+        <span class="hljs-string">'d'</span> =&gt; <span class="hljs-number">42</span>,
+        <span class="hljs-string">'e'</span> =&gt; <span class="hljs-keyword">new</span> Amp\Success(<span class="hljs-number">43</span>),
+        <span class="hljs-string">'f'</span> =&gt; myAsyncThing(),
+    ]);
+    var_dump(<span class="hljs-variable">$d</span>, <span class="hljs-variable">$e</span>, <span class="hljs-variable">$f</span>); <span class="hljs-comment">// int(42), int(43), int(44)</span>
+};</code></pre>
+
+
+
+<h4 id="yield-any">yield any</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">myAsyncThing</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">100</span>;
+    <span class="hljs-keyword">yield</span> <span class="hljs-number">44</span>;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">list</span>(<span class="hljs-variable">$errors</span>, <span class="hljs-variable">$results</span>) = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'any'</span> =&gt; [
+        <span class="hljs-string">'a'</span> =&gt; <span class="hljs-number">42</span>,
+        <span class="hljs-string">'b'</span> =&gt; <span class="hljs-keyword">new</span> Amp\Failure(<span class="hljs-keyword">new</span> <span class="hljs-keyword">Exception</span>(<span class="hljs-string">'test'</span>)),
+        <span class="hljs-string">'c'</span> =&gt; myAsyncThing(),
+    ]);
+    assert(<span class="hljs-variable">$errors</span>[<span class="hljs-string">'b'</span>] <span class="hljs-keyword">instanceof</span> <span class="hljs-keyword">Exception</span>);
+    assert(<span class="hljs-variable">$errors</span>[<span class="hljs-string">'b'</span>]-&gt;getMessage() === <span class="hljs-string">'test'</span>);
+    assert(<span class="hljs-keyword">isset</span>(<span class="hljs-variable">$results</span>[<span class="hljs-string">'a'</span>], <span class="hljs-variable">$results</span>[<span class="hljs-string">'c'</span>]));
+    assert(<span class="hljs-variable">$results</span>[<span class="hljs-string">'a'</span>] === <span class="hljs-number">42</span>);
+    assert(<span class="hljs-variable">$results</span>[<span class="hljs-string">'c'</span>] === <span class="hljs-number">44</span>);
+};</code></pre>
+
+
+
+<h4 id="yield-some">yield some</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">myAsyncThing</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">100</span>;
+    <span class="hljs-keyword">yield</span> <span class="hljs-number">44</span>;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-keyword">list</span>(<span class="hljs-variable">$errors</span>, <span class="hljs-variable">$results</span>) = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'some'</span> =&gt; [
+        <span class="hljs-string">'a'</span> =&gt; <span class="hljs-number">42</span>,
+        <span class="hljs-string">'b'</span> =&gt; <span class="hljs-keyword">new</span> Amp\Failure(<span class="hljs-keyword">new</span> <span class="hljs-keyword">Exception</span>(<span class="hljs-string">'test'</span>)),
+        <span class="hljs-string">'c'</span> =&gt; myAsyncThing(),
+    ]);
+
+    assert(<span class="hljs-variable">$results</span>[<span class="hljs-string">'a'</span>] === <span class="hljs-number">42</span>);
+    assert(<span class="hljs-variable">$errors</span>[<span class="hljs-string">'b'</span>] <span class="hljs-keyword">instanceof</span> <span class="hljs-keyword">Exception</span>);
+    assert(<span class="hljs-variable">$results</span>[<span class="hljs-string">'c'</span>] === <span class="hljs-number">44</span>);
+
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">list</span>(<span class="hljs-variable">$errors</span>, <span class="hljs-variable">$results</span>) = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'some'</span> =&gt; [
+            <span class="hljs-keyword">new</span> Amp\Failure(<span class="hljs-keyword">new</span> <span class="hljs-keyword">Exception</span>(<span class="hljs-string">'ex1'</span>)),
+            <span class="hljs-keyword">new</span> Amp\Failure(<span class="hljs-keyword">new</span> <span class="hljs-keyword">Exception</span>(<span class="hljs-string">'ex2'</span>)),
+        ]);
+        <span class="hljs-comment">// You'll never reach this line because both promises failed</span>
+    } <span class="hljs-keyword">catch</span> (<span class="hljs-keyword">Exception</span> <span class="hljs-variable">$e</span>) {
+        var_dump(<span class="hljs-variable">$e</span>-&gt;getMessage());
+    }
+};</code></pre>
+
+
+
+<h4 id="yield-bind">yield bind</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-variable">$repeatWatcherId</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">'repeat'</span> =&gt; [<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span>{</span>}, <span class="hljs-number">1000</span>]);
+    <span class="hljs-variable">$func</span> = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">(<span class="hljs-variable">$repeatWatcherId</span>)</span> {</span>
+        <span class="hljs-keyword">yield</span> <span class="hljs-string">"cancel"</span> =&gt; <span class="hljs-variable">$repeatWatcherId</span>;
+    };
+
+    <span class="hljs-variable">$boundFunc</span> = (<span class="hljs-keyword">yield</span> <span class="hljs-string">"bind"</span> =&gt; <span class="hljs-variable">$func</span>);
+
+    <span class="hljs-comment">// Resolved as if we yielded the "cancel" command here</span>
+    <span class="hljs-variable">$boundFunc</span>();
+};</code></pre>
+
+
+
+<h4 id="yield-nowait">yield nowait</h4>
+
+
+
+<pre class="prettyprint"><code class="language-php hljs "><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">myAsyncThing</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// pause for three seconds</span>
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'pause'</span> =&gt; <span class="hljs-number">3000</span>;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+    <span class="hljs-comment">// Don't wait for the async task to complete</span>
+    <span class="hljs-variable">$startTime</span> = time();
+    <span class="hljs-keyword">yield</span> <span class="hljs-string">'nowait'</span> =&gt; myAsyncThing();
+    var_dump(time() - <span class="hljs-variable">$startTime</span>); <span class="hljs-comment">// int(0)</span>
+
+    <span class="hljs-comment">// Wait for async task completion (normal)</span>
+    <span class="hljs-variable">$startTime</span> = time();
+    <span class="hljs-keyword">yield</span> myAsyncThing();
+    var_dump(time() - <span class="hljs-variable">$startTime</span>); <span class="hljs-comment">// int(3)</span>
+};</code></pre>
+
+<hr>
+
+
+
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<p><div class="toc"><div class="toc">
+<ul>
+<li><a href="#amp-the-guide">Amp: The Guide</a><ul>
+<li><a href="#event-reactor-concepts">Event Reactor Concepts</a><ul>
+<li><a href="#reactor-implementations">Reactor Implementations</a></li>
+<li><a href="#reactor-task-scheduler">Reactor == Task Scheduler</a></li>
+<li><a href="#the-universal-reactor">The Universal Reactor</a></li>
+</ul>
+</li>
+<li><a href="#controlling-the-reactor">Controlling the Reactor</a><ul>
+<li><a href="#run">run()</a></li>
+<li><a href="#tick">tick()</a></li>
+<li><a href="#stop">stop()</a></li>
+</ul>
+</li>
+<li><a href="#timer-watchers">Timer Watchers</a><ul>
+<li><a href="#immediately">immediately()</a></li>
+<li><a href="#once">once()</a></li>
+<li><a href="#repeat">repeat()</a></li>
+<li><a href="#at">at()</a></li>
+</ul>
+</li>
+<li><a href="#stream-io-watchers">Stream IO Watchers</a><ul>
+<li><a href="#onreadable">onReadable()</a></li>
+<li><a href="#onwritable">onWritable()</a></li>
+</ul>
+</li>
+<li><a href="#pausing-resuming-and-cancelling-watchers">Pausing, Resuming and Cancelling Watchers</a><ul>
+<li><a href="#disable">disable()</a></li>
+<li><a href="#enable">enable()</a></li>
+<li><a href="#cancel">cancel()</a></li>
+</ul>
+</li>
+<li><a href="#process-signal-watchers">Process Signal Watchers</a></li>
+<li><a href="#reactor-addenda">Reactor Addenda</a><ul>
+<li><a href="#callback-invocation-parameters">Callback Invocation Parameters</a></li>
+<li><a href="#watcher-cancellation-safety">Watcher Cancellation Safety</a></li>
+<li><a href="#an-important-note-on-writability">An Important Note on Writability</a></li>
+<li><a href="#process-signal-number-availability">Process Signal Number Availability</a></li>
+</ul>
+</li>
+<li><a href="#managing-concurrency">Managing Concurrency</a><ul>
+<li><a href="#promises">Promises</a><ul>
+<li><a href="#the-promise-api">The Promise API</a></li>
+<li><a href="#when">when()</a></li>
+<li><a href="#watch">watch()</a></li>
+</ul>
+</li>
+<li><a href="#promisors">Promisors</a><ul>
+<li><a href="#the-promisor-api">The Promisor API</a></li>
+<li><a href="#future-promisor">Future Promisor</a></li>
+<li><a href="#privatefuture-promisor">PrivateFuture Promisor</a></li>
+<li><a href="#promisor-example">Promisor Example</a></li>
+</ul>
+</li>
+<li><a href="#combinators">Combinators</a><ul>
+<li><a href="#all">all()</a></li>
+<li><a href="#some">some()</a></li>
+<li><a href="#first">first()</a></li>
+<li><a href="#map">map()</a></li>
+<li><a href="#filter">filter()</a></li>
+</ul>
+</li>
+<li><a href="#generators">Generators</a></li>
+<li><a href="#implicit-yield-behavior">Implicit Yield Behavior</a></li>
+<li><a href="#yield-command-reference">Yield Command Reference</a></li>
+<li><a href="#yield-command-examples">Yield Command Examples</a><ul>
+<li><a href="#yield-pause">yield pause</a></li>
+<li><a href="#yield-immediately">yield immediately</a></li>
+<li><a href="#yield-once">yield once</a></li>
+<li><a href="#yield-repeat">yield repeat</a></li>
+<li><a href="#yield-onreadable">yield onreadable</a></li>
+<li><a href="#yield-onwritable">yield onwritable</a></li>
+<li><a href="#yield-enable">yield enable</a></li>
+<li><a href="#yield-disable">yield disable</a></li>
+<li><a href="#yield-cancel">yield cancel</a></li>
+<li><a href="#yield-all">yield all</a></li>
+<li><a href="#yield-any">yield any</a></li>
+<li><a href="#yield-some">yield some</a></li>
+<li><a href="#yield-bind">yield bind</a></li>
+<li><a href="#yield-nowait">yield nowait</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#table-of-contents">Table of Contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</p></div></body>
+</html>
