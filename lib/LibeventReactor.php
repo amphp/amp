@@ -375,7 +375,7 @@ class LibeventReactor implements SignalReactor {
         $signo = (int) $signo;
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
-        $watcher = new LibeventWatcher;
+        $watcher = new LibeventSignalWatcher;
         $watcher->id = $watcherId;
         $watcher->type = Watcher::SIGNAL;
         $watcher->signo = $signo;
