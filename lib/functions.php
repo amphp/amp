@@ -237,9 +237,7 @@ function all(array $promises) {
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
-            $results[$key] = $resolvable;
-            $remaining--;
-            continue;
+            $resolvable = new Success($resolvable);
         }
 
         $resolvable->when(function($error, $result) use (&$remaining, &$results, $key, $promisor) {
@@ -259,10 +257,6 @@ function all(array $promises) {
                 $promisor->succeed($results);
             }
         });
-    }
-
-    if (empty($remaining)) {
-        $promisor->succeed($results);
     }
 
     // We can return $promisor directly because the Future Promisor implementation
@@ -300,9 +294,7 @@ function some(array $promises) {
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
-            $results[$key] = $resolvable;
-            $remaining--;
-            continue;
+            $resolvable = new Success($resolvable);
         }
 
         $resolvable->when(function($error, $result) use (&$remaining, &$results, &$errors, $key, $promisor) {
@@ -322,10 +314,6 @@ function some(array $promises) {
                 $promisor->succeed([$errors, $results]);
             }
         });
-    }
-
-    if (empty($remaining)) {
-        $promisor->succeed([$errors, $results]);
     }
 
     // We can return $promisor directly because the Future Promisor implementation
@@ -354,9 +342,7 @@ function any(array $promises) {
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
-            $results[$key] = $resolvable;
-            $remaining--;
-            continue;
+            $resolvable = new Success($resolvable);
         }
 
         $resolvable->when(function($error, $result) use (&$remaining, &$results, &$errors, $key, $promisor) {
@@ -370,10 +356,6 @@ function any(array $promises) {
                 $promisor->succeed([$errors, $results]);
             }
         });
-    }
-
-    if (empty($remaining)) {
-        $promisor->succeed([$errors, $results]);
     }
 
     // We can return $promisor directly because the Future Promisor implementation
