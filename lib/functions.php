@@ -261,6 +261,10 @@ function all(array $promises) {
         });
     }
 
+    if (empty($remaining)) {
+        $promisor->succeed($results);
+    }
+
     // We can return $promisor directly because the Future Promisor implementation
     // also implements Promise for convenience
     return $promisor;
@@ -289,7 +293,8 @@ function some(array $promises) {
         ));
     }
 
-    $results   = $errors = [];
+    $errors    = [];
+    $results   = [];
     $remaining = count($promises);
     $promisor  = new Future;
 
@@ -317,6 +322,10 @@ function some(array $promises) {
                 $promisor->succeed([$errors, $results]);
             }
         });
+    }
+
+    if (empty($remaining)) {
+        $promisor->succeed([$errors, $results]);
     }
 
     // We can return $promisor directly because the Future Promisor implementation
@@ -361,6 +370,10 @@ function any(array $promises) {
                 $promisor->succeed([$errors, $results]);
             }
         });
+    }
+
+    if (empty($remaining)) {
+        $promisor->succeed([$errors, $results]);
     }
 
     // We can return $promisor directly because the Future Promisor implementation
