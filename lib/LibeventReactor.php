@@ -90,7 +90,7 @@ class LibeventReactor implements SignalReactor {
             }
 
             if (!$this->isRunning) {
-                // If a watcher stops the reactor break out of the loop
+                // If one of the immediately watchers stops the reactor break out of the loop
                 return false;
             }
         }
@@ -201,8 +201,8 @@ class LibeventReactor implements SignalReactor {
         $watcher->eventResource = $eventResource;
         $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
-
         $watcher->wrapper = $this->wrapOnceCallback($watcher);
+        $watcher->isEnabled = true;
 
         $this->watchers[$watcherId] = $watcher;
 
@@ -216,7 +216,6 @@ class LibeventReactor implements SignalReactor {
     private function wrapOnceCallback(LibeventWatcher $watcher) {
         return function() use ($watcher) {
             try {
-                $this->enabledWatcherCount--;
                 $callback = $watcher->callback;
                 $watcherId = $watcher->id;
                 $result = $callback($this, $watcherId);
@@ -265,6 +264,7 @@ class LibeventReactor implements SignalReactor {
         $watcher->msDelay = $msDelay;
         $watcher->callback = $callback;
         $watcher->wrapper = $this->wrapRepeatingCallback($watcher);
+        $watcher->isEnabled = true;
 
         $this->watchers[$watcherId] = $watcher;
 
@@ -287,7 +287,11 @@ class LibeventReactor implements SignalReactor {
                 if ($result instanceof \Generator) {
                     $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
-                event_add($eventResource, $msDelay);
+
+                // If the watcher cancelled itself this will no longer be set
+                if (isset($this->watchers[$watcherId])) {
+                    event_add($eventResource, $msDelay);
+                }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
             }
@@ -381,6 +385,7 @@ class LibeventReactor implements SignalReactor {
         $watcher->signo = $signo;
         $watcher->eventResource = $eventResource;
         $watcher->callback = $onSignal;
+        $watcher->isEnabled = true;
 
         $watcher->wrapper = $this->wrapSignalCallback($watcher);
 
@@ -422,7 +427,7 @@ class LibeventReactor implements SignalReactor {
         }
 
         $watcher = $this->watchers[$watcherId];
-        $this->enabledWatcherCount =- $watcher->isEnabled;
+        $this->enabledWatcherCount -= (int) $watcher->isEnabled;
 
         if (empty($watcher->eventResource)) {
             // It's an immediately watcher
@@ -570,6 +575,7 @@ class LibeventReactor implements SignalReactor {
         }
 
         return [
+            'enabled'           => $this->enabledWatcherCount,
             'timers'            => $timers,
             'immediates'        => $immediates,
             'io_readers'        => $readers,

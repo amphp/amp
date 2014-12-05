@@ -330,4 +330,50 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor->run(function() { throw new \Exception('test'); });
         $this->assertSame('test', $var);
     }
+
+    public function testReactorRunsUntilNoWatchersRemain() {
+        $reactor = $this->getReactor();
+
+        $var1 = 0;
+        $reactor->repeat(function($reactor, $watcherId) use (&$var1) {
+            if (++$var1 === 3) {
+                $reactor->cancel($watcherId);
+            }
+        }, 0);
+
+        $var2 = 0;
+        $reactor->onWritable(STDOUT, function($reactor, $watcherId) use (&$var2) {
+            if (++$var2 === 4) {
+                $reactor->cancel($watcherId);
+            }
+        });
+
+        $reactor->run();
+
+        $this->assertSame(3, $var1);
+        $this->assertSame(4, $var2);
+    }
+
+    public function testReactorRunsUntilNoWatchersRemainWhenStartedImmediately() {
+        $reactor = $this->getReactor();
+
+        $var1 = 0;
+        $var2 = 0;
+        $reactor->run(function($reactor) use (&$var1, &$var2) {
+            $reactor->repeat(function($reactor, $watcherId) use (&$var1) {
+                if (++$var1 === 3) {
+                    $reactor->cancel($watcherId);
+                }
+            }, 0);
+
+            $reactor->onWritable(STDOUT, function($reactor, $watcherId) use (&$var2) {
+                if (++$var2 === 4) {
+                    $reactor->cancel($watcherId);
+                }
+            });
+        });
+
+        $this->assertSame(3, $var1);
+        $this->assertSame(4, $var2);
+    }
 }
