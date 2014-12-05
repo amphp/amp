@@ -220,6 +220,7 @@ class UvReactor implements SignalReactor {
                     $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
                 if ($watcher->type === Watcher::TIMER_ONCE) {
+                    $watcher->isEnabled = false;
                     $this->clearWatcher($watcher->id);
                 }
             } catch (\Exception $e) {
