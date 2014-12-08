@@ -1,19 +1,19 @@
 ### master
 
+- n/a
+
+v0.15.0
+-------
+
 **Additions**
 
 - Added `Reactor::__debugInfo()` hook to ease debugging.
-- Added `Reactor::onError()` exception handling hook
+- Added `Reactor::onError()` exception handling hook to handle asynchronous
+  errors without breaking the event loop
 - Added optional boolean `$noWait` parameter to `Reactor::tick($noWait)`
 - Added `Amp\getReactor()` and `Amp\chooseReactor()` functions
+- Added `Amp\wait()` to replace deprecated `Amp\Promise::wait()`
 - Added new `"bind"` yield command
-
-**Bugfixes:**
-
-- Correctly break out of the `NativeReactor` run loop immediately when
-  `Reactor::stop()` invoked inside immediately watchers
-- Correctly exit `UvReactor` and `LibeventReactor` run loop when no outstanding
-  watchers remain active
 
 **Removals:**
 
@@ -29,6 +29,14 @@
   instead
 - The `ReactorFactory` class is deprecated and scheduled for removal. Please use
   the `Amp\getReactor()` function instead of `ReactorFactory::select()`
+
+**Bugfixes:**
+
+- Correctly break out of the `NativeReactor` run loop immediately when
+  `Reactor::stop()` invoked inside immediately watchers
+- Correctly exit `UvReactor` and `LibeventReactor` run loop when no outstanding
+  watchers remain active
+- Other miscellaneous fixes
 
 **Other:**
 
