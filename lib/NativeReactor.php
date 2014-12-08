@@ -18,6 +18,7 @@ class NativeReactor implements Reactor {
     private $resolution = 1000;
     private $lastWatcherId = 1;
     private $isRunning = false;
+    private $isTicking = false;
     private $onError;
     private $onCallbackResolution;
 
@@ -104,6 +105,9 @@ class NativeReactor implements Reactor {
      */
     public function stop() {
         $this->isRunning = false;
+        if ($this->isTicking) {
+            $this->isTicking = false;
+        }
     }
 
     /**
@@ -114,6 +118,7 @@ class NativeReactor implements Reactor {
      */
     public function tick($noWait = false) {
         try {
+            $this->isTicking = true;
             if (!$this->isRunning) {
                 $this->enableAlarms();
             }
@@ -129,7 +134,7 @@ class NativeReactor implements Reactor {
             }
 
             // If an immediately watcher called stop() then pull out here
-            if (!$this->isRunning) {
+            if (!$this->isTicking) {
                 return;
             }
 
@@ -140,6 +145,7 @@ class NativeReactor implements Reactor {
             } else {
                 $timeToNextAlarm = $noWait ? 0 : 1;
             }
+
 
             if ($this->readStreams || $this->writeStreams) {
                 $this->selectActionableStreams($timeToNextAlarm);
@@ -152,6 +158,7 @@ class NativeReactor implements Reactor {
             if ($this->alarmOrder) {
                 $this->executeAlarms();
             }
+            $this->isTicking = false;
         } catch (\Exception $error) {
             $errorHandler = $this->onCallbackResolution;
             $errorHandler($error);
