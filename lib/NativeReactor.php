@@ -104,10 +104,7 @@ class NativeReactor implements Reactor {
      * @return void
      */
     public function stop() {
-        $this->isRunning = false;
-        if ($this->isTicking) {
-            $this->isTicking = false;
-        }
+        $this->isRunning = $this->isTicking = false;
     }
 
     /**
