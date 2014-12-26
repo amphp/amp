@@ -28,7 +28,7 @@ use Amp\Reactor;
 define('RUN_TIME', 10);
 printf("Each line you type will be echoed back for the next %d seconds ...\n\n", RUN_TIME);
 
-Amp\getReactor()->run(function(Reactor $reactor) {
+Amp\run(function(Reactor $reactor) {
     // Set the STDIN stream to "non-blocking" mode
     stream_set_blocking(STDIN, false);
 
