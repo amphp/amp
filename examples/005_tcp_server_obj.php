@@ -28,7 +28,7 @@ class Server {
     private $ioGranularity = 8192;
 
     public function __construct(Amp\Reactor $reactor = null) {
-        $this->reactor = $reactor ?: Amp\reactor();
+        $this->reactor = $reactor ?: Amp\getReactor();
     }
 
     public function start($address) {
