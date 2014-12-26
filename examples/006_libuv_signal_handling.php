@@ -13,7 +13,7 @@
  *     // Any constant beginning with SIG* is an available signal
  *     print_r((new ReflectionClass('UV'))->getConstants());
  */
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 (new Amp\UvReactor)->run(function($reactor) {
     // Let's tick off output once per second so we can see activity.

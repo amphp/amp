@@ -5,7 +5,7 @@ use Amp\ReactorFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-(new ReactorFactory)->select()->run(function(Reactor $reactor) {
+Amp\getReactor()->run(function(Reactor $reactor) {
     $ticker = function() {
         $now = time();
         $vowel = ($now % 2) ? 'i' : 'o';
