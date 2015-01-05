@@ -2,9 +2,15 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-date_default_timezone_set('UTC'); // F U Derick.
+date_default_timezone_set('UTC');
 define('SERVER_ADDRESS', '127.0.0.1:1337');
 
+/*
+ * echo server example
+ * 1. Connect to 127.0.0.1 at port 1337 from various terminals;
+ * 2. Type in anything and press ENTER;
+ * 3. Reactor will asyncronously read from client and broadcast to others.
+ */
 
 /**
  * A simple struct to hold a client's state while it's connected to our server
@@ -46,11 +52,6 @@ class Server {
             $this->acceptClients($server);
         });
 
-        // Let's schedule a broadcast of the current time to all connected sockets every three seconds
-        $this->timeBroadcastWatcher = $this->reactor->repeat(function() {
-            $this->broadcastTime();
-        }, $msInterval = 3000);
-
         // Release the hounds!
         $this->reactor->run();
     }
@@ -73,20 +74,28 @@ class Server {
 
             // Buffer something to send to the client. The writability watcher we just enabled
             // above will take care of sending this data automatically.
-            $client->outputBuffer = "--- Welcome to the example server! ---\n\n";
+            $message = "--- Welcome to the example server! ---\n\n";
 
             printf("Client socket accepted: %s\n", $name);
 
             // Store the client using its integer ID
+            if (0 === sizeof($this->clients)) {
+                $message .= "Hello! Looks like you are alone here.\nOpen another connection and start typing something…\n";
+            } else {
+                $message .= "{$client->id} joined\n";
+            }
+
             $this->clients[$client->id] = $client;
+            $this->broadcast($client, $message, true);
         }
     }
 
-    private function broadcastTime() {
-        $data = date('r') . "\n";
+    private function broadcast(Client $sender, $data, $ignoreSender = false) {
         foreach ($this->clients as $client) {
-            $client->outputBuffer .= $data;
-            $this->reactor->enable($client->writeWatcher);
+            if ($ignoreSender || $client->id !== $sender->id) {
+                $client->outputBuffer = $data;
+                $this->reactor->enable($client->writeWatcher);
+            }
         }
     }
 
@@ -98,6 +107,7 @@ class Server {
             $this->unloadClient($client);
         } else {
             printf("Data rcvd from client %d: %s\n", $client->id, $data);
+            $this->broadcast($client, "{$client->id} said: {$data}\n");
         }
     }
 
@@ -136,6 +146,7 @@ class Server {
         unset($this->clients[$client->id]);
 
         printf("Client %d disconnected\n", $client->id);
+        $this->broadcast($client, "{$client->id} left\n");
     }
 }
 

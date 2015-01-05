@@ -28,7 +28,7 @@ use Amp\Reactor;
 define('RUN_TIME', 10);
 printf("Each line you type will be echoed back for the next %d seconds ...\n\n", RUN_TIME);
 
-(new ReactorFactory)->select()->run(function(Reactor $reactor) {
+Amp\run(function(Reactor $reactor) {
     // Set the STDIN stream to "non-blocking" mode
     stream_set_blocking(STDIN, false);
 
@@ -41,7 +41,7 @@ printf("Each line you type will be echoed back for the next %d seconds ...\n\n",
 
     // Countdown RUN_TIME seconds then end the event loop
     $secondsRemaining = RUN_TIME;
-    $reactor->repeat(function() use (&$secondsRemaining) {
+    $reactor->repeat(function() use (&$secondsRemaining, $reactor) {
         if (--$secondsRemaining > 0) {
             echo "$secondsRemaining seconds to shutdown\n";
         } else {
