@@ -22,6 +22,10 @@ class LibeventReactor implements SignalReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        if (!extension_loaded('libevent')) {
+            throw new \RuntimeException('The pecl-libevent extension is required to use the LibeventReactor.');
+        }
+
         $this->base = event_base_new();
         $this->gcEvent = event_new();
         event_timer_set($this->gcEvent, [$this, 'collectGarbage']);
