@@ -25,6 +25,10 @@ class UvReactor implements SignalReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        if (!extension_loaded('uv')) {
+            throw new \RuntimeException('The php-uv extension is required to use the UvReactor.');
+        }
+
         $this->loop = uv_loop_new();
         $this->gcWatcher = uv_timer_init($this->loop);
         $this->gcCallback = function() { $this->collectGarbage(); };
