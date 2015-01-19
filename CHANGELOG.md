@@ -2,6 +2,14 @@
 
 - n/a
 
+### v0.15.1
+
+- Throw exceptions in extension reactor if required extensions not loaded
+  (Douglas Gontijo)
+- Fix outdated examples (Douglas Gontijo)
+- Fix `E_NOTICE` errors in `UvReactor`
+
+
 v0.15.0
 -------
 
