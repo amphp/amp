@@ -223,7 +223,9 @@ class UvReactor implements SignalReactor {
                 if ($result instanceof \Generator) {
                     $this->resolveGenerator($result)->when($this->onCallbackResolution);
                 }
-                if ($watcher->type === Watcher::TIMER_ONCE) {
+                // The isset() check is necessary because the "once" timer
+                // callback may have cancelled itself when it was invoked.
+                if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcher->id])) {
                     $watcher->isEnabled = false;
                     $this->clearWatcher($watcher->id);
                 }
@@ -454,7 +456,7 @@ class UvReactor implements SignalReactor {
                     unset($this->immediates[$watcherId]);
                     break;
                 default:
-                    uv_timer_stop($watcher->uvStruct);
+                    @uv_timer_stop($watcher->uvStruct);
                     break;
             }
         }
