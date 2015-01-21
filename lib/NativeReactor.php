@@ -84,11 +84,9 @@ class NativeReactor implements Reactor {
 
     private function enableAlarms() {
         $now = microtime(true);
-        $enabled = 0;
         foreach ($this->alarms as $watcherId => $alarmStruct) {
             $nextExecution = $alarmStruct[1];
             if (!$nextExecution) {
-                $enabled++;
                 $delay = $alarmStruct[2];
                 $nextExecution = $now + $delay;
                 $alarmStruct[1] = $nextExecution;
