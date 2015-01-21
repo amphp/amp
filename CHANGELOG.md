@@ -2,6 +2,10 @@
 
 - n/a
 
+### v0.15.2
+
+- Fix immediately watcher starvation in extension reactors (Bob Weinand)
+
 ### v0.15.1
 
 - Throw exceptions in extension reactor if required extensions not loaded
