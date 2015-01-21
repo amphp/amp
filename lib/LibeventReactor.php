@@ -66,7 +66,7 @@ class LibeventReactor implements SignalReactor {
             if (empty($this->enabledWatcherCount)) {
                 break;
             }
-            event_base_loop($this->base, EVLOOP_ONCE);
+            event_base_loop($this->base, EVLOOP_ONCE | (empty($this->immediates) ? 0 : EVLOOP_NONBLOCK));
         }
 
         if ($this->stopException) {
@@ -116,7 +116,7 @@ class LibeventReactor implements SignalReactor {
         $this->isRunning = true;
 
         if (empty($this->immediates) || $this->doImmediates()) {
-            $flags = $noWait ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
+            $flags = $noWait || !empty($this->immediates) ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
             event_base_loop($this->base, $flags);
         }
 

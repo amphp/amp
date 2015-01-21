@@ -74,7 +74,7 @@ class UvReactor implements SignalReactor {
             if (empty($this->enabledWatcherCount)) {
                 break;
             }
-            uv_run($this->loop, \UV::RUN_DEFAULT | \UV::RUN_ONCE);
+            uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
         }
 
         if ($this->stopException) {
@@ -124,7 +124,7 @@ class UvReactor implements SignalReactor {
         $this->isRunning = true;
 
         if (empty($this->immediates) || $this->doImmediates()) {
-            $flags = $noWait ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;
+            $flags = $noWait || !empty($this->immediates) ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;
             uv_run($this->loop, $flags);
         }
 
