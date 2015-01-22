@@ -622,9 +622,7 @@ class UvReactor implements SignalReactor {
             $poll->writers[$watcherId] = $watcher;
         }
 
-        if ($preexistingFlags != $poll->flags) {
-            uv_poll_start($poll->handle, $poll->flags, $poll->callback);
-        }
+        @uv_poll_start($poll->handle, $poll->flags, $poll->callback);
     }
 
     /**

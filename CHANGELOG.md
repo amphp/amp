@@ -2,6 +2,10 @@
 
 - n/a
 
+### v0.15.3
+
+- Correctly re-enable disabled stream polling watchers in UvReactor
+
 ### v0.15.2
 
 - Fix immediately watcher starvation in extension reactors (Bob Weinand)
