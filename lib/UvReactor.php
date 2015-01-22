@@ -612,8 +612,6 @@ class UvReactor implements SignalReactor {
 
         unset($poll->disable[$watcherId]);
 
-        $preexistingFlags = $poll->flags;
-
         if ($watcher->type === Watcher::IO_READER) {
             $poll->flags |= \UV::READABLE;
             $poll->readers[$watcherId] = $watcher;
