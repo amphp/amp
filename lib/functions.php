@@ -13,10 +13,10 @@ function getReactor($forceNew = false) {
 
     if ($forceNew) {
         return chooseReactor();
-    } elseif (empty($reactor)) {
-        return $reactor = chooseReactor();
-    } else {
+    } elseif ($reactor) {
         return $reactor;
+    } else {
+        return $reactor = chooseReactor();
     }
 }
 
@@ -193,7 +193,20 @@ function onWritable($stream, callable $func, $enableNow = true) {
     return getReactor()->onWritable($stream, $func, $enableNow);
 }
 
-
+/**
+ * Resolve the specified generator
+ *
+ * Upon resolution the final yielded value is used to succeed the returned promise. If an
+ * error occurs the returned promise is failed appropriately.
+ *
+ * @param \Generator $generator
+ * @param Reactor $reactor optional reactor instance (uses global reactor if not specified)
+ * @return Promise
+ */
+function coroutine(\Generator $generator, $reactor = null) {
+    $reactor = $reactor ?: getReactor();
+    return $reactor->coroutine($generator);
+}
 
 /**
  * React to process control signals

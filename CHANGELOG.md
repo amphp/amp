@@ -1,6 +1,29 @@
 ### master
 
-- n/a
+- Added `Reactor::coroutine()` method
+- Added `Amp\coroutine()` function
+- `YieldCommands` "enum" constant class removed -- yield keys now live in
+  the reactor class
+- New optional `"coroutine"` yield key for self-documenting generator
+  yields.
+- New optional `"async"` yield key for self-documenting promise yields.
+- New `"return"` yield key for specifying the return value of a resolved
+  Generator coroutine. If not specified a resolved coroutine result is
+  equal to null.
+- The final value yielded by a resolved `Generator` is *no longer* used
+  as its "return" value. Instead, generators must manually use the new
+  `"return"` yield key specifically to designate the value that should
+  be used to resolve the promise associated with generator resolution.
+- `GeneratorResolver` trait renamed to `CoroutineResolver` and is now an
+  abstract class extended by the various `Reactor` implementations.
+- Implicit "all" array combinator resolution is now removed. Use the
+  explicit form instead:
+
+```php
+function() {
+    list($a, $b, $c) = (yield 'all' => [$promise1, $promise2, $promise3]);
+};
+```
 
 ### v0.15.3
 

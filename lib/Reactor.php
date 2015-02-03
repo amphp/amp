@@ -3,6 +3,25 @@
 namespace Amp;
 
 interface Reactor {
+    const ALL = 'all';
+    const ANY = 'any';
+    const SOME = 'some';
+    const PAUSE = 'pause';
+    const BIND = 'bind';
+    const IMMEDIATELY = 'immediately';
+    const ONCE = 'once';
+    const REPEAT = 'repeat';
+    const ON_READABLE = 'onreadable';
+    const ON_WRITABLE = 'onwritable';
+    const ENABLE = 'enable';
+    const DISABLE = 'disable';
+    const CANCEL = 'cancel';
+    const NOWAIT = 'nowait';
+    const NOWAIT_PREFIX = '@';
+    const ASYNC = 'async';
+    const COROUTINE = 'coroutine';
+    const CORETURN = 'return';
+
     /**
      * Start the event reactor and assume program flow control
      *
@@ -111,6 +130,17 @@ interface Reactor {
      * @param int $watcherId
      */
     public function enable($watcherId);
+
+    /**
+     * Resolve the specified generator
+     *
+     * Upon resolution the final yielded value is used to succeed the returned promise. If an
+     * error occurs the returned promise is failed appropriately.
+     *
+     * @param \Generator $generator
+     * @return Promise
+     */
+    public function coroutine(\Generator $generator);
 
     /**
      * An optional "last-chance" exception handler for errors resulting during callback invocation

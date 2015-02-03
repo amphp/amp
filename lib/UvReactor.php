@@ -2,9 +2,7 @@
 
 namespace Amp;
 
-class UvReactor implements SignalReactor {
-    use GeneratorResolver;
-
+class UvReactor extends CoroutineResolver implements SignalReactor {
     private $loop;
     private $lastWatcherId = 1;
     private $watchers;
@@ -95,7 +93,7 @@ class UvReactor implements SignalReactor {
                 );
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                    $this->coroutine($result)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -221,12 +219,11 @@ class UvReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id);
                 if ($result instanceof \Generator) {
-                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                    $this->coroutine($result)->when($this->onCallbackResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
                 if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcher->id])) {
-                    $watcher->isEnabled = false;
                     $this->clearWatcher($watcher->id);
                 }
             } catch (\Exception $e) {
@@ -381,7 +378,7 @@ class UvReactor implements SignalReactor {
             $callback = $watcher->callback;
             $result = $callback($this, $watcher->id, $watcher->stream);
             if ($result instanceof \Generator) {
-                $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                $this->coroutine($result)->when($this->onCallbackResolution);
             }
         } catch (\Exception $e) {
             $this->handleRunError($e);
@@ -417,7 +414,7 @@ class UvReactor implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id, $watcher->signo);
                 if ($result instanceof \Generator) {
-                    $this->resolveGenerator($result)->when($this->onCallbackResolution);
+                    $this->coroutine($result)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -440,7 +437,6 @@ class UvReactor implements SignalReactor {
     private function clearWatcher($watcherId) {
         $watcher = $this->watchers[$watcherId];
         unset($this->watchers[$watcherId]);
-
         if ($watcher->isEnabled) {
             $this->enabledWatcherCount--;
             switch ($watcher->type) {
@@ -455,8 +451,11 @@ class UvReactor implements SignalReactor {
                 case Watcher::IMMEDIATE:
                     unset($this->immediates[$watcherId]);
                     break;
+                case Watcher::TIMER_ONCE:
+                    // we don't have to actually stop once timers
+                    break;
                 default:
-                    @uv_timer_stop($watcher->uvStruct);
+                    uv_timer_stop($watcher->uvStruct);
                     break;
             }
         }
