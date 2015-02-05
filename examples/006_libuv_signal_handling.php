@@ -3,7 +3,7 @@
 /**
  * Process signals are "watchable" events just like timers and stream IO
  * availability. SignalReactor::onSignal() returns a unique watcher ID that
- * may be disabled/enabled/cancelled like any other watcher.
+ * may be disabled/enabled/canceled like any other watcher.
  *
  * The available signal number constants vary by operating system, but you
  * can see the possible signals in your PHP install with the following
@@ -15,7 +15,7 @@
  */
 require __DIR__ . '/../vendor/autoload.php';
 
-(new Amp\UvReactor)->run(function($reactor) {
+(new Amp\UvReactor)->run(function(Amp\Reactor $reactor) {
     // Let's tick off output once per second so we can see activity.
     $reactor->repeat(function() {
             echo "tick: ", date('c'), "\n";

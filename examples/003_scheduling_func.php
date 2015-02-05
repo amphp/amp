@@ -14,7 +14,7 @@ Amp\run(function() {
     // garbage collect resources associated with one-time events after they finish executing.
     Amp\immediately($ticker);
 
-    // Execute every $msInterval milliseconds until the resulting $watcherId is cancelled.
+    // Execute every $msInterval milliseconds until the resulting $watcherId is canceled.
     // At some point in the future we need to cancel this watcher or our program will never end.
     $repeatingWatcherId = Amp\repeat($ticker, $msInterval = 1000);
 

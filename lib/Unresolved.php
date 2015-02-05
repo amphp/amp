@@ -7,7 +7,6 @@ namespace Amp;
  * the Promisor that created it.
  */
 class Unresolved implements Promise {
-    private $isWaiting = false;
     private $isResolved = false;
     private $watchers = [];
     private $whens = [];
@@ -93,18 +92,6 @@ class Unresolved implements Promise {
                 $when($error, $result);
             }
             $this->whens = $this->watchers = [];
-        }
-    }
-
-    private function update($progress) {
-        if ($this->isResolved) {
-            throw new \LogicException(
-                'Cannot update resolved promise'
-            );
-        }
-
-        foreach ($this->watchers as $watcher) {
-            $watcher($progress);
         }
     }
 }

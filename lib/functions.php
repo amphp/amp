@@ -246,7 +246,6 @@ function all(array $promises) {
     $results    = [];
     $remaining  = count($promises);
     $promisor   = new Future;
-    $isResolved = false;
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
