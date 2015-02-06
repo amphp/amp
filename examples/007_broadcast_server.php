@@ -9,7 +9,7 @@ define('SERVER_ADDRESS', '127.0.0.1:1337');
  * echo server example
  * 1. Connect to 127.0.0.1 at port 1337 from various terminals;
  * 2. Type in anything and press ENTER;
- * 3. Reactor will asyncronously read from client and broadcast to others.
+ * 3. Reactor will asynchronously read from client and broadcast to others.
  */
 
 /**
@@ -106,7 +106,7 @@ class Server {
         if ($data == '' && $this->isSocketDead($client->socket)) {
             $this->unloadClient($client);
         } else {
-            printf("Data rcvd from client %d: %s\n", $client->id, $data);
+            printf("Data received from client %d: %s\n", $client->id, $data);
             $this->broadcast($client, "{$client->id} said: {$data}\n");
         }
     }

@@ -72,4 +72,26 @@ class PrivateFutureTest extends \PHPUnit_Framework_TestCase {
             yield $promisor->promise();
         });
     }
+
+    public function testUpdate() {
+        $updatable = 0;
+        (new NativeReactor)->run(function() use (&$updatable) {
+            $i = 0;
+            $promisor = new PrivateFuture;
+            $updater = function($reactor, $watcherId) use ($promisor, &$i) {
+                $promisor->update(++$i);
+                if ($i === 3) {
+                    $reactor->cancel($watcherId);
+                    // reactor run loop should now be able to exit
+                }
+            };
+            $promise = $promisor->promise();
+            $promise->watch(function($updateData) use (&$updatable) {
+                $updatable += $updateData;
+            });
+            yield 'repeat' => [$updater, $msDelay = 10];
+        });
+
+        $this->assertSame(6, $updatable);
+    }
 }
