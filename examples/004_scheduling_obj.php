@@ -1,7 +1,6 @@
 <?php
 
 use Amp\Reactor;
-use Amp\ReactorFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -28,7 +27,7 @@ Amp\run(function(Reactor $reactor) {
     }, $msDelay = 5000);
 
     // After about five seconds the program will exit on its own. Why? This happens because in
-    // that time frame we will have cancelled the repeating watcher we registered using repeat()
+    // that time frame we will have canceled the repeating watcher we registered using repeat()
     // and the two one-off events (immediately() + once()) are automatically garbage collected
     // by the Reactor after they execute.
 });

@@ -7,7 +7,6 @@ namespace Amp;
  * the Promisor that created it.
  */
 class Unresolved implements Promise {
-    private $isWaiting = false;
     private $isResolved = false;
     private $watchers = [];
     private $whens = [];

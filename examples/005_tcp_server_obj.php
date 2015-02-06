@@ -19,12 +19,11 @@ class Client {
 
 
 /**
- * A simple TCP server that broadcasts the current time once per second to all connected clients
+ * A simple TCP server that broadcasts the current time once per 3 seconds to all connected clients
  */
 class Server {
     private $reactor;
     private $clients = [];
-    private $timeBroadcastWatcher;
     private $ioGranularity = 8192;
 
     public function __construct(Amp\Reactor $reactor = null) {
@@ -47,7 +46,7 @@ class Server {
         });
 
         // Let's schedule a broadcast of the current time to all connected sockets every three seconds
-        $this->timeBroadcastWatcher = $this->reactor->repeat(function() {
+        $this->reactor->repeat(function() {
             $this->broadcastTime();
         }, $msInterval = 3000);
 
@@ -97,7 +96,7 @@ class Server {
         if ($data == '' && $this->isSocketDead($client->socket)) {
             $this->unloadClient($client);
         } else {
-            printf("Data rcvd from client %d: %s\n", $client->id, $data);
+            printf("Data received from client %d: %s\n", $client->id, $data);
         }
     }
 
