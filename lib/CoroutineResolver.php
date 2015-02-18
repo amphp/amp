@@ -9,7 +9,7 @@ abstract class CoroutineResolver implements Reactor {
      * Upon resolution the final yielded value is used to succeed the returned promise. If an
      * error occurs the returned promise is failed appropriately.
      *
-     * @param \Generator $generator
+     * @param \Generator $gen
      * @return Promise
      */
     public function coroutine(\Generator $gen) {
