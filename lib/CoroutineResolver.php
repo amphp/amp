@@ -62,25 +62,30 @@ abstract class CoroutineResolver implements Reactor {
 
         if (is_string($key)) {
             goto explicit_key;
-        } else {
-            goto implicit_key;
         }
 
+        // Fall through to implicit_key if no string key was yielded
+
         implicit_key: {
-            if ($yielded instanceof Promise) {
-                $promise = $yielded;
-            } elseif ($yielded instanceof \Generator) {
-                $promise = $this->coroutine($yielded);
-            } elseif (isset($yielded)) {
+            if (!isset($yielded)) {
+                $promise = new Success;
+            } elseif (!is_object($yielded)) {
                 $promise = new Failure(new \LogicException(
                     sprintf(
-                        'Unresolvable %s type requires yield key',
+                        "Unresolvable implicit yield of type %s; key required",
                         is_object($yielded) ? get_class($yielded) : gettype($yielded)
                     )
                 ));
+            } elseif ($yielded instanceof Promise) {
+                $promise = $yielded;
+            } elseif ($yielded instanceof \Generator) {
+                $promise = $this->coroutine($yielded);
             } else {
                 $promise = new Failure(new \LogicException(
-                    'Empty yield without key (yield; or yield null;)'
+                    sprintf(
+                        "Unresolvable implicit yield of type %s; key required",
+                        is_object($yielded) ? get_class($yielded) : gettype($yielded)
+                    )
                 ));
             }
 
@@ -152,18 +157,18 @@ abstract class CoroutineResolver implements Reactor {
 
         unknown_key: {
             $promise = new Failure(new \DomainException(
-                sprintf('Unknown yield key: "%s"', $key)
+                sprintf("Unknown yield key: %s", $key)
             ));
             goto return_struct;
         }
 
         async: {
-            if ($yielded instanceof Promise) {
+            if (is_object($yielded) && $yielded instanceof Promise) {
                 $promise = $yielded;
             } else {
                 $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield command expects Promise; %s yielded',
+                        "%s yield command expects Promise; %s yielded",
                         $key,
                         gettype($yielded)
                     )
@@ -173,12 +178,12 @@ abstract class CoroutineResolver implements Reactor {
         }
 
         coroutine: {
-            if ($yielded instanceof \Generator) {
+            if (is_object($yielded) && $yielded instanceof \Generator) {
                 $promise = $this->coroutine($yielded);
             } else {
                 $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield command expects Generator; %s yielded',
+                        "%s yield command expects Generator; %s yielded",
                         $key,
                         gettype($yielded)
                     )
@@ -190,7 +195,7 @@ abstract class CoroutineResolver implements Reactor {
         combinator: {
             if (!is_array($yielded)) {
                 $promise = new Failure(new \DomainException(
-                    sprintf('"%s" yield command expects array; %s yielded', $key, gettype($yielded))
+                    sprintf("%s yield command expects array; %s yielded", $key, gettype($yielded))
                 ));
                 goto return_struct;
             }
@@ -221,7 +226,7 @@ abstract class CoroutineResolver implements Reactor {
             } else {
                 $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield command requires callable; %s provided',
+                        "%s yield command requires callable; %s provided",
                         $key,
                         gettype($yielded)
                     )
@@ -239,7 +244,7 @@ abstract class CoroutineResolver implements Reactor {
             } else {
                 $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield command requires [callable $func, int $msDelay]; %s provided',
+                        "%s yield command requires [callable \$func, int \$msDelay]; %s provided",
                         $key,
                         gettype($yielded)
                     )
@@ -257,7 +262,7 @@ abstract class CoroutineResolver implements Reactor {
             } else {
                 $promise = new Failure(new \DomainException(
                     sprintf(
-                        '"%s" yield command requires [resource $stream, callable $func, bool $enableNow]; %s provided',
+                        "%s yield command requires [resource \$stream, callable \$func, bool \$enableNow]; %s provided",
                         $key,
                         gettype($yielded)
                     )
@@ -286,7 +291,7 @@ abstract class CoroutineResolver implements Reactor {
                 });
             } else {
                 $promise = new Failure(new \DomainException(
-                    sprintf('"bind" yield command requires callable; %s provided', gettype($yielded))
+                    sprintf("bind yield command requires callable; %s provided", gettype($yielded))
                 ));
             }
 

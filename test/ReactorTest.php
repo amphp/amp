@@ -614,7 +614,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \DomainException
-     * @expectedExceptionMessage "some" yield command expects array; string yielded
+     * @expectedExceptionMessage some yield command expects array; string yielded
      */
     public function testExplicitCombinatorResolutionFailsIfNonArrayYielded() {
         $this->getReactor()->run(function($reactor) {
