@@ -1,5 +1,10 @@
 ### master
 
+- n/a
+
+v0.16.0
+-------
+
 - Added `Reactor::coroutine()` method
 - Added `Amp\coroutine()` function
 - `YieldCommands` "enum" constant class removed -- yield keys now live in
