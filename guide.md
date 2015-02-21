@@ -144,7 +144,7 @@ $reactor->run(function($reactor) use (&$stdinWatcher, &$number) {
         $number = fgets(STDIN);
         $reactor->stop();
     });
-    $reactor->once(function() {
+    $reactor->once(function(Amp\Reactor $reactor) {
         $reactor->stop();
     }, $msInterval = 5000);
 });
