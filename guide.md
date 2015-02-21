@@ -770,7 +770,7 @@ function myCoroutine() {
 }
 ```
 
-Coroutines may `yield "return"` multiple times if they like. Only the final value yielded with this key is used returned from the coroutine in the original calling code. Note that coroutine generators may "return" an unresolved `Promise` and its eventual resolution will be used as the final return value upon completion:
+Coroutines may `yield "return"` multiple times if they like. Only the final value yielded with this key is returned from the coroutine in the original calling code. Note that coroutine generators may "return" an unresolved `Promise` and its eventual resolution will be used as the final return value upon completion:
 
 ```php
 Amp\run(function() {
