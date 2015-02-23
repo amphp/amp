@@ -123,12 +123,12 @@ stream_set_blocking(STDIN, true);
 // Continue doing regular synchronous things here.
 ```
 
-The details of what's happening in this example are unimportant and involve functionality that will be covered later. For now, the takeaway should simply be that it's possible tomove in and out of the event loop like a ninja.
+The details of what's happening in this example are unimportant and involve functionality that will be covered later. For now, the takeaway should simply be that it's possible to move in and out of the event loop like a ninja.
 
 
 ## The Universal Reactor
 
-In the above example we use the reactor's procedural API to register stream IO and timere watchers. However, Amp also exposes an object API. Though it almost never makes sense to run multiple event loop instances in a single-threaded process, instantiating `Reactor` objects in your application can make things significantly more testable. Note that the function API uses a single static reactor instance for all operations (universal). Below you'll find the same example from above section rewritten to use the `Amp\NativeReactor` class .
+In the above example we use the reactor's procedural API to register stream IO and timer watchers. However, Amp also exposes an object API. Though it almost never makes sense to run multiple event loop instances in a single-threaded process, instantiating `Reactor` objects in your application can make things significantly more testable. Note that the function API uses a single static reactor instance for all operations (universal). Below you'll find the same example from above section rewritten to use the `Amp\NativeReactor` class .
 
 ```php
 <?php
@@ -144,7 +144,7 @@ $reactor->run(function($reactor) use (&$stdinWatcher, &$number) {
         $number = fgets(STDIN);
         $reactor->stop();
     });
-    $reactor->once(function() {
+    $reactor->once(function(Amp\Reactor $reactor) {
         $reactor->stop();
     }, $msInterval = 5000);
 });
@@ -770,7 +770,7 @@ function myCoroutine() {
 }
 ```
 
-Coroutines may `yield "return"` multiple times if they like. Only the final value yielded with this key is used returned from the coroutine in the original calling code. Note that coroutine generators may "return" an unresolved `Promise` and its eventual resolution will be used as the final return value upon completion:
+Coroutines may `yield "return"` multiple times if they like. Only the final value yielded with this key is returned from the coroutine in the original calling code. Note that coroutine generators may "return" an unresolved `Promise` and its eventual resolution will be used as the final return value upon completion:
 
 ```php
 Amp\run(function() {
