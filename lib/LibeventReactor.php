@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class LibeventReactor extends CoroutineResolver implements SignalReactor {
+class LibeventReactor implements SignalReactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
@@ -85,7 +85,7 @@ class LibeventReactor extends CoroutineResolver implements SignalReactor {
                 );
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -222,7 +222,7 @@ class LibeventReactor extends CoroutineResolver implements SignalReactor {
                 $watcherId = $watcher->id;
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
                 $this->cancel($watcherId);
             } catch (\Exception $e) {
@@ -287,7 +287,7 @@ class LibeventReactor extends CoroutineResolver implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
 
                 // If the watcher cancelled itself this will no longer be set
@@ -361,7 +361,7 @@ class LibeventReactor extends CoroutineResolver implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $stream);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -409,7 +409,7 @@ class LibeventReactor extends CoroutineResolver implements SignalReactor {
             try {
                 $result = $callback($this, $watcherId, $signo);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);

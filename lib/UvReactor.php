@@ -93,7 +93,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
                 );
                 $result = $callback($this, $watcherId);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -219,7 +219,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
@@ -378,7 +378,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             $callback = $watcher->callback;
             $result = $callback($this, $watcher->id, $watcher->stream);
             if ($result instanceof \Generator) {
-                $this->coroutine($result)->when($this->onCallbackResolution);
+                resolve($result, $this)->when($this->onCallbackResolution);
             }
         } catch (\Exception $e) {
             $this->handleRunError($e);
@@ -414,7 +414,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             try {
                 $result = $callback($this, $watcher->id, $watcher->signo);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCallbackResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);

@@ -194,21 +194,6 @@ function onWritable($stream, callable $func, $enableNow = true) {
 }
 
 /**
- * Resolve the specified generator
- *
- * Upon resolution the final yielded value is used to succeed the returned promise. If an
- * error occurs the returned promise is failed appropriately.
- *
- * @param \Generator $generator
- * @param Reactor $reactor optional reactor instance (uses global reactor if not specified)
- * @return Promise
- */
-function coroutine(\Generator $generator, $reactor = null) {
-    $reactor = $reactor ?: getReactor();
-    return $reactor->coroutine($generator);
-}
-
-/**
  * React to process control signals
  *
  * @param int $signo The signal number to watch for
@@ -439,7 +424,7 @@ function map(array $promises, callable $functor) {
         $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
         $promise->when(function($error, $result) use (&$remaining, &$results, $key, $promisor, $functor) {
             if (empty($remaining)) {
-                // If the future already failed we don't bother.
+                // If the promise already failed we don't bother.
                 return;
             }
             if ($error) {
@@ -552,6 +537,99 @@ function wait(Promise $promise, Reactor $reactor = null) {
 
     return $resolvedResult;
 }
+
+/**
+ * Return a function that will be resolved as a coroutine once invoked
+ *
+ * @param \Generator $generator
+ * @param \Amp\Reactor $reactor
+ * @param callable $promisifier
+ * @return callable
+ */
+function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null) {
+    return function(...$args) use ($func) {
+        $result = $func(...$args);
+        return ($result instanceof \Generator)
+            ? resolve($result, $reactor, $promisifier)
+            : $result;
+    };
+}
+
+/**
+ * Resolve a Generator function as a coroutine
+ *
+ * Upon resolution the Generator return value is used to succeed the promised result. If an
+ * error occurs during coroutine resolution the promise fails.
+ *
+ * @param \Generator $generator
+ * @param \Amp\Reactor $reactor
+ * @param callable $promisifier
+ * @return \Amp\Promise
+ */
+function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null) {
+    $cs = new CoroutineStruct;
+    $cs->reactor = $reactor ?: getReactor();
+    $cs->promisor = new Future;
+    $cs->generator = $generator;
+    $cs->promisifier = $promisifier;
+    __coroutineAdvance($cs);
+
+    return $cs->promisor->promise();
+}
+
+function __coroutineAdvance(CoroutineStruct $cs) {
+    try {
+        if ($cs->generator->valid()) {
+            $promise = __coroutinePromisify($cs);
+            $cs->reactor->immediately(function() use ($cs, $promise) {
+                $promise->when(function($error, $result) use ($cs) {
+                    __coroutineSend($cs, $error, $result);
+                });
+            });
+        } else {
+            $cs->promisor->succeed($cs->generator->getReturn());
+        }
+    } catch (\Exception $uncaught) {
+        $cs->promisor->fail($uncaught);
+    }
+}
+
+function __coroutineSend(CoroutineStruct $cs, \Exception $error = null, $result = null) {
+    try {
+        if ($error) {
+            $cs->generator->throw($error);
+        } else {
+            $cs->generator->send($result);
+        }
+        __coroutineAdvance($cs);
+    } catch (\Exception $uncaught) {
+        $cs->promisor->fail($uncaught);
+    }
+}
+
+function __coroutinePromisify(CoroutineStruct $cs) : Promise {
+    $yielded = $cs->generator->current();
+
+    if (!isset($yielded)) {
+        return new Success;
+    }
+
+    if (is_object($yielded) && $yielded instanceof Promise) {
+        return $yielded;
+    }
+
+    if ($cs->promisifier) {
+        return call_user_func($cs->promisifier, $cs->generator->key(), $yielded);
+    }
+
+    return new Failure(new \DomainException(
+        sprintf(
+            "Unexpected value of type %s yielded; Promise expected",
+            is_object($yielded) ? get_class($yielded) : gettype($yielded)
+        )
+    ));
+}
+
 
 // === DEPRECATED FUNCTIONS ========================================================================
 

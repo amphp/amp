@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class NativeReactor extends CoroutineResolver implements Reactor {
+class NativeReactor implements Reactor {
     private $alarms = [];
     private $immediates = [];
     private $alarmOrder = [];
@@ -121,7 +121,7 @@ class NativeReactor extends CoroutineResolver implements Reactor {
                 foreach ($immediates as $watcherId => $callback) {
                     $result = $callback($this, $watcherId);
                     if ($result instanceof \Generator) {
-                        $this->coroutine($result)->when($this->onCallbackResolution);
+                        resolve($result, $this)->when($this->onCallbackResolution);
                     }
                 }
             }
@@ -177,7 +177,7 @@ class NativeReactor extends CoroutineResolver implements Reactor {
                 foreach ($this->readCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $readableStream);
                     if ($result instanceof \Generator) {
-                        $this->coroutine($result)->when($this->onCallbackResolution);
+                        resolve($result, $this)->when($this->onCallbackResolution);
                     }
                 }
             }
@@ -186,7 +186,7 @@ class NativeReactor extends CoroutineResolver implements Reactor {
                 foreach ($this->writeCallbacks[$streamId] as $watcherId => $callback) {
                     $result = $callback($this, $watcherId, $writableStream);
                     if ($result instanceof \Generator) {
-                        $this->coroutine($result)->when($this->onCallbackResolution);
+                        resolve($result, $this)->when($this->onCallbackResolution);
                     }
                 }
             }
@@ -217,7 +217,7 @@ class NativeReactor extends CoroutineResolver implements Reactor {
 
             $result = $callback($this, $watcherId);
             if ($result instanceof \Generator) {
-                $this->coroutine($result)->when($this->onCallbackResolution);
+                resolve($result, $this)->when($this->onCallbackResolution);
             }
         }
     }
