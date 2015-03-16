@@ -14,16 +14,13 @@ class PrivateFuture implements Promisor {
     private $promise;
 
     public function __construct() {
-        $unresolved = new Unresolved;
-        $resolver = function(\Exception $error = null, $result = null) {
-            $this->resolve($error, $result); // bound to private Unresolved::resolve()
+        $this->promise = new Unresolved;
+        $this->resolver = function(\Exception $error = null, $result = null) {
+            $this->resolve($error, $result); // bound to private Unresolved::resolve() at call-time
         };
-        $updater = function($progress) {
-            $this->update($progress); // bound to private Unresolved::update()
+        $this->updater = function($progress) {
+            $this->update($progress); // bound to private Unresolved::update() at call-time
         };
-        $this->resolver = $resolver->bindTo($unresolved, $unresolved);
-        $this->updater = $updater->bindTo($unresolved, $unresolved);
-        $this->promise = $unresolved;
     }
 
     /**
@@ -36,14 +33,13 @@ class PrivateFuture implements Promisor {
     }
 
     /**
-     * Update watchers of progress resolving the promised value
+     * Update subscribers of progress resolving the promised value
      *
      * @param mixed $progress
      * @return void
      */
     public function update($progress) {
-        $updater = $this->updater;
-        $updater($progress);
+        $this->updater->call($this->promise, $progress);
     }
 
     /**
@@ -53,8 +49,7 @@ class PrivateFuture implements Promisor {
      * @return void
      */
     public function succeed($result = null) {
-        $resolver = $this->resolver;
-        $resolver($error = null, $result);
+        $this->resolver->call($this->promise, $error = null, $result);
     }
 
     /**
@@ -64,7 +59,6 @@ class PrivateFuture implements Promisor {
      * @return void
      */
     public function fail(\Exception $error) {
-        $resolver = $this->resolver;
-        $resolver($error, $result = null);
+        $this->resolver->call($this->promise, $error, $result = null);
     }
 }
