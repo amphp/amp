@@ -71,7 +71,7 @@ class Unresolved implements Promise {
         return $resolvedResult;
     }
 
-    private function resolve(\Exception $error = null, $result = null) {
+    protected function resolve(\Exception $error = null, $result = null) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Promise already resolved'
@@ -95,7 +95,7 @@ class Unresolved implements Promise {
         }
     }
 
-    private function update($progress) {
+    protected function update($progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Cannot update resolved promise'
