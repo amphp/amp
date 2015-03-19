@@ -102,7 +102,7 @@ interface Reactor {
      * If an application throws inside the event loop and no onError callback is specified the
      * exception bubbles up and the event loop is stopped. This is undesirable in long-running
      * applications (like servers) where stopping the event loop for an application error is
-     * undesirable.
+     * problematic.
      *
      * onError callback functions are passed a single parameter: the uncaught exception.
      *
