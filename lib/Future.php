@@ -53,7 +53,7 @@ class Future implements Promisor, Promise {
      * @throws \LogicException if the promise has already resolved
      * @return void
      */
-    public function update($progress) {
+    public function update(...$progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Cannot update resolved promise'
@@ -61,7 +61,7 @@ class Future implements Promisor, Promise {
         }
 
         foreach ($this->watchers as $watcher) {
-            $watcher($progress);
+            $watcher(...$progress);
         }
     }
 

@@ -43,7 +43,7 @@ interface Promisor {
      * @param mixed $progress
      * @return void
      */
-    public function update($progress);
+    public function update(...$progress);
 
     /**
      * Resolve the promised value as a success

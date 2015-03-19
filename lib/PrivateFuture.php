@@ -16,10 +16,12 @@ class PrivateFuture implements Promisor {
     public function __construct() {
         $this->promise = new Unresolved;
         $this->resolver = function(\Exception $error = null, $result = null) {
-            $this->resolve($error, $result); // bound to private Unresolved::resolve() at call-time
+            // bound to private Unresolved::resolve() at call-time
+            $this->resolve($error, $result);
         };
-        $this->updater = function($progress) {
-            $this->update($progress); // bound to private Unresolved::update() at call-time
+        $this->updater = function(...$progress) {
+            // bound to private Unresolved::update() at call-time
+            $this->update(...$progress);
         };
     }
 
@@ -36,8 +38,8 @@ class PrivateFuture implements Promisor {
      * @param mixed $progress
      * @return void
      */
-    public function update($progress) {
-        $this->updater->call($this->promise, $progress);
+    public function update(...$progress) {
+        $this->updater->call($this->promise, ...$progress);
     }
 
     /**
