@@ -53,15 +53,6 @@ interface Reactor {
     public function repeat(callable $func, int $millisecondDelay): string;
 
     /**
-     * Schedule an event to trigger once at the specified time
-     *
-     * @param callable $func A callback to invoke at the specified future time
-     * @param int|string $unixTimeOrStr
-     * @return string Returns unique (to the process) string watcher ID
-     */
-    public function at(callable $func, $unixTimeOrStr): string;
-
-    /**
      * Watch a stream resource for readable data and trigger the callback when actionable
      *
      * @param resource $stream The stream resource to watch for readability

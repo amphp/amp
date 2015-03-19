@@ -231,26 +231,6 @@ class UvReactor implements SignalReactor {
     /**
      * {@inheritDoc}
      */
-    public function at(callable $callback, $unixTimeOrStr): string {
-        $now = time();
-        if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
-            $secondsUntil = ($unixTimeOrStr - $now);
-        } elseif (($executeAt = @strtotime($unixTimeOrStr)) && $executeAt > $now) {
-            $secondsUntil = ($executeAt - $now);
-        } else {
-            throw new \InvalidArgumentException(
-                'Unix timestamp or future time string (parsable by strtotime()) required'
-            );
-        }
-
-        $msDelay = $secondsUntil * $this->resolution;
-
-        return $this->once($callback, $msDelay);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function onReadable($stream, callable $callback, bool $enableNow = true): string {
         return $this->watchStream($stream, $callback, Watcher::IO_READER, $enableNow);
     }

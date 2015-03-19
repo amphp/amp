@@ -131,27 +131,6 @@ class LibeventReactor implements SignalReactor {
 
     /**
      * {@inheritDoc}
-     * @throws \InvalidArgumentException On invalid future time
-     */
-    public function at(callable $callback, $unixTimeOrStr): string {
-        $now = time();
-        if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
-            $secondsUntil = ($unixTimeOrStr - $now);
-        } elseif (($executeAt = @strtotime($unixTimeOrStr)) && $executeAt > $now) {
-            $secondsUntil = ($executeAt - $now);
-        } else {
-            throw new \InvalidArgumentException(
-                "Unix timestamp or future time string (parsable by strtotime()) required"
-            );
-        }
-
-        $msDelay = $secondsUntil * $this->resolution;
-
-        return $this->once($callback, $msDelay);
-    }
-
-    /**
-     * {@inheritDoc}
      */
     public function immediately(callable $callback): string {
         $this->enabledWatcherCount++;
