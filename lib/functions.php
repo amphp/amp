@@ -4,11 +4,8 @@ namespace Amp;
 
 /**
  * Get the global singleton event reactor instance
- *
- * @param bool $forceNew If true return a new Reactor instance (but don't store it for future use)
- * @return Reactor
  */
-function getReactor($forceNew = false) {
+function getReactor(bool $forceNew = false): Reactor {
     static $reactor;
 
     if ($forceNew) {
@@ -22,10 +19,8 @@ function getReactor($forceNew = false) {
 
 /**
  * Select the most appropriate event reactor given the current execution environment
- *
- * @return LibeventReactor|NativeReactor|UvReactor
  */
-function chooseReactor() {
+function chooseReactor(): Reactor {
     if (extension_loaded('uv')) {
         return new UvReactor;
     } elseif (extension_loaded('libevent')) {
@@ -37,56 +32,43 @@ function chooseReactor() {
 
 /**
  * Start an event reactor and assume program flow control
- *
- * @param callable $onStart Optional callback to invoke immediately upon reactor start
- * @return void
  */
 function run(callable $onStart = null) {
-    return getReactor()->run($onStart);
+    getReactor()->run($onStart);
 }
 
 /**
  * Execute a single event loop iteration
- *
- * @param bool $noWait
- * @return void
  */
-function tick($noWait = false) {
-    return getReactor()->tick($noWait);
+function tick(bool $noWait = false) {
+    getReactor()->tick($noWait);
 }
 
 /**
  * Stop the event reactor
- *
+ * 
  * @return void
  */
 function stop() {
-    return getReactor()->stop();
+    getReactor()->stop();
 }
 
 /**
  * Schedule a callback for immediate invocation in the next event loop iteration
  *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @return int Returns the unique watcher ID for disable/enable/cancel
+ * NOTE: Watchers registered using this function are automatically garbage collected after execution.
  */
-function immediately(callable $func) {
+function immediately(callable $func): string {
     return getReactor()->immediately($func);
 }
 
 /**
  * Schedule a callback to execute once
  *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
- * @return int Returns the unique watcher ID for disable/enable/cancel
+ * NOTE: Watchers registered using this function are automatically garbage collected after execution.
  */
-function once(callable $func, $msDelay) {
-    return getReactor()->once($func, $msDelay);
+function once(callable $func, int $millisecondDelay): string {
+    return getReactor()->once($func, $millisecondDelay);
 }
 
 /**
@@ -95,38 +77,27 @@ function once(callable $func, $msDelay) {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- *
- * @param callable $func Any valid PHP callable
- * @param int $msDelay The delay in milliseconds in-between callback invocations (may be zero)
- * @return int Returns the unique watcher ID for disable/enable/cancel
  */
-function repeat(callable $func, $msDelay) {
-    return getReactor()->repeat($func, $msDelay);
+function repeat(callable $func, int $millisecondDelay): string {
+    return getReactor()->repeat($func, $millisecondDelay);
 }
 
 /**
  * Schedule an event to trigger once at the specified time
  *
- * Watchers registered using this function will be automatically garbage collected after execution.
- *
- * @param callable $func Any valid PHP callable
- * @param string $timeString Any string that can be parsed by strtotime() and is in the future
- * @return int Returns the unique watcher ID for disable/enable/cancel
+ * NOTE: Watchers registered using this function are automatically garbage collected after execution.
  */
-function at(callable $func, $timeString) {
-    return getReactor()->at($func, $timeString);
+function at(callable $func, $unixTimeOrString): string {
+    return getReactor()->at($func, $unixTimeOrString);
 }
 
 /**
  * Enable a disabled timer or stream IO watcher
  *
  * Calling enable() on an already-enabled watcher will have no effect.
- *
- * @param int $watcherId
- * @return void
  */
-function enable($watcherId) {
-    return getReactor()->enable($watcherId);
+function enable(string $watcherId) {
+    getReactor()->enable($watcherId);
 }
 
 /**
@@ -137,24 +108,18 @@ function enable($watcherId) {
  * NOTE: Disabling a repeating or stream watcher is not sufficient to free associated resources.
  * When the watcher is no longer needed applications must still use cancel() to clear related
  * memory and avoid leaks.
- *
- * @param int $watcherId
- * @return void
  */
-function disable($watcherId) {
-    return getReactor()->disable($watcherId);
+function disable(string $watcherId) {
+    getReactor()->disable($watcherId);
 }
 
 /**
  * Cancel an existing timer/stream watcher
  *
- * Calling cancel() on a non-existent watcher will have no effect.
- *
- * @param int $watcherId
- * @return void
+ * Calling cancel() on a non-existent watcher ID will have no effect.
  */
-function cancel($watcherId) {
-    return getReactor()->cancel($watcherId);
+function cancel(string $watcherId) {
+    getReactor()->cancel($watcherId);
 }
 
 /**
@@ -163,14 +128,11 @@ function cancel($watcherId) {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- *
- * @param resource $stream A stream resource to watch for readable data
- * @param callable $func Any valid PHP callable
- * @param bool $enableNow Should the watcher be enabled now or held for later use?
- * @return int Returns the unique watcher ID for disable/enable/cancel
+ * 
+ * @param resource $stream
  */
-function onReadable($stream, callable $func, $enableNow = true) {
-    return getReactor()->onReadable($stream, $func, $enableNow);
+function onReadable($stream, callable $func, bool $enableNow = true): string {
+    getReactor()->onReadable($stream, $func, $enableNow);
 }
 
 /**
@@ -183,25 +145,17 @@ function onReadable($stream, callable $func, $enableNow = true) {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- *
- * @param resource $stream A stream resource to watch for writable data
- * @param callable $func Any valid PHP callable
- * @param bool $enableNow Should the watcher be enabled now or held for later use?
- * @return int Returns the unique watcher ID for disable/enable/cancel
+ * 
+ * @param resource $stream
  */
-function onWritable($stream, callable $func, $enableNow = true) {
-    return getReactor()->onWritable($stream, $func, $enableNow);
+function onWritable($stream, callable $func, bool $enableNow = true): string {
+    getReactor()->onWritable($stream, $func, $enableNow);
 }
 
 /**
  * React to process control signals
- *
- * @param int $signo The signal number to watch for
- * @param callable $onSignal
- * @throws \RuntimeException if the current environment cannot support signal handling
- * @return int Returns a unique integer watcher ID
  */
-function onSignal($signo, callable $onSignal) {
+function onSignal(int $signo, callable $onSignal): string {
     /**
      * @var $reactor \Amp\SignalReactor
      */
@@ -219,11 +173,8 @@ function onSignal($signo, callable $onSignal) {
  * If any one of the Promises fails the resulting Promise will fail. Otherwise
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
- *
- * @param array[Promise] $promises
- * @return Promise
  */
-function all(array $promises) {
+function all(array $promises): Promise {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -273,11 +224,8 @@ function all(array $promises) {
  *
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
- *
- * @param array[Promise] $promises
- * @return Promise
  */
-function some(array $promises) {
+function some(array $promises): Promise {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -323,11 +271,8 @@ function some(array $promises) {
  *
  * This function is the same as some() with the notable exception that it will never fail even
  * if all promises in the array resolve unsuccessfully.
- *
- * @param array[Promise] $promises
- * @return Promise
  */
-function any(array $promises) {
+function any(array $promises): Promise {
     if (empty($promises)) {
         return new Success([], []);
     }
@@ -363,11 +308,8 @@ function any(array $promises) {
 /**
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
- *
- * @param array[Promise] $promises
- * @return Promise
  */
-function first(array $promises) {
+function first(array $promises): Promise {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -406,12 +348,8 @@ function first(array $promises) {
 
 /**
  * Map promised future values using the specified functor
- *
- * @param array[Promise] $promises
- * @param callable $functor
- * @return Promise
  */
-function map(array $promises, callable $functor) {
+function map(array $promises, callable $functor): Promise {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -455,12 +393,8 @@ function map(array $promises, callable $functor) {
  *
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
- *
- * @param array[Promise] $promises
- * @param callable $functor
- * @return Promise
  */
-function filter(array $promises, callable $functor) {
+function filter(array $promises, callable $functor): Promise {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -510,10 +444,7 @@ function filter(array $promises, callable $functor) {
  * this can lead to hard-to-debug failures. If the async value producer uses a different event
  * reactor instance from that specified in this method the wait() call will never return.
  *
- * @param Promise $promise A promise on which to wait for resolution
- * @param Reactor $reactor An optional event reactor instance
- * @throws \Exception
- * @return mixed
+ * @throws \Exception if the promise fails
  */
 function wait(Promise $promise, Reactor $reactor = null) {
     $isWaiting = true;
@@ -540,13 +471,8 @@ function wait(Promise $promise, Reactor $reactor = null) {
 
 /**
  * Return a function that will be resolved as a coroutine once invoked
- *
- * @param \Generator $generator
- * @param \Amp\Reactor $reactor
- * @param callable $promisifier
- * @return callable
  */
-function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null) {
+function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null): callable {
     return function(...$args) use ($func) {
         $result = $func(...$args);
         return ($result instanceof \Generator)
@@ -560,13 +486,8 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  *
  * Upon resolution the Generator return value is used to succeed the promised result. If an
  * error occurs during coroutine resolution the promise fails.
- *
- * @param \Generator $generator
- * @param \Amp\Reactor $reactor
- * @param callable $promisifier
- * @return \Amp\Promise
  */
-function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null) {
+function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null): Promise {
     $cs = new CoroutineStruct;
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;

@@ -3,14 +3,11 @@
 namespace Amp;
 
 /**
- * Represents the failed resolution of a Promisor's future computation
+ * Represents a failed computation resolution
  */
 class Failure implements Promise {
     private $error;
 
-    /**
-     * @param \Exception $error
-     */
     public function __construct(\Exception $error) {
         $this->error = $error;
     }
@@ -21,7 +18,6 @@ class Failure implements Promise {
      * NOTE: because this object represents a failed Promise it will *always* invoke the specified
      * $func callback immediately.
      *
-     * @param callable $func
      * @return void
      */
     public function when(callable $func) {
@@ -31,7 +27,6 @@ class Failure implements Promise {
     /**
      * Does nothing -- a resolved promise has no progress updates
      *
-     * @param callable $func
      * @return void
      */
     public function watch(callable $func) {

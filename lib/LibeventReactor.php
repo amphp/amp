@@ -6,7 +6,7 @@ class LibeventReactor implements SignalReactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
-    private $lastWatcherId = 1;
+    private $lastWatcherId = "a";
     private $enabledWatcherCount = 0;
     private $resolution = 1000;
     private $isRunning = false;
@@ -41,11 +41,8 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Start the event reactor and assume program flow control
-     *
-     * @param callable $onStart Optional callback to invoke immediately upon reactor start
+     * {@inheritDoc}
      * @throws \Exception Will throw if code executed during the event loop throws
-     * @return void
      */
     public function run(callable $onStart = null) {
         if ($this->isRunning) {
@@ -101,10 +98,7 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Execute a single event loop iteration
-     *
-     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
-     * @return void
+     * {@inheritDoc}
      */
     public function tick($noWait = false) {
         if ($this->isRunning) {
@@ -128,9 +122,7 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Stop the event reactor
-     *
-     * @return void
+     * {@inheritDoc}
      */
     public function stop() {
         event_base_loopexit($this->base);
@@ -138,14 +130,10 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Schedule an event to trigger once at the specified time
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
+     * {@inheritDoc}
      * @throws \InvalidArgumentException On invalid future time
-     * @return string Returns a unique watcher ID
      */
-    public function at(callable $callback, $unixTimeOrStr) {
+    public function at(callable $callback, $unixTimeOrStr): string {
         $now = time();
         if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
             $secondsUntil = ($unixTimeOrStr - $now);
@@ -153,7 +141,7 @@ class LibeventReactor implements SignalReactor {
             $secondsUntil = ($executeAt - $now);
         } else {
             throw new \InvalidArgumentException(
-                'Unix timestamp or future time string (parsable by strtotime()) required'
+                "Unix timestamp or future time string (parsable by strtotime()) required"
             );
         }
 
@@ -163,14 +151,11 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Schedule a callback for immediate invocation in the next event loop tick
-     *
-     * @param callable $callback Any valid PHP callable
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function immediately(callable $callback) {
+    public function immediately(callable $callback): string {
         $this->enabledWatcherCount++;
-        $watcherId = (string) $this->lastWatcherId++;
+        $watcherId = $this->lastWatcherId++;
         $this->immediates[$watcherId] = $callback;
 
         $watcher = new \StdClass;
@@ -179,21 +164,17 @@ class LibeventReactor implements SignalReactor {
         $watcher->callback = $callback;
         $watcher->isEnabled = true;
 
-        $this->watchers[$watcher->id] = $watcher;
+        $this->watchers[$watcherId] = $watcher;
 
         return $watcherId;
     }
 
     /**
-     * Schedule a callback to execute once
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function once(callable $callback, $msDelay) {
+    public function once(callable $callback, int $msDelay): string {
         $this->enabledWatcherCount++;
-        $watcherId = (string) $this->lastWatcherId++;
+        $watcherId = $this->lastWatcherId++;
         $eventResource = event_new();
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
 
@@ -247,15 +228,11 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Schedule a recurring callback to execute every $interval seconds until cancelled
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msDelay The interval in milliseconds between callback invocations
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function repeat(callable $callback, $msDelay) {
+    public function repeat(callable $callback, int $msDelay): string {
         $this->enabledWatcherCount++;
-        $watcherId = (string) $this->lastWatcherId++;
+        $watcherId = $this->lastWatcherId++;
         $msDelay = ($msDelay > 0) ? ($msDelay * $this->resolution) : 0;
         $eventResource = event_new();
 
@@ -277,7 +254,7 @@ class LibeventReactor implements SignalReactor {
         return $watcherId;
     }
 
-    private function wrapRepeatingCallback(LibeventWatcher $watcher) {
+    private function wrapRepeatingCallback(LibeventWatcher $watcher): \Closure {
         $callback = $watcher->callback;
         $watcherId = $watcher->id;
         $eventResource = $watcher->eventResource;
@@ -301,30 +278,20 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Watch a stream resource for IO readable data and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for readable data
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onReadable($stream, callable $callback, $enableNow = true) {
+    public function onReadable($stream, callable $callback, bool $enableNow = true): string {
         return $this->watchIoStream($stream, Watcher::IO_READER, $callback, $enableNow);
     }
 
     /**
-     * Watch a stream resource to become writable and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for writability
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onWritable($stream, callable $callback, $enableNow = true) {
+    public function onWritable($stream, callable $callback, bool $enableNow = true): string {
         return $this->watchIoStream($stream, Watcher::IO_WRITER, $callback, $enableNow);
     }
 
-    private function watchIoStream($stream, $type, callable $callback, $enableNow) {
+    private function watchIoStream($stream, $type, callable $callback, $enableNow): string {
         $this->enabledWatcherCount += $enableNow;
         $watcherId = (string) $this->lastWatcherId++;
         $eventResource = event_new();
@@ -352,7 +319,7 @@ class LibeventReactor implements SignalReactor {
         return $watcherId;
     }
 
-    private function wrapStreamCallback(LibeventWatcher $watcher) {
+    private function wrapStreamCallback(LibeventWatcher $watcher): \Closure {
         $callback = $watcher->callback;
         $watcherId = $watcher->id;
         $stream = $watcher->stream;
@@ -370,13 +337,9 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * React to process control signals
-     *
-     * @param int $signo The signal number to watch for (e.g. 2 for Uv::SIGINT)
-     * @param callable $onSignal
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onSignal($signo, callable $onSignal) {
+    public function onSignal(int $signo, callable $func): string {
         $this->enabledWatcherCount++;
         $signo = (int) $signo;
         $watcherId = (string) $this->lastWatcherId++;
@@ -386,7 +349,7 @@ class LibeventReactor implements SignalReactor {
         $watcher->type = Watcher::SIGNAL;
         $watcher->signo = $signo;
         $watcher->eventResource = $eventResource;
-        $watcher->callback = $onSignal;
+        $watcher->callback = $func;
         $watcher->isEnabled = true;
 
         $watcher->wrapper = $this->wrapSignalCallback($watcher);
@@ -418,12 +381,9 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Cancel an existing watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function cancel($watcherId) {
+    public function cancel(string $watcherId) {
         if (empty($this->watchers[$watcherId])) {
             return;
         }
@@ -447,12 +407,9 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Temporarily disable (but don't cancel) an existing timer/stream watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function disable($watcherId) {
+    public function disable(string $watcherId) {
         if (empty($this->watchers[$watcherId])) {
             return;
         }
@@ -471,12 +428,9 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * Enable a disabled timer/stream watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function enable($watcherId) {
+    public function enable(string $watcherId) {
         if (empty($this->watchers[$watcherId])) {
             return;
         }
@@ -528,19 +482,10 @@ class LibeventReactor implements SignalReactor {
     }
 
     /**
-     * An optional "last-chance" exception handler for errors resulting during callback invocation
-     *
-     * If a reactor callback throws and no onError() callback is specified the exception will
-     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
-     * exception that resulted in the callback's invocation.
-     *
-     * @param callable $onErrorCallback
-     * @return self
+     * {@inheritDoc}
      */
     public function onError(callable $onErrorCallback) {
         $this->onError = $onErrorCallback;
-
-        return $this;
     }
 
     public function __destruct() {

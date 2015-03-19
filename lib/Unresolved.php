@@ -15,11 +15,8 @@ class Unresolved implements Promise {
 
     /**
      * Notify the $func callback when the promise resolves (whether successful or not)
-     *
-     * @param callable $func
-     * @return self
      */
-    public function when(callable $func) {
+    public function when(callable $func): Unresolved {
         if ($this->isResolved) {
             $func($this->error, $this->result);
         } else {
@@ -31,11 +28,8 @@ class Unresolved implements Promise {
 
     /**
      * Notify the $func callback when resolution progress events are emitted
-     *
-     * @param callable $func
-     * @return self
      */
-    public function watch(callable $func) {
+    public function watch(callable $func): Unresolved {
         if (!$this->isResolved) {
             $this->watchers[] = $func;
         }

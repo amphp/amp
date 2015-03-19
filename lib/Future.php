@@ -15,10 +15,8 @@ class Future implements Promisor, Promise {
      * This implementation acts as both Promisor and Promise so we simply return the
      * current instance. If users require a Promisor that can only be resolved by code
      * holding a reference to the Promisor they may instead use Amp\PrivateFuture.
-     *
-     * @return \Amp\Promise
      */
-    public function promise() {
+    public function promise(): Future {
         return $this;
     }
 
@@ -26,9 +24,8 @@ class Future implements Promisor, Promise {
      * Notify the $func callback when the promise resolves (whether successful or not)
      *
      * $func callbacks are invoked with parameters in error-first style.
-     *
-     * @param callable $func
-     * @return self
+     * 
+     * @return void
      */
     public function when(callable $func) {
         if ($this->isResolved) {
@@ -36,22 +33,17 @@ class Future implements Promisor, Promise {
         } else {
             $this->whens[] = $func;
         }
-
-        return $this;
     }
 
     /**
      * Notify the $func callback when resolution progress events are emitted
-     *
-     * @param callable $func
-     * @return self
+     * 
+     * @return void
      */
     public function watch(callable $func) {
         if (!$this->isResolved) {
             $this->watchers[] = $func;
         }
-
-        return $this;
     }
 
     /**
@@ -84,9 +76,9 @@ class Future implements Promisor, Promise {
 
     /**
      * Update watchers of resolution progress events
-     *
+     * 
      * @param mixed $progress
-     * @throws \LogicException
+     * @throws \LogicException if the promise has already resolved
      * @return void
      */
     public function update($progress) {
@@ -103,9 +95,9 @@ class Future implements Promisor, Promise {
 
     /**
      * Resolve the promised value as a success
-     *
+     * 
      * @param mixed $result
-     * @throws \LogicException
+     * @throws \LogicException if the promise has already resolved or the result is the current instance
      * @return void
      */
     public function succeed($result = null) {
@@ -138,9 +130,8 @@ class Future implements Promisor, Promise {
 
     /**
      * Resolve the promised value as a failure
-     *
-     * @param \Exception $error
-     * @throws \LogicException If the Promise has already resolved
+     * 
+     * @throws \LogicException if the promise has already resolved
      * @return void
      */
     public function fail(\Exception $error) {

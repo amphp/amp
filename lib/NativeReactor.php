@@ -14,7 +14,7 @@ class NativeReactor implements Reactor {
     private $watcherIdWriteStreamIdMap = [];
     private $disabledWatchers = [];
     private $resolution = 1000;
-    private $lastWatcherId = 1;
+    private $lastWatcherId = "a";
     private $isRunning = false;
     private $isTicking = false;
     private $onError;
@@ -58,11 +58,7 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Start the event reactor and assume program flow control
-     *
-     * @param callable $onStart Optional callback to invoke immediately upon reactor start
-     * @throws \Exception Will throw if code executed during the event loop throws
-     * @return void
+     * {@inheritDoc}
      */
     public function run(callable $onStart = null) {
         if ($this->isRunning) {
@@ -95,21 +91,16 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Stop the event reactor
-     *
-     * @return void
+     * {@inheritDoc}
      */
     public function stop() {
         $this->isRunning = $this->isTicking = false;
     }
 
     /**
-     * Execute a single event loop iteration
-     *
-     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
-     * @return void
+     * {@inheritDoc}
      */
-    public function tick($noWait = false) {
+    public function tick(bool $noWait = false) {
         try {
             $this->isTicking = true;
             if (!$this->isRunning) {
@@ -223,14 +214,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Schedule an event to trigger once at the specified time
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
-     * @throws \InvalidArgumentException On invalid future time
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function at(callable $callback, $unixTimeOrStr) {
+    public function at(callable $callback, $unixTimeOrStr): string {
         $now = time();
         if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
             $secondsUntil = ($unixTimeOrStr - $now);
@@ -248,42 +234,31 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Schedule a callback for immediate invocation in the next event loop iteration
-     *
-     * @param callable $callback Any valid PHP callable
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function immediately(callable $callback) {
-        $watcherId = (string) $this->lastWatcherId++;
+    public function immediately(callable $callback): string {
+        $watcherId = $this->lastWatcherId++;
         $this->immediates[$watcherId] = $callback;
 
         return $watcherId;
     }
 
     /**
-     * Schedule a callback to execute once
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function once(callable $callback, $msDelay) {
+    public function once(callable $callback, int $msDelay): string {
         return $this->scheduleAlarm($callback, $msDelay, $isRepeating = false);
     }
 
     /**
-     * Schedule a recurring callback to execute every $interval seconds until cancelled
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msDelay The interval in milliseconds between callback invocations
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function repeat(callable $callback, $msDelay) {
+    public function repeat(callable $callback, int $msDelay): string {
         return $this->scheduleAlarm($callback, $msDelay, $isRepeating = true);
     }
 
-    private function scheduleAlarm($callback, $msDelay, $isRepeating) {
-        $watcherId = (string) $this->lastWatcherId++;
+    private function scheduleAlarm(callable $callback, int $msDelay, bool $isRepeating): string {
+        $watcherId = $this->lastWatcherId++;
         $msDelay = round(($msDelay / $this->resolution), 3);
 
         if ($this->isRunning) {
@@ -300,14 +275,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Watch a stream resource for IO readable data and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for readable data
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onReadable($stream, callable $callback, $enableNow = true) {
+    public function onReadable($stream, callable $callback, bool $enableNow = true): string {
         $watcherId = (string) $this->lastWatcherId++;
 
         if ($enableNow) {
@@ -323,14 +293,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Watch a stream resource to become writable and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for writability
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onWritable($stream, callable $callback, $enableNow = true) {
+    public function onWritable($stream, callable $callback, bool $enableNow = true): string {
         $watcherId = (string) $this->lastWatcherId++;
 
         if ($enableNow) {
@@ -346,12 +311,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Cancel an existing watcher
-     *
-     * @param string $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function cancel($watcherId) {
+    public function cancel(string $watcherId) {
         if (isset($this->alarms[$watcherId])) {
             unset(
                 $this->alarms[$watcherId],
@@ -368,7 +330,7 @@ class NativeReactor implements Reactor {
         }
     }
 
-    private function cancelReadWatcher($watcherId) {
+    private function cancelReadWatcher(string $watcherId) {
         $streamId = $this->watcherIdReadStreamIdMap[$watcherId];
 
         unset(
@@ -382,7 +344,7 @@ class NativeReactor implements Reactor {
         }
     }
 
-    private function cancelWriteWatcher($watcherId) {
+    private function cancelWriteWatcher(string $watcherId) {
         $streamId = $this->watcherIdWriteStreamIdMap[$watcherId];
 
         unset(
@@ -397,12 +359,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Enable a disabled timer/stream watcher
-     *
-     * @param string $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function enable($watcherId) {
+    public function enable(string $watcherId) {
         if (!isset($this->disabledWatchers[$watcherId])) {
             return;
         }
@@ -441,12 +400,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * Temporarily disable (but don't cancel) an existing timer/stream watcher
-     *
-     * @param string $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function disable($watcherId) {
+    public function disable(string $watcherId) {
         if (isset($this->alarms[$watcherId])) {
             $alarmStruct = $this->alarms[$watcherId];
             $this->disabledWatchers[$watcherId] = [self::$DISABLED_ALARM, $alarmStruct];
@@ -493,18 +449,9 @@ class NativeReactor implements Reactor {
     }
 
     /**
-     * An optional "last-chance" exception handler for errors resulting during callback invocation
-     *
-     * If a reactor callback throws and no onError() callback is specified the exception will
-     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
-     * exception that resulted in the callback's invocation.
-     *
-     * @param callable $onErrorCallback
-     * @return self
+     * {@inheritDoc}
      */
-    public function onError(callable $onErrorCallback) {
-        $this->onError = $onErrorCallback;
-
-        return $this;
+    public function onError(callable $func) {
+        $this->onError = $func;
     }
 }
