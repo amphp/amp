@@ -47,34 +47,6 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * This method is deprecated. New code should use Amp\wait($promise) instead.
-     */
-    public function wait() {
-        trigger_error(
-            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
-            'Please update code to use Amp\\wait($promise) instead.',
-            E_USER_DEPRECATED
-        );
-
-        $isWaiting = true;
-        $resolvedError = $resolvedResult = null;
-        $this->when(function($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
-            $isWaiting = false;
-            $resolvedError = $error;
-            $resolvedResult = $result;
-        });
-        $reactor = getReactor();
-        while ($isWaiting) {
-            $reactor->tick();
-        }
-        if ($resolvedError) {
-            throw $resolvedError;
-        }
-
-        return $resolvedResult;
-    }
-
-    /**
      * Update watchers of resolution progress events
      * 
      * @param mixed $progress

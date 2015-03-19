@@ -550,37 +550,3 @@ function __coroutinePromisify(CoroutineStruct $cs) : Promise {
         )
     ));
 }
-
-
-// === DEPRECATED FUNCTIONS ========================================================================
-
-/**
- * Get the global singleton event reactor instance
- *
- * Note that the $factory callable is only invoked if no global reactor has yet been initialized.
- *
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * === THIS FUNCTION IS DEPRECATED ===
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- *
- * @param callable $factory Optional factory callable for initializing a reactor
- * @return Reactor
- */
-function reactor(callable $factory = null) {
-    static $reactor;
-
-    $msg = 'This function is deprecated and scheduled for removal. Please use Amp\\getReactor()';
-    trigger_error($msg, E_USER_DEPRECATED);
-
-    if ($reactor) {
-        return $reactor;
-    } elseif ($factory) {
-        return ($reactor = $factory());
-    } elseif (extension_loaded('uv')) {
-        return ($reactor = new UvReactor);
-    } elseif (extension_loaded('libevent')) {
-        return ($reactor = new LibeventReactor);
-    } else {
-        return ($reactor = new NativeReactor);
-    }
-}

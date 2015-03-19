@@ -32,17 +32,4 @@ class Failure implements Promise {
     public function watch(callable $func) {
         return;
     }
-
-    /**
-     * This method is deprecated. New code should use Amp\wait($promise) instead.
-     */
-    public function wait() {
-        trigger_error(
-            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
-            'Please update code to use Amp\\wait($promise) instead.',
-            E_USER_DEPRECATED
-        );
-
-        throw $this->error;
-    }
 }
