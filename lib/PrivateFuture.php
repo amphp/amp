@@ -27,6 +27,8 @@ class PrivateFuture implements Promisor {
 
     /**
      * Promise future fulfillment via a temporary placeholder value
+     * 
+     * @return \Amp\Promise
      */
     public function promise(): Promise {
         return $this->promise;
