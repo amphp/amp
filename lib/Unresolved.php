@@ -14,7 +14,7 @@ class Unresolved implements Promise {
     private $result;
 
     /**
-     * Notify the $func callback when the promise resolves (whether successful or not)
+     * {@inheritDoc}
      */
     public function when(callable $func): Unresolved {
         if ($this->isResolved) {
@@ -27,7 +27,7 @@ class Unresolved implements Promise {
     }
 
     /**
-     * Notify the $func callback when resolution progress events are emitted
+     * {@inheritDoc}
      */
     public function watch(callable $func): Unresolved {
         if (!$this->isResolved) {

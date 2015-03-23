@@ -13,21 +13,14 @@ class Failure implements Promise {
     }
 
     /**
-     * Pass the resolved failure Exception to the specified callback
-     *
-     * NOTE: because this object represents a failed Promise it will *always* invoke the specified
-     * $func callback immediately.
-     *
-     * @return void
+     * {@inheritDoc}
      */
     public function when(callable $func) {
         $func($this->error, $result = null);
     }
 
     /**
-     * Does nothing -- a resolved promise has no progress updates
-     *
-     * @return void
+     * {@inheritDoc}
      */
     public function watch(callable $func) {
         return;

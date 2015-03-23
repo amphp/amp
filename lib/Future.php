@@ -15,17 +15,15 @@ class Future implements Promisor, Promise {
      * This implementation acts as both Promisor and Promise so we simply return the
      * current instance. If users require a Promisor that can only be resolved by code
      * holding a reference to the Promisor they may instead use Amp\PrivateFuture.
+     *
+     * @return \Amp\Promise
      */
-    public function promise(): Future {
+    public function promise(): Promise {
         return $this;
     }
 
     /**
-     * Notify the $func callback when the promise resolves (whether successful or not)
-     *
-     * $func callbacks are invoked with parameters in error-first style.
-     * 
-     * @return void
+     * {@inheritDoc}
      */
     public function when(callable $func) {
         if ($this->isResolved) {
@@ -36,9 +34,7 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Notify the $func callback when resolution progress events are emitted
-     * 
-     * @return void
+     * {@inheritDoc}
      */
     public function watch(callable $func) {
         if (!$this->isResolved) {
@@ -47,11 +43,8 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Update watchers of resolution progress events
-     * 
-     * @param mixed $progress
+     * {@inheritDoc}
      * @throws \LogicException if the promise has already resolved
-     * @return void
      */
     public function update(...$progress) {
         if ($this->isResolved) {
@@ -66,11 +59,8 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Resolve the promised value as a success
-     * 
-     * @param mixed $result
+     * {@inheritDoc}
      * @throws \LogicException if the promise has already resolved or the result is the current instance
-     * @return void
      */
     public function succeed($result = null) {
         if ($this->isResolved) {
@@ -101,10 +91,8 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Resolve the promised value as a failure
-     * 
+     * {@inheritDoc}
      * @throws \LogicException if the promise has already resolved
-     * @return void
      */
     public function fail(\Exception $error) {
         if ($this->isResolved) {

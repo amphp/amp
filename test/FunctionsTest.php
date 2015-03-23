@@ -110,12 +110,8 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             return ($a * $b);
         };
 
-        $bar = function() use ($foo) {
-            return yield from $foo();
-        };
-
-        (new NativeReactor)->run(function($reactor) use ($bar) {
-            $result = yield resolve($bar(), $reactor);
+        (new NativeReactor)->run(function($reactor) use ($foo) {
+            $result = yield resolve($foo(), $reactor);
             $this->assertSame(42, $result);
         });
     }
@@ -143,27 +139,20 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testAllCombinatorResolution() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                list($a, $b) = yield all([
+            list($a, $b) = yield all([
                     new Success(21),
                     new Success(2),
-                ]);
-                return ($a * $b);
-            };
+            ]);
 
-            $result = yield from $gen();
+            $result = ($a * $b);
             $this->assertSame(42, $result);
         });
     }
 
     public function testAllCombinatorResolutionWithNonPromises() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                list($a, $b, $c) = yield all([new Success(21), new Success(2), 10]);
-                return ($a * $b * $c);
-            };
-
-            $result = yield from $gen();
+            list($a, $b, $c) = yield all([new Success(21), new Success(2), 10]);
+            $result = ($a * $b * $c);
             $this->assertSame(420, $result);
         });
     }
@@ -174,42 +163,31 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
      */
     public function testAllCombinatorResolutionThrowsIfAnyOnePromiseFails() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                list($a, $b) = yield all([
-                    new Success(21),
-                    new Failure(new \Exception('When in the chronicle of wasted time')),
-                ]);
-            };
-            yield from $gen();
+            list($a, $b) = yield all([
+                new Success(21),
+                new Failure(new \Exception('When in the chronicle of wasted time')),
+            ]);
         });
     }
 
     public function testExplicitAllCombinatorResolution() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                list($a, $b, $c) = yield all([
-                    new Success(21),
-                    new Success(2),
-                    10
-                ]);
-                return ($a * $b * $c);
-            };
+            list($a, $b, $c) = yield all([
+                new Success(21),
+                new Success(2),
+                10
+            ]);
 
-            $result = yield from $gen();
-            $this->assertSame(420, $result);
+            $this->assertSame(420, ($a * $b * $c));
         });
     }
 
     public function testExplicitAnyCombinatorResolution() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                return yield any([
-                    'a' => new Success(21),
-                    'b' => new Failure(new \Exception('test')),
-                ]);
-            };
-
-            list($errors, $results) = yield from $gen();
+            list($errors, $results) = yield any([
+                'a' => new Success(21),
+                'b' => new Failure(new \Exception('test')),
+            ]);
             $this->assertSame('test', $errors['b']->getMessage());
             $this->assertSame(21, $results['a']);
         });
@@ -221,13 +199,10 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
      */
     public function testExplicitSomeCombinatorResolutionFailsOnError() {
         (new NativeReactor)->run(function($reactor) {
-            $gen = function() {
-                yield some([
-                    'r1' => new Failure(new \RuntimeException),
-                    'r2' => new Failure(new \RuntimeException),
-                ]);
-            };
-            yield from $gen();
+            yield some([
+                'r1' => new Failure(new \RuntimeException),
+                'r2' => new Failure(new \RuntimeException),
+            ]);
         });
     }
 
