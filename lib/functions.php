@@ -473,7 +473,7 @@ function wait(Promise $promise, Reactor $reactor = null) {
  * Return a function that will be resolved as a coroutine once invoked
  */
 function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null): callable {
-    return function(...$args) use ($func) {
+    return function(...$args) use ($func, $reactor, $promisifier) {
         $result = $func(...$args);
         return ($result instanceof \Generator)
             ? resolve($result, $reactor, $promisifier)
