@@ -539,6 +539,8 @@ function __coroutinePromisify(CoroutineStruct $cs) : Promise {
         return $yielded;
     }
 
+    // Allow custom promisifier callables to create Promise from
+    // the yielded key/value for extension use-cases
     if ($cs->promisifier) {
         return call_user_func($cs->promisifier, $cs->generator->key(), $yielded);
     }
