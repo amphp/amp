@@ -535,7 +535,7 @@ function __coroutinePromisify(CoroutineStruct $cs) : Promise {
         return new Success;
     }
 
-    if (is_object($yielded) && $yielded instanceof Promise) {
+    if ($yielded instanceof Promise) {
         return $yielded;
     }
 
