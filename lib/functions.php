@@ -488,7 +488,17 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  * error occurs during coroutine resolution the promise fails.
  */
 function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null): Promise {
-    $cs = new CoroutineStruct;
+    // @TODO Replace stdclass with anon class once merged into php-src
+    $cs = new \StdClass;
+    /*
+    $cs = new class {
+        use Struct;
+        public $reactor;
+        public $promisor;
+        public $generator;
+        public $promisifier;
+    };
+    */
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;
     $cs->generator = $generator;
@@ -498,7 +508,7 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
     return $cs->promisor->promise();
 }
 
-function __coroutineAdvance(CoroutineStruct $cs) {
+function __coroutineAdvance($cs) {
     try {
         if ($cs->generator->valid()) {
             $promise = __coroutinePromisify($cs);
@@ -515,7 +525,7 @@ function __coroutineAdvance(CoroutineStruct $cs) {
     }
 }
 
-function __coroutineSend(CoroutineStruct $cs, \Exception $error = null, $result = null) {
+function __coroutineSend($cs, \Exception $error = null, $result = null) {
     try {
         if ($error) {
             $cs->generator->throw($error);
@@ -528,7 +538,7 @@ function __coroutineSend(CoroutineStruct $cs, \Exception $error = null, $result 
     }
 }
 
-function __coroutinePromisify(CoroutineStruct $cs) : Promise {
+function __coroutinePromisify($cs) : Promise {
     $yielded = $cs->generator->current();
 
     if (!isset($yielded)) {

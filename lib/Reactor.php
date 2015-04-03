@@ -29,48 +29,51 @@ interface Reactor {
     /**
      * Schedule a callback for immediate invocation in the next event loop iteration
      *
-     * @param callable $func A callback to invoke in the next iteration of the event loop
+     * @param callable $callback A callback to invoke in the next iteration of the event loop
+     * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function immediately(callable $func): string;
+    public function immediately(callable $callback, array $options = []): string;
 
     /**
      * Schedule a callback to execute once
      *
-     * @param callable $func A callback to invoke after the specified millisecond delay
-     * @param int $millisecondDelay the number of milliseconds to wait before invoking $func
+     * @param callable $callback A callback to invoke after the specified millisecond delay
+     * @param int $msDelay the number of milliseconds to wait before invoking $callback
+     * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function once(callable $func, int $millisecondDelay): string;
+    public function once(callable $callback, int $msDelay, array $options = []): string;
 
     /**
      * Schedule a recurring callback to execute every $interval seconds until cancelled
      *
-     * @param callable $func A callback to invoke at the $millisecondDelay interval until canceled
-     * @param int $millisecondDelay The interval at which to repeat $func invocations
+     * @param callable $callback A callback to invoke at the $msDelay interval until cancelled
+     * @param int $msInterval The interval at which to repeat $callback invocations
+     * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function repeat(callable $func, int $millisecondDelay): string;
+    public function repeat(callable $callback, int $msInterval, array $options = []): string;
 
     /**
      * Watch a stream resource for readable data and trigger the callback when actionable
      *
      * @param resource $stream The stream resource to watch for readability
-     * @param callable $func A callback to invoke when the stream reports as readable
-     * @param bool $enableNow Whether or not the watcher should be enabled upon creation
+     * @param callable $callback A callback to invoke when the stream reports as readable
+     * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onReadable($stream, callable $func, bool $enableNow = true): string;
+    public function onReadable($stream, callable $callback, array $options = []): string;
 
     /**
      * Watch a stream resource to become writable and trigger the callback when actionable
      *
      * @param resource $stream The stream resource to watch for writability
-     * @param callable $func A callback to invoke when the stream reports as writable
-     * @param bool $enableNow Whether or not the watcher should be enabled upon creation
+     * @param callable $callback A callback to invoke when the stream reports as writable
+     * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onWritable($stream, callable $func, bool $enableNow = true): string;
+    public function onWritable($stream, callable $callback, array $options = []): string;
 
     /**
      * Cancel an existing timer/stream watcher
@@ -102,12 +105,13 @@ interface Reactor {
      * If an application throws inside the event loop and no onError callback is specified the
      * exception bubbles up and the event loop is stopped. This is undesirable in long-running
      * applications (like servers) where stopping the event loop for an application error is
-     * problematic.
+     * problematic. Amp applications can instead specify the onError callback to handle uncaught
+     * exceptions without stopping the event loop.
      *
      * onError callback functions are passed a single parameter: the uncaught exception.
      *
-     * @param callable $func A callback to invoke when an exception occurs inside the event loop
+     * @param callable $callback A callback to invoke when an exception occurs inside the event loop
      * @return void
      */
-    public function onError(callable $func);
+    public function onError(callable $callback);
 }

@@ -2,14 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp\Success;
-use Amp\Failure;
-use function Amp\resolve;
-use function Amp\coroutine;
-use function Amp\all;
-use function Amp\any;
-use function Amp\some;
-
 abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     abstract protected function getReactor();
 
@@ -20,13 +12,13 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $watcherId = $reactor->immediately(function() use (&$increment) { $increment++; });
         $reactor->disable($watcherId);
 
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
 
         $reactor->run();
         $this->assertEquals(0, $increment);
 
         $reactor->enable($watcherId);
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
 
         $reactor->run();
 
@@ -77,7 +69,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         });
 
         $reactor->disable($watcherId);
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
         $reactor->run();
 
         $this->assertEquals(0, $increment);
@@ -228,7 +220,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
             $flag = TRUE;
             $reactor->stop();
         });
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
 
         $reactor->run();
         $this->assertTrue($flag);
@@ -238,8 +230,9 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor = $this->getReactor();
 
         $increment = 0;
-        $reactor->onWritable(STDOUT, function() use (&$increment) { $increment++; }, $isEnabled = FALSE);
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $options = ["enable" => false];
+        $reactor->onWritable(STDOUT, function() use (&$increment) { $increment++; }, $options);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
         $reactor->run();
 
         $this->assertSame(0, $increment);
@@ -249,15 +242,13 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor = $this->getReactor();
 
         $increment = 0;
-        $watcherId = $reactor->onWritable(STDOUT, function() use (&$increment) {
-            $increment++;
-        }, $isEnabled = FALSE);
-
+        $options = ["enable" => false];
+        $watcherId = $reactor->onWritable(STDOUT, function() use (&$increment) { $increment++; }, $options);
         $reactor->immediately(function() use ($reactor, $watcherId) {
             $reactor->enable($watcherId);
         });
 
-        $reactor->once([$reactor, 'stop'], $msDelay = 250);
+        $reactor->once([$reactor, "stop"], $msDelay = 250);
         $reactor->run();
 
         $this->assertTrue($increment > 0);
@@ -269,13 +260,13 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testStreamWatcherDoesntSwallowExceptions() {
         $reactor = $this->getReactor();
         $reactor->onWritable(STDOUT, function() { throw new \RuntimeException; });
-        $reactor->once([$reactor, 'stop'], $msDelay = 50);
+        $reactor->once([$reactor, "stop"], $msDelay = 50);
         $reactor->run();
     }
 
     public function testGarbageCollection() {
         $reactor = $this->getReactor();
-        $reactor->once([$reactor, 'stop'], $msDelay = 100);
+        $reactor->once([$reactor, "stop"], $msDelay = 100);
         $reactor->run();
     }
 
@@ -284,7 +275,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $this->getReactor()->run(function($reactor) use (&$test) {
             yield;
             $test = "Thus Spake Zarathustra";
-            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
+            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 1);
         });
         $this->assertSame("Thus Spake Zarathustra", $test);
     }
@@ -292,12 +283,11 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testImmediatelyGeneratorResolvesAutomatically() {
         $reactor = $this->getReactor();
         $test = '';
-        $gen = function($reactor) use (&$test) {
+        $reactor->immediately(function($reactor) use (&$test) {
             yield;
             $test = "The abyss will gaze back into you";
-            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
-        };
-        $reactor->immediately($gen);
+            $reactor->once(function($reactor) { $reactor->stop(); }, 50);
+        });
         $reactor->run();
         $this->assertSame("The abyss will gaze back into you", $test);
     }
@@ -382,11 +372,63 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(3, $var1);
         $this->assertSame(4, $var2);
     }
-    
-    
-    
-    
-    
-    
-    
+
+    public function testOptionalCallbackDataPassedOnInvocation() {
+        $callbackData = new \StdClass;
+        $options = ["callbackData" => $callbackData];
+        $reactor = $this->getReactor();
+        $reactor->immediately(function($reactor, $watcherId, $callbackData) {
+            $callbackData->immediately = true;
+        }, $options);
+        $reactor->once(function($reactor, $watcherId, $callbackData) {
+            $callbackData->once = true;
+        }, 1, $options);
+        $reactor->repeat(function($reactor, $watcherId, $callbackData) {
+            $callbackData->repeat = true;
+            $reactor->cancel($watcherId);
+        }, 1, $options);
+        $reactor->onWritable(STDERR, function($reactor, $watcherId, $stream, $callbackData) {
+            $callbackData->onWritable = true;
+            $reactor->cancel($watcherId);
+        }, $options);
+        $reactor->run();
+
+        $this->assertTrue($callbackData->immediately);
+        $this->assertTrue($callbackData->once);
+        $this->assertTrue($callbackData->repeat);
+        $this->assertTrue($callbackData->onWritable);
+    }
+
+    public function testOptionalRepeatWatcherDelay() {
+        $reactor = $this->getReactor();
+        $watcherId = $reactor->repeat(function($reactor, $watcherId) {
+            $reactor->cancel($watcherId);
+        }, $msInterval = 10000, $options = ["msDelay" => 1]);
+        $startTime = time();
+        $reactor->run();
+        $endTime = time();
+        $this->assertTrue(($endTime - $startTime) < $msInterval);
+    }
+
+    public function testOptionalDisable() {
+        $reactor = $this->getReactor();
+        $options = ["enable" => false];
+
+        $reactor->immediately(function($reactor, $watcherId, $callbackData) {
+            $this->fail("disabled watcher should not invoke callback");
+        }, $options);
+        $reactor->once(function($reactor, $watcherId, $callbackData) {
+            $this->fail("disabled watcher should not invoke callback");
+        }, 1, $options);
+        $reactor->repeat(function($reactor, $watcherId, $callbackData) {
+            $this->fail("disabled watcher should not invoke callback");
+            $reactor->cancel($watcherId);
+        }, 1, $options);
+        $reactor->onWritable(STDERR, function($reactor, $watcherId, $stream, $callbackData) {
+            $this->fail("disabled watcher should not invoke callback");
+            $reactor->cancel($watcherId);
+        }, $options);
+
+        $reactor->run();
+    }
 }
