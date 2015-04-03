@@ -108,6 +108,10 @@ interface Reactor {
      * problematic. Amp applications can instead specify the onError callback to handle uncaught
      * exceptions without stopping the event loop.
      *
+     * Additionally, generator callbacks which are auto-resolved by the event reactor may fail.
+     * Coroutine resolution failures are treated like uncaught exceptions and stop the event reactor
+     * if no onError callback is specified to handle these situations.
+     *
      * onError callback functions are passed a single parameter: the uncaught exception.
      *
      * @param callable $callback A callback to invoke when an exception occurs inside the event loop
