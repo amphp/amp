@@ -539,7 +539,7 @@ function __coroutinePromisify($cs) : Promise {
     // Allow custom promisifier callables to create Promise from
     // the yielded key/value for extension use-cases
     if ($cs->promisifier) {
-        return call_user_func($cs->promisifier, $cs->generator->key(), $yielded);
+        return ($cs->promisifier)($cs->generator->key(), $yielded);
     }
 
     return new Failure(new \DomainException(
