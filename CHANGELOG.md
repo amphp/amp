@@ -1,4 +1,24 @@
-### master
+### master (v1.0.0-dev)
+
+- All `Amp\Reactor` watcher methods now accept an options array
+  for future API expansion.
+- All `Amp\Reactor` watchers may now be disabled at creation-time
+  by passing `"enable" => false` in the options array.
+- `Reactor::repeat()` watchers may specify a custom initial delay
+  separate from the repeat interval in milliseconds using the
+  `"msDelay" => 1234` option
+- All watcher IDs are now represented as strings
+- Added new `Amp\resolve()` function to resolve co-routines as
+  promises.
+- Removed `LibeventReactor` code until pecl/libevent supports php7
+- Removed deprecated `Amp\ReactorFactory`
+- `Amp\Struct` is now a trait instead of a class
+
+
+v0.17.0
+-------
+
+*This is the final PHP5 compatible release. Bugfixes only to follow ...*
 
 > **BC BREAKS:**
 
