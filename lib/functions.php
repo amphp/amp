@@ -8,12 +8,10 @@ namespace Amp;
  * @param bool $forceNew If true return a new Reactor instance (but don't store it for future use)
  * @return Reactor
  */
-function getReactor($forceNew = false) {
+function getReactor() {
     static $reactor;
 
-    if ($forceNew) {
-        return chooseReactor();
-    } elseif ($reactor) {
+    if ($reactor) {
         return $reactor;
     } else {
         return $reactor = chooseReactor();

@@ -1,6 +1,8 @@
 ### master
 
-- n/a
+> **BC BREAKS:**
+
+- Dropped `\Amp\getReactor` param `$forceNew` as it doesn't has a proper use case.
 
 v0.16.0
 -------
