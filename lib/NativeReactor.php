@@ -256,9 +256,6 @@ class NativeReactor implements Reactor {
     public function once(callable $callback, int $msDelay, array $options = []): string {
         assert(($msDelay >= 0), "\$msDelay at Argument 2 expects integer >= 0");
 
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -269,7 +266,6 @@ class NativeReactor implements Reactor {
             public $msDelay;
             public $nextExecutionAt;
         }
-        */
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_ONCE;
@@ -301,9 +297,6 @@ class NativeReactor implements Reactor {
         $msDelay = $options["msDelay"] ?? $msInterval;
         assert(($msDelay >= 0), "msDelay option expects integer >= 0");
         
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -315,7 +308,6 @@ class NativeReactor implements Reactor {
             public $msInterval;
             public $nextExecutionAt;
         }
-        */
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_REPEAT;
@@ -355,9 +347,6 @@ class NativeReactor implements Reactor {
     }
 
     private function registerIoWatcher($stream, $callback, $options, $type): string {
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -368,7 +357,6 @@ class NativeReactor implements Reactor {
             public $streamId;
             public $stream;
         }
-        */
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = $type;
@@ -405,7 +393,6 @@ class NativeReactor implements Reactor {
      * {@inheritDoc}
      */
     public function enable(string $watcherId) {
-        // @TODO should this throw?
         if (!isset($this->watchers[$watcherId])) {
             return;
         }

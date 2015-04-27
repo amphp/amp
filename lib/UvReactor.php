@@ -130,9 +130,6 @@ class UvReactor implements SignalReactor {
      * {@inheritDoc}
      */
     public function immediately(callable $callback, array $options = []): string {
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -143,7 +140,6 @@ class UvReactor implements SignalReactor {
             public $msDelay;
             public $nextExecutionAt;
         }
-        */
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;
@@ -189,9 +185,6 @@ class UvReactor implements SignalReactor {
 
     private function registerTimer(callable $callback, int $msDelay, int $msInterval, array $options): string {
         $this->enabledWatcherCount++;
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -203,7 +196,6 @@ class UvReactor implements SignalReactor {
             public $msDelay;
             public $msInterval;
         };
-        */
 
         $isRepeating = ($msInterval !== -1);
 
@@ -273,9 +265,6 @@ class UvReactor implements SignalReactor {
     }
 
     private function watchStream($stream, callable $callback, int $type, array $options): string {
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -288,7 +277,6 @@ class UvReactor implements SignalReactor {
             public $streamId;
 
         };
-        */
 
         $this->watchers[$watcherId] = $watcher;
 
@@ -341,9 +329,6 @@ class UvReactor implements SignalReactor {
 
         $streamId = (int) $stream;
 
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $poll = new \StdClass;
-        /*
         $poll = new class {
             use Struct;
             public $flags;
@@ -353,7 +338,6 @@ class UvReactor implements SignalReactor {
             public $writers = [];
             public $disable = [];
         };
-        */
         $this->streamIdPollMap[$streamId] = $poll;
 
         $poll->flags = 0;
@@ -397,9 +381,6 @@ class UvReactor implements SignalReactor {
      * {@inheritDoc}
      */
     public function onSignal(int $signo, callable $func, array $options = []): string {
-        // @TODO Replace stdclass with anon class once merged into php-src/master
-        $watcher = new \StdClass;
-        /*
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -410,7 +391,6 @@ class UvReactor implements SignalReactor {
             public $signo;
             public $uvHandle;
         };
-        */
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::SIGNAL;
         $watcher->callback = $this->wrapSignalCallback($watcher, $func);

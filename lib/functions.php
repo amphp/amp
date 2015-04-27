@@ -479,9 +479,6 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  * error occurs during coroutine resolution the promise fails.
  */
 function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null): Promise {
-    // @TODO Replace stdclass with anon class once merged into php-src
-    $cs = new \StdClass;
-    /*
     $cs = new class {
         use Struct;
         public $reactor;
@@ -489,7 +486,6 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
         public $generator;
         public $promisifier;
     };
-    */
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;
     $cs->generator = $generator;
