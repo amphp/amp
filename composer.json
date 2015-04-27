@@ -33,11 +33,6 @@
             "Amp\\Test\\": "test/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
-        }
-    },
     "suggest": {
       "php-uv": "Extension for libuv backends (high performance use cases).",
       "pecl/libevent": "Extension for libevent backends (high performance use cases)."
