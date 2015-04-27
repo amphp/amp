@@ -5,16 +5,9 @@ namespace Amp;
 /**
  * Get the global singleton event reactor instance
  */
-function getReactor(bool $forceNew = false): Reactor {
+function getReactor(): Reactor {
     static $reactor;
-
-    if ($forceNew) {
-        return chooseReactor();
-    } elseif ($reactor) {
-        return $reactor;
-    } else {
-        return $reactor = chooseReactor();
-    }
+    return $reactor ?: ($reactor = chooseReactor());
 }
 
 /**
@@ -23,8 +16,6 @@ function getReactor(bool $forceNew = false): Reactor {
 function chooseReactor(): Reactor {
     if (extension_loaded('uv')) {
         return new UvReactor;
-    } elseif (extension_loaded('libevent')) {
-        return new LibeventReactor;
     } else {
         return new NativeReactor;
     }
