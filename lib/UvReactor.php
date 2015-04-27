@@ -2,36 +2,30 @@
 
 namespace Amp;
 
-class UvReactor extends CoroutineResolver implements SignalReactor {
+class UvReactor implements SignalReactor {
     private $loop;
-    private $lastWatcherId = 1;
+    private $lastWatcherId = "a";
     private $watchers;
     private $enabledWatcherCount = 0;
     private $streamIdPollMap = [];
-    private $gcWatcher;
-    private $gcCallback;
-    private $garbage = [];
-    private $isGcScheduled = false;
     private $isRunning = false;
     private $stopException;
     private $resolution = 1000;
     private $isWindows;
     private $immediates = [];
     private $onError;
-    private $onCallbackResolution;
+    private $onCoroutineResolution;
 
     private static $instanceCount = 0;
 
     public function __construct() {
         if (!extension_loaded('uv')) {
-            throw new \RuntimeException('The php-uv extension is required to use the UvReactor.');
+            throw new \RuntimeException('php-uv extension is required to use the UvReactor.');
         }
 
         $this->loop = uv_loop_new();
-        $this->gcWatcher = uv_timer_init($this->loop);
-        $this->gcCallback = function() { $this->collectGarbage(); };
         $this->isWindows = (stripos(PHP_OS, 'win') === 0);
-        $this->onCallbackResolution = function($e = null, $r = null) {
+        $this->onCoroutineResolution = function($e = null, $r = null) {
             if (empty($e)) {
                 return;
             } elseif ($onError = $this->onError) {
@@ -43,17 +37,9 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
         self::$instanceCount++;
     }
 
-    private function collectGarbage() {
-        $this->garbage = [];
-        $this->isGcScheduled = false;
-    }
-
     /**
-     * Start the event reactor and assume program flow control
-     *
-     * @param callable $onStart Optional callback to invoke immediately upon reactor start
+     * {@inheritDoc}
      * @throws \Exception Will throw if code executed during the event loop throws
-     * @return void
      */
     public function run(callable $onStart = null) {
         if ($this->isRunning) {
@@ -84,16 +70,16 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
 
     private function doImmediates() {
         $immediates = $this->immediates;
-        foreach ($immediates as $watcherId => $callback) {
+        foreach ($immediates as $watcherId => $watcher) {
             try {
                 $this->enabledWatcherCount--;
                 unset(
                     $this->immediates[$watcherId],
                     $this->watchers[$watcherId]
                 );
-                $result = $callback($this, $watcherId);
+                $result = ($watcher->callback)($this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -109,12 +95,9 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Execute a single event loop iteration
-     *
-     * @param bool $noWait If TRUE, return immediately when no watchers are immediately ready to trigger
-     * @return void
+     * {@inheritDoc}
      */
-    public function tick($noWait = false) {
+    public function tick(bool $noWait = false) {
         if ($this->isRunning) {
             return;
         }
@@ -136,9 +119,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Stop the event reactor
-     *
-     * @return void
+     * {@inheritDoc}
      */
     public function stop() {
         uv_stop($this->loop);
@@ -146,85 +127,108 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Schedule a callback for immediate invocation in the next event loop iteration
-     *
-     * @param callable $callback Any valid PHP callable
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function immediately(callable $callback) {
-        $this->enabledWatcherCount++;
-        $watcherId = (string) $this->lastWatcherId++;
-        $this->immediates[$watcherId] = $callback;
+    public function immediately(callable $callback, array $options = []): string {
+        $watcher = new class extends Watcher {
+            // Inherited:
+            // public $id;
+            // public $type;
+            // public $isEnabled;
+            // public $callback;
+            // public $callbackData;
+            public $msDelay;
+            public $nextExecutionAt;
+        }
 
-        $watcher = new \StdClass;
-        $watcher->id = $watcherId;
+        $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->isEnabled = true;
+        $watcher->callbackData = $options["callbackData"] ?? null;
+        $watcher->isEnabled = $options["enable"] ?? true;
 
-        $this->watchers[$watcher->id] = $watcher;
+        if ($watcher->isEnabled) {
+            $this->enabledWatcherCount++;
+            $this->immediates[$watcherId] = $watcher;
+        }
+
+        $this->watchers[$watcherId] = $watcher;
 
         return $watcherId;
     }
 
     /**
-     * Schedule a callback to execute once
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msDelay The delay in milliseconds before the callback will trigger (may be zero)
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function once(callable $callback, $msDelay) {
-        return $this->startTimer($callback, $msDelay, $msInterval = 0, Watcher::TIMER_ONCE);
+    public function once(callable $callback, int $msDelay, array $options = []): string {
+        assert(($msDelay >= 0), "\$msDelay at Argument 2 expects integer >= 0");
+        return $this->registerTimer($callback, $msDelay, $msInterval = -1, $options);
     }
 
     /**
-     * Schedule a recurring callback to execute every $msInterval seconds until cancelled
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param int $msInterval The interval in milliseconds between callback invocations
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function repeat(callable $callback, $msInterval) {
-        // A zero interval is interpreted as a "non-repeating" timer by php-uv. Here
-        // we use a hack to notify on STDOUT writability for 0 interval repeating
-        // callbacks because it's much more performant than churning 1ms timers.
-        $msInterval = ($msInterval && $msInterval > 0) ? (int) $msInterval : -1;
+    public function repeat(callable $callback, int $msInterval, array $options = []): string {
+        assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
+        $msDelay = $options["msDelay"] ?? $msInterval;
+        assert(($msDelay >= 0), "msDelay option expects integer >= 0");
 
-        return ($msInterval === -1)
-            ? $this->watchStream(STDOUT, $callback, Watcher::IO_WRITER, true)
-            : $this->startTimer($callback, $msInterval, $msInterval, Watcher::TIMER_REPEAT);
+        // libuv interprets a zero interval as "non-repeating." Because we support
+        // zero-time repeat intervals in our other event reactors we hack in support
+        // for this by assigning a 1ms interval when zero is passed by the user.
+        if ($msInterval === 0) {
+            $msInterval = 1;
+        }
+
+        return $this->registerTimer($callback, $msDelay, $msInterval, $options);
     }
 
-    private function startTimer($callback, $msDelay, $msInterval, $type) {
+    private function registerTimer(callable $callback, int $msDelay, int $msInterval, array $options): string {
         $this->enabledWatcherCount++;
-        $watcher = new UvTimerWatcher;
-        $watcher->id = (string) $this->lastWatcherId++;
-        $watcher->type = $type;
-        $watcher->uvStruct = uv_timer_init($this->loop);
+        $watcher = new class extends Watcher {
+            // Inherited:
+            // public $id;
+            // public $type;
+            // public $callback;
+            // public $callbackData;
+            // public $isEnabled;
+            public $uvHandle;
+            public $msDelay;
+            public $msInterval;
+        };
+
+        $isRepeating = ($msInterval !== -1);
+
+        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->type = ($isRepeating) ? Watcher::TIMER_ONCE : Watcher::TIMER_REPEAT;
+        $watcher->uvHandle = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
-        $watcher->msDelay = ($msDelay > 0) ? (int) $msDelay : 0;
-        $watcher->msInterval = ($msInterval > 0) ? (int) $msInterval : 0;
-        $watcher->isEnabled = true;
+        $watcher->callbackData = $options["callbackData"] ?? null;
+        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->msDelay = $msDelay;
+        $watcher->msInterval = $isRepeating ? $msInterval : 0;
 
-        $this->watchers[$watcher->id] = $watcher;
+        $this->watchers[$watcherId] = $watcher;
 
-        uv_timer_start($watcher->uvStruct, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
+        if ($watcher->isEnabled) {
+            uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
+        }
 
         return $watcher->id;
     }
 
-    private function wrapTimerCallback($watcher, $callback) {
+    private function wrapTimerCallback($watcher, $callback): \Closure {
         return function() use ($watcher, $callback) {
             try {
-                $result = $callback($this, $watcher->id);
+                $watcherId = $watcher->id;
+                $result = ($callback)($this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCoroutineResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
-                if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcher->id])) {
-                    $this->clearWatcher($watcher->id);
+                if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcherId])) {
+                    $this->clearWatcher($watcherId);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -238,8 +242,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
                 $this->stopException = $e;
                 $this->stop();
             } else {
-                $handler = $this->onCallbackResolution;
-                $handler($e);
+                ($this->onCoroutineResolution)($e);
             }
         } catch (\Exception $e) {
             $this->stopException = $e;
@@ -248,74 +251,53 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Schedule an event to trigger once at the specified time
-     *
-     * @param callable $callback Any valid PHP callable
-     * @param mixed[int|string] $unixTimeOrStr A future unix timestamp or string parsable by strtotime()
-     * @throws \InvalidArgumentException On invalid future time
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function at(callable $callback, $unixTimeOrStr) {
-        $now = time();
-        if (is_int($unixTimeOrStr) && $unixTimeOrStr > $now) {
-            $secondsUntil = ($unixTimeOrStr - $now);
-        } elseif (($executeAt = @strtotime($unixTimeOrStr)) && $executeAt > $now) {
-            $secondsUntil = ($executeAt - $now);
-        } else {
-            throw new \InvalidArgumentException(
-                'Unix timestamp or future time string (parsable by strtotime()) required'
-            );
-        }
-
-        $msDelay = $secondsUntil * $this->resolution;
-
-        return $this->once($callback, $msDelay);
+    public function onReadable($stream, callable $callback, array $options = []): string {
+        return $this->watchStream($stream, $callback, Watcher::IO_READER, $options);
     }
 
     /**
-     * Watch a stream resource for IO readable data and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for readable data
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onReadable($stream, callable $callback, $enableNow = true) {
-        return $this->watchStream($stream, $callback, Watcher::IO_READER, (bool) $enableNow);
+    public function onWritable($stream, callable $callback, array $options = []): string {
+        return $this->watchStream($stream, $callback, Watcher::IO_WRITER, $options);
     }
 
-    /**
-     * Watch a stream resource to become writable and trigger the callback when actionable
-     *
-     * @param resource $stream A stream resource to watch for writability
-     * @param callable $callback Any valid PHP callable
-     * @param bool $enableNow Should the watcher be enabled now or held for later use?
-     * @return string Returns a unique watcher ID
-     */
-    public function onWritable($stream, callable $callback, $enableNow = true) {
-        return $this->watchStream($stream, $callback, Watcher::IO_WRITER, (bool) $enableNow);
-    }
+    private function watchStream($stream, callable $callback, int $type, array $options): string {
+        $watcher = new class extends Watcher {
+            // Inherited:
+            // public $id;
+            // public $type;
+            // public $callback;
+            // public $callbackData;
+            // public $isEnabled;
+            public $poll;
+            public $stream;
+            public $streamId;
 
-    private function watchStream($stream, callable $callback, $type, $enableNow) {
-        $this->enabledWatcherCount += $enableNow;
-        $streamId = (int) $stream;
-        $poll = isset($this->streamIdPollMap[$streamId])
+        };
+
+        $this->watchers[$watcherId] = $watcher;
+
+        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->type = $type;
+        $watcher->callback = $callback;
+        $watcher->callbackData = $options["callbackData"] ?? null;
+        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->stream = $stream;
+        $watcher->streamId = $streamId = (int) $stream;
+        $watcher->poll = $poll = isset($this->streamIdPollMap[$streamId])
             ? $this->streamIdPollMap[$streamId]
             : $this->makePollHandle($stream);
 
-        $watcherId = $this->lastWatcherId;
-        $this->watchers[$watcherId] = $watcher = new UvIoWatcher;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
-        $watcher->type = $type;
-        $watcher->poll = $poll;
-        $watcher->stream = $stream;
-        $watcher->callback = $callback;
-        $watcher->isEnabled = $enableNow;
-
-        if ($enableNow === false) {
+        if (!$watcher->isEnabled) {
             $poll->disable[$watcherId] = $watcher;
+            // If the poll is disabled we don't need to do anything else
             return $watcherId;
         }
+
+        $this->enabledWatcherCount++;
 
         if ($type === Watcher::IO_READER) {
             $poll->readers[$watcherId] = $watcher;
@@ -346,7 +328,18 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             : 'uv_poll_init';
 
         $streamId = (int) $stream;
-        $this->streamIdPollMap[$streamId] = $poll = new UvPoll;
+
+        $poll = new class {
+            use Struct;
+            public $flags;
+            public $handle;
+            public $callback;
+            public $readers = [];
+            public $writers = [];
+            public $disable = [];
+        };
+        $this->streamIdPollMap[$streamId] = $poll;
+
         $poll->flags = 0;
         $poll->handle = $pollInitFunc($this->loop, $stream);
         $poll->callback = function($uvHandle, $stat, $events) use ($poll) {
@@ -365,7 +358,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
         return $poll;
     }
 
-    private function chooseWindowsPollingFunction($stream) {
+    private function chooseWindowsPollingFunction($stream): string {
         $streamType = stream_get_meta_data($stream)['stream_type'];
 
         return ($streamType === 'tcp_socket/ssl' || $streamType === 'tcp_socket')
@@ -373,12 +366,11 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             : 'uv_poll_init';
     }
 
-    private function invokePollWatcher(UvIoWatcher $watcher) {
+    private function invokePollWatcher($watcher) {
         try {
-            $callback = $watcher->callback;
-            $result = $callback($this, $watcher->id, $watcher->stream);
+            $result = ($watcher->callback)($this, $watcher->id, $watcher->stream, $watcher->callbackData);
             if ($result instanceof \Generator) {
-                $this->coroutine($result)->when($this->onCallbackResolution);
+                resolve($result, $this)->when($this->onCoroutineResolution);
             }
         } catch (\Exception $e) {
             $this->handleRunError($e);
@@ -386,35 +378,43 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * React to process control signals
-     *
-     * @param int $signo The signal number to watch for (e.g. 2 for Uv::SIGINT)
-     * @param callable $onSignal
-     * @return string Returns a unique watcher ID
+     * {@inheritDoc}
      */
-    public function onSignal($signo, callable $onSignal) {
-        $this->enabledWatcherCount++;
-        $watcher = new UvSignalWatcher;
-        $watcher->id = (string) $this->lastWatcherId++;
+    public function onSignal(int $signo, callable $func, array $options = []): string {
+        $watcher = new class extends Watcher {
+            // Inherited:
+            // public $id;
+            // public $type;
+            // public $callback;
+            // public $callbackData;
+            // public $isEnabled;
+            public $signo;
+            public $uvHandle;
+        };
+        $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::SIGNAL;
+        $watcher->callback = $this->wrapSignalCallback($watcher, $func);
+        $watcher->callbackData = $options["callbackData"] ?? null;
+        $watcher->isEnabled = $options["enable"] ?? true;
         $watcher->signo = $signo;
-        $watcher->uvStruct = uv_signal_init($this->loop);
-        $watcher->callback = $this->wrapSignalCallback($watcher, $onSignal);
-        $watcher->isEnabled = true;
+        $watcher->uvHandle = uv_signal_init($this->loop);
 
-        uv_signal_start($watcher->uvStruct, $watcher->callback, $watcher->signo);
+        if ($watcher->isEnabled) {
+            $this->enabledWatcherCount++;
+            uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
+        }
 
-        $this->watchers[$watcher->id] = $watcher;
+        $this->watchers[$watcherId] = $watcher;
 
-        return $watcher->id;
+        return $watcherId;
     }
 
-    private function wrapSignalCallback($watcher, $callback) {
+    private function wrapSignalCallback($watcher, $callback): \Closure {
         return function() use ($watcher, $callback) {
             try {
-                $result = $callback($this, $watcher->id, $watcher->signo);
+                $result = ($callback)($this, $watcher->id, $watcher->signo, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    $this->coroutine($result)->when($this->onCallbackResolution);
+                    resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->handleRunError($e);
@@ -423,18 +423,15 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Cancel an existing watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function cancel($watcherId) {
+    public function cancel(string $watcherId) {
         if (isset($this->watchers[$watcherId])) {
             $this->clearWatcher($watcherId);
         }
     }
 
-    private function clearWatcher($watcherId) {
+    private function clearWatcher(string $watcherId) {
         $watcher = $this->watchers[$watcherId];
         unset($this->watchers[$watcherId]);
         if ($watcher->isEnabled) {
@@ -446,7 +443,7 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
                     $this->clearPollFromWatcher($watcher);
                     break;
                 case Watcher::SIGNAL:
-                    uv_signal_stop($watcher->uvStruct);
+                    uv_signal_stop($watcher->uvHandle);
                     break;
                 case Watcher::IMMEDIATE:
                     unset($this->immediates[$watcherId]);
@@ -455,20 +452,13 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
                     // we don't have to actually stop once timers
                     break;
                 default:
-                    uv_timer_stop($watcher->uvStruct);
+                    uv_timer_stop($watcher->uvHandle);
                     break;
             }
         }
-
-        $this->garbage[] = $watcher;
-
-        if (!$this->isGcScheduled) {
-            uv_timer_start($this->gcWatcher, 250, 0, $this->gcCallback);
-            $this->isGcScheduled = true;
-        }
     }
 
-    private function clearPollFromWatcher(UvIoWatcher $watcher) {
+    private function clearPollFromWatcher($watcher) {
         $poll = $watcher->poll;
         $watcherId = $watcher->id;
 
@@ -499,23 +489,18 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Temporarily disable (but don't cancel) an existing timer/stream watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function disable($watcherId) {
+    public function disable(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
 
         $watcher = $this->watchers[$watcherId];
-
         if (!$watcher->isEnabled) {
             return;
         }
 
-        $this->enabledWatcherCount--;
         switch ($watcher->type) {
             case Watcher::IO_READER:
                 // fallthrough
@@ -523,20 +508,25 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
                 $this->disablePollFromWatcher($watcher);
                 break;
             case Watcher::SIGNAL:
-                uv_signal_stop($watcher->uvStruct);
+                uv_signal_stop($watcher->uvHandle);
                 break;
             case Watcher::IMMEDIATE:
-                unset($this->immediates[$watcher->id]);
+                unset($this->immediates[$watcherId]);
+                break;
+            case Watcher::TIMER_ONCE:
+                // fallthrough
+            case Watcher::TIMER_REPEAT:
+                uv_timer_stop($watcher->uvHandle);
                 break;
             default:
-                uv_timer_stop($watcher->uvStruct);
-                break;
+                assert(false, "Unexpected Watcher type encountered");
         }
 
         $watcher->isEnabled = false;
+        $this->enabledWatcherCount--;
     }
 
-    private function disablePollFromWatcher(UvIoWatcher $watcher) {
+    private function disablePollFromWatcher($watcher) {
         $poll = $watcher->poll;
         $watcherId = $watcher->id;
 
@@ -567,45 +557,42 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * Enable a disabled timer/stream watcher
-     *
-     * @param int $watcherId
-     * @return void
+     * {@inheritDoc}
      */
-    public function enable($watcherId) {
+    public function enable(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
 
         $watcher = $this->watchers[$watcherId];
-
         if ($watcher->isEnabled) {
             return;
         }
 
-        $this->enabledWatcherCount++;
-
         switch ($watcher->type) {
-            case Watcher::IO_READER:
-                // fallthrough
+            case Watcher::TIMER_ONCE: // fallthrough
+            case Watcher::TIMER_REPEAT:
+                uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
+                break;
+            case Watcher::IO_READER: // fallthrough
             case Watcher::IO_WRITER:
                 $this->enablePollFromWatcher($watcher);
                 break;
             case Watcher::SIGNAL:
-                uv_signal_start($watcher->uvStruct, $watcher->callback, $watcher->signo);
+                uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
                 break;
             case Watcher::IMMEDIATE:
-                $this->immediates[$watcher->id] = $watcher->callback;
+                $this->immediates[$watcherId] = $watcher;
                 break;
             default:
-                uv_timer_start($watcher->uvStruct, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
-                break;
+                assert(false, "Unexpected Watcher type encountered");
         }
 
         $watcher->isEnabled = true;
+        $this->enabledWatcherCount++;
     }
 
-    private function enablePollFromWatcher(UvIoWatcher $watcher) {
+    private function enablePollFromWatcher($watcher) {
         $poll = $watcher->poll;
         $watcherId = $watcher->id;
 
@@ -636,19 +623,10 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
     }
 
     /**
-     * An optional "last-chance" exception handler for errors resulting during callback invocation
-     *
-     * If a reactor callback throws and no onError() callback is specified the exception will
-     * bubble up the stack. onError() callbacks are passed a single parameter: the uncaught
-     * exception that resulted in the callback's invocation.
-     *
-     * @param callable $onErrorCallback
-     * @return self
+     * {@inheritDoc}
      */
-    public function onError(callable $onErrorCallback) {
-        $this->onError = $onErrorCallback;
-
-        return $this;
+    public function onError(callable $func) {
+        $this->onError = $func;
     }
 
     public function __destruct() {
@@ -695,44 +673,4 @@ class UvReactor extends CoroutineResolver implements SignalReactor {
             'instances'         => self::$instanceCount,
         ];
     }
-}
-
-class UvIoWatcher extends Watcher {
-    // Inherited:
-    // public $id;
-    // public $type;
-    // public $isEnabled;
-    public $poll;
-    public $stream;
-    public $callback;
-}
-
-class UvPoll extends Struct {
-    public $flags;
-    public $handle;
-    public $callback;
-    public $readers = [];
-    public $writers = [];
-    public $disable = [];
-}
-
-class UvSignalWatcher extends Watcher {
-    // Inherited:
-    // public $id;
-    // public $type;
-    // public $isEnabled;
-    public $signo;
-    public $uvStruct;
-    public $callback;
-}
-
-class UvTimerWatcher extends Watcher {
-    // Inherited:
-    // public $id;
-    // public $type;
-    // public $isEnabled;
-    public $uvStruct;
-    public $callback;
-    public $msDelay;
-    public $msInterval;
 }

@@ -23,7 +23,7 @@ interface Promise {
      * Implementations MUST return the current object instance.
      *
      * @param callable $func
-     * @return self
+     * @return void
      */
     public function when(callable $func);
 
@@ -38,7 +38,7 @@ interface Promise {
      * Implementations MUST return the current object instance.
      *
      * @param callable $func
-     * @return self
+     * @return void
      */
     public function watch(callable $func);
 }

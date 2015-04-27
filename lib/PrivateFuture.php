@@ -9,41 +9,39 @@ namespace Amp;
  * holding a reference to the Future instance.
  */
 class PrivateFuture implements Promisor {
-    private $resolver;
-    private $updater;
     private $promise;
+    private $resolver;
 
     public function __construct() {
-        $unresolved = new Unresolved;
-        $resolver = function(\Exception $error = null, $result = null) {
-            $this->resolve($error, $result); // bound to private Unresolved::resolve()
+        $this->promise = new Unresolved;
+        $this->resolver = function(bool $isUpdate, ...$args) {
+            if ($isUpdate) {
+                // bound to private Unresolved::update() at call-time
+                $this->update(...$args);
+            } else {
+                // bound to private Unresolved::resolve() at call-time
+                $this->resolve(...$args);
+            }
         };
-        $updater = function($progress) {
-            $this->update($progress); // bound to private Unresolved::update()
-        };
-        $this->resolver = $resolver->bindTo($unresolved, $unresolved);
-        $this->updater = $updater->bindTo($unresolved, $unresolved);
-        $this->promise = $unresolved;
     }
 
     /**
      * Promise future fulfillment via a temporary placeholder value
-     *
+     * 
      * @return \Amp\Promise
      */
-    public function promise() {
+    public function promise(): Promise {
         return $this->promise;
     }
 
     /**
-     * Update watchers of progress resolving the promised value
+     * Update subscribers of progress resolving the promised value
      *
      * @param mixed $progress
      * @return void
      */
-    public function update($progress) {
-        $updater = $this->updater;
-        $updater($progress);
+    public function update(...$progress) {
+        $this->resolver->call($this->promise, $isUpdate = true, ...$progress);
     }
 
     /**
@@ -53,8 +51,7 @@ class PrivateFuture implements Promisor {
      * @return void
      */
     public function succeed($result = null) {
-        $resolver = $this->resolver;
-        $resolver($error = null, $result);
+        $this->resolver->call($this->promise, $isUpdate = false, $error = null, $result);
     }
 
     /**
@@ -64,7 +61,6 @@ class PrivateFuture implements Promisor {
      * @return void
      */
     public function fail(\Exception $error) {
-        $resolver = $this->resolver;
-        $resolver($error, $result = null);
+        $this->resolver->call($this->promise, $isUpdate = false, $error, $result = null);
     }
 }

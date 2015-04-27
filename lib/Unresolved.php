@@ -14,12 +14,9 @@ class Unresolved implements Promise {
     private $result;
 
     /**
-     * Notify the $func callback when the promise resolves (whether successful or not)
-     *
-     * @param callable $func
-     * @return self
+     * {@inheritDoc}
      */
-    public function when(callable $func) {
+    public function when(callable $func): Unresolved {
         if ($this->isResolved) {
             $func($this->error, $this->result);
         } else {
@@ -30,12 +27,9 @@ class Unresolved implements Promise {
     }
 
     /**
-     * Notify the $func callback when resolution progress events are emitted
-     *
-     * @param callable $func
-     * @return self
+     * {@inheritDoc}
      */
-    public function watch(callable $func) {
+    public function watch(callable $func): Unresolved {
         if (!$this->isResolved) {
             $this->watchers[] = $func;
         }
@@ -43,35 +37,7 @@ class Unresolved implements Promise {
         return $this;
     }
 
-    /**
-     * This method is deprecated. New code should use Amp\wait($promise) instead.
-     */
-    public function wait() {
-        trigger_error(
-            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
-            'Please update code to use Amp\\wait($promise) instead.',
-            E_USER_DEPRECATED
-        );
-
-        $isWaiting = true;
-        $resolvedError = $resolvedResult = null;
-        $this->when(function($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
-            $isWaiting = false;
-            $resolvedError = $error;
-            $resolvedResult = $result;
-        });
-        $reactor = getReactor();
-        while ($isWaiting) {
-            $reactor->tick();
-        }
-        if ($resolvedError) {
-            throw $resolvedError;
-        }
-
-        return $resolvedResult;
-    }
-
-    private function resolve(\Exception $error = null, $result = null) {
+    protected function resolve(\Exception $error = null, $result = null) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Promise already resolved'
@@ -95,7 +61,7 @@ class Unresolved implements Promise {
         }
     }
 
-    private function update($progress) {
+    protected function update($progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Cannot update resolved promise'

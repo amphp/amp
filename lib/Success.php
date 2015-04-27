@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Represents the successful resolution of a Promisor's future computation
+ * Represents a successful computation resolution
  */
 class Success implements Promise {
     private $result;
@@ -20,34 +20,16 @@ class Success implements Promise {
      *
      * NOTE: because this object represents a successfully resolved Promise it will *always* invoke
      * the specified $func callback immediately.
-     *
-     * @param callable $func
-     * @return void
      */
-    public function when(callable $func) {
+    public function when(callable $func): Success {
         $func($error = null, $this->result);
+        return $this;
     }
 
     /**
      * Does nothing -- a resolved promise has no progress updates
-     *
-     * @param callable $func
-     * @return void
      */
-    public function watch(callable $func) {
-        return;
-    }
-
-    /**
-     * This method is deprecated. New code should use Amp\wait($promise) instead.
-     */
-    public function wait() {
-        trigger_error(
-            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
-            'Please update code to use Amp\\wait($promise) instead.',
-            E_USER_DEPRECATED
-        );
-
-        return $this->result;
+    public function watch(callable $func): Success {
+        return $this;
     }
 }

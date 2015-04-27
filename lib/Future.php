@@ -18,17 +18,12 @@ class Future implements Promisor, Promise {
      *
      * @return \Amp\Promise
      */
-    public function promise() {
+    public function promise(): Promise {
         return $this;
     }
 
     /**
-     * Notify the $func callback when the promise resolves (whether successful or not)
-     *
-     * $func callbacks are invoked with parameters in error-first style.
-     *
-     * @param callable $func
-     * @return self
+     * {@inheritDoc}
      */
     public function when(callable $func) {
         if ($this->isResolved) {
@@ -36,60 +31,22 @@ class Future implements Promisor, Promise {
         } else {
             $this->whens[] = $func;
         }
-
-        return $this;
     }
 
     /**
-     * Notify the $func callback when resolution progress events are emitted
-     *
-     * @param callable $func
-     * @return self
+     * {@inheritDoc}
      */
     public function watch(callable $func) {
         if (!$this->isResolved) {
             $this->watchers[] = $func;
         }
-
-        return $this;
     }
 
     /**
-     * This method is deprecated. New code should use Amp\wait($promise) instead.
+     * {@inheritDoc}
+     * @throws \LogicException if the promise has already resolved
      */
-    public function wait() {
-        trigger_error(
-            'Amp\\Promise::wait() is deprecated and scheduled for removal. ' .
-            'Please update code to use Amp\\wait($promise) instead.',
-            E_USER_DEPRECATED
-        );
-
-        $isWaiting = true;
-        $resolvedError = $resolvedResult = null;
-        $this->when(function($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
-            $isWaiting = false;
-            $resolvedError = $error;
-            $resolvedResult = $result;
-        });
-        $reactor = getReactor();
-        while ($isWaiting) {
-            $reactor->tick();
-        }
-        if ($resolvedError) {
-            throw $resolvedError;
-        }
-
-        return $resolvedResult;
-    }
-
-    /**
-     * Update watchers of resolution progress events
-     *
-     * @param mixed $progress
-     * @throws \LogicException
-     * @return void
-     */
-    public function update($progress) {
+    public function update(...$progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Cannot update resolved promise'
@@ -97,16 +54,13 @@ class Future implements Promisor, Promise {
         }
 
         foreach ($this->watchers as $watcher) {
-            $watcher($progress);
+            $watcher(...$progress);
         }
     }
 
     /**
-     * Resolve the promised value as a success
-     *
-     * @param mixed $result
-     * @throws \LogicException
-     * @return void
+     * {@inheritDoc}
+     * @throws \LogicException if the promise has already resolved or the result is the current instance
      */
     public function succeed($result = null) {
         if ($this->isResolved) {
@@ -137,11 +91,8 @@ class Future implements Promisor, Promise {
     }
 
     /**
-     * Resolve the promised value as a failure
-     *
-     * @param \Exception $error
-     * @throws \LogicException If the Promise has already resolved
-     * @return void
+     * {@inheritDoc}
+     * @throws \LogicException if the promise has already resolved
      */
     public function fail(\Exception $error) {
         if ($this->isResolved) {

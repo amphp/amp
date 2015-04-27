@@ -2,7 +2,9 @@
 
 namespace Amp;
 
-abstract class Watcher extends Struct {
+class Watcher {
+    use Struct;
+
     const IMMEDIATE    = 0b00000001;
     const TIMER        = 0b00000010;
     const TIMER_ONCE   = 0b00000110;
@@ -14,5 +16,7 @@ abstract class Watcher extends Struct {
 
     public $id;
     public $type;
+    public $callback;
+    public $callbackData;
     public $isEnabled;
 }

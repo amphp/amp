@@ -12,15 +12,15 @@ namespace Amp;
  * Example:
  *
  *     function myAsyncProducer() {
- *         // Create a new promise that needs to be resolved
- *         $future = new Amp\Future;
+ *         // Create a new promisor that needs to be resolved
+ *         $promisor = new Amp\Future;
  *
  *         // When we eventually finish non-blocking value resolution we
  *         // simply call the relevant Promise method to notify any code
  *         // with references to the Promisor's associated Promise:
- *         // $future->succeed($value) -or- $future->fail($exceptionObj)
+ *         // $promisor->succeed($value) -or- $promisor->fail($exceptionObj)
  *
- *         return $future->promise();
+ *         return $promisor->promise();
  *     }
  *
  * The following correlations exist between Promisor and Promise methods:
@@ -32,10 +32,10 @@ namespace Amp;
 interface Promisor {
     /**
      * Promise future fulfillment via a temporary placeholder value
-     *
+     * 
      * @return \Amp\Promise
      */
-    public function promise();
+    public function promise(): Promise;
 
     /**
      * Update watchers of progress resolving the promised value
@@ -43,7 +43,7 @@ interface Promisor {
      * @param mixed $progress
      * @return void
      */
-    public function update($progress);
+    public function update(...$progress);
 
     /**
      * Resolve the promised value as a success
@@ -56,7 +56,6 @@ interface Promisor {
     /**
      * Resolve the promised value as a failure
      *
-     * @param \Exception $error
      * @return void
      */
     public function fail(\Exception $error);
