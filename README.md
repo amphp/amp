@@ -14,8 +14,12 @@ Optional PHP extensions may be used to improve performance in production environ
 
 ```bash
 $ git clone https://github.com/amphp/amp.git
-$ cd amp
-$ composer.phar install
+```
+
+-or-
+
+```bash
+$ composer require amphp/amp
 ```
 
 **Community**
