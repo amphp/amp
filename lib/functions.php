@@ -74,15 +74,6 @@ function repeat(callable $func, int $millisecondDelay): string {
 }
 
 /**
- * Schedule an event to trigger once at the specified time
- *
- * NOTE: Watchers registered using this function are automatically garbage collected after execution.
- */
-function at(callable $func, $unixTimeOrString): string {
-    return getReactor()->at($func, $unixTimeOrString);
-}
-
-/**
  * Enable a disabled timer or stream IO watcher
  *
  * Calling enable() on an already-enabled watcher will have no effect.
