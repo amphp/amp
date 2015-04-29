@@ -146,7 +146,7 @@ function onSignal(int $signo, callable $onSignal): string {
         return $reactor->onSignal($signo, $onSignal);
     } else {
         throw new \RuntimeException(
-            'Your PHP environment does not support signal handling. Please install pecl/libevent or the php-uv extension'
+            'Your PHP environment does not support signal handling. Please install the php-uv extension'
         );
     }
 }
