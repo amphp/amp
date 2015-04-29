@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.0.0@dev"
     },
     "autoload": {
         "psr-4": {
