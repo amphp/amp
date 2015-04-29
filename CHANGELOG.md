@@ -13,7 +13,17 @@
 - Removed `LibeventReactor` code until pecl/libevent supports php7
 - Removed deprecated `Amp\ReactorFactory`
 - `Amp\Struct` is now a trait instead of a class
-
+- All magic `yield` key command resolution is removed
+- New built-in `Amp\Pause` object to replace `yield "pause" => $ms`
+- `Amp\PrivateFuture` uses new PHP7 `Closure::call()` to avoid rebinding
+  overhead.
+- Anonymous classes now used to store watcher state consistently in all
+  event reactors.
+- Generators are no longer resolved when yielded by coroutines. Only
+  `Amp\Promise` instances and `null` may be yielded inside coroutines.
+- `Amp\coroutine()` and `Amp\resolve()` accept an optional `$promisifier`
+  callable on invocation to allow custom coroutine behavior for yielded
+  values that are not `Amp\Promise` instances.
 
 v0.17.0
 -------
