@@ -1,0 +1,7 @@
+language: php
+sudo: false
+php:
+  - 7.0
+before_script:
+  - composer install
+script: php vendor/bin/phpunit --coverage-text

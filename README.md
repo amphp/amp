@@ -1,5 +1,5 @@
-Amp
-====
+# Amp [![Build Status](https://travis-ci.org/amphp/amp.svg?branch=master)](https://travis-ci.org/amphp/amp)
+
 Amp is a non-blocking concurrency framework for PHP applications
 
 **Dependencies**
