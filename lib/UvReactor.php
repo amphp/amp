@@ -139,7 +139,7 @@ class UvReactor implements SignalReactor {
             // public $callbackData;
             public $msDelay;
             public $nextExecutionAt;
-        }
+        };
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;

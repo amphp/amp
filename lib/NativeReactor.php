@@ -265,7 +265,7 @@ class NativeReactor implements Reactor {
             // public $callbackData;
             public $msDelay;
             public $nextExecutionAt;
-        }
+        };
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_ONCE;
@@ -307,7 +307,7 @@ class NativeReactor implements Reactor {
             public $msDelay;
             public $msInterval;
             public $nextExecutionAt;
-        }
+        };
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_REPEAT;
@@ -356,7 +356,7 @@ class NativeReactor implements Reactor {
             // public $isEnabled;
             public $streamId;
             public $stream;
-        }
+        };
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = $type;
