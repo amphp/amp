@@ -1,6 +1,8 @@
 # Amp [![Build Status](https://travis-ci.org/amphp/amp.svg?branch=master)](https://travis-ci.org/amphp/amp)
 
-Amp is a non-blocking concurrency framework for PHP applications
+Amp is a non-blocking concurrency framework for PHP applications.
+
+Learn more about Amp in the [Amp Guide](https://stackedit.io/viewer#!url=https://raw.githubusercontent.com/amphp/amp/master/guide.md).
 
 **Dependencies**
 
