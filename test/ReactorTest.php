@@ -375,7 +375,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
     public function testOptionalCallbackDataPassedOnInvocation() {
         $callbackData = new \StdClass;
-        $options = ["callbackData" => $callbackData];
+        $options = ["callback_data" => $callbackData];
         $reactor = $this->getReactor();
         $reactor->immediately(function($reactor, $watcherId, $callbackData) {
             $callbackData->immediately = true;
@@ -403,7 +403,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $reactor = $this->getReactor();
         $watcherId = $reactor->repeat(function($reactor, $watcherId) {
             $reactor->cancel($watcherId);
-        }, $msInterval = 10000, $options = ["msDelay" => 1]);
+        }, $msInterval = 10000, $options = ["ms_delay" => 1]);
         $startTime = time();
         $reactor->run();
         $endTime = time();

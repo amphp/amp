@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * Get the global singleton event reactor instance
  */
-function getReactor(): Reactor {
+function getReactor() {
     static $reactor;
     return $reactor ?: ($reactor = chooseReactor());
 }
@@ -13,7 +13,7 @@ function getReactor(): Reactor {
 /**
  * Select the most appropriate event reactor given the current execution environment
  */
-function chooseReactor(): Reactor {
+function chooseReactor() {
     if (extension_loaded('uv')) {
         return new UvReactor;
     } else {
@@ -31,13 +31,13 @@ function run(callable $onStart = null) {
 /**
  * Execute a single event loop iteration
  */
-function tick(bool $noWait = false) {
+function tick($noWait = false) {
     getReactor()->tick($noWait);
 }
 
 /**
  * Stop the event reactor
- * 
+ *
  * @return void
  */
 function stop() {
@@ -49,7 +49,7 @@ function stop() {
  *
  * NOTE: Watchers registered using this function are automatically garbage collected after execution.
  */
-function immediately(callable $func): string {
+function immediately(callable $func) {
     return getReactor()->immediately($func);
 }
 
@@ -58,7 +58,7 @@ function immediately(callable $func): string {
  *
  * NOTE: Watchers registered using this function are automatically garbage collected after execution.
  */
-function once(callable $func, int $millisecondDelay): string {
+function once(callable $func, $millisecondDelay) {
     return getReactor()->once($func, $millisecondDelay);
 }
 
@@ -69,7 +69,7 @@ function once(callable $func, int $millisecondDelay): string {
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
  */
-function repeat(callable $func, int $millisecondDelay): string {
+function repeat(callable $func, $millisecondDelay) {
     return getReactor()->repeat($func, $millisecondDelay);
 }
 
@@ -78,7 +78,7 @@ function repeat(callable $func, int $millisecondDelay): string {
  *
  * Calling enable() on an already-enabled watcher will have no effect.
  */
-function enable(string $watcherId) {
+function enable($watcherId) {
     getReactor()->enable($watcherId);
 }
 
@@ -91,7 +91,7 @@ function enable(string $watcherId) {
  * When the watcher is no longer needed applications must still use cancel() to clear related
  * memory and avoid leaks.
  */
-function disable(string $watcherId) {
+function disable($watcherId) {
     getReactor()->disable($watcherId);
 }
 
@@ -100,7 +100,7 @@ function disable(string $watcherId) {
  *
  * Calling cancel() on a non-existent watcher ID will have no effect.
  */
-function cancel(string $watcherId) {
+function cancel($watcherId) {
     getReactor()->cancel($watcherId);
 }
 
@@ -110,10 +110,10 @@ function cancel(string $watcherId) {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- * 
+ *
  * @param resource $stream
  */
-function onReadable($stream, callable $func, bool $enableNow = true): string {
+function onReadable($stream, callable $func, $enableNow = true) {
     getReactor()->onReadable($stream, $func, $enableNow);
 }
 
@@ -127,17 +127,17 @@ function onReadable($stream, callable $func, bool $enableNow = true): string {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- * 
+ *
  * @param resource $stream
  */
-function onWritable($stream, callable $func, bool $enableNow = true): string {
+function onWritable($stream, callable $func, $enableNow = true) {
     getReactor()->onWritable($stream, $func, $enableNow);
 }
 
 /**
  * React to process control signals
  */
-function onSignal(int $signo, callable $onSignal): string {
+function onSignal($signo, callable $onSignal) {
     /**
      * @var $reactor \Amp\SignalReactor
      */
@@ -156,7 +156,7 @@ function onSignal(int $signo, callable $onSignal): string {
  * the resulting Promise succeeds with an array matching keys from the input array
  * to their resolved values.
  */
-function all(array $promises): Promise {
+function all(array $promises) {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -207,7 +207,7 @@ function all(array $promises): Promise {
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
  */
-function some(array $promises): Promise {
+function some(array $promises) {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -254,7 +254,7 @@ function some(array $promises): Promise {
  * This function is the same as some() with the notable exception that it will never fail even
  * if all promises in the array resolve unsuccessfully.
  */
-function any(array $promises): Promise {
+function any(array $promises) {
     if (empty($promises)) {
         return new Success([], []);
     }
@@ -291,7 +291,7 @@ function any(array $promises): Promise {
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  */
-function first(array $promises): Promise {
+function first(array $promises) {
     if (empty($promises)) {
         return new Failure(new \LogicException(
             'No promises or values provided for resolution'
@@ -331,7 +331,7 @@ function first(array $promises): Promise {
 /**
  * Map promised future values using the specified functor
  */
-function map(array $promises, callable $functor): Promise {
+function map(array $promises, callable $functor) {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -376,7 +376,7 @@ function map(array $promises, callable $functor): Promise {
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
  */
-function filter(array $promises, callable $functor): Promise {
+function filter(array $promises, callable $functor) {
     if (empty($promises)) {
         return new Success([]);
     }
@@ -454,9 +454,9 @@ function wait(Promise $promise, Reactor $reactor = null) {
 /**
  * Return a function that will be resolved as a coroutine once invoked
  */
-function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null): callable {
-    return function(...$args) use ($func, $reactor, $promisifier) {
-        $result = $func(...$args);
+function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null) {
+    return function($data) use ($func, $reactor, $promisifier) {
+        $result = $func($data);
         return ($result instanceof \Generator)
             ? resolve($result, $reactor, $promisifier)
             : $result;
@@ -469,18 +469,25 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  * Upon resolution the Generator return value is used to succeed the promised result. If an
  * error occurs during coroutine resolution the promise fails.
  */
-function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null): Promise {
-    $cs = new class {
-        use Struct;
-        public $reactor;
-        public $promisor;
-        public $generator;
-        public $promisifier;
-    };
+function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null) {
+    /* In the php7 branch we use an anonymous class with Struct for this.
+     * Using a stdclass isn't terribly readable and it's prone to error but
+     * it's the easiest way to minimize the distance between 5.x and 7 code
+     * and keep maintenance simple.
+     */
+    $cs = new \StdClass;
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
+
+    /**
+     * In php7 we're able to use Generator::getReturn() to retrieve this. Because
+     * this functionality is unavailable in 5.x users must manually use yield "return" => $foo
+     * so we can store the "return" value ourselves.
+     */
+    $cs->returnValue = null;
+
     __coroutineAdvance($cs);
 
     return $cs->promisor->promise();
@@ -496,7 +503,7 @@ function __coroutineAdvance($cs) {
                 });
             });
         } else {
-            $cs->promisor->succeed($cs->generator->getReturn());
+            $cs->promisor->succeed($cs->returnValue);
         }
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);
@@ -516,11 +523,20 @@ function __coroutineSend($cs, \Exception $error = null, $result = null) {
     }
 }
 
-function __coroutinePromisify($cs) : Promise {
-    $yielded = $cs->generator->current();
+function __coroutinePromisify($cs) {
+    $generator = $cs->generator;
+    $yielded = $generator->current();
 
     if (!isset($yielded)) {
         return new Success;
+    }
+
+    $key = $generator->key();
+
+    // We fake generator returns in 5.x using the "return" yield key
+    if ($key === "return") {
+        $cs->returnValue = $yielded;
+        return new Success($yielded);
     }
 
     if ($yielded instanceof Promise) {
@@ -530,7 +546,9 @@ function __coroutinePromisify($cs) : Promise {
     // Allow custom promisifier callables to create Promise from
     // the yielded key/value for extension use-cases
     if ($cs->promisifier) {
-        return ($cs->promisifier)($cs->generator->key(), $yielded);
+        // In php7 we wrap the promisifier in parens to avoid call_user_func()
+        // but that's not possible in 5.x :(
+        return call_user_func($cs->promisifier, $key, $yielded);
     }
 
     return new Failure(new \DomainException(

@@ -17,7 +17,7 @@ interface Reactor {
      * @param bool $noWait Should tick return immediately if no watchers are ready to trigger?
      * @return void
      */
-    public function tick(bool $noWait = false);
+    public function tick($noWait = false);
 
     /**
      * Stop the event reactor
@@ -33,7 +33,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function immediately(callable $callback, array $options = []): string;
+    public function immediately(callable $callback, array $options = []);
 
     /**
      * Schedule a callback to execute once
@@ -43,7 +43,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function once(callable $callback, int $msDelay, array $options = []): string;
+    public function once(callable $callback, $msDelay, array $options = []);
 
     /**
      * Schedule a recurring callback to execute every $interval seconds until cancelled
@@ -53,7 +53,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function repeat(callable $callback, int $msInterval, array $options = []): string;
+    public function repeat(callable $callback, $msInterval, array $options = []);
 
     /**
      * Watch a stream resource for readable data and trigger the callback when actionable
@@ -63,7 +63,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onReadable($stream, callable $callback, array $options = []): string;
+    public function onReadable($stream, callable $callback, array $options = []);
 
     /**
      * Watch a stream resource to become writable and trigger the callback when actionable
@@ -73,7 +73,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onWritable($stream, callable $callback, array $options = []): string;
+    public function onWritable($stream, callable $callback, array $options = []);
 
     /**
      * Cancel an existing timer/stream watcher
@@ -81,7 +81,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be canceled
      * @return void
      */
-    public function cancel(string $watcherId);
+    public function cancel($watcherId);
 
     /**
      * Temporarily disable (but don't cancel) an existing timer/stream watcher
@@ -89,7 +89,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be disabled
      * @return void
      */
-    public function disable(string $watcherId);
+    public function disable($watcherId);
 
     /**
      * Enable a disabled timer/stream watcher
@@ -97,7 +97,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be enabled
      * @return void
      */
-    public function enable(string $watcherId);
+    public function enable($watcherId);
 
     /**
      * An optional "last-chance" exception handler for errors resulting during callback invocation

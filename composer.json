@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": ">=7.0.0-dev"
+        "php": "^5.5"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.4.0"
@@ -34,11 +34,6 @@
     "autoload-dev": {
         "psr-4": {
             "Amp\\Test\\": "test/"
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
         }
     },
     "suggest": {

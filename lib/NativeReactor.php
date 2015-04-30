@@ -24,8 +24,8 @@ class NativeReactor implements Reactor {
         $this->onCoroutineResolution = function($e = null, $r = null) {
             if (empty($e)) {
                 return;
-            } elseif ($onError = $this->onError) {
-                $onError($e);
+            } elseif ($this->onError) {
+                call_user_func($this->onError, $e);
             } else {
                 throw $e;
             }
@@ -112,8 +112,9 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function tick(bool $noWait = false) {
+    public function tick($noWait = false) {
         try {
+            $noWait = (bool) $noWait;
             $this->isTicking = true;
             if (!$this->isRunning) {
                 $this->enableTimers();
@@ -125,7 +126,7 @@ class NativeReactor implements Reactor {
                         $this->immediates[$watcherId],
                         $this->watchers[$watcherId]
                     );
-                    $result = ($watcher->callback)($this, $watcherId, $watcher->callbackData);
+                    $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -180,8 +181,7 @@ class NativeReactor implements Reactor {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
-                    $callback = $watcher->callback;
-                    $result = $callback($this, $watcherId, $readableStream, $watcher->callbackData);
+                    $result = call_user_func($watcher->callback, $this, $watcherId, $readableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -190,8 +190,7 @@ class NativeReactor implements Reactor {
             foreach ($w as $writableStream) {
                 $streamId = (int) $writableStream;
                 foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
-                    $callback = $watcher->callback;
-                    $result = $callback($this, $watcherId, $writableStream, $watcher->callbackData);
+                    $result = call_user_func($watcher->callback, $this, $watcherId, $writableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -214,7 +213,7 @@ class NativeReactor implements Reactor {
 
             $watcher = $this->watchers[$watcherId];
 
-            $result = ($watcher->callback)($this, $watcherId, $watcher->callbackData);
+            $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
             if ($result instanceof \Generator) {
                 resolve($result, $this)->when($this->onCoroutineResolution);
             }
@@ -235,13 +234,13 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function immediately(callable $callback, array $options = []): string {
+    public function immediately(callable $callback, array $options = []) {
         $watcher = new Watcher;
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callbackData"] ?? null;
-        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->callbackData = @$options["callback_data"];
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
 
         if ($watcher->isEnabled) {
             $this->watchers[$watcherId] = $this->immediates[$watcherId] = $watcher;
@@ -253,26 +252,23 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function once(callable $callback, int $msDelay, array $options = []): string {
+    public function once(callable $callback, $msDelay, array $options = []) {
+        $msDelay = (int) $msDelay;
         assert(($msDelay >= 0), "\$msDelay at Argument 2 expects integer >= 0");
 
-        $watcher = new class extends Watcher {
-            // Inherited:
-            // public $id;
-            // public $type;
-            // public $isEnabled;
-            // public $callback;
-            // public $callbackData;
-            public $msDelay;
-            public $nextExecutionAt;
-        };
-
+        /* In the php7 branch we use an anonymous class with Struct for this.
+         * Using a stdclass isn't terribly readable and it's prone to error but
+         * it's the easiest way to minimize the distance between 5.x and 7 code
+         * and keep maintenance simple.
+         */
+        $watcher = new \StdClass;
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_ONCE;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callbackData"] ?? null;
-        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->callbackData = @$options["callback_data"];
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->msDelay = $msDelay = round(($msDelay / 1000), 3);
+        $watcher->nextExecutionAt = null; // only needed for php5.x
 
         if ($watcher->isEnabled && $this->isRunning) {
             $nextExecutionAt = microtime(true) + $msDelay;
@@ -292,34 +288,30 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function repeat(callable $callback, int $msInterval, array $options = []): string {
+    public function repeat(callable $callback, $msInterval, array $options = []) {
+        $msInterval = (int) $msInterval;
         assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
-        $msDelay = $options["msDelay"] ?? $msInterval;
-        assert(($msDelay >= 0), "msDelay option expects integer >= 0");
+        $msDelay = isset($options["ms_delay"]) ? $options["ms_delay"] : (int) $msInterval;
+        assert(($msDelay >= 0), "ms_delay option expects integer >= 0");
         
-        $watcher = new class extends Watcher {
-            // Inherited:
-            // public $id;
-            // public $type;
-            // public $callback;
-            // public $callbackData;
-            // public $isEnabled;
-            public $msDelay;
-            public $msInterval;
-            public $nextExecutionAt;
-        };
-
+        /* In the php7 branch we use an anonymous class with Struct for this.
+         * Using a stdclass isn't terribly readable and it's prone to error but
+         * it's the easiest way to minimize the distance between 5.x and 7 code
+         * and keep maintenance simple.
+         */
+        $watcher = new \StdClass;
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_REPEAT;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callbackData"] ?? null;
-        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->callbackData = @$options["callback_data"];
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->msInterval = round(($msInterval / 1000), 3);
         $watcher->msDelay = round(($msDelay / 1000), 3);
+        $watcher->nextExecutionAt = null; // only needed for php5.x
 
         if ($watcher->isEnabled && $this->isRunning) {
             $nextExecutionAt = microtime(true);
-            $nextExecutionAt += $watcher->msDelay ?? $watcher->msInterval;
+            $nextExecutionAt += (isset($watcher->msDelay) ? $watcher->msDelay : $watcher->msInterval);
             $this->timerOrder[$watcherId] = $watcher->nextExecutionAt = $nextExecutionAt;
             $this->nextTimerAt = $this->nextTimerAt
                 ? min([$this->nextTimerAt, $nextExecutionAt])
@@ -335,34 +327,29 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function onReadable($stream, callable $callback, array $options = []): string {
+    public function onReadable($stream, callable $callback, array $options = []) {
         return $this->registerIoWatcher($stream, $callback, $options, Watcher::IO_READER);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function onWritable($stream, callable $callback, array $options = []): string {
+    public function onWritable($stream, callable $callback, array $options = []) {
         return $this->registerIoWatcher($stream, $callback, $options, Watcher::IO_WRITER);
     }
 
-    private function registerIoWatcher($stream, $callback, $options, $type): string {
-        $watcher = new class extends Watcher {
-            // Inherited:
-            // public $id;
-            // public $type;
-            // public $callback;
-            // public $callbackData;
-            // public $isEnabled;
-            public $streamId;
-            public $stream;
-        };
-
+    private function registerIoWatcher($stream, $callback, $options, $type) {
+        /* In the php7 branch we use an anonymous class with Struct for this.
+         * Using a stdclass isn't terribly readable and it's prone to error but
+         * it's the easiest way to minimize the distance between 5.x and 7 code
+         * and keep maintenance simple.
+         */
+        $watcher = new \StdClass;
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callbackData"] ?? null;
-        $watcher->isEnabled = $options["enable"] ?? true;
+        $watcher->callbackData = @$options["callback_data"];
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->stream = $stream;
         $watcher->streamId = $streamId = (int) $stream;
 
@@ -384,7 +371,7 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function cancel(string $watcherId) {
+    public function cancel($watcherId) {
         $this->disable($watcherId);
         unset($this->watchers[$watcherId]);
     }
@@ -392,7 +379,7 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function enable(string $watcherId) {
+    public function enable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -435,7 +422,7 @@ class NativeReactor implements Reactor {
     /**
      * {@inheritDoc}
      */
-    public function disable(string $watcherId) {
+    public function disable($watcherId) {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }

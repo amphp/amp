@@ -35,7 +35,7 @@ interface Promisor {
      * 
      * @return \Amp\Promise
      */
-    public function promise(): Promise;
+    public function promise();
 
     /**
      * Update watchers of progress resolving the promised value
@@ -43,7 +43,7 @@ interface Promisor {
      * @param mixed $progress
      * @return void
      */
-    public function update(...$progress);
+    public function update($progress);
 
     /**
      * Resolve the promised value as a success

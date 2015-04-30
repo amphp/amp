@@ -68,7 +68,7 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
             $once = function() use ($next) { $next->succeed(42); };
             $reactor->once($once, $msDelay = 10);
             yield;
-            $result = yield $promisor->promise();
+            $result = (yield $promisor->promise());
             $this->assertSame(42, $result);
         });
     }

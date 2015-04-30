@@ -14,11 +14,14 @@ class Unresolved implements Promise {
     private $result;
 
     /**
-     * {@inheritDoc}
+     * Notify the $func callback when the promise resolves (whether successful or not)
+     *
+     * @param callable $func
+     * @return self
      */
-    public function when(callable $func): Unresolved {
+    public function when(callable $func) {
         if ($this->isResolved) {
-            $func($this->error, $this->result);
+            call_user_func($func, $this->error, $this->result);
         } else {
             $this->whens[] = $func;
         }
@@ -27,9 +30,12 @@ class Unresolved implements Promise {
     }
 
     /**
-     * {@inheritDoc}
+     * Notify the $func callback when resolution progress events are emitted
+     *
+     * @param callable $func
+     * @return self
      */
-    public function watch(callable $func): Unresolved {
+    public function watch(callable $func) {
         if (!$this->isResolved) {
             $this->watchers[] = $func;
         }
@@ -37,14 +43,14 @@ class Unresolved implements Promise {
         return $this;
     }
 
-    protected function resolve(\Exception $error = null, $result = null) {
+    private function resolve(\Exception $error = null, $result = null) {
         if ($this->isResolved) {
             throw new \LogicException(
-                'Promise already resolved'
+                "Promise already resolved"
             );
         } elseif ($result === $this) {
             throw new \LogicException(
-                'A Promise cannot act as its own resolution result'
+                "A Promise cannot act as its own resolution result"
             );
         } elseif ($result instanceof Promise) {
             $result->when(function($error, $result) {
@@ -55,21 +61,21 @@ class Unresolved implements Promise {
             $this->error = $error;
             $this->result = $result;
             foreach ($this->whens as $when) {
-                $when($error, $result);
+                call_user_func($when, $error, $result);
             }
             $this->whens = $this->watchers = [];
         }
     }
 
-    protected function update($progress) {
+    private function update($progress) {
         if ($this->isResolved) {
             throw new \LogicException(
-                'Cannot update resolved promise'
+                "Cannot update resolved promise"
             );
         }
 
         foreach ($this->watchers as $watcher) {
-            $watcher($progress);
+            call_user_func($watcher, $progress);
         }
     }
 }

@@ -11,5 +11,5 @@ interface SignalReactor extends Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onSignal(int $signo, callable $func, array $options = []): string;
+    public function onSignal($signo, callable $func, array $options = []);
 }
