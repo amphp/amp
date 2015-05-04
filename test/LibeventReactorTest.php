@@ -6,6 +6,12 @@ use Amp\LibeventReactor;
 
 class LibeventReactorTest extends ReactorTest {
     protected function getReactor() {
-        return new LibeventReactor;
+        if (extension_loaded('libevent')) {
+            return new LibeventReactor;
+        } else {
+            $this->markTestSkipped(
+                'php-uv extension not loaded'
+            );
+        }
     }
 }
