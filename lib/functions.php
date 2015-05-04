@@ -535,7 +535,7 @@ function __coroutinePromisify($cs) : Promise {
     if ($key === "return") {
         trigger_error(
             "Returning coroutine results via `yield \"return\" => \$foo` is deprecated; please " .
-            "use return statements directly in generator functions"
+            "use return statements directly in generator functions",
             E_USER_DEPRECATED
         );
         $cs->returnValue = $yielded;
