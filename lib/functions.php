@@ -476,11 +476,14 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
         public $promisor;
         public $generator;
         public $promisifier;
+        public $returnValue;
     };
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
+    $cs->returnValue = null;
+
     __coroutineAdvance($cs);
 
     return $cs->promisor->promise();
