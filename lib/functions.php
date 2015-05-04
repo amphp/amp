@@ -37,7 +37,7 @@ function tick(bool $noWait = false) {
 
 /**
  * Stop the event reactor
- * 
+ *
  * @return void
  */
 function stop() {
@@ -110,7 +110,7 @@ function cancel(string $watcherId) {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- * 
+ *
  * @param resource $stream
  */
 function onReadable($stream, callable $func, bool $enableNow = true): string {
@@ -127,7 +127,7 @@ function onReadable($stream, callable $func, bool $enableNow = true): string {
  * IMPORTANT: Watchers registered using this function must be manually cleared using cancel() to
  * free the associated memory. Failure to cancel repeating watchers (even if disable() is used)
  * will lead to memory leaks.
- * 
+ *
  * @param resource $stream
  */
 function onWritable($stream, callable $func, bool $enableNow = true): string {
@@ -496,7 +496,8 @@ function __coroutineAdvance($cs) {
                 });
             });
         } else {
-            $cs->promisor->succeed($cs->generator->getReturn());
+            /* @TODO Remove $cs->returnValue check once "return" key support is removed */
+            $cs->promisor->succeed($cs->returnValue ?? $cs->generator->getReturn());
         }
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);
@@ -522,6 +523,24 @@ function __coroutinePromisify($cs) : Promise {
     if (!isset($yielded)) {
         return new Success;
     }
+    
+    $key = $cs->generator->key();
+
+    /**
+     * Allow "fake generator returns" for compatibility with code migrating
+     * from PHP5.x using the "return" yield key.
+     *
+     * @TODO Remove $cs->returnValue check once "return" key support is removed
+     */
+    if ($key === "return") {
+        trigger_error(
+            "Returning coroutine results via `yield \"return\" => \$foo` is deprecated; please " .
+            "use return statements directly in generator functions"
+            E_USER_DEPRECATED
+        );
+        $cs->returnValue = $yielded;
+        return new Success($yielded);
+    }
 
     if ($yielded instanceof Promise) {
         return $yielded;
@@ -530,7 +549,7 @@ function __coroutinePromisify($cs) : Promise {
     // Allow custom promisifier callables to create Promise from
     // the yielded key/value for extension use-cases
     if ($cs->promisifier) {
-        return ($cs->promisifier)($cs->generator->key(), $yielded);
+        return ($cs->promisifier)($key, $yielded);
     }
 
     return new Failure(new \DomainException(
