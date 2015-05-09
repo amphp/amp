@@ -375,7 +375,7 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
     public function testOptionalCallbackDataPassedOnInvocation() {
         $callbackData = new \StdClass;
-        $options = ["callbackData" => $callbackData];
+        $options = ["callback_data" => $callbackData];
         $reactor = $this->getReactor();
         $reactor->immediately(function($reactor, $watcherId, $callbackData) {
             $callbackData->immediately = true;
