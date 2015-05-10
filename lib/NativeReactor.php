@@ -45,7 +45,7 @@ class NativeReactor implements Reactor {
                 case Watcher::TIMER_REPEAT:
                     if ($watcher->isEnabled) { $timers++; } else { $disabled++; }
                     break;
-                case Watcher::IO_READER: $readers++;
+                case Watcher::IO_READER:
                     if ($watcher->isEnabled) { $readers++; } else { $disabled++; }
                     break;
                 case Watcher::IO_WRITER:
