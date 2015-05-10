@@ -219,9 +219,12 @@ class NativeReactor implements Reactor {
                 resolve($result, $this)->when($this->onCoroutineResolution);
             }
 
-            if (isset($watcher->msInterval) && $watcher->isEnabled) {
+            if ($watcher->type === Watcher::TIMER_REPEAT && $watcher->isEnabled) {
                 $this->isTimerSortNeeded = true;
-                $watcher->nextExecutionAt += $watcher->msInterval;
+                $watcher->nextExecutionAt = $now + $watcher->msInterval;
+                if ($watcher->nextExecutionAt < $this->nextTimerAt) {
+                    $this->nextTimerAt = $watcher->nextExecutionAt;
+                }
                 $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
             } else {
                 unset(
@@ -272,16 +275,16 @@ class NativeReactor implements Reactor {
         $watcher->callback = $callback;
         $watcher->callbackData = $options["callback_data"] ?? null;
         $watcher->isEnabled = $options["enable"] ?? true;
-        $watcher->msDelay = $msDelay = round(($msDelay / 1000), 3);
+        $watcher->msDelay = round(($msDelay / 1000), 3);
 
         if ($watcher->isEnabled && $this->isRunning) {
-            $nextExecutionAt = microtime(true) + $msDelay;
-            $watcher->nextExecutionAt = microtime(true) + $msDelay;
+            $nextExecutionAt = microtime(true) + $watcher->msDelay;
+            $watcher->nextExecutionAt = $nextExecutionAt;
             $this->timerOrder[$watcherId] = $nextExecutionAt;
-            $this->nextTimerAt = $this->nextTimerAt
-                ? min([$this->nextTimerAt, $nextExecutionAt])
-                : $nextExecutionAt;
             $this->isTimerSortNeeded = true;
+            if ($nextExecutionAt < $this->nextTimerAt) {
+                $this->nextTimerAt = $nextExecutionAt;
+            }
         }
 
         $this->watchers[$watcherId] = $watcher;
@@ -296,7 +299,7 @@ class NativeReactor implements Reactor {
         assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
         $msDelay = $options["msDelay"] ?? $msInterval;
         assert(($msDelay >= 0), "msDelay option expects integer >= 0");
-        
+
         $watcher = new class extends Watcher {
             // Inherited:
             // public $id;
@@ -318,13 +321,12 @@ class NativeReactor implements Reactor {
         $watcher->msDelay = round(($msDelay / 1000), 3);
 
         if ($watcher->isEnabled && $this->isRunning) {
-            $nextExecutionAt = microtime(true);
-            $nextExecutionAt += $watcher->msDelay ?? $watcher->msInterval;
+            $nextExecutionAt = microtime(true) + ($watcher->msDelay ?? $watcher->msInterval);
             $this->timerOrder[$watcherId] = $watcher->nextExecutionAt = $nextExecutionAt;
-            $this->nextTimerAt = $this->nextTimerAt
-                ? min([$this->nextTimerAt, $nextExecutionAt])
-                : $nextExecutionAt;
             $this->isTimerSortNeeded = true;
+            if ($nextExecutionAt < $this->nextTimerAt) {
+                $this->nextTimerAt = $nextExecutionAt;
+            }
         }
 
         $this->watchers[$watcherId] = $watcher;
