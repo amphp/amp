@@ -1,4 +1,15 @@
-### master (v1.0.0-dev)
+### HEAD
+
+v1.0.0-beta
+-----------
+
+- README updates
+- Fix bug sending `NativeReactor` into infinite loop in some cases
+  with the use of `repeat()` watcher timestamps.
+- Fix incorrect IO read watcher count in `NativeReactor::__debugInfo()`
+
+v1.0.0-alpha
+------------
 
 - All `Amp\Reactor` watcher methods now accept an options array
   for future API expansion.
