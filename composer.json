@@ -35,7 +35,10 @@
             "Amp\\Test\\": "test/"
         }
     },
-    "suggest": {
-      "php-uv": "Extension for libuv backends (high performance use cases)."
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.0-dev"
+            "dev-v1.0.x": "1.0.0-dev"
+        }
     }
 }
