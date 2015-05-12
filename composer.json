@@ -8,8 +8,7 @@
         "future",
         "promise",
         "non-blocking",
-        "libevent",
-        "libuv"
+        "event"
     ],
     "license": "MIT",
     "authors": [
