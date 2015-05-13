@@ -9,6 +9,12 @@ namespace Amp;
  * nonexistent property names are read or written.
  */
 trait Struct {
+    /**
+     * The minimum percentage [0-100] at which to recommend a similar property
+     * name when generating error messages.
+     */
+    private $__propertySuggestThreshold = 70;
+
     final public function __get($property) {
         throw new \DomainException(
             $this->generateStructPropertyError($property)
@@ -22,6 +28,34 @@ trait Struct {
     }
 
     private function generateStructPropertyError($property) {
-        return sprintf("Struct property %s::%s does not exist", get_class($this), $property);
+        $suggestion = $this->suggestPropertyName($property);
+        $suggestStr = ($suggestion == "") ? "" : " ... did you mean \"{$suggestion}?\"";
+
+        return sprintf(
+            "%s property \"%s\" does not exist%s",
+            get_class($this),
+            $property,
+            $suggestStr
+        );
+    }
+
+    private function suggestPropertyName(string $badProperty): string {
+        $badProperty = strtolower($badProperty);
+        $bestMatch = "";
+        $bestMatchPercentage = 0.00;
+        $byRefPercentage = 0.00;
+        foreach ($this as $property => $value) {
+            // Never suggest properties that begin with an underscore
+            if ($property[0] === "_") {
+                continue;
+            }
+            \similar_text($badProperty, strtolower($property), $byRefPercentage);
+            if ($byRefPercentage > $bestMatchPercentage) {
+                $bestMatchPercentage = $byRefPercentage;
+                $bestMatch = $property;
+            }
+        }
+
+        return ($bestMatchPercentage >= $this->__propertySuggestThreshold) ? $bestMatch : "";
     }
 }
