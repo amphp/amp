@@ -553,8 +553,9 @@ function __coroutinePromisify($cs) {
 
     return new Failure(new \DomainException(
         sprintf(
-            "Unexpected value of type %s yielded; Promise expected",
-            is_object($yielded) ? get_class($yielded) : gettype($yielded)
+            "Unexpected Generator yield of type %s at key %s; Promise|null expected",
+            (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
+            $key
         )
     ));
 }

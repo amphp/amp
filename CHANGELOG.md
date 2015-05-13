@@ -1,5 +1,8 @@
 ### HEAD
 
+- Add offending generator key to error message when resolving coroutines
+  that yield incorrect values to assist in debugging.
+
 v1.0.0-beta
 -----------
 
