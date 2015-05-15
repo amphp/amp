@@ -476,13 +476,11 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
         public $promisor;
         public $generator;
         public $promisifier;
-        public $returnValue;
     };
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Future;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
-    $cs->returnValue = null;
 
     __coroutineAdvance($cs);
 
@@ -499,8 +497,7 @@ function __coroutineAdvance($cs) {
                 });
             });
         } else {
-            /* @TODO Remove $cs->returnValue check once "return" key support is removed */
-            $cs->promisor->succeed($cs->returnValue ?? $cs->generator->getReturn());
+            $cs->promisor->succeed($cs->generator->getReturn());
         }
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);
@@ -526,31 +523,30 @@ function __coroutinePromisify($cs) : Promise {
     if (!isset($yielded)) {
         return new Success;
     }
-    
+
     $key = $cs->generator->key();
 
     /**
-     * Allow "fake generator returns" for compatibility with code migrating
-     * from PHP5.x using the "return" yield key.
+     * Before we had Generator return expressions in PHP7 we faked coroutine returns
+     * by yielding the "return" key. Applications using PHP7 should update their code.
      *
-     * @TODO Remove $cs->returnValue check once "return" key support is removed
+     * @TODO Eventually remove this error
      */
     if ($key === "return") {
-        trigger_error(
-            "Returning coroutine results via `yield \"return\" => \$foo` is deprecated; please " .
-            "use return statements directly in generator functions",
-            E_USER_DEPRECATED
-        );
-        $cs->returnValue = $yielded;
-        return new Success($yielded);
+        return new Failure(new \DomainException(
+            "`yield \"return\" => \$foo` is no longer valid to denote coroutine " .
+            "return values; please use `return \$foo;` directly in PHP7 code."
+        ));
     }
 
     if ($yielded instanceof Promise) {
         return $yielded;
     }
 
-    // Allow custom promisifier callables to create Promise from
-    // the yielded key/value for extension use-cases
+    /**
+     * Allow custom promisifier callables to create the Promise from
+     * a yielded non-standard key/value for extended use-cases.
+     */
     if ($cs->promisifier) {
         return ($cs->promisifier)($key, $yielded);
     }
