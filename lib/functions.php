@@ -551,11 +551,21 @@ function __coroutinePromisify($cs) : Promise {
         return ($cs->promisifier)($key, $yielded);
     }
 
-    return new Failure(new \DomainException(
-        sprintf(
-            "Unexpected Generator yield of type %s at key %s; Promise|null expected",
-            (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
-            $key
-        )
-    ));
+    /**
+     * If we make it this far it's an error and we do some reflection to
+     * make debugging possible. We don't care that this is slow because
+     * you shouldn't have errors in production code.
+     */
+    $reflectionGen = new \ReflectionGenerator($cs->generator);
+    $executingGen = $reflectionGen->getExecutingGenerator();
+    if ($isSubgenerator = ($executingGen !== $cs->generator)) {
+        $reflectionGen = new \ReflectionGenerator($executingGen);
+    }
+
+    return new Failure(new \DomainException(sprintf(
+        "Unexpected Generator yield (Promise|null expected); %s yielded at line %s in %s",
+        (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
+        $reflectionGen->getExecutingLine(),
+        $reflectionGen->getExecutingFile()
+    )));
 }

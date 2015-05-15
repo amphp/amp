@@ -115,12 +115,39 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame(42, $result);
         });
     }
-    
-    
-    
-    
-    
-    
+
+    public function testBadGeneratorYieldError() {
+        $constraint = new \StdClass;
+        $constraint->invocationCount = 0;
+        $constraint->exception = null;
+
+        $reactor = new NativeReactor;
+        $reactor->onError(function(\Exception $error) use ($constraint) {
+            $constraint->invocationCount++;
+            $constraint->exception = $error;
+        });
+
+        ($reactor)->run(function() {
+            $result = yield from (function() { yield; yield 42; return; })();
+        });
+
+        $this->assertSame(1, $constraint->invocationCount);
+        $this->assertInstanceOf("DomainException", $constraint->exception);
+
+        $expected = "Unexpected Generator yield (Promise|null expected); integer yielded at line %d in %s";
+        $actual = $constraint->exception->getMessage();
+        $this->assertTrue($this->matchesPrintfString($expected, $actual));
+    }
+
+    private function matchesPrintfString(string $pattern, string $subject) {
+        $pattern = preg_quote($pattern, "/");
+        $pattern = str_replace("%d", "[0-9]+", $pattern);
+        $pattern = str_replace("%s", ".+", $pattern);
+        $pattern = "/{$pattern}/";
+
+        return (preg_match($pattern, $subject) === 1);
+    }
+
     /**
      * @expectedException \Exception
      * @expectedExceptionMessage When in the chronicle of wasted time
@@ -206,5 +233,5 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    
+
 }
