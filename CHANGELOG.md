@@ -1,5 +1,7 @@
 ### HEAD
 
+- Fixed bug preventing correct resolution of any() combinator promise
+  when passed an empty array
 - Suggest nearby property name in Struct error messages
 - Add offending generator key to error message when resolving coroutines
   that yield incorrect values to assist in debugging.

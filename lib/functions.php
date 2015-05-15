@@ -256,7 +256,7 @@ function some(array $promises) {
  */
 function any(array $promises) {
     if (empty($promises)) {
-        return new Success([], []);
+        return new Success([[], []]);
     }
 
     $results   = [];
