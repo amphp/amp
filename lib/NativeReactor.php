@@ -24,8 +24,8 @@ class NativeReactor implements Reactor {
         $this->onCoroutineResolution = function($e = null, $r = null) {
             if (empty($e)) {
                 return;
-            } elseif ($onError = $this->onError) {
-                $onError($e);
+            } elseif ($this->onError) {
+                ($this->onError)($e);
             } else {
                 throw $e;
             }
