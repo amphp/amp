@@ -221,7 +221,7 @@ class NativeReactor implements Reactor {
             if ($watcher->type === Watcher::TIMER_REPEAT && $watcher->isEnabled) {
                 $this->isTimerSortNeeded = true;
                 $watcher->nextExecutionAt = $now + $watcher->msInterval;
-                if ($watcher->nextExecutionAt < $this->nextTimerAt) {
+                if (!isset($this->nextTimerAt) || $watcher->nextExecutionAt < $this->nextTimerAt) {
                     $this->nextTimerAt = $watcher->nextExecutionAt;
                 }
                 $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
@@ -278,7 +278,7 @@ class NativeReactor implements Reactor {
             $watcher->nextExecutionAt = $nextExecutionAt;
             $this->timerOrder[$watcherId] = $nextExecutionAt;
             $this->isTimerSortNeeded = true;
-            if ($nextExecutionAt < $this->nextTimerAt) {
+            if (!isset($this->nextTimerAt) || $nextExecutionAt < $this->nextTimerAt) {
                 $this->nextTimerAt = $nextExecutionAt;
             }
         }
@@ -317,7 +317,7 @@ class NativeReactor implements Reactor {
             $nextExecutionAt = microtime(true) + $increment;
             $this->timerOrder[$watcherId] = $watcher->nextExecutionAt = $nextExecutionAt;
             $this->isTimerSortNeeded = true;
-            if ($nextExecutionAt < $this->nextTimerAt) {
+            if (!isset($this->nextTimerAt) || $nextExecutionAt < $this->nextTimerAt) {
                 $this->nextTimerAt = $nextExecutionAt;
             }
         }

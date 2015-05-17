@@ -1,5 +1,11 @@
 ### HEAD
 
+- n/a
+
+v1.0.0-beta2
+------------
+
+- Fixed bug causing every NativeReactor tick to last one second (lol)
 - Fixed bug preventing correct resolution of any() combinator promise
   when passed an empty array
 - Suggest nearby property name in Struct error messages
