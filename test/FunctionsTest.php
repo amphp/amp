@@ -134,7 +134,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $constraint->invocationCount);
         $this->assertInstanceOf("DomainException", $constraint->exception);
 
-        $expected = "Unexpected Generator yield (Promise|null expected); integer yielded at line %d in %s";
+        $expected = "Unexpected Generator yield (Promise|null expected); %s yielded at key %s on line %s in %s";
         $actual = $constraint->exception->getMessage();
         $this->assertTrue($this->matchesPrintfString($expected, $actual));
     }

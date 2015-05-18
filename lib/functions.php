@@ -548,7 +548,7 @@ function __coroutinePromisify($cs) : Promise {
      * a yielded non-standard key/value for extended use-cases.
      */
     if ($cs->promisifier) {
-        return ($cs->promisifier)($key, $yielded);
+        return ($cs->promisifier)($cs->generator, $key, $yielded);
     }
 
     /**
@@ -556,15 +556,20 @@ function __coroutinePromisify($cs) : Promise {
      * make debugging possible. We don't care that this is slow because
      * you shouldn't have errors in production code.
      */
-    $reflectionGen = new \ReflectionGenerator($cs->generator);
+    return __makeGeneratorYieldFailure($cs->generator, $key, $yielded);
+}
+
+function __makeGeneratorYieldFailure(\Generator $generator, $key, $yielded) {
+    $reflectionGen = new \ReflectionGenerator($generator);
     $executingGen = $reflectionGen->getExecutingGenerator();
-    if ($isSubgenerator = ($executingGen !== $cs->generator)) {
+    if ($isSubgenerator = ($executingGen !== $generator)) {
         $reflectionGen = new \ReflectionGenerator($executingGen);
     }
 
     return new Failure(new \DomainException(sprintf(
-        "Unexpected Generator yield (Promise|null expected); %s yielded at line %s in %s",
+        "Unexpected Generator yield (Promise|null expected); %s yielded at key %s on line %s in %s",
         (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
+        $key,
         $reflectionGen->getExecutingLine(),
         $reflectionGen->getExecutingFile()
     )));
