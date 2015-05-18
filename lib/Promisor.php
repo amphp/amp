@@ -38,12 +38,12 @@ interface Promisor {
     public function promise(): Promise;
 
     /**
-     * Update watchers of progress resolving the promised value
+     * Update watchers with progress data while resolving the promised value
      *
-     * @param mixed $progress
+     * @param mixed $data
      * @return void
      */
-    public function update(...$progress);
+    public function update($data);
 
     /**
      * Resolve the promised value as a success

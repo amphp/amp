@@ -17,10 +17,10 @@ class PrivateFuture implements Promisor {
         $this->resolver = function(bool $isUpdate, ...$args) {
             if ($isUpdate) {
                 // bound to private Unresolved::update() at call-time
-                $this->update(...$args);
+                $this->update($args[0]);
             } else {
                 // bound to private Unresolved::resolve() at call-time
-                $this->resolve(...$args);
+                $this->resolve($args[0], $args[1]);
             }
         };
     }
@@ -37,11 +37,11 @@ class PrivateFuture implements Promisor {
     /**
      * Update subscribers of progress resolving the promised value
      *
-     * @param mixed $progress
+     * @param mixed $data
      * @return void
      */
-    public function update(...$progress) {
-        $this->resolver->call($this->promise, $isUpdate = true, ...$progress);
+    public function update($data) {
+        $this->resolver->call($this->promise, $isUpdate = true, $data);
     }
 
     /**

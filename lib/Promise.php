@@ -33,7 +33,7 @@ interface Promise {
      * Implementations MUST invoke $func callback with a single update parameter, e.g.:
      *
      *     <?php
-     *     $promise->watch(function($update) { ... });
+     *     $promise->watch(function($data) { ... });
      *
      * Implementations MUST return the current object instance.
      *

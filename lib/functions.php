@@ -543,6 +543,10 @@ function __coroutinePromisify($cs) : Promise {
         return $yielded;
     }
 
+    if ($yielded instanceof PromiseStream) {
+        return resolve(__bufferPromiseStream($yielded), $cs->reactor);
+    }
+
     /**
      * Allow custom promisifier callables to create the Promise from
      * a yielded non-standard key/value for extended use-cases.
@@ -573,4 +577,12 @@ function __makeGeneratorYieldFailure(\Generator $generator, $key, $yielded) {
         $reflectionGen->getExecutingLine(),
         $reflectionGen->getExecutingFile()
     )));
+}
+
+function __bufferPromiseStream(PromiseStream $stream): \Generator {
+    $buffer = [];
+    foreach ($stream->stream() as $promise) {
+        $buffer[] = (yield $promise);
+    }
+    return $buffer;
 }
