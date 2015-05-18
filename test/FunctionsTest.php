@@ -5,6 +5,8 @@ namespace Amp\Test;
 use Amp\NativeReactor;
 use Amp\Success;
 use Amp\Failure;
+use Amp\PrivateFuture;
+use Amp\PromiseStream;
 
 class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
@@ -203,6 +205,38 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         (new NativeReactor)->run(function($reactor) use ($co) {
             $result = (yield \Amp\resolve($co()));
             $this->assertSame(42, $result);
+        });
+    }
+
+    public function testCoroutineResolutionBuffersYieldedPromiseStream() {
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
+                $i++;
+                $promisor->update($i);
+                if ($i === 3) {
+                    $reactor->cancel($watcherId);
+                    $promisor->succeed();
+                }
+            }, 10);
+
+            $result = (yield new PromiseStream($promisor->promise()));
+            $this->assertSame([1, 2, 3], $result);
+        });
+    }
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage test
+     */
+    public function testCoroutineResolutionThrowsOnPromiseStreamBufferFailure() {
+        (new NativeReactor)->run(function($reactor) {
+            $promisor = new PrivateFuture;
+            $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
+                $promisor->fail(new \Exception("test"));
+            }, 10);
+
+            $result = (yield new PromiseStream($promisor->promise()));
         });
     }
 }

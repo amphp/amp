@@ -543,6 +543,10 @@ function __coroutinePromisify($cs) {
         return $yielded;
     }
 
+    if ($yielded instanceof PromiseStream) {
+        return resolve(__bufferPromiseStream($yielded), $cs->reactor);
+    }
+
     // Allow custom promisifier callables to create Promise from
     // the yielded key/value for extension use-cases
     if ($cs->promisifier) {
@@ -558,4 +562,12 @@ function __coroutinePromisify($cs) {
             $key
         )
     ));
+}
+
+function __bufferPromiseStream(PromiseStream $stream) {
+    $buffer = [];
+    foreach ($stream->stream() as $promise) {
+        $buffer[] = (yield $promise);
+    }
+    yield "return" => $buffer;
 }
