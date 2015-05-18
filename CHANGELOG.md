@@ -2,6 +2,11 @@
 
 - n/a
 
+v1.0.0-beta3
+------------
+
+- Fix high cpu usage in timer loop from broken "nextTimerAt" caching
+
 v1.0.0-beta2
 ------------
 
