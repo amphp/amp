@@ -9,6 +9,9 @@
   specifying the optional data will receive it as the third parameter
   to associated when() callbacks. If not specified callbacks are passed
   null at Argument 3.
+- New `Amp\pipe()` function allows piping of deferred values through a
+  functor when they eventually resolve. This function is the singular
+  analog of the plural `Amp\map()` function.
 
 v1.0.0-beta3
 ------------

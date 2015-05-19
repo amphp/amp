@@ -10,6 +10,37 @@ use Amp\PromiseStream;
 
 class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
+    public function testPipe() {
+        $invoked = 0;
+        $promise = \Amp\pipe(21, function($r) { return $r * 2; });
+        $promise->when(function($e, $r) use (&$invoked) {
+            $invoked++;
+            $this->assertSame(42, $r);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    public function testPipeAbortsIfOriginalPromiseFails() {
+        $invoked = 0;
+        $failure = new Failure(new \RuntimeException);
+        $promise = \Amp\pipe($failure, function(){});
+        $promise->when(function($e, $r) use (&$invoked) {
+            $invoked++;
+            $this->assertInstanceOf("RuntimeException", $e);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    public function testPipeAbortsIfFunctorThrows() {
+        $invoked = 0;
+        $promise = \Amp\pipe(42, function(){ throw new \RuntimeException; });
+        $promise->when(function($e, $r) use (&$invoked) {
+            $invoked++;
+            $this->assertInstanceOf("RuntimeException", $e);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
     public function testAllResolutionWhenNoPromiseInstancesCombined() {
         $promises = [null, 1, 2, true];
         \Amp\all($promises)->when(function($e, $r) {
