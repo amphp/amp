@@ -61,4 +61,17 @@ class PromiseStream {
             }
         }
     }
+
+    /**
+     * Buffer all remaining promise placeholders in the stream
+     *
+     * @return \Generator
+     */
+    public function buffer() {
+        $buffer = [];
+        foreach ($this->stream() as $promise) {
+            $buffer[] = (yield $promise);
+        }
+        yield "return" => $buffer;
+    }
 }
