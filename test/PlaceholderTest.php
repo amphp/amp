@@ -6,28 +6,56 @@ use Amp\NativeReactor;
 
 abstract class PlaceholderTest  {
     abstract protected function getPromisor();
-
-    public function testWatchInvokesCallbackWithResultIfAlreadySucceeded() {
+    
+    public function testWhenCallbackDataPassed() {
+        $invoked = 0;
         $promisor = $this->getPromisor();
         $promise = $promisor->promise();
         $promisor->succeed(42);
-        $promise->watch(function($p, $e, $r) {
-            $this->assertSame(42, $r);
-            $this->assertNull($p);
+        $promise->when(function($e, $r, $d) use (&$invoked) {
             $this->assertNull($e);
-        });
+            $this->assertSame(42, $r);
+            $this->assertSame("zanzibar", $d);
+            ++$invoked;
+        }, "zanzibar");
+        $this->assertSame(1, $invoked);
+    }
+    
+    public function testWatchCallbackDataPassed() {
+        $invoked = 0;
+        $promisor = $this->getPromisor();
+        $promise = $promisor->promise();
+        $promise->watch(function($p, $d) use (&$invoked) {
+            $this->assertSame(42, $p);
+            $this->assertSame("zanzibar", $d);
+            $invoked++;
+        }, "zanzibar");
+        $promisor->update(42);
+        $promisor->update(42);
+        $this->assertSame(2, $invoked);
     }
 
-    public function testWatchInvokesCallbackWithErrorIfAlreadyFailed() {
+    public function testWatchCallbackNotInvokedIfAlreadySucceeded() {
+        $invoked = 0;
+        $promisor = $this->getPromisor();
+        $promise = $promisor->promise();
+        $promisor->succeed(42);
+        $promise->watch(function($p, $d) use (&$invoked) {
+            $invoked++;
+        });
+        $this->assertSame(0, $invoked);
+    }
+
+    public function testWatchCallbackNotInvokedIfAlreadyFailed() {
+        $invoked = 0;
         $promisor = $this->getPromisor();
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
-        $promise->watch(function($p, $e, $r) use ($exception) {
-            $this->assertSame($exception, $e);
-            $this->assertNull($p);
-            $this->assertNull($r);
+        $promise->watch(function($p, $d) use (&$invoked) {
+            $invoked++;
         });
+        $this->assertSame(0, $invoked);
     }
 
     /**

@@ -22,10 +22,11 @@ interface Promise {
      *
      * Implementations MUST return the current object instance.
      *
-     * @param callable $func
+     * @param callable $func An error-first callback to invoke upon promise resolution
+     * @param mixed $data Optional data to pass as a third parameter to $func
      * @return void
      */
-    public function when(callable $func);
+    public function when(callable $func, $data = null);
 
     /**
      * Notify the $func callback when resolution progress events are emitted
@@ -37,8 +38,9 @@ interface Promise {
      *
      * Implementations MUST return the current object instance.
      *
-     * @param callable $func
+     * @param callable $func A callback to invoke when data updates are available
+     * @param mixed $data Optional data to pass as a second parameter to $func
      * @return void
      */
-    public function watch(callable $func);
+    public function watch(callable $func, $data = null);
 }

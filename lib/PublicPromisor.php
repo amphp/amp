@@ -31,7 +31,7 @@ trait PublicPromisor {
         }
 
         foreach ($this->watchers as $watcher) {
-            $watcher($progress);
+            call_user_func($watcher[0], $progress, $watcher[1]);
         }
     }
 
@@ -42,15 +42,16 @@ trait PublicPromisor {
      * @return void
      */
     public function succeed($result = null) {
-        return $this->resolve($error = null, $result);
+        $this->resolve($error = null, $result);
     }
 
     /**
      * Resolve the promised value as a failure
      *
+     * @param \Exception $error
      * @return void
      */
     public function fail(\Exception $error) {
-        return $this->resolve($error, $result = null);
+        $this->resolve($error, $result = null);
     }
 }

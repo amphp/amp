@@ -12,8 +12,8 @@ trait PrivatePromisor {
     private $updater;
     private $promise;
 
-    public function __construct($callbackData = null) {
-        $placeholder = new PrivatePlaceholder($callbackData);
+    public function __construct() {
+        $placeholder = new PrivatePlaceholder;
         $resolver = function(\Exception $error = null, $result = null) {
             // bound to private PrivatePlaceholder::resolve()
             $this->resolve($error, $result);

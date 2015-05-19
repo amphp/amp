@@ -1,19 +1,18 @@
 ### HEAD
 
-- Expose AMP_PRODUCTION_MODE constant to alternate performance/safety
+- Expose `AMP_PRODUCTION_MODE` constant to alternate performance/safety
 - Removed `Amp\PrivateFuture` -- the safety of the `Amp\Future`
-  implementation is now dependent upon AMP_PRODUCTION_MODE.
-- Renamed Future -> Deferred
-- Renamed Unresolved -> PrivatePlaceholder
-- Support optional callbackData in Deferred::__construct(). Promisors
-  specifying the optional data will receive it as the third parameter
-  to associated when() callbacks. If not specified callbacks are passed
-  null at Argument 3.
+  implementation is now dependent upon `AMP_PRODUCTION_MODE`
+- Renamed `Future` -> `Deferred`
+- Renamed `Unresolved` -> `PrivatePlaceholder`
 - New `Amp\pipe()` function allows piping of deferred values through a
   functor when they eventually resolve. This function is the singular
   analog of the plural `Amp\map()` function.
 - Add `Amp\Streamable` interface for buffered generator resolution
 - Fix NativeReactor bug breaking tick sleep timing
+- `Promise::watch()` and `Promise::when()` now accept additional
+  optional `$data` parameters which will be passed as the final
+  parameter to the associated callback upon resolution/update.
 
 v1.0.0-beta3
 ------------

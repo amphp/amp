@@ -5,18 +5,14 @@ namespace Amp;
 class Pause implements Promise {
     use Placeholder;
 
-    public function __construct($millisecondTimeout, Reactor $reactor = null) {
-        if ($millisecondTimeout < 1) {
-            throw new \DomainException(
-                sprintf(
-                    "Pause millisecond timeout must be greater than or equal to 1; %d provided",
-                    $millisecondTimeout
-                )
-            );
+    public function __construct($msTimeout, Reactor $reactor = null) {
+        if ($msTimeout < 1) {
+            throw new \DomainException(sprintf(
+                "Pause timeout must be greater than or equal to 1 millisecond; %d provided",
+                $msTimeout
+            ));
         }
-        if (empty($reactor)) {
-            $reactor = getReactor();
-        }
-        $reactor->once(function() { $this->resolve(); }, $millisecondTimeout);
+        $reactor = $reactor ?: getReactor();
+        $reactor->once(function() { $this->resolve(); }, $msTimeout);
     }
 }

@@ -21,15 +21,15 @@ class Success implements Promise {
      * NOTE: because this object represents a successfully resolved Promise it will *always* invoke
      * the specified $func callback immediately.
      */
-    public function when(callable $func) {
-        call_user_func($func, $error = null, $this->result, $callbackData = null);
+    public function when(callable $func, $data = null) {
+        call_user_func($func, $error = null, $this->result, $data);
         return $this;
     }
 
     /**
      * Does nothing -- a resolved promise has no progress updates
      */
-    public function watch(callable $func) {
+    public function watch(callable $func, $data = null) {
         return $this;
     }
 }

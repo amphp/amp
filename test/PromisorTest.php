@@ -20,20 +20,6 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testPromisorPassesCallbackDataToCallbacks() {
-        $invoked = 0;
-        $promisor = $this->getPromisor("zanzibar");
-        $promise = $promisor->promise();
-        $promisor->succeed(42);
-        $promise->when(function($e, $r, $d) use (&$invoked) {
-            $this->assertNull($e);
-            $this->assertSame(42, $r);
-            $this->assertSame("zanzibar", $d);
-            ++$invoked;
-        });
-        $this->assertSame(1, $invoked);
-    }
-
     public function testWhenInvokesCallbackWithErrorIfAlreadyFailed() {
         $invoked = 0;
         $promisor = $this->getPromisor();

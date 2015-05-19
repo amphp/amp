@@ -6,8 +6,8 @@ use Amp\Promisor;
 use Amp\Test\PromisorPublicImpl;
 
 class PromisorPublicTest extends PromisorTest {
-    protected function getPromisor($callbackData = null) {
-        return new PromisorPublicImpl($callbackData);
+    protected function getPromisor() {
+        return new PromisorPublicImpl;
     }
 
     public function testPromiseReturnsSelf() {
