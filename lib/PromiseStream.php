@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class PromiseStream {
+class PromiseStream implements Streamable {
     const NOTIFY  = 0b00;
     const WAIT    = 0b01;
     const ERROR   = 0b10;

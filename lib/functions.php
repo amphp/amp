@@ -556,7 +556,7 @@ function __coroutinePromisify($cs) : Promise {
         return $yielded;
     }
 
-    if ($yielded instanceof PromiseStream) {
+    if ($yielded instanceof Streamable) {
         return resolve($yielded->buffer(), $cs->reactor);
     }
 
