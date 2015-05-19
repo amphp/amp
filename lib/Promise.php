@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * A placeholder value for the future result of an asynchronous computation
+ * A placeholder value for the deferred result of an asynchronous computation
  */
 interface Promise {
     /**

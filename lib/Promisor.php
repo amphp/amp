@@ -7,13 +7,13 @@ namespace Amp;
  *
  * A Promisor resolves its associated placeholder value (Promise) Promisor::succeed() or
  * Promisor::fail(). Promisor::update() may be used to notify watchers of progress resolving
- * the future value.
+ * the deferred value.
  *
  * Example:
  *
  *     function myAsyncProducer() {
  *         // Create a new promisor that needs to be resolved
- *         $promisor = new Amp\Future;
+ *         $promisor = new Amp\Deferred;
  *
  *         // When we eventually finish non-blocking value resolution we
  *         // simply call the relevant Promise method to notify any code
@@ -31,7 +31,7 @@ namespace Amp;
  */
 interface Promisor {
     /**
-     * Promise future fulfillment via a temporary placeholder value
+     * Promise deferred fulfillment via a temporary placeholder value
      * 
      * @return \Amp\Promise
      */

@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class Pause extends Unresolved {
+class Pause extends PrivatePlaceholder {
     public function __construct(int $millisecondTimeout, Reactor $reactor = null) {
         if ($millisecondTimeout < 1) {
             throw new \DomainException(
