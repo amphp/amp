@@ -12,6 +12,7 @@
 - New `Amp\pipe()` function allows piping of deferred values through a
   functor when they eventually resolve. This function is the singular
   analog of the plural `Amp\map()` function.
+- Add `Amp\Streamable` interface for buffered generator resolution
 
 v1.0.0-beta3
 ------------
