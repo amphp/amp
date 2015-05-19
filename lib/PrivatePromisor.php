@@ -3,12 +3,11 @@
 namespace Amp;
 
 /**
- * A PrivateFuture creates a read-only Promise that may *only* be fulfilled by holders of the
- * actual PrivateFuture instance. This provides an additional layer of API protection over
- * the standard Future Promisor implementation whose Promise can be resolved by any code
- * holding a reference to the Future instance.
+ * A PrivatePromisor creates read-only Promise instances that can only be
+ * resolved by holders of the PrivatePromisor instance. This creates an
+ * additional layer of API protection beyond the PublicPromisor.
  */
-class PrivateFuture implements Promisor {
+trait PrivatePromisor {
     private $resolver;
     private $updater;
     private $promise;
@@ -27,7 +26,7 @@ class PrivateFuture implements Promisor {
     }
 
     /**
-     * Promise future fulfillment via a temporary placeholder value
+     * Promise future fulfillment of the returned placeholder value
      *
      * @return \Amp\Promise
      */
@@ -46,7 +45,7 @@ class PrivateFuture implements Promisor {
     }
 
     /**
-     * Resolve the promised value as a success
+     * Resolve the associated promise placeholder as a success
      *
      * @param mixed $result
      * @return void
@@ -56,7 +55,7 @@ class PrivateFuture implements Promisor {
     }
 
     /**
-     * Resolve the promised value as a failure
+     * Resolve the associated promise placeholder as a failure
      *
      * @param \Exception $error
      * @return void

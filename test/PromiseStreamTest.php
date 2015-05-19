@@ -4,7 +4,6 @@ namespace Amp\Test;
 
 use Amp\PromiseStream;
 use Amp\NativeReactor;
-use Amp\PrivateFuture;
 
 class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
 
@@ -14,7 +13,7 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
      */
     public function testStreamThrowsIfPromiseFails() {
         (new NativeReactor)->run(function($reactor) {
-            $promisor = new PrivateFuture;
+            $promisor = new PromisorPrivateImpl;
             $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
                 $i++;
                 $promisor->update($i);
@@ -35,7 +34,7 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Cannot advance stream: previous Promise not yet resolved
      */
     public function testStreamThrowsIfPrematurelyIterated() {
-        $promisor = new PrivateFuture;
+        $promisor = new PromisorPrivateImpl;
         $stream = (new PromiseStream($promisor->promise()))->stream();
         $stream->next();
     }
@@ -45,7 +44,7 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Cannot advance stream: subject Promise failed
      */
     public function testStreamThrowsIfIteratedAfterFailure() {
-        $promisor = new PrivateFuture;
+        $promisor = new PromisorPrivateImpl;
         $promisor->fail(new \Exception("test"));
         $stream = (new PromiseStream($promisor->promise()))->stream();
         $stream->next();
