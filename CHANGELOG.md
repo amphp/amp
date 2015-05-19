@@ -13,6 +13,7 @@
   functor when they eventually resolve. This function is the singular
   analog of the plural `Amp\map()` function.
 - Add `Amp\Streamable` interface for buffered generator resolution
+- Fix NativeReactor bug breaking tick sleep timing
 
 v1.0.0-beta3
 ------------

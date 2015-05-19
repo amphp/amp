@@ -125,21 +125,23 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testResolutionFailuresAreThrownIntoGenerator() {
-        $foo = function() {
-            $a = (yield new Success(21));
-            $b = 1;
-            try {
-                yield new Failure(new \Exception('test'));
-                $this->fail('Code path should not be reached');
-            } catch (\Exception $e) {
-                $this->assertSame('test', $e->getMessage());
-                $b = 2;
-            }
-        };
-
-        (new NativeReactor)->run(function($reactor) use ($foo) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $foo = function() {
+                $a = (yield new Success(21));
+                $b = 1;
+                try {
+                    yield new Failure(new \Exception('test'));
+                    $this->fail('Code path should not be reached');
+                } catch (\Exception $e) {
+                    $this->assertSame('test', $e->getMessage());
+                    $b = 2;
+                }
+            };
             $result = (yield \Amp\resolve($foo(), $reactor));
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     /**
@@ -147,7 +149,8 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage When in the chronicle of wasted time
      */
     public function testUncaughtGeneratorExceptionFailsResolverPromise() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
             $gen = function() {
                 yield;
                 throw new \Exception('When in the chronicle of wasted time');
@@ -155,11 +158,14 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             };
 
             yield \Amp\resolve($gen(), $reactor);
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     public function testAllCombinatorResolution() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
             list($a, $b) = (yield \Amp\all([
                     new Success(21),
                     new Success(2),
@@ -167,15 +173,20 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
             $result = ($a * $b);
             $this->assertSame(42, $result);
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     public function testAllCombinatorResolutionWithNonPromises() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
             list($a, $b, $c) = (yield \Amp\all([new Success(21), new Success(2), 10]));
             $result = ($a * $b * $c);
             $this->assertSame(420, $result);
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     /**
@@ -192,7 +203,8 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testExplicitAllCombinatorResolution() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
             list($a, $b, $c) = (yield \Amp\all([
                 new Success(21),
                 new Success(2),
@@ -200,18 +212,23 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             ]));
 
             $this->assertSame(420, ($a * $b * $c));
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     public function testExplicitAnyCombinatorResolution() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
             list($errors, $results) = (yield \Amp\any([
                 'a' => new Success(21),
                 'b' => new Failure(new \Exception('test')),
             ]));
             $this->assertSame('test', $errors['b']->getMessage());
             $this->assertSame(21, $results['a']);
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     /**
@@ -227,20 +244,25 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function testCoroutineReturnValue() {
-        $co = function() {
-            yield;
-            yield "return" => 42;
-            yield;
-        };
-        (new NativeReactor)->run(function($reactor) use ($co) {
-            $result = (yield \Amp\resolve($co()));
+    public function testCoroutineFauxReturnValue() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $co = function() use (&$invoked) {
+                yield;
+                yield "return" => 42;
+                yield;
+                $invoked++;
+            };
+            $result = (yield \Amp\resolve($co(), $reactor));
             $this->assertSame(42, $result);
         });
+        $this->assertSame(1, $invoked);
     }
 
     public function testCoroutineResolutionBuffersYieldedPromiseStream() {
-        (new NativeReactor)->run(function($reactor) {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $i = 0;
             $promisor = new Deferred;
             $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
                 $i++;
@@ -253,7 +275,9 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
             $result = (yield new PromiseStream($promisor->promise()));
             $this->assertSame([1, 2, 3], $result);
+            $invoked++;
         });
+        $this->assertSame(1, $invoked);
     }
 
     /**
@@ -263,7 +287,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     public function testCoroutineResolutionThrowsOnPromiseStreamBufferFailure() {
         (new NativeReactor)->run(function($reactor) {
             $promisor = new Deferred;
-            $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
+            $reactor->repeat(function($reactor, $watcherId) use ($promisor) {
                 $promisor->fail(new \Exception("test"));
             }, 10);
 
