@@ -1,6 +1,10 @@
 ### HEAD
 
-- n/a
+- Expose AMP_DEBUG constant to alternate between performance/safety
+- Removed `Amp\PrivateFuture` -- the safety of the `Amp\Future`
+  implementation is now dependent upon the AMP_DEBUG constant.
+- Renamed Future -> Deferred
+- Renamed Unresolved -> PrivatePlaceholder
 
 v1.0.0-beta3
 ------------
