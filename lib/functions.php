@@ -404,6 +404,31 @@ function filter(array $promises, callable $functor): Promise {
 }
 
 /**
+ * Pipe the promised value through the specified functor once it resolves
+ *
+ * @return \Amp\Promise
+ */
+function pipe($promise, callable $functor): Promise {
+    if (!($promise instanceof Promise)) {
+        $promise = new Success($promise);
+    }
+    $promisor = new Deferred;
+    $promise->when(function($error, $result) use ($promisor, $functor) {
+        if ($error) {
+            $promisor->fail($error);
+            return;
+        }
+        try {
+            $promisor->succeed(call_user_func($functor, $result));
+        } catch (\Exception $error) {
+            $promisor->fail($error);
+        }
+    });
+
+    return $promisor->promise();
+}
+
+/**
  * Block script execution indefinitely until the specified Promise resolves
  *
  * In the event of promise failure this method will throw the exception responsible for the failure.

@@ -11,8 +11,8 @@ trait PrivatePromisor {
     private $promise;
     private $resolver;
 
-    public function __construct() {
-        $this->promise = new PrivatePlaceholder;
+    public function __construct($callbackData = null) {
+        $this->promise = new PrivatePlaceholder($callbackData);
         $this->resolver = function(bool $isUpdate, ...$args) {
             if ($isUpdate) {
                 // bound to private Unresolved::update() at call-time

@@ -16,7 +16,7 @@ class Failure implements Promise {
      * {@inheritDoc}
      */
     public function when(callable $func) {
-        $func($this->error, $result = null);
+        $func($this->error, $result = null, $callbackData = null);
     }
 
     /**
