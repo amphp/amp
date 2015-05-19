@@ -12,13 +12,15 @@ trait PrivatePromisor {
     private $updater;
     private $promise;
 
-    public function __construct() {
-        $placeholder = new PrivatePlaceholder;
+    public function __construct($callbackData = null) {
+        $placeholder = new PrivatePlaceholder($callbackData);
         $resolver = function(\Exception $error = null, $result = null) {
-            $this->resolve($error, $result); // bound to private PrivatePlaceholder::resolve()
+            // bound to private PrivatePlaceholder::resolve()
+            $this->resolve($error, $result);
         };
         $updater = function($progress) {
-            $this->update($progress); // bound to private PrivatePlaceholder::update()
+            // bound to private PrivatePlaceholder::update()
+            $this->update($progress);
         };
         $this->resolver = $resolver->bindTo($placeholder, $placeholder);
         $this->updater = $updater->bindTo($placeholder, $placeholder);

@@ -22,7 +22,7 @@ class Success implements Promise {
      * the specified $func callback immediately.
      */
     public function when(callable $func) {
-        call_user_func($func, $error = null, $this->result);
+        call_user_func($func, $error = null, $this->result, $callbackData = null);
         return $this;
     }
 

@@ -5,6 +5,10 @@
   implementation is now dependent upon the AMP_DEBUG constant.
 - Renamed Future -> Deferred
 - Renamed Unresolved -> PrivatePlaceholder
+- Support optional callbackData in Deferred::__construct(). Promisors
+  specifying the optional data will receive it as the third parameter
+  to associated when() callbacks. If not specified callbacks are passed
+  null at Argument 3.
 
 v1.0.0-beta3
 ------------
