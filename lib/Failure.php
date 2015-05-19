@@ -15,14 +15,14 @@ class Failure implements Promise {
     /**
      * {@inheritDoc}
      */
-    public function when(callable $func) {
-        $func($this->error, $result = null, $callbackData = null);
+    public function when(callable $func, $data = null) {
+        $func($this->error, $result = null, $data);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function watch(callable $func) {
+    public function watch(callable $func, $data = null) {
         return;
     }
 }

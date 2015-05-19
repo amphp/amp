@@ -419,7 +419,7 @@ function pipe($promise, callable $functor): Promise {
             return;
         }
         try {
-            $promisor->succeed(call_user_func($functor, $result));
+            $promisor->succeed($functor($result));
         } catch (\Exception $error) {
             $promisor->fail($error);
         }

@@ -3,49 +3,44 @@
 namespace Amp;
 
 /**
+ * Standard Promise interface implementation
+ *
  * A placeholder value that will be resolved at some point in the future by
  * the Promisor that created it.
  */
 trait Placeholder {
-    private $callbackData = null;
     private $isResolved = false;
     private $watchers = [];
     private $whens = [];
     private $error;
     private $result;
 
-    public function __construct($callbackData = null) {
-        $this->callbackData = $callbackData;
-    }
-
     /**
      * Notify the $func callback when the promise resolves (whether successful or not)
      *
-     * @param callable $func
-     * @return self
+     * @param callable $func An error-first callback to invoke upon promise resolution
+     * @param mixed $data Optional data to pass as a third parameter to $func
+     * @return void
      */
-    public function when(callable $func) {
+    public function when(callable $func, $data = null) {
         if ($this->isResolved) {
-            call_user_func($func, $this->error, $this->result, $this->callbackData);
+            ($func)($this->error, $this->result, $data);
         } else {
-            $this->whens[] = $func;
+            $this->whens[] = [$func, $data];
         }
-
-        return $this;
     }
 
     /**
      * Notify the $func callback when resolution progress events are emitted
      *
-     * @param callable $func
-     * @return self
+     * @param callable $func A callback to invoke when data updates are available
+     * @param mixed $data Optional data to pass as a second parameter to $func
+     * @return void
      */
-    public function watch(callable $func) {
+    public function watch(callable $func, $data = null) {
         if (!$this->isResolved) {
-            $this->watchers[] = $func;
+            $this->watchers[] = [$func, $data];
         }
-
-        return $this;
     }
 
     private function update($progress) {
@@ -56,7 +51,7 @@ trait Placeholder {
         }
 
         foreach ($this->watchers as $watcher) {
-            call_user_func($watcher, $progress);
+            ($watcher[0])($progress, $watcher[1]);
         }
     }
 
@@ -78,7 +73,7 @@ trait Placeholder {
             $this->error = $error;
             $this->result = $result;
             foreach ($this->whens as $when) {
-                call_user_func($when, $error, $result, $this->callbackData);
+                ($when[0])($error, $result, $when[1]);
             }
             $this->whens = $this->watchers = [];
         }
