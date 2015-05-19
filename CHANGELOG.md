@@ -1,8 +1,8 @@
 ### HEAD
 
-- Expose AMP_DEBUG constant to alternate between performance/safety
+- Expose AMP_PRODUCTION_MODE constant to alternate performance/safety
 - Removed `Amp\PrivateFuture` -- the safety of the `Amp\Future`
-  implementation is now dependent upon the AMP_DEBUG constant.
+  implementation is now dependent upon AMP_PRODUCTION_MODE.
 - Renamed Future -> Deferred
 - Renamed Unresolved -> PrivatePlaceholder
 - Support optional callbackData in Deferred::__construct(). Promisors
