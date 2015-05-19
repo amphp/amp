@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\NativeReactor;
 use Amp\Success;
 use Amp\Failure;
-use Amp\PrivateFuture;
+use Amp\Future;
 use Amp\PromiseStream;
 use function Amp\all;
 use function Amp\any;
@@ -249,7 +249,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testCoroutineResolutionBuffersYieldedPromiseStream() {
         (new NativeReactor)->run(function($reactor) {
-            $promisor = new PrivateFuture;
+            $promisor = new Future;
             $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
                 $i++;
                 $promisor->update($i);
@@ -270,7 +270,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
      */
     public function testCoroutineResolutionThrowsOnPromiseStreamBufferFailure() {
         (new NativeReactor)->run(function($reactor) {
-            $promisor = new PrivateFuture;
+            $promisor = new Future;
             $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
                 $promisor->fail(new \Exception("test"));
             }, 10);

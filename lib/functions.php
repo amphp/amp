@@ -189,9 +189,7 @@ function all(array $promises): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**
@@ -243,9 +241,7 @@ function some(array $promises): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**
@@ -282,9 +278,7 @@ function any(array $promises): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**
@@ -323,9 +317,7 @@ function first(array $promises): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**
@@ -365,9 +357,7 @@ function map(array $promises, callable $functor): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**
@@ -410,9 +400,7 @@ function filter(array $promises, callable $functor): Promise {
         });
     }
 
-    // We can return $promisor directly because the Future Promisor implementation
-    // also implements Promise for convenience
-    return $promisor;
+    return $promisor->promise();
 }
 
 /**

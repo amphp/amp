@@ -2,14 +2,16 @@
 
 namespace Amp\Test;
 
-use Amp\Future;
+use Amp\Promisor;
+use Amp\Test\PromisorPublicImpl;
 
-class FutureTest extends PromisorTest {
+class PromisorPublicTest extends PromisorTest {
     protected function getPromisor() {
-        return new Future;
+        return new PromisorPublicImpl;
     }
+
     public function testPromiseReturnsSelf() {
-        $promisor = new Future;
+        $promisor = new PromisorPublicImpl;
         $this->assertSame($promisor, $promisor->promise());
     }
 }
