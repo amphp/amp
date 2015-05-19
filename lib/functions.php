@@ -543,17 +543,13 @@ function __coroutinePromisify($cs) : Promise {
 
     /**
      * Before we had Generator return expressions in PHP7 we faked coroutine returns
-     * by yielding the "return" key. Applications using PHP7 should update their code.
+     * by yielding the "return" key. Applications using PHP7 should update their code
+     * to use return directly.
      *
      * @TODO Eventually remove this support
      */
     if ($key === "return") {
         $cs->returnValue = $yielded;
-        trigger_error(
-            "`yield \"return\" => \$foo` is deprecated for denoting coroutine " .
-            "return values; please use `return \$foo;` directly in PHP7 code."
-        , E_USER_DEPRECATED);
-
         return new Success($yielded);
     }
 
