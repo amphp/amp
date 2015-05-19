@@ -13,16 +13,16 @@ trait PrivatePromisor {
     private $promise;
 
     public function __construct() {
-        $unresolved = new Unresolved;
+        $placeholder = new PrivatePlaceholder;
         $resolver = function(\Exception $error = null, $result = null) {
-            $this->resolve($error, $result); // bound to private Unresolved::resolve()
+            $this->resolve($error, $result); // bound to private PrivatePlaceholder::resolve()
         };
         $updater = function($progress) {
-            $this->update($progress); // bound to private Unresolved::update()
+            $this->update($progress); // bound to private PrivatePlaceholder::update()
         };
-        $this->resolver = $resolver->bindTo($unresolved, $unresolved);
-        $this->updater = $updater->bindTo($unresolved, $unresolved);
-        $this->promise = $unresolved;
+        $this->resolver = $resolver->bindTo($placeholder, $placeholder);
+        $this->updater = $updater->bindTo($placeholder, $placeholder);
+        $this->promise = $placeholder;
     }
 
     /**
