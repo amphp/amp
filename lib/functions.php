@@ -489,11 +489,13 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
         public $promisor;
         public $generator;
         public $promisifier;
+        public $returnValue;
     };
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Deferred;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
+    $cs->returnValue = null;
 
     __coroutineAdvance($cs);
 
@@ -510,7 +512,7 @@ function __coroutineAdvance($cs) {
                 });
             });
         } else {
-            $cs->promisor->succeed($cs->generator->getReturn());
+            $cs->promisor->succeed($cs->returnValue ?? $cs->generator->getReturn());
         }
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);
@@ -543,13 +545,16 @@ function __coroutinePromisify($cs) : Promise {
      * Before we had Generator return expressions in PHP7 we faked coroutine returns
      * by yielding the "return" key. Applications using PHP7 should update their code.
      *
-     * @TODO Eventually remove this error
+     * @TODO Eventually remove this support
      */
     if ($key === "return") {
-        return new Failure(new \DomainException(
-            "`yield \"return\" => \$foo` is no longer valid to denote coroutine " .
+        $cs->returnValue = $yielded;
+        trigger_error(
+            "`yield \"return\" => \$foo` is deprecated for denoting coroutine " .
             "return values; please use `return \$foo;` directly in PHP7 code."
-        ));
+        , E_USER_DEPRECATED);
+
+        return new Success($yielded);
     }
 
     if ($yielded instanceof Promise) {
