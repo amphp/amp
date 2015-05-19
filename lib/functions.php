@@ -163,7 +163,7 @@ function all(array $promises) {
 
     $results    = [];
     $remaining  = count($promises);
-    $promisor   = new Future;
+    $promisor   = new Deferred;
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -215,7 +215,7 @@ function some(array $promises) {
     $errors    = [];
     $results   = [];
     $remaining = count($promises);
-    $promisor  = new Future;
+    $promisor  = new Deferred;
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -258,7 +258,7 @@ function any(array $promises) {
     $results   = [];
     $errors    = [];
     $remaining = count($promises);
-    $promisor  = new Future;
+    $promisor  = new Deferred;
 
     foreach ($promises as $key => $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -294,7 +294,7 @@ function first(array $promises) {
 
     $remaining  = count($promises);
     $isComplete = false;
-    $promisor   = new Future;
+    $promisor   = new Deferred;
 
     foreach ($promises as $resolvable) {
         if (!$resolvable instanceof Promise) {
@@ -304,7 +304,7 @@ function first(array $promises) {
 
         $promise->when(function($error, $result) use (&$remaining, &$isComplete, $promisor) {
             if ($isComplete) {
-                // we don't care about Futures that resolve after the first
+                // we don't care about Deferreds that resolve after the first
                 return;
             } elseif ($error && --$remaining === 0) {
                 $promisor->fail(new \RuntimeException(
@@ -321,7 +321,7 @@ function first(array $promises) {
 }
 
 /**
- * Map promised future values using the specified functor
+ * Map promised deferred values using the specified functor
  */
 function map(array $promises, callable $functor) {
     if (empty($promises)) {
@@ -330,7 +330,7 @@ function map(array $promises, callable $functor) {
 
     $results   = [];
     $remaining = count($promises);
-    $promisor  = new Future;
+    $promisor  = new Deferred;
 
     foreach ($promises as $key => $resolvable) {
         $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
@@ -361,7 +361,7 @@ function map(array $promises, callable $functor) {
 }
 
 /**
- * Filter future values using the specified functor
+ * Filter deferred values using the specified functor
  *
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
@@ -373,13 +373,13 @@ function filter(array $promises, callable $functor) {
 
     $results   = [];
     $remaining = count($promises);
-    $promisor  = new Future;
+    $promisor  = new Deferred;
 
     foreach ($promises as $key => $resolvable) {
         $promise = ($resolvable instanceof Promise) ? $resolvable : new Success($resolvable);
         $promise->when(function($error, $result) use (&$remaining, &$results, $key, $promisor, $functor) {
             if (empty($remaining)) {
-                // If the future result already failed we don't bother.
+                // If the deferred result already failed we don't bother.
                 return;
             }
             if ($error) {
@@ -465,7 +465,7 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
      */
     $cs = new \StdClass;
     $cs->reactor = $reactor ?: getReactor();
-    $cs->promisor = new Future;
+    $cs->promisor = new Deferred;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
 

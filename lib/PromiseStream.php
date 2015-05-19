@@ -16,10 +16,10 @@ class PromiseStream {
      */
     public function __construct(Promise $watchedPromise) {
         $this->state = self::WAIT;
-        $this->promisors[] = new Future;
+        $this->promisors[] = new Deferred;
         $watchedPromise->watch(function($data) {
             $this->state = self::NOTIFY;
-            $this->promisors[$this->index + 1] = new Future;
+            $this->promisors[$this->index + 1] = new Deferred;
             $this->promisors[$this->index++]->succeed($data);
         });
         $watchedPromise->when(function($error, $result) {
