@@ -532,7 +532,7 @@ function __coroutinePromisify($cs) : Promise {
     }
 
     if ($yielded instanceof PromiseStream) {
-        return resolve(__bufferPromiseStream($yielded), $cs->reactor);
+        return resolve($yielded->buffer(), $cs->reactor);
     }
 
     /**
@@ -565,12 +565,4 @@ function __makeGeneratorYieldFailure(\Generator $generator, $key, $yielded) {
         $reflectionGen->getExecutingLine(),
         $reflectionGen->getExecutingFile()
     )));
-}
-
-function __bufferPromiseStream(PromiseStream $stream): \Generator {
-    $buffer = [];
-    foreach ($stream->stream() as $promise) {
-        $buffer[] = (yield $promise);
-    }
-    return $buffer;
 }
