@@ -2,7 +2,9 @@
 
 namespace Amp;
 
-class Pause extends PrivatePlaceholder {
+class Pause implements Promise {
+    use Placeholder;
+
     public function __construct(int $millisecondTimeout, Reactor $reactor = null) {
         if ($millisecondTimeout < 1) {
             throw new \DomainException(

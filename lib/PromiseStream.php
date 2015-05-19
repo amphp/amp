@@ -3,9 +3,10 @@
 namespace Amp;
 
 class PromiseStream implements Streamable {
-    const NOTIFY  = 0b00;
-    const WAIT    = 0b01;
-    const ERROR   = 0b10;
+    const NOTIFY = 0b000;
+    const WAIT   = 0b001;
+    const ERROR  = 0b010;
+    const DONE   = 0b100;
 
     private $promisors;
     private $index = 0;
@@ -26,6 +27,9 @@ class PromiseStream implements Streamable {
             if ($error) {
                 $this->state = self::ERROR;
                 $this->promisors[$this->index]->fail($error);
+            } else {
+                $this->state = self::DONE;
+                $this->promisors[$this->index]->succeed();
             }
         });
     }
@@ -54,6 +58,8 @@ class PromiseStream implements Streamable {
                         "Cannot advance stream: previous Promise not yet resolved"
                     );
                     break;
+                case self::DONE:
+                    return;
                 case self::ERROR:
                     throw new \LogicException(
                         "Cannot advance stream: subject Promise failed"
@@ -70,8 +76,10 @@ class PromiseStream implements Streamable {
     public function buffer(): \Generator {
         $buffer = [];
         foreach ($this->stream() as $promise) {
-            $buffer[] = (yield $promise);
+            $buffer[] = yield $promise;
         }
+        array_pop($buffer);
+
         return $buffer;
     }
 }

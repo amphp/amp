@@ -142,9 +142,10 @@ class NativeReactor implements Reactor {
                     asort($this->timerOrder);
                     $this->isTimerSortNeeded = false;
                 }
-                $nextTimerAt = current($this->timerOrder);
+                // This reset() is important ... don't remove it!
+                $nextTimerAt = reset($this->timerOrder);
                 $timeToNextAlarm = round($nextTimerAt - microtime(true), 4);
-                $timeToNextAlaram = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
+                $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
             }
 
             if ($this->readStreams || $this->writeStreams) {
