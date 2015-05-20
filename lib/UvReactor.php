@@ -152,7 +152,7 @@ class UvReactor implements SignalReactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["callback_data"];
+        $watcher->callbackData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
 
         if ($watcher->isEnabled) {
@@ -199,7 +199,7 @@ class UvReactor implements SignalReactor {
         $watcher->type = ($isRepeating) ? Watcher::TIMER_ONCE : Watcher::TIMER_REPEAT;
         $watcher->uvHandle = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
-        $watcher->callbackData = @$options["callback_data"];
+        $watcher->callbackData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->msDelay = $msDelay;
         $watcher->msInterval = $isRepeating ? $msInterval : 0;
@@ -271,7 +271,7 @@ class UvReactor implements SignalReactor {
         $watcher->id = $watcherId;
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["callback_data"];
+        $watcher->callbackData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->stream = $stream;
         $watcher->streamId = $streamId = (int) $stream;
@@ -367,7 +367,7 @@ class UvReactor implements SignalReactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::SIGNAL;
         $watcher->callback = $this->wrapSignalCallback($watcher, $func);
-        $watcher->callbackData = @$options["callback_data"];
+        $watcher->callbackData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->signo = $signo;
         $watcher->uvHandle = uv_signal_init($this->loop);

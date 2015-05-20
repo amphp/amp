@@ -538,7 +538,7 @@ function __coroutineAdvance($cs) {
             return;
         }
 
-        $cs->reactor->immediately("Amp\__coroutineNextTick", ["callback_data" => $cs]);
+        $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
 
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);

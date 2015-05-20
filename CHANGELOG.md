@@ -1,5 +1,6 @@
 ### HEAD
 
+- Reactor watcher option "callback_data" renamed "cb_data"
 - Combinator functions optimized for performance
 - Amp\reactor() now accepts an optional assignment parameter for
   modifying the global default event reactor instance to allow for

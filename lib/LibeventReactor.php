@@ -161,7 +161,7 @@ class LibeventReactor implements SignalReactor {
         $watcher->id = $watcherId;
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["callback_data"];
+        $watcher->callbackData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
 
         if ($type !== Watcher::IMMEDIATE) {
