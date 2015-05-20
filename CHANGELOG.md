@@ -1,5 +1,27 @@
 ### HEAD
 
+- Combinator functions optimized for performance
+- Amp\reactor() now accepts an optional assignment parameter for
+  modifying the global default event reactor instance to allow for
+  third-party Reactor implementations.
+- Renamed functions:
+    . Amp\getReactor() -> Amp\reactor()
+- Removed functions:
+    . Amp\chooseReactor()
+    . Amp\tick()
+    . Amp\immediately()
+    . Amp\once()
+    . Amp\repeat()
+    . Amp\onReadable()
+    . Amp\onWritable()
+    . Amp\onSignal()
+    . Amp\enable()
+    . Amp\disable()
+    . Amp\cancel()
+
+v1.0.0-beta4
+------------
+
 - Expose `AMP_PRODUCTION_MODE` constant to alternate performance/safety
 - Removed `Amp\PrivateFuture` -- the safety of the `Amp\Future`
   implementation is now dependent upon `AMP_PRODUCTION_MODE`

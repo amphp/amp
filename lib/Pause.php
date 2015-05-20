@@ -12,7 +12,7 @@ class Pause implements Promise {
                 $msTimeout
             ));
         }
-        $reactor = $reactor ?: getReactor();
+        $reactor = $reactor ?: reactor();
         $reactor->once(function() { $this->resolve(); }, $msTimeout);
     }
 }

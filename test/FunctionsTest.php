@@ -93,7 +93,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r1' => new Success(42),
             'r2' => new Failure($exception),
             'r3' => new Success(40),
-        ])->when(function($error) {
+        ])->when(function(\Exception $error) {
             throw $error;
         });
     }
@@ -113,7 +113,6 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage All promises failed
      */
     public function testSomeThrowsIfNoPromisesResolveSuccessfully() {
         \Amp\some([
@@ -233,7 +232,6 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage All promises failed
      */
     public function testExplicitSomeCombinatorResolutionFailsOnError() {
         (new NativeReactor)->run(function($reactor) {
