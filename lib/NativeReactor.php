@@ -243,7 +243,7 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callback_data"] ?? null;
+        $watcher->callbackData = $options["cb_data"] ?? null;
         $watcher->isEnabled = $options["enable"] ?? true;
 
         if ($watcher->isEnabled) {
@@ -273,7 +273,7 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_ONCE;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callback_data"] ?? null;
+        $watcher->callbackData = $options["cb_data"] ?? null;
         $watcher->isEnabled = $options["enable"] ?? true;
         $watcher->msDelay = round(($msDelay / 1000), 3);
 
@@ -312,7 +312,7 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = Watcher::TIMER_REPEAT;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callback_data"] ?? null;
+        $watcher->callbackData = $options["cb_data"] ?? null;
         $watcher->isEnabled = $options["enable"] ?? true;
         $watcher->msInterval = round(($msInterval / 1000), 3);
         $watcher->msDelay = round(($msDelay / 1000), 3);
@@ -357,7 +357,7 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = $this->lastWatcherId++;
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = $options["callback_data"] ?? null;
+        $watcher->callbackData = $options["cb_data"] ?? null;
         $watcher->isEnabled = $options["enable"] ?? true;
         $watcher->stream = $stream;
         $watcher->streamId = $streamId = (int) $stream;
