@@ -406,12 +406,19 @@ function filter(array $promises, callable $functor) {
 /**
  * Pipe the promised value through the specified functor once it resolves
  *
+ * @param mixed $promise Any value is acceptable -- non-promises are normalized to promise form
+ * @param callable $functor The functor through which to pipe the resolved promise value
  * @return \Amp\Promise
  */
 function pipe($promise, callable $functor) {
     if (!($promise instanceof Promise)) {
-        $promise = new Success($promise);
+        try {
+            return new Success(call_user_func($functor, $promise));
+        } catch (\Exception $e) {
+            return new Failure($e);
+        }
     }
+
     $promisor = new Deferred;
     $promise->when(function($error, $result) use ($promisor, $functor) {
         if ($error) {
