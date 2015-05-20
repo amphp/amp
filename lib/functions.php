@@ -483,22 +483,12 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  * error occurs during coroutine resolution the promise fails.
  */
 function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null) {
-    /* In the php7 branch we use an anonymous class with Struct for this.
-     * Using a stdclass isn't terribly readable and it's prone to error but
-     * it's the easiest way to minimize the distance between 5.x and 7 code
-     * and keep maintenance simple.
-     */
     $cs = new \StdClass;
     $cs->reactor = $reactor ?: getReactor();
     $cs->promisor = new Deferred;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
-
-    /**
-     * In php7 we're able to use Generator::getReturn() to retrieve this. Because
-     * this functionality is unavailable in 5.x users must manually use yield "return" => $foo
-     * so we can store the "return" value ourselves.
-     */
+    $cs->currentPromise = null;
     $cs->returnValue = null;
 
     __coroutineAdvance($cs);
@@ -508,22 +498,56 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
 
 function __coroutineAdvance($cs) {
     try {
-        if ($cs->generator->valid()) {
-            $promise = __coroutinePromisify($cs);
-            $cs->reactor->immediately(function() use ($cs, $promise) {
-                $promise->when(function($error, $result) use ($cs) {
-                    __coroutineSend($cs, $error, $result);
-                });
-            });
-        } else {
+        if (!$cs->generator->valid()) {
             $cs->promisor->succeed($cs->returnValue);
+            return;
         }
+
+        $yielded = $cs->generator->current();
+
+        if (!isset($yielded)) {
+            // nothing to do ... jump to the end
+        } elseif (($key = $cs->generator->key()) === "return") {
+            $cs->returnValue = $yielded;
+        } elseif ($yielded instanceof Promise) {
+            $cs->currentPromise = $yielded;
+        } elseif ($yielded instanceof Streamable) {
+            $cs->currentPromise = resolve($yielded->buffer(), $cs->reactor);
+        } elseif ($cs->promisifier) {
+            $promise = call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
+            if ($promise instanceof Promise) {
+                $cs->currentPromise = $promise;
+            } else {
+                $cs->promisor->fail(new \DomainException(sprintf(
+                    "Invalid promisifier yield of type %s; Promise|null expected",
+                    is_object($promise) ? get_class($promise) : gettype($promise)
+                )));
+                return;
+            }
+        } else {
+            $cs->promisor->fail(new \DomainException(
+                __generateYieldError($cs->generator, $key, $yielded)
+            ));
+            return;
+        }
+
+        $cs->reactor->immediately("Amp\__coroutineNextTick", ["callback_data" => $cs]);
+
     } catch (\Exception $uncaught) {
         $cs->promisor->fail($uncaught);
     }
 }
 
-function __coroutineSend($cs, \Exception $error = null, $result = null) {
+function __coroutineNextTick($reactor, $watcherId, $cs) {
+    if ($promise = $cs->currentPromise) {
+        $cs->currentPromise = null;
+        $promise->when("Amp\__coroutineSend", $cs);
+    } else {
+        __coroutineSend(null, null, $cs);
+    }
+}
+
+function __coroutineSend($error, $result, $cs) {
     try {
         if ($error) {
             $cs->generator->throw($error);
@@ -536,43 +560,18 @@ function __coroutineSend($cs, \Exception $error = null, $result = null) {
     }
 }
 
-function __coroutinePromisify($cs) {
-    $generator = $cs->generator;
-    $yielded = $generator->current();
-
-    if (!isset($yielded)) {
-        return new Success;
+function __generateYieldError(\Generator $generator, $key, $yielded) {
+    $reflectionGen = new \ReflectionGenerator($generator);
+    $executingGen = $reflectionGen->getExecutingGenerator();
+    if ($isSubgenerator = ($executingGen !== $generator)) {
+        $reflectionGen = new \ReflectionGenerator($executingGen);
     }
 
-    $key = $generator->key();
-
-    // We fake generator returns in 5.x using the "return" yield key
-    if ($key === "return") {
-        $cs->returnValue = $yielded;
-        return new Success($yielded);
-    }
-
-    if ($yielded instanceof Promise) {
-        return $yielded;
-    }
-
-    if ($yielded instanceof Streamable) {
-        return resolve($yielded->buffer(), $cs->reactor);
-    }
-
-    // Allow custom promisifier callables to create Promise from
-    // the yielded key/value for extension use-cases
-    if ($cs->promisifier) {
-        // In php7 we wrap the promisifier in parens to avoid call_user_func()
-        // but that's not possible in 5.x :(
-        return call_user_func($cs->promisifier, $key, $yielded);
-    }
-
-    return new Failure(new \DomainException(
-        sprintf(
-            "Unexpected Generator yield of type %s at key %s; Promise|null expected",
-            (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
-            $key
-        )
-    ));
+    return sprintf(
+        "Unexpected Generator yield (Promise|null expected); %s yielded at key %s on line %s in %s",
+        (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
+        $key,
+        $reflectionGen->getExecutingLine(),
+        $reflectionGen->getExecutingFile()
+    );
 }
