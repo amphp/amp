@@ -578,6 +578,8 @@ function __coroutineSend($error, $result, $cs) {
         if ($promisor = $cs->promisor) {
             $cs->promisor = null;
             $promisor->fail($uncaught);
+        } else {
+            throw new \Exception("", 0, $uncaught);
         }
     }
 }
