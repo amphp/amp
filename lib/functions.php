@@ -506,7 +506,9 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
 function __coroutineAdvance($cs) {
     try {
         if (!$cs->generator->valid()) {
-            $cs->promisor->succeed($cs->returnValue);
+            $promisor = $cs->promisor;
+            $cs->promisor = null;
+            $promisor->succeed($cs->returnValue);
             return;
         }
 
@@ -525,14 +527,18 @@ function __coroutineAdvance($cs) {
             if ($promise instanceof Promise) {
                 $cs->currentPromise = $promise;
             } else {
-                $cs->promisor->fail(new \DomainException(sprintf(
+                $promisor = $cs->promisor;
+                $cs->promisor = null;
+                $promisor->fail(new \DomainException(sprintf(
                     "Invalid promisifier yield of type %s; Promise|null expected",
                     is_object($promise) ? get_class($promise) : gettype($promise)
                 )));
                 return;
             }
         } else {
-            $cs->promisor->fail(new \DomainException(
+            $promisor = $cs->promisor;
+            $cs->promisor = null;
+            $promisor->fail(new \DomainException(
                 __generateYieldError($cs->generator, $key, $yielded)
             ));
             return;
@@ -541,7 +547,12 @@ function __coroutineAdvance($cs) {
         $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
 
     } catch (\Exception $uncaught) {
-        $cs->promisor->fail($uncaught);
+        if ($promisor = $cs->promisor) {
+            $cs->promisor = null;
+            $promisor->fail($uncaught);
+        } else {
+            throw new \Exception("", 0, $uncaught);
+        }
     }
 }
 
@@ -563,7 +574,10 @@ function __coroutineSend($error, $result, $cs) {
         }
         __coroutineAdvance($cs);
     } catch (\Exception $uncaught) {
-        $cs->promisor->fail($uncaught);
+        if ($promisor = $cs->promisor) {
+            $cs->promisor = null;
+            $promisor->fail($uncaught);
+        }
     }
 }
 
