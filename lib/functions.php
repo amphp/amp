@@ -495,9 +495,8 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
     $cs->promisor = new Deferred;
     $cs->generator = $generator;
     $cs->promisifier = $promisifier;
-    $cs->currentPromise = null;
     $cs->returnValue = null;
-
+    $cs->currentPromise = null;
     __coroutineAdvance($cs);
 
     return $cs->promisor->promise();
@@ -506,14 +505,10 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
 function __coroutineAdvance($cs) {
     try {
         if (!$cs->generator->valid()) {
-            $promisor = $cs->promisor;
-            $cs->promisor = null;
-            $promisor->succeed($cs->returnValue);
+            $cs->promisor->succeed($cs->returnValue);
             return;
         }
-
         $yielded = $cs->generator->current();
-
         if (!isset($yielded)) {
             // nothing to do ... jump to the end
         } elseif (($key = $cs->generator->key()) === "return") {
@@ -523,37 +518,33 @@ function __coroutineAdvance($cs) {
         } elseif ($yielded instanceof Streamable) {
             $cs->currentPromise = resolve($yielded->buffer(), $cs->reactor);
         } elseif ($cs->promisifier) {
-            $promise = call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
-            if ($promise instanceof Promise) {
-                $cs->currentPromise = $promise;
-            } else {
-                $promisor = $cs->promisor;
-                $cs->promisor = null;
-                $promisor->fail(new \DomainException(sprintf(
-                    "Invalid promisifier yield of type %s; Promise|null expected",
-                    is_object($promise) ? get_class($promise) : gettype($promise)
-                )));
-                return;
-            }
+            __coroutineCustomPromisify($cs, $key, $yielded);
         } else {
             $promisor = $cs->promisor;
             $cs->promisor = null;
-            $promisor->fail(new \DomainException(sprintf(
-                "Unexpected Generator yield (Promise|null expected); %s yielded at key %s",
-                is_object($yielded) ? get_class($yielded) : gettype($yielded)
-            )));
+            $promisor->fail(new \DomainException(
+                __generateYieldError($key, $yielded)
+            ));
             return;
         }
-
         $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-
     } catch (\Exception $uncaught) {
         if ($promisor = $cs->promisor) {
             $cs->promisor = null;
             $promisor->fail($uncaught);
-        } else {
-            throw new \Exception("", 0, $uncaught);
         }
+    }
+}
+
+function __coroutineCustomPromisify($cs, $key, $yielded) {
+    $promise = call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
+    if ($promise instanceof Promise) {
+        $cs->currentPromise = $promise;
+    } else {
+        throw new \DomainException(sprintf(
+            "Invalid promisifier yield of type %s; Promise|null expected",
+            is_object($promise) ? get_class($promise) : gettype($promise)
+        ));
     }
 }
 
@@ -578,8 +569,14 @@ function __coroutineSend($error, $result, $cs) {
         if ($promisor = $cs->promisor) {
             $cs->promisor = null;
             $promisor->fail($uncaught);
-        } else {
-            throw new \Exception("", 0, $uncaught);
         }
     }
+}
+
+function __generateYieldError(\Generator $generator, $key, $yielded) {
+    return sprintf(
+        "Unexpected Generator yield (Promise|null expected); %s yielded at key %s",
+        (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
+        $key
+    );
 }
