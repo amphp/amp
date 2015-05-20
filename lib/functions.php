@@ -290,7 +290,8 @@ function map(array $promises, callable $functor): Promise {
         }
         $struct->remaining--;
         try {
-            $struct->results[$key] = call_user_func($struct->functor, $result);
+            $functor = $struct->functor;
+            $struct->results[$key] = $functor($result);
         } catch (\Exception $e) {
             $struct->remaining = 0;
             $struct->promisor->fail($e);
@@ -307,7 +308,8 @@ function map(array $promises, callable $functor): Promise {
         } else {
             $struct->remaining--;
             try {
-                $struct->results[$key] = call_user_func($struct->functor, $promise);
+                $functor = $struct->functor;
+                $struct->results[$key] = $functor($promise);
             } catch (\Exception $e) {
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
@@ -356,7 +358,8 @@ function filter(array $promises, callable $functor): Promise {
         }
         $struct->remaining--;
         try {
-            if (call_user_func($struct->functor, $result)) {
+            $functor = $struct->functor;
+            if ($functor($result)) {
                 $struct->results[$key] = $result;
             }
         } catch (\Exception $e) {
@@ -375,7 +378,8 @@ function filter(array $promises, callable $functor): Promise {
         } else {
             $struct->remaining--;
             try {
-                if (call_user_func($struct->functor, $promise)) {
+                $functor = $struct->functor;
+                if ($functor($promise)) {
                     $struct->results[$key] = $promise;
                 }
             } catch (\Exception $e) {
