@@ -20,12 +20,12 @@ require __DIR__ . '/../vendor/autoload.php';
 define('RUN_TIME', 10);
 printf("Each line you type will be echoed back for the next %d seconds ...\n\n", RUN_TIME);
 
-Amp\run(function() {
+Amp\run(function($reactor) {
     // Set the STDIN stream to "non-blocking" mode
     stream_set_blocking(STDIN, false);
 
     // Echo back the line each time there is readable data on STDIN
-    Amp\onReadable(STDIN, function() {
+    $reactor->onReadable(STDIN, function() {
         if ($line = fgets(STDIN)) {
             echo "INPUT> ", $line, "\n";
         }
@@ -33,11 +33,11 @@ Amp\run(function() {
 
     // Countdown RUN_TIME seconds then end the event loop
     $secondsRemaining = RUN_TIME;
-    Amp\repeat(function() use (&$secondsRemaining) {
+    $reactor->repeat(function() use (&$secondsRemaining) {
         if (--$secondsRemaining > 0) {
             echo "$secondsRemaining seconds to shutdown\n";
         } else {
-            Amp\stop(); // <-- explicitly stop the loop
+            $reactor->stop(); // <-- explicitly stop the loop
         }
     }, $msInterval = 1000);
 });
