@@ -538,9 +538,10 @@ function __coroutineAdvance($cs) {
         } else {
             $promisor = $cs->promisor;
             $cs->promisor = null;
-            $promisor->fail(new \DomainException(
-                __generateYieldError($cs->generator, $key, $yielded)
-            ));
+            $promisor->fail(new \DomainException(sprintf(
+                "Unexpected Generator yield (Promise|null expected); %s yielded at key %s",
+                is_object($yielded) ? get_class($yielded) : gettype($yielded)
+            )));
             return;
         }
 
@@ -579,20 +580,4 @@ function __coroutineSend($error, $result, $cs) {
             $promisor->fail($uncaught);
         }
     }
-}
-
-function __generateYieldError(\Generator $generator, $key, $yielded) {
-    $reflectionGen = new \ReflectionGenerator($generator);
-    $executingGen = $reflectionGen->getExecutingGenerator();
-    if ($isSubgenerator = ($executingGen !== $generator)) {
-        $reflectionGen = new \ReflectionGenerator($executingGen);
-    }
-
-    return sprintf(
-        "Unexpected Generator yield (Promise|null expected); %s yielded at key %s on line %s in %s",
-        (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
-        $key,
-        $reflectionGen->getExecutingLine(),
-        $reflectionGen->getExecutingFile()
-    );
 }
