@@ -523,7 +523,7 @@ function __coroutineAdvance($cs) {
             $promisor = $cs->promisor;
             $cs->promisor = null;
             $promisor->fail(new \DomainException(
-                __generateYieldError($key, $yielded)
+                __coroutineYieldError($key, $yielded)
             ));
             return;
         }
@@ -573,7 +573,7 @@ function __coroutineSend($error, $result, $cs) {
     }
 }
 
-function __generateYieldError(\Generator $generator, $key, $yielded) {
+function __coroutineYieldError(\Generator $generator, $key, $yielded) {
     return sprintf(
         "Unexpected Generator yield (Promise|null expected); %s yielded at key %s",
         (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
