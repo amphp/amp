@@ -3,10 +3,10 @@
 namespace Amp;
 
 class PromiseStream implements Streamable {
-    const NOTIFY = 0b000;
-    const WAIT   = 0b001;
-    const ERROR  = 0b010;
-    const DONE   = 0b100;
+    const NOTIFY = 0;
+    const WAIT   = 1;
+    const ERROR  = 2;
+    const DONE   = 3;
 
     private $promisors;
     private $index = 0;
