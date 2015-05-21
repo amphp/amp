@@ -523,7 +523,7 @@ function __coroutineAdvance($cs) {
             $promisor = $cs->promisor;
             $cs->promisor = null;
             $promisor->fail(new \DomainException(
-                __generateYieldError($cs->generator, $key, $yielded)
+                __coroutineYieldError($cs->generator, $key, $yielded)
             ));
             return;
         }
@@ -573,7 +573,7 @@ function __coroutineSend($error, $result, $cs) {
     }
 }
 
-function __generateYieldError(\Generator $generator, $key, $yielded): string {
+function __coroutineYieldError(\Generator $generator, $key, $yielded): string {
     $reflectionGen = new \ReflectionGenerator($generator);
     $executingGen = $reflectionGen->getExecutingGenerator();
     if ($isSubgenerator = ($executingGen !== $generator)) {
