@@ -3,32 +3,22 @@
 namespace Amp;
 
 class PromiseStream implements Streamable {
-    const NOTIFY = 0;
-    const WAIT   = 1;
-    const ERROR  = 2;
-    const DONE   = 3;
-
     private $promisors;
     private $index = 0;
-    private $state;
 
     /**
      * @param \Amp\Promise $watchedPromise
      */
     public function __construct(Promise $watchedPromise) {
-        $this->state = self::WAIT;
         $this->promisors[] = new Deferred;
         $watchedPromise->watch(function($data) {
-            $this->state = self::NOTIFY;
             $this->promisors[$this->index + 1] = new Deferred;
             $this->promisors[$this->index++]->succeed($data);
         });
         $watchedPromise->when(function($error, $result) {
             if ($error) {
-                $this->state = self::ERROR;
                 $this->promisors[$this->index]->fail($error);
             } else {
-                $this->state = self::DONE;
                 $this->promisors[$this->index]->succeed();
             }
         });
@@ -48,23 +38,7 @@ class PromiseStream implements Streamable {
         while ($this->promisors) {
             $key = key($this->promisors);
             yield $this->promisors[$key]->promise();
-            switch ($this->state) {
-                case self::NOTIFY:
-                    $this->state = self::WAIT;
-                    unset($this->promisors[$key]);
-                    break;
-                case self::WAIT:
-                    throw new \LogicException(
-                        "Cannot advance stream: previous Promise not yet resolved"
-                    );
-                    break;
-                case self::DONE:
-                    return;
-                case self::ERROR:
-                    throw new \LogicException(
-                        "Cannot advance stream: subject Promise failed"
-                    );
-            }
+            unset($this->promisors[$key]);
         }
     }
 
