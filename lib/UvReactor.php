@@ -409,14 +409,6 @@ class UvReactor implements SignalReactor {
                     break;
             }
         }
-
-        if (PHP_MAJOR_VERSION < 7) {
-            $this->garbage[] = $watcher;
-            if (!$this->isGcScheduled) {
-                uv_timer_start($this->gcWatcher, 250, 0, $this->gcCallback);
-                $this->isGcScheduled = true;
-            }
-        }
     }
 
     private function clearPollFromWatcher($watcher) {
