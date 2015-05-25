@@ -294,8 +294,8 @@ class NativeReactor implements Reactor {
      */
     public function repeat(callable $callback, int $msInterval, array $options = []): string {
         assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
-        $msDelay = $options["msDelay"] ?? $msInterval;
-        assert(($msDelay >= 0), "msDelay option expects integer >= 0");
+        $msDelay = $options["ms_delay"] ?? $msInterval;
+        assert(($msDelay >= 0), "ms_delay option expects integer >= 0");
 
         $watcher = new class extends Watcher {
             // Inherited:
