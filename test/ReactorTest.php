@@ -398,13 +398,14 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
     public function testOptionalRepeatWatcherDelay() {
         $reactor = $this->getReactor();
-        $watcherId = $reactor->repeat(function($reactor, $watcherId) {
+        $invoked = false;
+        $reactor->repeat(function($reactor, $watcherId) use (&$invoked) {
+            $invoked = true;
             $reactor->cancel($watcherId);
         }, $msInterval = 10000, $options = ["ms_delay" => 1]);
-        $startTime = time();
+        $reactor->once([$reactor, "stop"], 50);
         $reactor->run();
-        $endTime = time();
-        $this->assertTrue(($endTime - $startTime) < $msInterval);
+        $this->assertTrue($invoked);
     }
 
     public function testOptionalDisable() {
