@@ -77,7 +77,7 @@ class UvReactor implements SignalReactor {
                 if ($result instanceof \Generator) {
                     resolve($result, $this)->when($this->onCoroutineResolution);
                 }
-            } catch (\Exception $e) {
+            } catch (\BaseException $e) {
                 $this->onCallbackError($e);
             }
 
@@ -206,13 +206,13 @@ class UvReactor implements SignalReactor {
                 if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcherId])) {
                     $this->clearWatcher($watcherId);
                 }
-            } catch (\Exception $e) {
+            } catch (\BaseException $e) {
                 $this->onCallbackError($e);
             }
         };
     }
 
-    private function onCallbackError(\Exception $e) {
+    private function onCallbackError(\BaseException $e) {
         if (empty($this->onError)) {
             $this->stopException = $e;
             $this->stop();
@@ -221,10 +221,10 @@ class UvReactor implements SignalReactor {
         }
     }
 
-    private function tryUserErrorCallback(\Exception $e) {
+    private function tryUserErrorCallback(\BaseException $e) {
         try {
             call_user_func($this->onError, $e);
-        } catch (\Exception $e) {
+        } catch (\BaseException $e) {
             $this->stopException = $e;
             $this->stop();
         }
@@ -334,7 +334,7 @@ class UvReactor implements SignalReactor {
             if ($result instanceof \Generator) {
                 resolve($result, $this)->when($this->onCoroutineResolution);
             }
-        } catch (\Exception $e) {
+        } catch (\BaseException $e) {
             $this->onCallbackError($e);
         }
     }
@@ -369,7 +369,7 @@ class UvReactor implements SignalReactor {
                 if ($result instanceof \Generator) {
                     resolve($result, $this)->when($this->onCoroutineResolution);
                 }
-            } catch (\Exception $e) {
+            } catch (\BaseException $e) {
                 $this->onCallbackError($e);
             }
         };

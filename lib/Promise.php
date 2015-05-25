@@ -12,7 +12,7 @@ interface Promise {
      * Implementations MUST invoke the $func callback in error-first style, e.g.:
      *
      *     <?php
-     *     $promise->when(function(\Exception $error = null, $result = null) {
+     *     $promise->when(function(\BaseException $error = null, $result = null) {
      *         if ($error) {
      *             // failed
      *         } else {

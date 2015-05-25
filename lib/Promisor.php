@@ -32,7 +32,7 @@ namespace Amp;
 interface Promisor {
     /**
      * Promise deferred fulfillment via a temporary placeholder value
-     * 
+     *
      * @return \Amp\Promise
      */
     public function promise(): Promise;
@@ -56,7 +56,8 @@ interface Promisor {
     /**
      * Resolve the promised value as a failure
      *
+     * @param \BaseException $error
      * @return void
      */
-    public function fail(\Exception $error);
+    public function fail(\BaseException $error);
 }

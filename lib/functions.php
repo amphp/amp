@@ -292,7 +292,7 @@ function map(array $promises, callable $functor): Promise {
         try {
             $functor = $struct->functor;
             $struct->results[$key] = $functor($result);
-        } catch (\Exception $e) {
+        } catch (\BaseException $e) {
             $struct->remaining = 0;
             $struct->promisor->fail($e);
             return;
@@ -310,7 +310,7 @@ function map(array $promises, callable $functor): Promise {
             try {
                 $functor = $struct->functor;
                 $struct->results[$key] = $functor($promise);
-            } catch (\Exception $e) {
+            } catch (\BaseException $e) {
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
             }
@@ -362,7 +362,7 @@ function filter(array $promises, callable $functor): Promise {
             if ($functor($result)) {
                 $struct->results[$key] = $result;
             }
-        } catch (\Exception $e) {
+        } catch (\BaseException $e) {
             $struct->remaining = 0;
             $struct->promisor->fail($e);
             return;
@@ -382,7 +382,7 @@ function filter(array $promises, callable $functor): Promise {
                 if ($functor($promise)) {
                     $struct->results[$key] = $promise;
                 }
-            } catch (\Exception $e) {
+            } catch (\BaseException $e) {
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
             }
@@ -406,7 +406,7 @@ function pipe($promise, callable $functor): Promise {
     if (!($promise instanceof Promise)) {
         try {
             return new Success($functor($promise));
-        } catch (\Exception $e) {
+        } catch (\BaseException $e) {
             return new Failure($e);
         }
     }
@@ -419,7 +419,7 @@ function pipe($promise, callable $functor): Promise {
         }
         try {
             $promisor->succeed($functor($result));
-        } catch (\Exception $error) {
+        } catch (\BaseException $error) {
             $promisor->fail($error);
         }
     });
@@ -440,7 +440,7 @@ function pipe($promise, callable $functor): Promise {
  *
  * @param \Amp\Promise $promise The promise on which to wait
  * @param \Amp\Reactor $reactor
- * @throws \Exception if the promise fails
+ * @throws \BaseException if the promise fails
  * @return mixed Returns the eventual resolution result for the specified promise
  */
 function wait(Promise $promise, Reactor $reactor = null) {
@@ -533,7 +533,7 @@ function __coroutineAdvance($cs) {
             return;
         }
         $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-    } catch (\Exception $uncaught) {
+    } catch (\BaseException $uncaught) {
         if ($cs->isResolved) {
             throw new \RuntimeException("", 0, $uncaught);
         } else {
@@ -572,7 +572,7 @@ function __coroutineSend($error, $result, $cs) {
             $cs->generator->send($result);
         }
         __coroutineAdvance($cs);
-    } catch (\Exception $uncaught) {
+    } catch (\BaseException $uncaught) {
         if ($cs->isResolved) {
             throw new \RuntimeException("", 0, $uncaught);
         } else {

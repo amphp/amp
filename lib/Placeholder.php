@@ -55,7 +55,7 @@ trait Placeholder {
         }
     }
 
-    private function resolve(\Exception $error = null, $result = null) {
+    private function resolve(\BaseException $error = null, $result = null) {
         if ($this->isResolved) {
             throw new \LogicException(
                 "Promise already resolved"

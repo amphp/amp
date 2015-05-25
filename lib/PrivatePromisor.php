@@ -56,10 +56,10 @@ trait PrivatePromisor {
     /**
      * Resolve the associated promise placeholder as a failure
      *
-     * @param \Exception $error
+     * @param \BaseException $error
      * @return void
      */
-    public function fail(\Exception $error) {
+    public function fail(\BaseException $error) {
         $this->resolver->call($this->promise, $isUpdate = false, $error, $result = null);
     }
 }

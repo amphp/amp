@@ -48,10 +48,10 @@ trait PublicPromisor {
     /**
      * Resolve the promised value as a failure
      *
-     * @param \Exception $error
+     * @param \BaseException $error
      * @return void
      */
-    public function fail(\Exception $error) {
+    public function fail(\BaseException $error) {
         $this->resolve($error, $result = null);
     }
 }

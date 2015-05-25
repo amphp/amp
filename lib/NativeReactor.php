@@ -160,9 +160,8 @@ class NativeReactor implements Reactor {
                 $this->executeTimers();
             }
             $this->isTicking = false;
-        } catch (\Exception $error) {
-            $errorHandler = $this->onCoroutineResolution;
-            $errorHandler($error);
+        } catch (\BaseException $uncaught) {
+            ($this->onCoroutineResolution)($uncaught);
         }
     }
 

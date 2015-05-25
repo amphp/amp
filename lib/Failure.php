@@ -8,7 +8,7 @@ namespace Amp;
 class Failure implements Promise {
     private $error;
 
-    public function __construct(\Exception $error) {
+    public function __construct(\BaseException $error) {
         $this->error = $error;
     }
 
