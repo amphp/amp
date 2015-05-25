@@ -131,16 +131,13 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
 
     public function testRunExecutesEventsUntilExplicitlyStopped() {
         $reactor = $this->getReactor();
-
         $increment = 0;
-
-        $reactor->repeat(function() use (&$increment, $reactor) {
-            if ($increment < 10) {
-                $increment++;
-            } else {
-                $reactor->stop();
+        $reactor->repeat(function($reactor, $watcherId) use (&$increment) {
+            $increment++;
+            if ($increment === 10) {
+                $reactor->cancel($watcherId);
             }
-        }, $msInterval = 1);
+        }, $msInterval = 5);
 
         $reactor->run();
 

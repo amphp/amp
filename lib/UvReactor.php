@@ -200,7 +200,7 @@ class UvReactor implements SignalReactor {
         $isRepeating = ($msInterval !== -1);
 
         $watcher->id = $watcherId = $this->lastWatcherId++;
-        $watcher->type = ($isRepeating) ? Watcher::TIMER_ONCE : Watcher::TIMER_REPEAT;
+        $watcher->type = ($isRepeating) ? Watcher::TIMER_REPEAT : Watcher::TIMER_ONCE;
         $watcher->uvHandle = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
         $watcher->callbackData = $options["cb_data"] ?? null;
@@ -338,7 +338,6 @@ class UvReactor implements SignalReactor {
             public $writers = [];
             public $disable = [];
         };
-        $this->streamIdPollMap[$streamId] = $poll;
 
         $poll->flags = 0;
         $poll->handle = $pollInitFunc($this->loop, $stream);
@@ -355,7 +354,7 @@ class UvReactor implements SignalReactor {
             }
         };
 
-        return $poll;
+        return $this->streamIdPollMap[$streamId] = $poll;
     }
 
     private function chooseWindowsPollingFunction($stream): string {

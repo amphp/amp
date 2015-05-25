@@ -501,6 +501,8 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
     $cs->promisifier = $promisifier;
     $cs->returnValue = null;
     $cs->currentPromise = null;
+    $cs->isResolved = false;
+
     __coroutineAdvance($cs);
 
     return $cs->promisor->promise();
@@ -524,18 +526,19 @@ function __coroutineAdvance($cs) {
         } elseif ($cs->promisifier) {
             __coroutineCustomPromisify($cs, $key, $yielded);
         } else {
-            $promisor = $cs->promisor;
-            $cs->promisor = null;
-            $promisor->fail(new \DomainException(
+            $cs->isResolved = true;
+            $cs->promisor->fail(new \DomainException(
                 __coroutineYieldError($cs->generator, $key, $yielded)
             ));
             return;
         }
         $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
     } catch (\Exception $uncaught) {
-        if ($promisor = $cs->promisor) {
-            $cs->promisor = null;
-            $promisor->fail($uncaught);
+        if ($cs->isResolved) {
+            throw new \RuntimeException("", 0, $uncaught);
+        } else {
+            $cs->isResolved = true;
+            $cs->promisor->fail($uncaught);
         }
     }
 }
@@ -570,9 +573,11 @@ function __coroutineSend($error, $result, $cs) {
         }
         __coroutineAdvance($cs);
     } catch (\Exception $uncaught) {
-        if ($promisor = $cs->promisor) {
-            $cs->promisor = null;
-            $promisor->fail($uncaught);
+        if ($cs->isResolved) {
+            throw new \RuntimeException("", 0, $uncaught);
+        } else {
+            $cs->isResolved = true;
+            $cs->promisor->fail($uncaught);
         }
     }
 }
