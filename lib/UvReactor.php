@@ -196,7 +196,7 @@ class UvReactor implements SignalReactor {
 
         $watcher = new \StdClass;
         $watcher->id = $watcherId = $this->lastWatcherId++;
-        $watcher->type = ($isRepeating) ? Watcher::TIMER_ONCE : Watcher::TIMER_REPEAT;
+        $watcher->type = ($isRepeating) ? Watcher::TIMER_REPEAT : Watcher::TIMER_ONCE;
         $watcher->uvHandle = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
         $watcher->callbackData = @$options["cb_data"];
@@ -242,7 +242,7 @@ class UvReactor implements SignalReactor {
         }
     }
 
-    private tryUserErrorCallback(\Exception $e) {
+    private function tryUserErrorCallback(\Exception $e) {
         try {
             call_user_func($this->onError, $e);
         } catch (\Exception $e) {
@@ -318,26 +318,27 @@ class UvReactor implements SignalReactor {
             : 'uv_poll_init';
 
         $streamId = (int) $stream;
-
-        return $this->streamIdPollMap[$streamId] = (object) [
-            "readers" = [],
-            "writers" = [],
-            "disable" = [],
-            "flags" => 0,
-            "handle" => $pollInitFunc($this->loop, $stream),
-            "callback" => function($uvHandle, $stat, $events) use ($poll) {
-                if ($events & \UV::READABLE) {
-                    foreach ($poll->readers as $watcher) {
-                        $this->invokePollWatcher($watcher);
-                    }
-                }
-                if ($events & \UV::WRITABLE) {
-                    foreach ($poll->writers as $watcher) {
-                        $this->invokePollWatcher($watcher);
-                    }
+        
+        $poll = new \StdClass;
+        $poll->readers = [];
+        $poll->writers = [];
+        $poll->disable = [];
+        $poll->flags = 0;
+        $poll->handle = \call_user_func($pollInitFunc, $this->loop, $stream);
+        $poll->callback = function($uvHandle, $stat, $events) use ($poll) {
+            if ($events & \UV::READABLE) {
+                foreach ($poll->readers as $watcher) {
+                    $this->invokePollWatcher($watcher);
                 }
             }
-        ];
+            if ($events & \UV::WRITABLE) {
+                foreach ($poll->writers as $watcher) {
+                    $this->invokePollWatcher($watcher);
+                }
+            }
+        };
+
+        return $this->streamIdPollMap[$streamId] = $poll;
     }
 
     private function chooseWindowsPollingFunction($stream) {
