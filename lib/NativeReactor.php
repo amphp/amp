@@ -221,15 +221,18 @@ class NativeReactor implements Reactor {
                 resolve($result, $this)->when($this->onCoroutineResolution);
             }
 
-            if ($watcher->type === Watcher::TIMER_REPEAT && $watcher->isEnabled) {
-                $this->isTimerSortNeeded = true;
-                $watcher->nextExecutionAt = $now + $watcher->msInterval;
-                $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
-            } else {
+            if ($watcher->type === Watcher::TIMER_ONCE) {
                 unset(
                     $this->watchers[$watcherId],
                     $this->timerOrder[$watcherId]
                 );
+                continue;
+            } elseif ($watcher->isEnabled) {
+                $this->isTimerSortNeeded = true;
+                $watcher->nextExecutionAt = $now + $watcher->msInterval;
+                $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
+            } else {
+                unset($this->timerOrder[$watcherId]);
             }
         }
     }
@@ -381,7 +384,10 @@ class NativeReactor implements Reactor {
      */
     public function cancel(string $watcherId) {
         $this->disable($watcherId);
-        unset($this->watchers[$watcherId]);
+        unset(
+            $this->watchers[$watcherId],
+            $this->timerOrder[$watcherId]
+        );
     }
 
     /**
