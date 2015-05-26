@@ -537,8 +537,11 @@ function __coroutineAdvance($cs) {
         if ($cs->isResolved) {
             throw new \RuntimeException("", 0, $uncaught);
         } else {
+            // This line is necessary in case the first Generator::current() throws
+            $cs->currentPromise = $cs->currentPromise ?? $cs->promisor->promise();
             $cs->isResolved = true;
             $cs->promisor->fail($uncaught);
+            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         }
     }
 }
