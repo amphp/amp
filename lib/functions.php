@@ -471,8 +471,8 @@ function wait(Promise $promise, Reactor $reactor = null) {
  * @return callable Returns the wrapped callable
  */
 function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null) {
-    return function($data) use ($func, $reactor, $promisifier) {
-        $result = $func($data);
+    return function() use ($func, $reactor, $promisifier) {
+        $result = \call_user_func_array($func, func_get_args());
         return ($result instanceof \Generator)
             ? resolve($result, $reactor, $promisifier)
             : $result;
