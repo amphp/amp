@@ -32,7 +32,7 @@ namespace Amp;
 interface Promisor {
     /**
      * Promise deferred fulfillment via a temporary placeholder value
-     * 
+     *
      * @return \Amp\Promise
      */
     public function promise();
@@ -40,7 +40,11 @@ interface Promisor {
     /**
      * Update watchers of progress resolving the promised value
      *
-     * @param mixed $progress
+     * Implementations must support variadic argument passing to update
+     * even though 5.5-compatibility prevents us from specifying it as
+     * part of the API.
+     *
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
     public function update($progress);

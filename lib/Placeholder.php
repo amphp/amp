@@ -50,8 +50,11 @@ trait Placeholder {
             );
         }
 
+        $baseArgs = func_get_args();
         foreach ($this->watchers as $watcher) {
-            call_user_func($watcher[0], $progress, $watcher[1]);
+            $args = $baseArgs;
+            $args[] = $watcher[1];
+            \call_user_func_array($watcher[0], $args);
         }
     }
 

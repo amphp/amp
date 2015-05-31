@@ -20,7 +20,7 @@ trait PublicPromisor {
     /**
      * Update watchers of progress resolving the promised value
      *
-     * @param mixed $progress
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
     public function update($progress) {
@@ -30,8 +30,11 @@ trait PublicPromisor {
             );
         }
 
+        $baseArgs = func_get_args();
         foreach ($this->watchers as $watcher) {
-            call_user_func($watcher[0], $progress, $watcher[1]);
+            $args = $baseArgs;
+            $args[] = $watcher[1];
+            \call_user_func_array($watcher[0], $args);
         }
     }
 

@@ -20,7 +20,7 @@ trait PrivatePromisor {
         };
         $updater = function($progress) {
             // bound to private PrivatePlaceholder::update()
-            $this->update($progress);
+            \call_user_func_array([$this, "update"], func_get_args());
         };
         $this->resolver = $resolver->bindTo($placeholder, $placeholder);
         $this->updater = $updater->bindTo($placeholder, $placeholder);
@@ -39,11 +39,11 @@ trait PrivatePromisor {
     /**
      * Update watchers of progress resolving the promised value
      *
-     * @param mixed $progress
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
     public function update($progress) {
-        call_user_func($this->updater, $progress);
+        \call_user_func_array($this->updater, func_get_args());
     }
 
     /**
