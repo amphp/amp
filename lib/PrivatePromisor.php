@@ -15,10 +15,10 @@ trait PrivatePromisor {
         $this->promise = new PrivatePlaceholder;
         $this->resolver = function(bool $isUpdate, ...$args) {
             if ($isUpdate) {
-                // bound to private Unresolved::update() at call-time
-                $this->update($args[0]);
+                // bound to private PrivatePlaceholder::update() at call-time
+                $this->update(...$args);
             } else {
-                // bound to private Unresolved::resolve() at call-time
+                // bound to private PrivatePlaceholder::resolve() at call-time
                 $this->resolve($args[0], $args[1]);
             }
         };
@@ -36,11 +36,11 @@ trait PrivatePromisor {
     /**
      * Update subscribers of progress resolving the promised value
      *
-     * @param mixed $data
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
-    public function update($data) {
-        $this->resolver->call($this->promise, $isUpdate = true, $data);
+    public function update(...$data) {
+        $this->resolver->call($this->promise, $isUpdate = true, ...$data);
     }
 
     /**

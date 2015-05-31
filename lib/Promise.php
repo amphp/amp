@@ -39,7 +39,7 @@ interface Promise {
      * Implementations MUST return the current object instance.
      *
      * @param callable $func A callback to invoke when data updates are available
-     * @param mixed $data Optional data to pass as a second parameter to $func
+     * @param mixed $data Optional data to pass as an additional parameter to $func
      * @return void
      */
     public function watch(callable $func, $data = null);

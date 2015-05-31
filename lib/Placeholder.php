@@ -43,15 +43,18 @@ trait Placeholder {
         }
     }
 
-    private function update($progress) {
+    private function update(...$progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 "Cannot update resolved promise"
             );
         }
 
+        $baseArgs = $progress;
         foreach ($this->watchers as $watcher) {
-            ($watcher[0])($progress, $watcher[1]);
+            $args = $baseArgs;
+            $args[] = $watcher[1];
+            ($watcher[0])(...$args);
         }
     }
 

@@ -20,18 +20,21 @@ trait PublicPromisor {
     /**
      * Update watchers of progress resolving the promised value
      *
-     * @param mixed $progress
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
-    public function update($progress) {
+    public function update(...$progress) {
         if ($this->isResolved) {
             throw new \LogicException(
                 'Cannot update resolved promise'
             );
         }
 
+        $baseArgs = $progress;
         foreach ($this->watchers as $watcher) {
-            ($watcher[0])($progress, $watcher[1]);
+            $args = $baseArgs;
+            $args[] = $watcher[1];
+            ($watcher[0])(...$args);
         }
     }
 

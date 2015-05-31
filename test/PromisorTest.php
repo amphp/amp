@@ -116,4 +116,27 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame(6, $updatable);
     }
+
+    public function testUpdateVariadicArgs() {
+        $updates = new \StdClass;
+        $updates->arr = [];
+
+        $promisor = $this->getPromisor();
+        $promise = $promisor->promise();
+        $promise->watch(function($arg1, $arg2, $arg3) use ($updates) {
+            $updates->arr[] = func_get_args();
+        }, "cb_data");
+
+        $promisor->update(1, "foo");
+        $promisor->update(2, "bar");
+        $promisor->update(3, "baz");
+
+        $expected = [
+            [1, "foo", "cb_data"],
+            [2, "bar", "cb_data"],
+            [3, "baz", "cb_data"],
+        ];
+
+        $this->assertSame($expected, $updates->arr);
+    }
 }

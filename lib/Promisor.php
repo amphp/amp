@@ -40,10 +40,10 @@ interface Promisor {
     /**
      * Update watchers with progress data while resolving the promised value
      *
-     * @param mixed $data
+     * @param mixed $progress1, $progress2, ... $progressN
      * @return void
      */
-    public function update($data);
+    public function update(...$progress);
 
     /**
      * Resolve the promised value as a success
