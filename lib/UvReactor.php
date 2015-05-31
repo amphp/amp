@@ -402,10 +402,8 @@ class UvReactor implements SignalReactor {
                     unset($this->immediates[$watcherId]);
                     break;
                 case Watcher::TIMER_ONCE:
-                    // we don't have to actually stop once timers
-                    break;
-                default:
-                    uv_timer_stop($watcher->uvHandle);
+                case Watcher::TIMER_REPEAT:
+                    @uv_timer_stop($watcher->uvHandle);
                     break;
             }
         }
