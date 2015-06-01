@@ -448,7 +448,6 @@ function timeout(Promise $promise, $msTimeout, Reactor $reactor = null) {
         if ($resolved) {
             return;
         }
-
         $reactor->cancel($watcherId);
         if ($error) {
             $promisor->fail($error);

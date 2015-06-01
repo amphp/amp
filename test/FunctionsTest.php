@@ -167,7 +167,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise resolution timed out
      */
     public function testTimeout() {
-        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+        (new NativeReactor)->run(function($reactor) {
             $pause = new \Amp\Pause(1000, $reactor);
             yield \Amp\timeout($pause, 10, $reactor);
         });
