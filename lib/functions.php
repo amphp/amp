@@ -428,6 +428,43 @@ function pipe($promise, callable $functor): Promise {
 }
 
 /**
+ * Create an artificial timeout for any Promise instance
+ *
+ * If the timeout expires prior to promise resolution the returned
+ * promise is failed.
+ *
+ * @param \Amp\Promise $promise The promise to which the timeout applies
+ * @param int $msTimeout The timeout in milliseconds
+ * @param \Amp\Reactor $reactor Optional reactor instance -- defaults to the global reactor
+ * @return \Amp\Promise
+ */
+function timeout(Promise $promise, int $msTimeout, Reactor $reactor = null): Promise {
+    $reactor = $reactor ?: reactor();
+    $resolved = false;
+    $promisor = new Deferred;
+    $watcherId = $reactor->once(function() use ($promisor, &$resolved) {
+        $resolved = true;
+        $promisor->fail(new \RuntimeException(
+            "Promise resolution timed out"
+        ));
+    }, $msTimeout);
+    $promise->when(function($error = null, $result = null) use ($reactor, $promisor, $watcherId, $resolved) {
+        if ($resolved) {
+            return;
+        }
+
+        $reactor->cancel($watcherId);
+        if ($error) {
+            $promisor->fail($error);
+        } else {
+            $promisor->succeed($result);
+        }
+    });
+
+    return $promisor->promise();
+}
+
+/**
  * Block script execution indefinitely until the specified Promise resolves
  *
  * In the event of promise failure this method will throw the exception responsible for the failure.

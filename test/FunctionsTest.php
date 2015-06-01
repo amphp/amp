@@ -198,6 +198,17 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Promise resolution timed out
+     */
+    public function testTimeout() {
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $pause = new \Amp\Pause(1000, $reactor);
+            yield \Amp\timeout($pause, 10, $reactor);
+        });
+    }
+
     public function testAllCombinatorResolution() {
         $invoked = 0;
         (new NativeReactor)->run(function($reactor) use (&$invoked) {
