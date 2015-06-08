@@ -14,7 +14,7 @@ trait PrivatePromisor {
 
     public function __construct() {
         $placeholder = new PrivatePlaceholder;
-        $resolver = function(\Exception $error = null, $result = null) {
+        $resolver = function($error = null, $result = null) {
             // bound to private PrivatePlaceholder::resolve()
             $this->resolve($error, $result);
         };
@@ -53,16 +53,21 @@ trait PrivatePromisor {
      * @return void
      */
     public function succeed($result = null) {
-        call_user_func($this->resolver, $error = null, $result);
+        \call_user_func($this->resolver, $error = null, $result);
     }
 
     /**
      * Resolve the associated promise placeholder as a failure
      *
-     * @param \Exception $error
+     * The error parameter used to fail a promisor must always be an exception
+     * instance. However, we cannot typehint this parameter in environments
+     * where PHP5.x compatibility is required because PHP7 BaseException
+     * instances will break the typehint.
+     *
+     * @param mixed $error An Exception or BaseException in PHP7 environments
      * @return void
      */
-    public function fail(\Exception $error) {
-        call_user_func($this->resolver, $error, $result = null);
+    public function fail($error) {
+        \call_user_func($this->resolver, $error, $result = null);
     }
 }
