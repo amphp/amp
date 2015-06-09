@@ -303,4 +303,24 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $result = (yield new PromiseStream($promisor->promise()));
         });
     }
+
+    public function testPromisesNormalization() {
+        $completed = false;
+        (new NativeReactor)->run(function($reactor) use (&$completed) {
+            $promisor = new Deferred;
+            $promisor->succeed(41);
+            $values = [
+                $promisor,
+                42,
+                new Success(43),
+            ];
+
+            list($a, $b, $c) = (yield \Amp\all(\Amp\promises($values)));
+            $this->assertSame(41, $a);
+            $this->assertSame(42, $b);
+            $this->assertSame(43, $c);
+            $completed = true;
+        });
+        $this->assertTrue($completed);
+    }
 }
