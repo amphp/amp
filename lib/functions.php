@@ -428,6 +428,26 @@ function pipe($promise, callable $functor): Promise {
 }
 
 /**
+ * Normalize an array of mixed values/Promises/Promisors to array<Promise>
+ *
+ * @param array $values
+ * @return array Returns an array of Promise instances
+ */
+function promises(array $values): array {
+    foreach ($values as $key => $value) {
+        if ($value instanceof Promise) {
+            continue;
+        } elseif ($value instanceof Promisor) {
+            $values[$key] = $value->promise();
+        } else {
+            $values[$key] = new Success($value);
+        }
+    }
+
+    return $values;
+}
+
+/**
  * Create an artificial timeout for any Promise instance
  *
  * If the timeout expires prior to promise resolution the returned
