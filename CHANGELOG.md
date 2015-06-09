@@ -1,10 +1,15 @@
 ### HEAD
 
+- Promisor::fail() no longer typehints \Exception for compatibility
+  with PHP7 \BaseException
 - Reactor watcher option "callback_data" renamed "cb_data"
 - Combinator functions optimized for performance
 - Amp\reactor() now accepts an optional assignment parameter for
   modifying the global default event reactor instance to allow for
   third-party Reactor implementations.
+- New functions:
+    . Amp\timeout()
+    . Amp\promises()
 - Renamed functions:
     . Amp\getReactor() -> Amp\reactor()
 - Removed functions:
