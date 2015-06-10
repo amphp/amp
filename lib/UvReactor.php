@@ -427,6 +427,8 @@ class UvReactor implements SignalReactor {
                     @uv_timer_stop($watcher->uvHandle);
                     break;
             }
+        } elseif ($watcher->type == Watcher::IO_READER || $watcher->type == Watcher::IO_WRITER) {
+            $this->clearPollFromWatcher($watcher);
         }
 
         if (PHP_MAJOR_VERSION < 7) {
