@@ -213,6 +213,10 @@ class NativeReactor implements Reactor {
             if ($executionCutoff > $now) {
                 break;
             }
+            if (!isset($this->watchers[$watcherId])) {
+                unset($this->timerOrder[$watcherId]);
+                continue;
+            }
 
             $watcher = $this->watchers[$watcherId];
 
