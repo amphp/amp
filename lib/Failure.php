@@ -8,7 +8,18 @@ namespace Amp;
 class Failure implements Promise {
     private $error;
 
-    public function __construct(\Exception $error) {
+    /**
+     * The error parameter used to fail a promisor must always be an exception
+     * instance. However, we cannot typehint this parameter in environments
+     * where PHP5.x compatibility is required because PHP7 BaseException
+     * instances will break the typehint.
+     */
+    public function __construct($error) {
+        if (!($error instanceof \Exception || $error instanceof \BaseException)) {
+            throw new \InvalidArgumentException(
+                "Only exceptions may be used to fail a promise"
+            );
+        }
         $this->error = $error;
     }
 
