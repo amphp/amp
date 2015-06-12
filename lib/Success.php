@@ -22,7 +22,8 @@ class Success implements Promise {
      * the specified $func callback immediately.
      */
     public function when(callable $func, $data = null) {
-        call_user_func($func, $error = null, $this->result, $data);
+        \call_user_func($func, $error = null, $this->result, $data);
+
         return $this;
     }
 

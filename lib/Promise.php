@@ -24,7 +24,7 @@ interface Promise {
      *
      * @param callable $func An error-first callback to invoke upon promise resolution
      * @param mixed $data Optional data to pass as a third parameter to $func
-     * @return void
+     * @return self
      */
     public function when(callable $func, $data = null);
 
@@ -40,7 +40,7 @@ interface Promise {
      *
      * @param callable $func A callback to invoke when data updates are available
      * @param mixed $data Optional data to pass as an additional parameter to $func
-     * @return void
+     * @return self
      */
     public function watch(callable $func, $data = null);
 }
