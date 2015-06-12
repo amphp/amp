@@ -20,7 +20,7 @@ trait Placeholder {
      *
      * @param callable $func An error-first callback to invoke upon promise resolution
      * @param mixed $data Optional data to pass as a third parameter to $func
-     * @return void
+     * @return self
      */
     public function when(callable $func, $data = null) {
         if ($this->isResolved) {
@@ -28,6 +28,8 @@ trait Placeholder {
         } else {
             $this->whens[] = [$func, $data];
         }
+
+        return $this;
     }
 
     /**
@@ -35,12 +37,14 @@ trait Placeholder {
      *
      * @param callable $func A callback to invoke when data updates are available
      * @param mixed $data Optional data to pass as a second parameter to $func
-     * @return void
+     * @return self
      */
     public function watch(callable $func, $data = null) {
         if (!$this->isResolved) {
             $this->watchers[] = [$func, $data];
         }
+
+        return $this;
     }
 
     private function update(...$progress) {

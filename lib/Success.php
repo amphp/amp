@@ -20,12 +20,14 @@ class Success implements Promise {
      */
     public function when(callable $func, $data = null) {
         $func($error = null, $this->result, $data);
+
+        return $this;
     }
 
     /**
      * {@inheritDoc}
      */
     public function watch(callable $func, $data = null) {
-        return;
+        return $this;
     }
 }
