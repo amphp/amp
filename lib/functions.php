@@ -563,7 +563,13 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
 function __coroutineAdvance($cs) {
     try {
         if (!$cs->generator->valid()) {
-            $cs->promisor->succeed($cs->returnValue);
+            if (isset($cs->returnValue)) {
+                $cs->promisor->succeed($cs->returnValue);
+            } elseif (PHP_MAJOR_VERSION >= 7) {
+                $cs->promisor->succeed($cs->generator->getReturn());
+            } else {
+                $cs->promisor->succeed(null);
+            }
             return;
         }
         $yielded = $cs->generator->current();
