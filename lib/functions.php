@@ -579,9 +579,6 @@ function __coroutineAdvance($cs) {
         } elseif ($yielded instanceof Promise) {
             $cs->currentPromise = $yielded;
             $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-        } elseif ($yielded instanceof Streamable) {
-            $cs->currentPromise = resolve($yielded->buffer(), $cs->reactor);
-            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } elseif ($cs->promisifier) {
             __coroutineCustomPromisify($cs, $key, $yielded);
             $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
@@ -602,9 +599,11 @@ function __coroutineAdvance($cs) {
 }
 
 function __coroutineCustomPromisify($cs, $key, $yielded) {
-    $promise = call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
+    $promise = \call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
     if ($promise instanceof Promise) {
         $cs->currentPromise = $promise;
+    } elseif ($promise instanceof \Generator) {
+        $cs->currentPromise = resolve($promise, $cs->reactor, $cs->promisifier);
     } else {
         throw new \DomainException(sprintf(
             "Invalid promisifier yield of type %s; Promise|null expected",

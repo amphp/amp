@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class PromiseStream implements Streamable {
+class PromiseStream {
     private $promisors;
     private $index = 0;
 
@@ -28,10 +28,9 @@ class PromiseStream implements Streamable {
      * Generate a stream of promises that may be iteratively yielded to await resolution
      *
      * NOTE: Only values sent to Promise::update() will be streamed. The final resolution
-     * value of the promise is not sent to the stream. If the Promise is failed that failure
-     * will resolve the stream's current Promise instance.
+     * value of the promise is not sent to the stream -- instead, the final promise value
+     * is NULL. If the Promise is failed that failure will resolve the stream's current Promise.
      *
-     * @throws \LogicException if stream is in an un-iterable state
      * @return \Generator
      */
     public function stream() {
@@ -40,20 +39,5 @@ class PromiseStream implements Streamable {
             yield $this->promisors[$key]->promise();
             unset($this->promisors[$key]);
         }
-    }
-
-    /**
-     * Buffer all remaining promise placeholders in the stream
-     *
-     * @return \Generator
-     */
-    public function buffer() {
-        $buffer = [];
-        foreach ($this->stream() as $promise) {
-            $buffer[] = (yield $promise);
-        }
-        array_pop($buffer);
-
-        yield "return" => $buffer;
     }
 }

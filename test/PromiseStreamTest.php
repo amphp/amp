@@ -16,14 +16,19 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
             $i = 0;
             $reactor->repeat(function($reactor, $watcherId) use ($def, &$i) {
                 $i++;
-                $def->update("test");
+                $def->update("test{$i}");
                 if ($i === 3) {
                     $def->succeed();
                     $reactor->cancel($watcherId);
                 }
             }, 100);
-            $result = (yield $msg);
-            $this->assertSame(["test", "test", "test"], $result);
+
+            $results = [];
+            foreach ($msg->stream() as $msgElement) {
+                $results[] = (yield $msgElement);
+            }
+
+            $this->assertSame(["test1", "test2", "test3", null], $results);
             $endReached = true;
         });
         $this->assertTrue($endReached);
@@ -38,8 +43,12 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
             $def->update("bar");
             $def->update("baz");
             $def->succeed();
-            $result = (yield $msg);
-            $this->assertSame(["foo", "bar", "baz"], $result);
+            
+            $results = [];
+            foreach ($msg->stream() as $msgElement) {
+                $results[] = (yield $msgElement);
+            }
+            $this->assertSame(["foo", "bar", "baz", null], $results);
             $endReached = true;
         });
         $this->assertTrue($endReached);
@@ -63,7 +72,12 @@ class PromiseStreamTest extends \PHPUnit_Framework_TestCase {
                 }
             }, 10);
 
-            $result = (yield new PromiseStream($promisor->promise()));
+            $msg = new PromiseStream($promisor->promise());
+            
+            $results = [];
+            foreach ($msg->stream() as $msgElement) {
+                $results[] = (yield $msgElement);
+            }
         });
     }
 }

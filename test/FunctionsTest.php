@@ -268,42 +268,6 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testCoroutineResolutionBuffersYieldedPromiseStream() {
-        $invoked = 0;
-        (new NativeReactor)->run(function($reactor) use (&$invoked) {
-            $i = 0;
-            $promisor = new Deferred;
-            $reactor->repeat(function($reactor, $watcherId) use (&$i, $promisor) {
-                $i++;
-                $promisor->update($i);
-                if ($i === 3) {
-                    $reactor->cancel($watcherId);
-                    $promisor->succeed();
-                }
-            }, 10);
-
-            $result = (yield new PromiseStream($promisor->promise()));
-            $this->assertSame([1, 2, 3], $result);
-            $invoked++;
-        });
-        $this->assertSame(1, $invoked);
-    }
-
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage test
-     */
-    public function testCoroutineResolutionThrowsOnPromiseStreamBufferFailure() {
-        (new NativeReactor)->run(function($reactor) {
-            $promisor = new Deferred;
-            $reactor->repeat(function($reactor, $watcherId) use ($promisor) {
-                $promisor->fail(new \Exception("test"));
-            }, 10);
-
-            $result = (yield new PromiseStream($promisor->promise()));
-        });
-    }
-
     public function testPromisesNormalization() {
         $completed = false;
         (new NativeReactor)->run(function($reactor) use (&$completed) {
