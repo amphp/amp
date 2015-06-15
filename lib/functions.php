@@ -523,14 +523,13 @@ function wait(Promise $promise, Reactor $reactor = null) {
  *
  * @param callable $func The callable to be wrapped for coroutine resolution
  * @param \Amp\Reactor $reactor
- * @param callable $promisifier
  * @return callable Returns the wrapped callable
  */
-function coroutine(callable $func, Reactor $reactor = null, callable $promisifier = null) {
-    return function() use ($func, $reactor, $promisifier) {
+function coroutine(callable $func, Reactor $reactor = null) {
+    return function() use ($func, $reactor) {
         $result = \call_user_func_array($func, func_get_args());
         return ($result instanceof \Generator)
-            ? resolve($result, $reactor, $promisifier)
+            ? resolve($result, $reactor)
             : $result;
     };
 }
@@ -543,14 +542,12 @@ function coroutine(callable $func, Reactor $reactor = null, callable $promisifie
  *
  * @param \Generator $generator The generator to resolve as a coroutine
  * @param \Amp\Reactor $reactor
- * @param callable $promisifier
  */
-function resolve(\Generator $generator, Reactor $reactor = null, callable $promisifier = null) {
+function resolve(\Generator $generator, Reactor $reactor = null) {
     $cs = new \StdClass;
     $cs->reactor = $reactor ?: reactor();
     $cs->promisor = new Deferred;
     $cs->generator = $generator;
-    $cs->promisifier = $promisifier;
     $cs->returnValue = null;
     $cs->currentPromise = null;
     $cs->isResolved = false;
@@ -579,9 +576,6 @@ function __coroutineAdvance($cs) {
         } elseif ($yielded instanceof Promise) {
             $cs->currentPromise = $yielded;
             $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-        } elseif ($cs->promisifier) {
-            __coroutineCustomPromisify($cs, $key, $yielded);
-            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } else {
             $cs->isResolved = true;
             $cs->promisor->fail(new \DomainException(
@@ -595,20 +589,6 @@ function __coroutineAdvance($cs) {
             $cs->isResolved = true;
             $cs->promisor->fail($uncaught);
         }
-    }
-}
-
-function __coroutineCustomPromisify($cs, $key, $yielded) {
-    $promise = \call_user_func($cs->promisifier, $cs->generator, $key, $yielded);
-    if ($promise instanceof Promise) {
-        $cs->currentPromise = $promise;
-    } elseif ($promise instanceof \Generator) {
-        $cs->currentPromise = resolve($promise, $cs->reactor, $cs->promisifier);
-    } else {
-        throw new \DomainException(sprintf(
-            "Invalid promisifier yield of type %s; Promise|null expected",
-            is_object($promise) ? get_class($promise) : gettype($promise)
-        ));
     }
 }
 
@@ -639,7 +619,7 @@ function __coroutineSend($error, $result, $cs) {
     }
 }
 
-function __coroutineYieldError(\Generator $generator, $key, $yielded) {
+function __coroutineYieldError($generator, $key, $yielded) {
     $type = is_object($yielded) ? get_class($yielded) : gettype($yielded);
     $msg = "Unexpected Generator yield (Promise|\"return\"|null expected); {$type} yielded at key {$key}";
     if (PHP_MAJOR_VERSION < 7) {
