@@ -641,9 +641,23 @@ function __coroutineSend($error, $result, $cs) {
 }
 
 function __coroutineYieldError(\Generator $generator, $key, $yielded) {
+    $type = is_object($yielded) ? get_class($yielded) : gettype($yielded);
+    $msg = "Unexpected Generator yield (Promise|\"return\"|null expected); {$type} yielded at key {$key}";
+    if (PHP_MAJOR_VERSION < 7) {
+        return $msg;
+    }
+
+    $reflGen = new \ReflectionGenerator($generator);
+    $exeGen = $reflGen->getExecutingGenerator();
+    if ($exeGen !== $generator) {
+        // We're executing a subgenerator; use the correct reflection
+        $reflGen = new \ReflectionGenerator($exeGen);
+    }
+
     return sprintf(
-        'Unexpected Generator yield (Promise|"return"|null expected); %s yielded at key %s',
-        (is_object($yielded) ? get_class($yielded) : gettype($yielded)),
-        $key
+        "%s on line %s in %s",
+        $msg,
+        $reflGen->getExecutingLine(),
+        $reflGen->getExecutingFile()
     );
 }
