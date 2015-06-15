@@ -562,35 +562,35 @@ function resolve(\Generator $generator, Reactor $reactor = null, callable $promi
 
 function __coroutineAdvance($cs) {
     try {
-        if (!$cs->generator->valid()) {
-            if (isset($cs->returnValue)) {
+        $yielded = $cs->generator->current();
+        if (!isset($yielded)) {
+            if ($cs->generator->valid()) {
+                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            } elseif (isset($cs->returnValue)) {
                 $cs->promisor->succeed($cs->returnValue);
             } elseif (PHP_MAJOR_VERSION >= 7) {
                 $cs->promisor->succeed($cs->generator->getReturn());
             } else {
-                $cs->promisor->succeed(null);
+                $cs->promisor->succeed();
             }
-            return;
-        }
-        $yielded = $cs->generator->current();
-        if (!isset($yielded)) {
-            // nothing to do ... jump to the end
         } elseif (($key = $cs->generator->key()) === "return") {
             $cs->returnValue = $yielded;
+            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } elseif ($yielded instanceof Promise) {
             $cs->currentPromise = $yielded;
+            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } elseif ($yielded instanceof Streamable) {
             $cs->currentPromise = resolve($yielded->buffer(), $cs->reactor);
+            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } elseif ($cs->promisifier) {
             __coroutineCustomPromisify($cs, $key, $yielded);
+            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } else {
             $cs->isResolved = true;
             $cs->promisor->fail(new \DomainException(
                 __coroutineYieldError($cs->generator, $key, $yielded)
             ));
-            return;
         }
-        $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
     } catch (\Exception $uncaught) {
         if ($cs->isResolved) {
             throw new \RuntimeException("", 0, $uncaught);
