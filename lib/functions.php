@@ -576,13 +576,13 @@ function __coroutineAdvance($cs) {
             $cs->currentPromise = $yielded;
             $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } else {
-            $error = makeGeneratorError($cs->generator, sprintf(
+            $error = new \DomainException(makeGeneratorError($cs->generator, sprintf(
                 'Unexpected yield (Promise|null|"return" expected); %s yielded at key %s',
                 is_object($yielded) ? get_class($yielded) : gettype($yielded),
                 $key
-            ));
+            )));
             $cs->reactor->immediately(function() use ($cs, $error) {
-                $cs->promisor->fail(new \DomainException($error));
+                $cs->promisor->fail($error);
             });
         }
     } catch (\Exception $uncaught) {
