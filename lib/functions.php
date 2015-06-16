@@ -527,7 +527,7 @@ function wait(Promise $promise, Reactor $reactor = null) {
  */
 function coroutine(callable $func, Reactor $reactor = null) {
     return function() use ($func, $reactor) {
-        $result = \call_user_func_array($func, func_get_args());
+        $result = \call_user_func_array($func, \func_get_args());
         return ($result instanceof \Generator)
             ? resolve($result, $reactor)
             : $result;
@@ -550,7 +550,6 @@ function resolve(\Generator $generator, Reactor $reactor = null) {
     $cs->generator = $generator;
     $cs->returnValue = null;
     $cs->currentPromise = null;
-    $cs->isResolved = false;
 
     __coroutineAdvance($cs);
 
@@ -572,28 +571,30 @@ function __coroutineAdvance($cs) {
             }
         } elseif (($key = $cs->generator->key()) === "return") {
             $cs->returnValue = $yielded;
-            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            __coroutineSend(null, null, $cs);
         } elseif ($yielded instanceof Promise) {
             $cs->currentPromise = $yielded;
             $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
         } else {
-            $cs->isResolved = true;
-            $cs->promisor->fail(new \DomainException(
-                __coroutineYieldError($cs->generator, $key, $yielded)
+            $error = makeGeneratorError($cs->generator, sprintf(
+                'Unexpected yield (Promise|null|"return" expected); %s yielded at key %s',
+                is_object($yielded) ? get_class($yielded) : gettype($yielded),
+                $key
             ));
+            $cs->reactor->immediately(function() use ($cs, $error) {
+                $cs->promisor->fail(new \DomainException($error));
+            });
         }
     } catch (\Exception $uncaught) {
-        if ($cs->isResolved) {
-            throw new \RuntimeException("", 0, $uncaught);
-        } else {
-            $cs->isResolved = true;
+        $cs->reactor->immediately(function() use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
-        }
+        });
     }
 }
 
 function __coroutineNextTick($reactor, $watcherId, $cs) {
-    if ($promise = $cs->currentPromise) {
+    if ($cs->currentPromise) {
+        $promise = $cs->currentPromise;
         $cs->currentPromise = null;
         $promise->when("Amp\__coroutineSend", $cs);
     } else {
@@ -610,32 +611,32 @@ function __coroutineSend($error, $result, $cs) {
         }
         __coroutineAdvance($cs);
     } catch (\Exception $uncaught) {
-        if ($cs->isResolved) {
-            throw new \RuntimeException("", 0, $uncaught);
-        } else {
-            $cs->isResolved = true;
+        $cs->reactor->immediately(function() use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
-        }
+        });
     }
 }
 
-function __coroutineYieldError($generator, $key, $yielded) {
-    $type = is_object($yielded) ? get_class($yielded) : gettype($yielded);
-    $msg = "Unexpected Generator yield (Promise|\"return\"|null expected); {$type} yielded at key {$key}";
-    if (PHP_MAJOR_VERSION < 7) {
-        return $msg;
+/**
+ * A general purpose function for creating error messages from generator yields
+ *
+ * @param \Generator $generator
+ * @param string $prefix
+ * @return string
+ */
+function makeGeneratorError(\Generator $generator, $prefix = "Generator error") {
+    if (PHP_MAJOR_VERSION < 7 || !$generator->valid()) {
+        return $prefix;
     }
 
     $reflGen = new \ReflectionGenerator($generator);
     $exeGen = $reflGen->getExecutingGenerator();
-    if ($exeGen !== $generator) {
-        // We're executing a subgenerator; use the correct reflection
+    if ($isSubgenerator = ($exeGen !== $generator)) {
         $reflGen = new \ReflectionGenerator($exeGen);
     }
 
     return sprintf(
-        "%s on line %s in %s",
-        $msg,
+        "{$prefix} on line %s in %s",
         $reflGen->getExecutingLine(),
         $reflGen->getExecutingFile()
     );
