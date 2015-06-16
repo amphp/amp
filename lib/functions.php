@@ -550,6 +550,7 @@ function resolve(\Generator $generator, Reactor $reactor = null) {
     $cs->generator = $generator;
     $cs->returnValue = null;
     $cs->currentPromise = null;
+    $cs->nestingLevel = 0;
 
     __coroutineAdvance($cs);
 
@@ -573,8 +574,14 @@ function __coroutineAdvance($cs) {
             $cs->returnValue = $yielded;
             __coroutineSend(null, null, $cs);
         } elseif ($yielded instanceof Promise) {
-            $cs->currentPromise = $yielded;
-            $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            if ($cs->nestingLevel < 3) {
+                $cs->nestingLevel++;
+                $yielded->when("Amp\__coroutineSend", $cs);
+                $cs->nestingLevel--;
+            } else {
+                $cs->currentPromise = $yielded;
+                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            }
         } else {
             $error = new \DomainException(makeGeneratorError($cs->generator, sprintf(
                 'Unexpected yield (Promise|null|"return" expected); %s yielded at key %s',
