@@ -11,11 +11,11 @@ class Failure implements Promise {
     /**
      * The error parameter used to fail a promisor must always be an exception
      * instance. However, we cannot typehint this parameter in environments
-     * where PHP5.x compatibility is required because PHP7 BaseException
+     * where PHP5.x compatibility is required because PHP7 Throwable
      * instances will break the typehint.
      */
     public function __construct($error) {
-        if (!($error instanceof \Exception || $error instanceof \BaseException)) {
+        if (!($error instanceof \Exception || $error instanceof \Throwable)) {
             throw new \InvalidArgumentException(
                 "Only exceptions may be used to fail a promise"
             );

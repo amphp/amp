@@ -65,7 +65,7 @@ trait Placeholder {
     /**
      * The error parameter used to fail a promisor must always be an exception
      * instance. However, we cannot typehint this parameter in environments
-     * where PHP5.x compatibility is required because PHP7 BaseException
+     * where PHP5.x compatibility is required because PHP7 Throwable
      * instances will break the typehint.
      */
     private function resolve($error = null, $result = null) {
@@ -81,7 +81,7 @@ trait Placeholder {
             $result->when(function($error, $result) {
                 $this->resolve($error, $result);
             });
-        } elseif (isset($error) && !($error instanceof \Exception || $error instanceof \BaseException)) {
+        } elseif (isset($error) && !($error instanceof \Exception || $error instanceof \Throwable)) {
             throw new \InvalidArgumentException(
                 "Only exceptions may be used to fail a promise"
             );

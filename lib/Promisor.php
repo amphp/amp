@@ -62,10 +62,10 @@ interface Promisor {
      *
      * The error parameter used to fail a promisor must always be an exception
      * instance. However, we cannot typehint this parameter in environments
-     * where PHP5.x compatibility is required because PHP7 BaseException
+     * where PHP5.x compatibility is required because PHP7 Throwable
      * instances will break the typehint.
      *
-     * @param mixed $error An Exception or BaseException in PHP7 environments
+     * @param mixed $error An Exception or Throwable in PHP7 environments
      * @return void
      */
     public function fail($error);
