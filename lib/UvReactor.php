@@ -318,7 +318,7 @@ class UvReactor implements SignalReactor {
             : 'uv_poll_init';
 
         $streamId = (int) $stream;
-        
+
         $poll = new \StdClass;
         $poll->readers = [];
         $poll->writers = [];
@@ -602,6 +602,29 @@ class UvReactor implements SignalReactor {
      */
     public function getUnderlyingLoop() {
         return $this->loop;
+    }
+
+    /**
+     * Manually increment the watcher refcount
+     *
+     * This method, like it's delRef() counterpart, is *only* necessary when manually
+     * operating directly on the underlying uv loop to avoid the reactor's run loop
+     * exiting because no enabled watchers exist when waiting on manually registered
+     * uv_*() callbacks.
+     *
+     * @return void
+     */
+    public function addRef() {
+        $this->enabledWatcherCount++;
+    }
+
+    /**
+     * Manually decrement the watcher refcount
+     *
+     * @return void
+     */
+    public function delRef() {
+        $this->enabledWatcherCount--;
     }
 
     /**
