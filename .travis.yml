@@ -1,9 +1,23 @@
 language: php
-sudo: false
+
 php:
   - 5.5
   - 5.6
-  - 7.0
+  - 7
+
+matrix:
+  allow_failures:
+    - php: 7
+
 before_script:
-  - composer install
-script: php vendor/bin/phpunit --coverage-text
+  - yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0"
+  - echo "extension=\"libevent.so\"" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
+  - composer self-update
+  - composer install --dev
+
+script:
+  - vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+  - php vendor/bin/php-cs-fixer --diff --dry-run -v fix
+
+after_script:
+  - php vendor/bin/coveralls -v
