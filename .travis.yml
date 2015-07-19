@@ -13,7 +13,7 @@ before_script:
   - yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0"
   - echo "extension=\"libevent.so\"" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
   - composer self-update
-  - composer install --dev
+  - composer install
 
 script:
   - vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
