@@ -272,6 +272,7 @@ class LibeventReactor implements SignalReactor {
      */
     public function onReadable($stream, callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::IO_READER, $callback, $options);
+        $watcher->stream = $stream;
         $evFlags = EV_PERSIST|EV_READ;
         event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
         event_base_set($watcher->eventResource, $this->base);
@@ -288,6 +289,7 @@ class LibeventReactor implements SignalReactor {
      */
     public function onWritable($stream, callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::IO_WRITER, $callback, $options);
+        $watcher->stream = $stream;
         $evFlags = EV_PERSIST|EV_WRITE;
         event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
         event_base_set($watcher->eventResource, $this->base);
