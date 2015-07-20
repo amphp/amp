@@ -14,8 +14,12 @@ function reactor(Reactor $assignReactor = null) {
         return ($reactor = $assignReactor);
     } elseif ($reactor) {
         return $reactor;
-    } elseif (\extension_loaded('uv')) {
+    } elseif (\extension_loaded("uv")) {
         return ($reactor = new UvReactor);
+    } elseif (\extension_loaded("ev")) {
+        return ($reactor = new EvReactor);
+    } elseif (\extension_loaded("libevent")) {
+        return ($reactor = new LibeventReactor);
     } else {
         return ($reactor = new NativeReactor);
     }

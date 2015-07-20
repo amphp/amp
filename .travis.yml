@@ -13,6 +13,7 @@ matrix:
 
 before_script:
   - yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0"
+  - yes "" | pecl install ev
   - composer self-update
   - composer install
 

@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-interface SignalReactor extends Reactor {
+interface ExtensionReactor extends Reactor {
     /**
      * React to process control signals
      *
@@ -12,4 +12,11 @@ interface SignalReactor extends Reactor {
      * @return string Returns unique (to the process) string watcher ID
      */
     public function onSignal($signo, callable $func, array $options = []);
+
+    /**
+     * Retrieve the underlying event loop representation
+     *
+     * @return mixed
+     */
+    public function getUnderlyingLoop();
 }
