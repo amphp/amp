@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class LibeventReactor implements SignalReactor {
+class LibeventReactor implements ExtensionReactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
@@ -438,8 +438,8 @@ class LibeventReactor implements SignalReactor {
     /**
      * {@inheritDoc}
      */
-    public function onError(callable $onErrorCallback) {
-        $this->onError = $onErrorCallback;
+    public function onError(callable $callback) {
+        $this->onError = $callback;
     }
 
     public function __destruct() {

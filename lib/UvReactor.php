@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class UvReactor implements SignalReactor {
+class UvReactor implements ExtensionReactor {
     private $loop;
     private $lastWatcherId = "a";
     private $watchers;
@@ -218,7 +218,7 @@ class UvReactor implements SignalReactor {
         return function() use ($watcher, $callback) {
             try {
                 $watcherId = $watcher->id;
-                $result = call_user_func($callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
                     resolve($result, $this)->when($this->onCoroutineResolution);
                 }
@@ -630,8 +630,8 @@ class UvReactor implements SignalReactor {
     /**
      * {@inheritDoc}
      */
-    public function onError(callable $func) {
-        $this->onError = $func;
+    public function onError(callable $callback) {
+        $this->onError = $callback;
     }
 
     public function __destruct() {
