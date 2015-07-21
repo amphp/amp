@@ -22,8 +22,10 @@ class LibeventReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
-        if (!extension_loaded('libevent')) {
-            throw new \RuntimeException('The pecl-libevent extension is required to use the LibeventReactor.');
+        if (!extension_loaded("libevent")) {
+            throw new \RuntimeException(
+                "The pecl libevent extension is required to use the LibeventReactor."
+            );
         }
 
         $this->base = event_base_new();

@@ -2,6 +2,10 @@
 
 namespace Amp;
 
+/**
+ * @codeCoverageIgnore
+ * @TODO remove code coverage ignore once we're able to install php-uv on travis
+ */
 class UvReactor implements ExtensionReactor {
     private $loop;
     private $lastWatcherId = "a";
@@ -24,8 +28,10 @@ class UvReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
-        if (!extension_loaded('uv')) {
-            throw new \RuntimeException('php-uv extension is required to use the UvReactor.');
+        if (!extension_loaded("uv")) {
+            throw new \RuntimeException(
+                "The php-uv extension is required to use the UvReactor."
+            );
         }
 
         $this->loop = uv_loop_new();

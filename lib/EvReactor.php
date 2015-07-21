@@ -25,7 +25,7 @@ class EvReactor implements ExtensionReactor {
     public function __construct($flags = null) {
         if (!extension_loaded("ev")) {
             throw new \RuntimeException(
-                "The ev extension is required to use the EvReactor."
+                "The pecl ev extension is required to use the EvReactor."
             );
         }
         $flags = $flags ?: Ev::FLAG_AUTO;
