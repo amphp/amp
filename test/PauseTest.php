@@ -23,4 +23,14 @@ class PauseTest extends \PHPUnit_Framework_TestCase {
             [-1],
         ];
     }
+    
+    public function testPauseYield() {
+        $endReached = false;
+        (new NativeReactor)->run(function ($reactor) use (&$endReached) {
+            $result = (yield new Pause(1, $reactor));
+            $this->assertNull($result);
+            $endReached = true;
+        });
+        $this->assertTrue($endReached);
+    }
 }
