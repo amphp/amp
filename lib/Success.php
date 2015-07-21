@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Represents a successful computation resolution
+ * A successfully resolved promise
  */
 class Success implements Promise {
     private $result;
@@ -16,9 +16,9 @@ class Success implements Promise {
     }
 
     /**
-     * Pass the resolved result to the specified $func callback
+     * {@inheritdoc}
      *
-     * NOTE: because this object represents a successfully resolved Promise it will *always* invoke
+     * NOTE: because this object represents a resolved Promise it will *always* invoke
      * the specified $func callback immediately.
      */
     public function when(callable $func, $data = null) {
@@ -28,7 +28,9 @@ class Success implements Promise {
     }
 
     /**
-     * Does nothing -- a resolved promise has no progress updates
+     * {@inheritdoc}
+     * 
+     * Does nothing; a resolved promise has no progress updates
      */
     public function watch(callable $func, $data = null) {
         return $this;

@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Represents a failed computation resolution
+ * A rejected (failed) promise
  */
 class Failure implements Promise {
     private $error;
@@ -13,27 +13,36 @@ class Failure implements Promise {
      * instance. However, we cannot typehint this parameter in environments
      * where PHP5.x compatibility is required because PHP7 Throwable
      * instances will break the typehint.
+     * 
+     * @param Exception $error
+     * @TODO Add Throwable typehint and remove conditional once PHP7 is required
      */
     public function __construct($error) {
-        if (!($error instanceof \Exception || $error instanceof \Throwable)) {
+        if ($error instanceof \Throwable || $error instanceof \Exception) {
+            $this->error = $error;
+        } else {
             throw new \InvalidArgumentException(
-                "Only exceptions may be used to fail a promise"
+                "Throwable Exception instance required"
             );
         }
-        $this->error = $error;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
+     *
+     * NOTE: because this object represents a resolved Promise it will *always* invoke
+     * the specified $func callback immediately.
      */
     public function when(callable $func, $data = null) {
-        $func($this->error, $result = null, $data);
+        \call_user_func($func, $this->error, $result = null, $data);
 
         return $this;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
+     * 
+     * Does nothing; a resolved promise has no progress updates
      */
     public function watch(callable $func, $data = null) {
         return $this;
