@@ -26,7 +26,7 @@ trait PublicPromisor {
     public function update($progress) {
         if ($this->isResolved) {
             throw new \LogicException(
-                'Cannot update resolved promise'
+                "Cannot update resolved promise"
             );
         }
 

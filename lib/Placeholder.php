@@ -81,9 +81,9 @@ trait Placeholder {
             $result->when(function($error, $result) {
                 $this->resolve($error, $result);
             });
-        } elseif (isset($error) && !($error instanceof \Exception || $error instanceof \Throwable)) {
+        } elseif (isset($error) && !($error instanceof \Throwable || $error instanceof \Exception)) {
             throw new \InvalidArgumentException(
-                "Only exceptions may be used to fail a promise"
+                "Throwable Exception instance required to fail a promise"
             );
         } else {
             $this->isResolved = true;

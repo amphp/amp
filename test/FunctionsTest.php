@@ -76,11 +76,37 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
+    public function testAnyReturnsImmediatelyOnEmptyPromiseArray() {
+        $promise = \Amp\any([]);
+        $this->assertInstanceOf("Amp\Success", $promise);
+        $error = null;
+        $result = null;
+        $promise->when(function($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+        $this->assertNull($error);
+        $this->assertSame([[], []], $result);
+    }
+
     public function testAllResolvesWithArrayOfResults() {
         \Amp\all(['r1' => 42, 'r2' => new Success(41)])->when(function($error, $result) {
             $expected = ['r1' => 42, 'r2' => 41];
             $this->assertSame($expected, $result);
         });
+    }
+
+    public function testAllReturnsImmediatelyOnEmptyPromiseArray() {
+        $promise = \Amp\all([]);
+        $this->assertInstanceOf("Amp\Success", $promise);
+        $error = null;
+        $result = null;
+        $promise->when(function($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+        $this->assertNull($error);
+        $this->assertSame([], $result);
     }
 
     /**
@@ -109,6 +135,20 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame(['r2' => $exception], $errors);
             $this->assertSame(['r1' => 42, 'r3' => 40], $results);
         });
+    }
+    
+    public function testSomeFailsImmediatelyOnEmptyPromiseArrayInput() {
+        $promise = \Amp\some([]);
+        $this->assertInstanceOf("Amp\Failure", $promise);
+        $error = null;
+        $result = null;
+        $promise->when(function($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+        $this->assertNull($result);
+        $this->assertInstanceOf("\LogicException", $error);
+        $this->assertSame("No promises or values provided for resolution", $error->getMessage());
     }
 
     /**

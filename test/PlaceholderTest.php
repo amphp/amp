@@ -6,7 +6,7 @@ use Amp\NativeReactor;
 
 abstract class PlaceholderTest  {
     abstract protected function getPromisor();
-    
+
     public function testWhenCallbackDataPassed() {
         $invoked = 0;
         $promisor = $this->getPromisor();
@@ -20,7 +20,7 @@ abstract class PlaceholderTest  {
         }, "zanzibar");
         $this->assertSame(1, $invoked);
     }
-    
+
     public function testWatchCallbackDataPassed() {
         $invoked = 0;
         $promisor = $this->getPromisor();
@@ -120,5 +120,4 @@ abstract class PlaceholderTest  {
             yield $promisor->promise();
         });
     }
-
 }

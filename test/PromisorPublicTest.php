@@ -14,4 +14,22 @@ class PromisorPublicTest extends PromisorTest {
         $promisor = new PromisorPublicImpl;
         $this->assertSame($promisor, $promisor->promise());
     }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Throwable Exception instance required to fail a promise
+     * @dataProvider provideBadFailureArguments
+     */
+    public function testResolvingErrorWithNonExceptionThrows($badArg) {
+        $promisor = $this->getPromisor();
+        $promisor->fail($badArg);
+    }
+
+    public function provideBadFailureArguments() {
+        return [
+            [1],
+            [true],
+            [new \StdClass],
+        ];
+    }
 }

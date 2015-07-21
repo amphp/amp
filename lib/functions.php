@@ -294,7 +294,7 @@ function map(array $promises, callable $functor) {
         }
         $struct->remaining--;
         try {
-            $struct->results[$key] = call_user_func($struct->functor, $result);
+            $struct->results[$key] = \call_user_func($struct->functor, $result);
         } catch (\Exception $e) {
             $struct->remaining = 0;
             $struct->promisor->fail($e);
@@ -311,7 +311,7 @@ function map(array $promises, callable $functor) {
         } else {
             $struct->remaining--;
             try {
-                $struct->results[$key] = call_user_func($struct->functor, $promise);
+                $struct->results[$key] = \call_user_func($struct->functor, $promise);
             } catch (\Exception $e) {
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
@@ -360,7 +360,7 @@ function filter(array $promises, callable $functor) {
         }
         $struct->remaining--;
         try {
-            if (call_user_func($struct->functor, $result)) {
+            if (\call_user_func($struct->functor, $result)) {
                 $struct->results[$key] = $result;
             }
         } catch (\Exception $e) {
@@ -379,7 +379,7 @@ function filter(array $promises, callable $functor) {
         } else {
             $struct->remaining--;
             try {
-                if (call_user_func($struct->functor, $promise)) {
+                if (\call_user_func($struct->functor, $promise)) {
                     $struct->results[$key] = $promise;
                 }
             } catch (\Exception $e) {
@@ -405,7 +405,7 @@ function filter(array $promises, callable $functor) {
 function pipe($promise, callable $functor) {
     if (!($promise instanceof Promise)) {
         try {
-            return new Success(call_user_func($functor, $promise));
+            return new Success(\call_user_func($functor, $promise));
         } catch (\Exception $e) {
             return new Failure($e);
         }
@@ -418,7 +418,7 @@ function pipe($promise, callable $functor) {
             return;
         }
         try {
-            $promisor->succeed(call_user_func($functor, $result));
+            $promisor->succeed(\call_user_func($functor, $result));
         } catch (\Exception $error) {
             $promisor->fail($error);
         }

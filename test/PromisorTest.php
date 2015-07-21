@@ -139,4 +139,14 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame($expected, $updates->arr);
     }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Cannot update resolved promise
+     */
+    public function testUpdateThrowsIfPromiseAlreadyResolved() {
+        $promisor = $this->getPromisor();
+        $promisor->succeed();
+        $promisor->update(42);
+    }
 }
