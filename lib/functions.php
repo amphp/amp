@@ -224,7 +224,7 @@ function any(array $promises) {
 function first(array $promises) {
     if (empty($promises)) {
         return new Failure(new \LogicException(
-            "No promises or values provided for first() resolution"
+            "No promises or values provided"
         ));
     }
 
@@ -244,7 +244,7 @@ function first(array $promises) {
         }
         if (--$struct->remaining === 0) {
             $struct->promisor->fail(new \RuntimeException(
-                "All promises passed for first() resolution failed"
+                "All promises failed"
             ));
         }
     };
@@ -295,7 +295,14 @@ function map(array $promises, callable $functor) {
         $struct->remaining--;
         try {
             $struct->results[$key] = \call_user_func($struct->functor, $result);
+        } catch (\Throwable $e) {
+            $struct->remaining = 0;
+            $struct->promisor->fail($e);
+            return;
         } catch (\Exception $e) {
+            /**
+             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+             */
             $struct->remaining = 0;
             $struct->promisor->fail($e);
             return;
@@ -312,7 +319,13 @@ function map(array $promises, callable $functor) {
             $struct->remaining--;
             try {
                 $struct->results[$key] = \call_user_func($struct->functor, $promise);
+            } catch (\Throwable $e) {
+                $struct->remaining = 0;
+                $struct->promisor->fail($e);
             } catch (\Exception $e) {
+                /**
+                 * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+                 */
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
             }
@@ -363,7 +376,14 @@ function filter(array $promises, callable $functor) {
             if (\call_user_func($struct->functor, $result)) {
                 $struct->results[$key] = $result;
             }
+        } catch (\Throwable $e) {
+            $struct->remaining = 0;
+            $struct->promisor->fail($e);
+            return;
         } catch (\Exception $e) {
+            /**
+             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+             */
             $struct->remaining = 0;
             $struct->promisor->fail($e);
             return;
@@ -382,7 +402,13 @@ function filter(array $promises, callable $functor) {
                 if (\call_user_func($struct->functor, $promise)) {
                     $struct->results[$key] = $promise;
                 }
+            } catch (\Throwable $e) {
+                $struct->remaining = 0;
+                $struct->promisor->fail($e);
             } catch (\Exception $e) {
+                /**
+                 * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+                 */
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
             }
@@ -403,10 +429,15 @@ function filter(array $promises, callable $functor) {
  * @return \Amp\Promise
  */
 function pipe($promise, callable $functor) {
-    if (!($promise instanceof Promise)) {
+    if (!$promise instanceof Promise) {
         try {
             return new Success(\call_user_func($functor, $promise));
+        } catch (\Throwable $e) {
+            return new Failure($e);
         } catch (\Exception $e) {
+            /**
+             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+             */
             return new Failure($e);
         }
     }
@@ -419,7 +450,12 @@ function pipe($promise, callable $functor) {
         }
         try {
             $promisor->succeed(\call_user_func($functor, $result));
+        } catch (\Throwable $error) {
+            $promisor->fail($error);
         } catch (\Exception $error) {
+             /**
+             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+             */
             $promisor->fail($error);
         }
     });
@@ -468,10 +504,11 @@ function timeout(Promise $promise, $msTimeout, Reactor $reactor = null) {
             "Promise resolution timed out"
         ));
     }, $msTimeout);
-    $promise->when(function($error = null, $result = null) use ($reactor, $promisor, $watcherId, $resolved) {
+    $promise->when(function($error = null, $result = null) use ($reactor, $promisor, $watcherId, &$resolved) {
         if ($resolved) {
             return;
         }
+        $resolved = true;
         $reactor->cancel($watcherId);
         if ($error) {
             $promisor->fail($error);
