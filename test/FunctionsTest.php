@@ -10,6 +10,107 @@ use Amp\PromiseStream;
 
 class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
+    public function testMap() {
+        $promises = ["test1", new Success("test2"), new Success("test3")];
+        $functor = "strtoupper";
+        $promise = \Amp\map($promises, $functor);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame(["TEST1", "TEST2", "TEST3"], $result);
+    }
+
+    public function testMapReturnsEmptySuccessOnEmptyInput() {
+        $promise = \Amp\map([], function () {});
+        $this->assertInstanceOf("Amp\Success", $promise);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame([], $result);
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage hulk smash
+     */
+    public function testMapFailsIfFunctorThrowsOnUnwrappedValue() {
+        (new NativeReactor)->run(function ($reactor) {
+            yield \Amp\map(["test"], function () { throw new \Exception("hulk smash"); });
+        });
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage hulk smash
+     */
+    public function testMapFailsIfFunctorThrowsOnResolvedValue() {
+        (new NativeReactor)->run(function ($reactor) {
+            $promises = [new Success("test")];
+            yield \Amp\map($promises, function () { throw new \Exception("hulk smash"); });
+        });
+    }
+
+    public function testMapFailsIfAnyPromiseFails() {
+        $e = new \RuntimeException(
+            "true progress is to know more, and be more, and to do more"
+        );
+        $promise = \Amp\map([new Failure($e)], function () {});
+
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertSame($e, $error);
+        $this->assertNull($result);
+    }
+
+    public function testMapIgnoresFurtherResultsOnceFailed() {
+        $completed = false;
+        (new NativeReactor)->run(function ($reactor) use (&$completed) {
+            $p1 = new Deferred;
+            $reactor->once(function () use ($p1) {
+                $p1->succeed("woot");
+            }, 50);
+
+            $e = new \RuntimeException(
+                "true progress is to know more, and be more, and to do more"
+            );
+
+            $p2 = new Deferred;
+            $reactor->once(function () use ($p2, $e) {
+                $p2->fail($e);
+            }, 10);
+
+            $toMap = \Amp\promises([$p1, $p2]);
+
+            try {
+                yield \Amp\map($toMap, "strtoupper");
+                $this->fail("this line should not be reached");
+            } catch (\RuntimeException $error) {
+                $this->assertSame($e, $error);
+            }
+
+            yield $p1->promise();
+
+            $completed = true;
+        });
+
+        $this->assertTrue($completed);
+    }
+
     public function testPipeWrapsRawValue() {
         $invoked = 0;
         $promise = \Amp\pipe(21, function($r) { return $r * 2; });
