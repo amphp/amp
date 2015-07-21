@@ -88,7 +88,7 @@ class EvReactor implements ExtensionReactor {
             unset($this->enabledImmediates[$watcherId]);
             $out = \call_user_func($callback, $this, $watcherId, $cbData);
             if ($out instanceof \Generator) {
-                resolve($out, $this)->when($this->onCoroutineResolution);
+                Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
             }
         } catch (\Exception $e) {
             $this->onCallbackError($e);
@@ -226,7 +226,7 @@ class EvReactor implements ExtensionReactor {
                     $out = \call_user_func($callback, $this, $watcherId, $evHandle->data);
                 }
                 if ($out instanceof \Generator) {
-                    resolve($out, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->onCallbackError($e);

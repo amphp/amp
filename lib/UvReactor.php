@@ -102,7 +102,7 @@ class UvReactor implements ExtensionReactor {
                 );
                 $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->onCallbackError($e);
@@ -226,7 +226,7 @@ class UvReactor implements ExtensionReactor {
                 $watcherId = $watcher->id;
                 $result = \call_user_func($callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
@@ -359,7 +359,7 @@ class UvReactor implements ExtensionReactor {
         try {
             $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
             if ($result instanceof \Generator) {
-                resolve($result, $this)->when($this->onCoroutineResolution);
+                Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
             }
         } catch (\Exception $e) {
             $this->onCallbackError($e);
@@ -394,7 +394,7 @@ class UvReactor implements ExtensionReactor {
             try {
                 $result = call_user_func($callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->onCallbackError($e);

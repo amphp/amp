@@ -96,7 +96,7 @@ class LibeventReactor implements ExtensionReactor {
                 );
                 $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->onCallbackError($e);
@@ -218,7 +218,7 @@ class LibeventReactor implements ExtensionReactor {
                         throw new \RuntimeException("Unexpected Watcher type encountered");
                 }
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Exception $e) {
                 $this->onCallbackError($e);

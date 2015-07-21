@@ -163,45 +163,6 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function testResolutionFailuresAreThrownIntoGenerator() {
-        $invoked = 0;
-        (new NativeReactor)->run(function($reactor) use (&$invoked) {
-            $foo = function() {
-                $a = (yield new Success(21));
-                $b = 1;
-                try {
-                    yield new Failure(new \Exception('test'));
-                    $this->fail('Code path should not be reached');
-                } catch (\Exception $e) {
-                    $this->assertSame('test', $e->getMessage());
-                    $b = 2;
-                }
-            };
-            $result = (yield \Amp\resolve($foo(), $reactor));
-            $invoked++;
-        });
-        $this->assertSame(1, $invoked);
-    }
-
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage When in the chronicle of wasted time
-     */
-    public function testUncaughtGeneratorExceptionFailsResolverPromise() {
-        $invoked = 0;
-        (new NativeReactor)->run(function($reactor) use (&$invoked) {
-            $gen = function() {
-                yield;
-                throw new \Exception('When in the chronicle of wasted time');
-                yield;
-            };
-
-            yield \Amp\resolve($gen(), $reactor);
-            $invoked++;
-        });
-        $this->assertSame(1, $invoked);
-    }
-
     /**
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Promise resolution timed out
@@ -291,21 +252,6 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
                 'r2' => new Failure(new \RuntimeException),
             ]);
         });
-    }
-
-    public function testCoroutineFauxReturnValue() {
-        $invoked = 0;
-        (new NativeReactor)->run(function($reactor) use (&$invoked) {
-            $co = function() use (&$invoked) {
-                yield;
-                yield "return" => 42;
-                yield;
-                $invoked++;
-            };
-            $result = (yield \Amp\resolve($co(), $reactor));
-            $this->assertSame(42, $result);
-        });
-        $this->assertSame(1, $invoked);
     }
 
     public function testPromisesNormalization() {

@@ -523,109 +523,25 @@ function wait(Promise $promise, Reactor $reactor = null) {
 }
 
 /**
- * Return a function that will be resolved as a coroutine once invoked
- *
- * @param callable $func The callable to be wrapped for coroutine resolution
- * @param \Amp\Reactor $reactor
- * @return callable Returns the wrapped callable
+ * This function is deprecated; please use Coroutine::resolve() instead
  */
-function coroutine(callable $func, Reactor $reactor = null) {
-    return function() use ($func, $reactor) {
-        $result = \call_user_func_array($func, \func_get_args());
-        return ($result instanceof \Generator)
-            ? resolve($result, $reactor)
-            : $result;
-    };
+function resolve(\Generator $generator, Reactor $reactor = null) {
+    trigger_error(
+        "Amp\\resolve() is deprecated; please use Amp\\Coroutine::resolve() instead",
+        E_USER_DEPRECATED
+    );
+    return Coroutine::resolve($generator, $reactor);
 }
 
 /**
- * Resolve a Generator function as a coroutine
- *
- * Upon resolution the Generator return value is used to succeed the promised result. If an
- * error occurs during coroutine resolution the promise fails.
- *
- * @param \Generator $generator The generator to resolve as a coroutine
- * @param \Amp\Reactor $reactor
+ * This function is deprecated; please use Coroutine::resolve() instead
  */
-function resolve(\Generator $generator, Reactor $reactor = null) {
-    $cs = new \StdClass;
-    $cs->reactor = $reactor ?: reactor();
-    $cs->promisor = new Deferred;
-    $cs->generator = $generator;
-    $cs->returnValue = null;
-    $cs->currentPromise = null;
-    $cs->nestingLevel = 0;
-
-    __coroutineAdvance($cs);
-
-    return $cs->promisor->promise();
-}
-
-function __coroutineAdvance($cs) {
-    try {
-        $yielded = $cs->generator->current();
-        if (!isset($yielded)) {
-            if ($cs->generator->valid()) {
-                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-            } elseif (isset($cs->returnValue)) {
-                $cs->promisor->succeed($cs->returnValue);
-            } elseif (PHP_MAJOR_VERSION >= 7) {
-                $cs->promisor->succeed($cs->generator->getReturn());
-            } else {
-                $cs->promisor->succeed();
-            }
-        } elseif (($key = $cs->generator->key()) === "return") {
-            $cs->returnValue = $yielded;
-            __coroutineSend(null, null, $cs);
-        } elseif ($yielded instanceof Promise) {
-            if ($cs->nestingLevel < 3) {
-                $cs->nestingLevel++;
-                $yielded->when("Amp\__coroutineSend", $cs);
-                $cs->nestingLevel--;
-            } else {
-                $cs->currentPromise = $yielded;
-                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
-            }
-        } else {
-            $error = new \DomainException(makeGeneratorError($cs->generator, sprintf(
-                'Unexpected yield (Promise|null|"return" expected); %s yielded at key %s',
-                is_object($yielded) ? get_class($yielded) : gettype($yielded),
-                $key
-            )));
-            $cs->reactor->immediately(function() use ($cs, $error) {
-                $cs->promisor->fail($error);
-            });
-        }
-    } catch (\Exception $uncaught) {
-        $cs->reactor->immediately(function() use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
-        });
-    }
-}
-
-function __coroutineNextTick($reactor, $watcherId, $cs) {
-    if ($cs->currentPromise) {
-        $promise = $cs->currentPromise;
-        $cs->currentPromise = null;
-        $promise->when("Amp\__coroutineSend", $cs);
-    } else {
-        __coroutineSend(null, null, $cs);
-    }
-}
-
-function __coroutineSend($error, $result, $cs) {
-    try {
-        if ($error) {
-            $cs->generator->throw($error);
-        } else {
-            $cs->generator->send($result);
-        }
-        __coroutineAdvance($cs);
-    } catch (\Exception $uncaught) {
-        $cs->reactor->immediately(function() use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
-        });
-    }
+function coroutine(callable $func, Reactor $reactor = null) {
+    trigger_error(
+        "Amp\\coroutine() is deprecated; please use Amp\\Coroutine::wrap() instead",
+        E_USER_DEPRECATED
+    );
+    return Coroutine::wrap($func, $reactor);
 }
 
 /**
