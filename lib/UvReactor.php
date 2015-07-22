@@ -674,14 +674,14 @@ class UvReactor implements ExtensionReactor {
         }
 
         return [
-            'timers'            => $timers,
-            'immediates'        => $immediates,
-            'io_readers'        => $readers,
-            'io_writers'        => $writers,
-            'signals'           => $signals,
-            'disabled'          => $disabled,
-            'last_watcher_id'   => $this->lastWatcherId,
-            'instances'         => self::$instanceCount,
+            "immediates"        => $immediates,
+            "timers"            => $timers,
+            "io_readers"        => $readers,
+            "io_writers"        => $writers,
+            "signals"           => $signals,
+            "disabled"          => $disabled,
+            "last_watcher_id"   => $this->lastWatcherId,
+            "instances"         => self::$instanceCount,
         ];
     }
 }

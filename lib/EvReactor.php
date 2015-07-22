@@ -48,6 +48,34 @@ class EvReactor implements ExtensionReactor {
         }
     }
 
+    public function __debugInfo() {
+        $timers = $readers = $writers = $signals = 0;
+        foreach ($this->enabledWatchers as $evHandle) {
+            switch (get_class($evHandle)) {
+                case "EvTimer":
+                    $timers++;
+                    break;
+                case "EvIo":
+                    if ($evHandle->events === Ev::READ) { $readers++; } else { $writers++; }
+                    break;
+                case "EvSignal":
+                    $signals++;
+                    break;
+            }
+        }
+
+        return [
+            "immediates"        => count($this->enabledImmediates),
+            "timers"            => $timers,
+            "io_readers"        => $readers,
+            "io_writers"        => $writers,
+            "signals"           => $signals,
+            "disabled"          => count($this->disabledWatchers) + count($this->disabledImmediates),
+            "last_watcher_id"   => $this->lastWatcherId,
+            "instances"         => self::$instanceCount,
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -306,8 +334,6 @@ class EvReactor implements ExtensionReactor {
         } elseif (isset($this->disabledImmediates[$watcherId])) {
             $watcher = $this->disabledImmediates[$watcherId];
             unset($this->disabledImmediates[$watcherId]);
-        } else {
-            return;
         }
     }
 

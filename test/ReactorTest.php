@@ -5,6 +5,148 @@ namespace Amp\Test;
 abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     abstract protected function getReactor();
 
+    public function testMultipleCallsToRunHaveNoEffect() {
+        $reactor = $this->getReactor();
+        $reactor->run(function($reactor) {
+            $reactor->run();
+        });
+    }
+
+    public function testImmediatelyWatcherRegistrationAndCancellation() {
+        $reactor = $this->getReactor();
+
+        $watcherId = $reactor->immediately(function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["immediates"]);
+
+        $reactor->disable($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["immediates"]);
+        $this->assertSame(1, $info["disabled"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["immediates"]);
+
+        $watcherId = $reactor->immediately(function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["immediates"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["immediates"]);
+    }
+
+    public function testOnceWatcherRegistrationAndCancellation() {
+        $reactor = $this->getReactor();
+
+        $watcherId = $reactor->once(function () {}, 1000);
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["timers"]);
+
+        $reactor->disable($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+        $this->assertSame(1, $info["disabled"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+
+        $watcherId = $reactor->once(function () {}, 1000);
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["timers"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+    }
+
+    public function testRepeatWatcherRegistrationAndCancellation() {
+        $reactor = $this->getReactor();
+
+        $watcherId = $reactor->repeat(function () {}, 1000);
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["timers"]);
+
+        $reactor->disable($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+        $this->assertSame(1, $info["disabled"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+
+        $watcherId = $reactor->repeat(function () {}, 1000);
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["timers"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["timers"]);
+    }
+
+    public function testOnWritableWatcherRegistrationAndCancellation() {
+        $reactor = $this->getReactor();
+
+        $watcherId = $reactor->onWritable(STDIN, function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["io_writers"]);
+
+        $reactor->disable($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_writers"]);
+        $this->assertSame(1, $info["disabled"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_writers"]);
+
+        $watcherId = $reactor->onWritable(STDIN, function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["io_writers"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_writers"]);
+    }
+
+    public function testOnReadableWatcherRegistrationAndCancellation() {
+        $reactor = $this->getReactor();
+
+        $watcherId = $reactor->onReadable(STDIN, function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["io_readers"]);
+
+        $reactor->disable($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_readers"]);
+        $this->assertSame(1, $info["disabled"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_readers"]);
+
+        $watcherId = $reactor->onReadable(STDIN, function () {});
+        $this->assertInternalType("string", $watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(1, $info["io_readers"]);
+
+        $reactor->cancel($watcherId);
+        $info = $reactor->__debugInfo();
+        $this->assertSame(0, $info["io_readers"]);
+    }
+
     public function testEnablingWatcherAllowsSubsequentInvocation() {
         $reactor = $this->getReactor();
         $increment = 0;
