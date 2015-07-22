@@ -295,20 +295,19 @@ function map(array $promises, callable $functor) {
         $struct->remaining--;
         try {
             $struct->results[$key] = \call_user_func($struct->functor, $result);
+            if ($struct->remaining === 0) {
+                $struct->promisor->succeed($struct->results);
+            }
         } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
             $struct->remaining = 0;
             $struct->promisor->fail($e);
-            return;
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
-            /**
-             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-             */
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $struct->remaining = 0;
             $struct->promisor->fail($e);
-            return;
-        }
-        if ($struct->remaining === 0) {
-            $struct->promisor->succeed($struct->results);
         }
     };
 
@@ -320,12 +319,13 @@ function map(array $promises, callable $functor) {
             try {
                 $struct->results[$key] = \call_user_func($struct->functor, $promise);
             } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
-                /**
-                 * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-                 */
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
             }
@@ -380,12 +380,13 @@ function filter(array $promises, callable $functor) {
                 $struct->promisor->succeed($struct->results);
             }
         } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
             $struct->remaining = 0;
             $struct->promisor->fail($e);
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
-            /**
-             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-             */
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $struct->remaining = 0;
             $struct->promisor->fail($e);
         }
@@ -405,13 +406,14 @@ function filter(array $promises, callable $functor) {
                     break;
                 }
             } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
                 break;
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
-                /**
-                 * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-                 */
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
                 break;
@@ -434,11 +436,12 @@ function pipe($promise, callable $functor) {
         try {
             return new Success(\call_user_func($functor, $promise));
         } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
             return new Failure($e);
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
-            /**
-             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-             */
+            // @TODO Remove this catch block once PHP5 support is no longer required
             return new Failure($e);
         }
     }
@@ -452,11 +455,12 @@ function pipe($promise, callable $functor) {
         try {
             $promisor->succeed(\call_user_func($functor, $result));
         } catch (\Throwable $error) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
             $promisor->fail($error);
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $error) {
-             /**
-             * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-             */
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $promisor->fail($error);
         }
     });
