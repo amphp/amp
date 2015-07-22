@@ -23,11 +23,14 @@ class EvReactor implements ExtensionReactor {
     private $onCoroutineResolution;
 
     public function __construct($flags = null) {
+        // @codeCoverageIgnoreStart
         if (!extension_loaded("ev")) {
             throw new \RuntimeException(
-                "The pecl ev extension is required to use the EvReactor."
+                "The pecl ev extension is required to use " . __CLASS__
             );
         }
+        // @codeCoverageIgnoreEnd
+
         $flags = $flags ?: Ev::FLAG_AUTO;
         $this->loop = new EvLoop($flags);
         $this->onCoroutineResolution = function ($e = null, $r = null) {
@@ -118,14 +121,23 @@ class EvReactor implements ExtensionReactor {
             if ($out instanceof \Generator) {
                 Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
             }
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->onCallbackError($e);
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $this->onCallbackError($e);
         }
 
         return $this->isRunning;
     }
 
-    private function onCallbackError(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function onCallbackError($e) {
         if (empty($this->onError)) {
             $this->stopException = $e;
             $this->stop();
@@ -134,10 +146,20 @@ class EvReactor implements ExtensionReactor {
         }
     }
 
-    private function tryUserErrorCallback(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function tryUserErrorCallback($e) {
         try {
             \call_user_func($this->onError, $e);
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->stopException = $e;
+            $this->stop();
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $this->stopException = $e;
             $this->stop();
         }
@@ -256,7 +278,13 @@ class EvReactor implements ExtensionReactor {
                 if ($out instanceof \Generator) {
                     Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
         };

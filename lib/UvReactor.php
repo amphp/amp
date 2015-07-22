@@ -28,11 +28,13 @@ class UvReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        // @codeCoverageIgnoreStart
         if (!extension_loaded("uv")) {
             throw new \RuntimeException(
-                "The php-uv extension is required to use the UvReactor."
+                "The php-uv extension is required to use " . __CLASS__
             );
         }
+        // @codeCoverageIgnoreEnd
 
         $this->loop = uv_loop_new();
         $this->isWindows = (stripos(PHP_OS, 'win') === 0);
@@ -100,11 +102,17 @@ class UvReactor implements ExtensionReactor {
                     $this->immediates[$watcherId],
                     $this->watchers[$watcherId]
                 );
-                $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
                     Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
 
@@ -233,13 +241,22 @@ class UvReactor implements ExtensionReactor {
                 if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcherId])) {
                     $this->clearWatcher($watcherId);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
         };
     }
 
-    private function onCallbackError(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function onCallbackError($e) {
         if (empty($this->onError)) {
             $this->stopException = $e;
             $this->stop();
@@ -248,10 +265,20 @@ class UvReactor implements ExtensionReactor {
         }
     }
 
-    private function tryUserErrorCallback(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function tryUserErrorCallback($e) {
         try {
-            call_user_func($this->onError, $e);
+            \call_user_func($this->onError, $e);
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->stopException = $e;
+            $this->stop();
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $this->stopException = $e;
             $this->stop();
         }
@@ -357,11 +384,17 @@ class UvReactor implements ExtensionReactor {
 
     private function invokePollWatcher($watcher) {
         try {
-            $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
             if ($result instanceof \Generator) {
                 Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
             }
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->onCallbackError($e);
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $this->onCallbackError($e);
         }
     }
@@ -392,11 +425,17 @@ class UvReactor implements ExtensionReactor {
     private function wrapSignalCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $result = call_user_func($callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
+                $result = \call_user_func($callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
                 if ($result instanceof \Generator) {
                     Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
         };

@@ -14,4 +14,24 @@ class EvReactorTest extends ReactorTest {
             );
         }
     }
+
+    public function testImmediateCoroutineResolutionError() {
+        if (\extension_loaded("xdebug")) {
+            $this->markTestSkipped(
+                "Cannot run this test with xdebug enabled: it causes zend_mm_heap corrupted"
+            );
+        } else {
+            parent::testImmediateCoroutineResolutionError();
+        }
+    }
+
+    public function testOnErrorFailure() {
+        if (\extension_loaded("xdebug")) {
+            $this->markTestSkipped(
+                "Cannot run this test with xdebug enabled: it causes zend_mm_heap corrupted"
+            );
+        } else {
+            parent::testImmediateCoroutineResolutionError();
+        }
+    }
 }

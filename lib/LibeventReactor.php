@@ -22,11 +22,13 @@ class LibeventReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        // @codeCoverageIgnoreStart
         if (!extension_loaded("libevent")) {
             throw new \RuntimeException(
-                "The pecl libevent extension is required to use the LibeventReactor."
+                "The pecl libevent extension is required to use " . __CLASS__
             );
         }
+        // @codeCoverageIgnoreEnd
 
         $this->base = event_base_new();
 
@@ -94,11 +96,17 @@ class LibeventReactor implements ExtensionReactor {
                     $this->immediates[$watcherId],
                     $this->watchers[$watcherId]
                 );
-                $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
                     Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
 
@@ -198,35 +206,42 @@ class LibeventReactor implements ExtensionReactor {
                     case Watcher::IO_READER:
                         // fallthrough
                     case Watcher::IO_WRITER:
-                        $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
                         break;
                     case Watcher::TIMER_ONCE:
-                        $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
                         $this->cancel($watcher->id);
                         break;
                     case Watcher::TIMER_REPEAT:
-                        $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
                         // If the watcher cancelled itself this will no longer exist
                         if (isset($this->watchers[$watcher->id])) {
                             event_add($watcher->eventResource, $watcher->msInterval);
                         }
                         break;
                     case Watcher::SIGNAL:
-                        $result = call_user_func($watcher->callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
                         break;
-                    default:
-                        throw new \RuntimeException("Unexpected Watcher type encountered");
                 }
                 if ($result instanceof \Generator) {
                     Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
                 }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
                 $this->onCallbackError($e);
             }
         };
     }
 
-    private function onCallbackError(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function onCallbackError($e) {
         if (empty($this->onError)) {
             $this->stopException = $e;
             $this->stop();
@@ -235,10 +250,20 @@ class LibeventReactor implements ExtensionReactor {
         }
     }
 
-    private function tryUserErrorCallback(\Exception $e) {
+    /**
+     *@TODO Add a \Throwable typehint once PHP5 is no longer required
+     */
+    private function tryUserErrorCallback($e) {
         try {
-            call_user_func($this->onError, $e);
+            \call_user_func($this->onError, $e);
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->stopException = $e;
+            $this->stop();
+            // @codeCoverageIgnoreEnd
         } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
             $this->stopException = $e;
             $this->stop();
         }
@@ -373,8 +398,6 @@ class LibeventReactor implements ExtensionReactor {
             case Watcher::TIMER_REPEAT:
                 event_del($watcher->eventResource);
                 break;
-            default:
-                throw new \RuntimeException("Unexpected Watcher type encountered");
         }
 
         $watcher->isEnabled = false;
@@ -409,8 +432,6 @@ class LibeventReactor implements ExtensionReactor {
             case Watcher::SIGNAL:
                 event_add($watcher->eventResource);
                 break;
-            default:
-                throw new \RuntimeException("Unexpected Watcher type encountered");
         }
 
         $watcher->isEnabled = true;
@@ -473,10 +494,6 @@ class LibeventReactor implements ExtensionReactor {
                 case Watcher::SIGNAL:
                     $signals++;
                     break;
-                default:
-                    throw new \DomainException(
-                        "Unexpected watcher type: {$watcher->type}"
-                    );
             }
         }
 
