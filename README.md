@@ -8,7 +8,7 @@
 
 Learn more about `amphp/amp` in [the guide](https://stackedit.io/viewer#!url=https://raw.githubusercontent.com/amphp/amp/master/guide.md).
 
-**Dependencies**
+**Required PHP Version**
 
 - PHP 5.5+
 
