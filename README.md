@@ -11,9 +11,12 @@ Learn more about `amphp/amp` in [the guide](https://stackedit.io/viewer#!url=htt
 **Dependencies**
 
 - PHP 5.5+
-- [ev](https://pecl.php.net/package/ev) (optional)
-- [libevent](https://pecl.php.net/package/libevent) (optional)
-- [php-uv](https://github.com/bwoebi/php-uv) (optional & experimental, requires PHP7)
+
+**Optional PHP Extension Backends**
+
+- [ev](https://pecl.php.net/package/ev)
+- [libevent](https://pecl.php.net/package/libevent)
+- [php-uv](https://github.com/bwoebi/php-uv) (experimental fork, requires PHP7)
 
 **Installation**
 
