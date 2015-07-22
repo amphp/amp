@@ -24,7 +24,7 @@ trait Placeholder {
      */
     public function when(callable $func, $data = null) {
         if ($this->isResolved) {
-            call_user_func($func, $this->error, $this->result, $data);
+            \call_user_func($func, $this->error, $this->result, $data);
         } else {
             $this->whens[] = [$func, $data];
         }
@@ -90,7 +90,7 @@ trait Placeholder {
             $this->error = $error;
             $this->result = $result;
             foreach ($this->whens as $when) {
-                call_user_func($when[0], $error, $result, $when[1]);
+                \call_user_func($when[0], $error, $result, $when[1]);
             }
             $this->whens = $this->watchers = [];
         }

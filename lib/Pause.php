@@ -18,7 +18,7 @@ class Pause implements Promise {
             );
         }
         $reactor = $reactor ?: reactor();
-        $reactor->once(function() {
+        $reactor->once(function () {
             $this->resolve();
         }, $timeout);
     }

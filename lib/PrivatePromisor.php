@@ -20,7 +20,7 @@ trait PrivatePromisor {
         };
         $updater = function($progress) {
             // bound to private PrivatePlaceholder::update()
-            \call_user_func_array([$this, "update"], func_get_args());
+            \call_user_func_array([$this, "update"], \func_get_args());
         };
         $this->resolver = $resolver->bindTo($placeholder, $placeholder);
         $this->updater = $updater->bindTo($placeholder, $placeholder);
