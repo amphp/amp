@@ -565,28 +565,6 @@ function wait(Promise $promise, Reactor $reactor = null) {
 }
 
 /**
- * This function is deprecated; please use Coroutine::resolve() instead
- */
-function resolve(\Generator $generator, Reactor $reactor = null) {
-    trigger_error(
-        "Amp\\resolve() is deprecated; please use Amp\\Coroutine::resolve() instead",
-        E_USER_DEPRECATED
-    );
-    return Coroutine::resolve($generator, $reactor);
-}
-
-/**
- * This function is deprecated; please use Coroutine::resolve() instead
- */
-function coroutine(callable $func, Reactor $reactor = null) {
-    trigger_error(
-        "Amp\\coroutine() is deprecated; please use Amp\\Coroutine::wrap() instead",
-        E_USER_DEPRECATED
-    );
-    return Coroutine::wrap($func, $reactor);
-}
-
-/**
  * A general purpose function for creating error messages from generator yields
  *
  * @param \Generator $generator
