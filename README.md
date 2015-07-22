@@ -12,7 +12,7 @@ Learn more about `amphp/amp` in [the guide](https://stackedit.io/viewer#!url=htt
 
 - PHP 5.5+
 
-**Optional PHP Extension Backends**
+**Optional Extension Backends**
 
 - [ev](https://pecl.php.net/package/ev)
 - [libevent](https://pecl.php.net/package/libevent)
