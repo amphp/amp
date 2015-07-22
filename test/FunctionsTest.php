@@ -111,6 +111,121 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($completed);
     }
 
+    public function testFilter() {
+        $promises = ["test1", new Success("test2"), new Success("test2"), "test2"];
+        $functor = function($el) { return $el === "test2"; };
+        $promise = \Amp\filter($promises, $functor);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame([1=>"test2", 2=>"test2", 3=>"test2"], $result);
+    }
+
+    public function testFilter2() {
+        $promises = ["test1", "test2", new Success("test2"), new Success("test2")];
+        $functor = function($el) { return $el === "test2"; };
+        $promise = \Amp\filter($promises, $functor);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame([1=>"test2", 2=>"test2", 3=>"test2"], $result);
+    }
+    
+    public function testFilterReturnsEmptySuccessOnEmptyInput() {
+        $promise = \Amp\filter([], function () {});
+        $this->assertInstanceOf("Amp\Success", $promise);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame([], $result);
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage hulk smash
+     */
+    public function testFilterFailsIfFunctorThrowsOnUnwrappedValue() {
+        (new NativeReactor)->run(function ($reactor) {
+            yield \Amp\filter(["test"], function () { throw new \Exception("hulk smash"); });
+        });
+    }
+
+    /**
+     * @expectedException Exception
+     * @expectedExceptionMessage hulk smash
+     */
+    public function testFilterFailsIfFunctorThrowsOnResolvedValue() {
+        (new NativeReactor)->run(function ($reactor) {
+            $promises = [new Success("test")];
+            yield \Amp\filter($promises, function () { throw new \Exception("hulk smash"); });
+        });
+    }
+
+    public function testFilterFailsIfAnyPromiseFails() {
+        $e = new \RuntimeException(
+            "true progress is to know more, and be more, and to do more"
+        );
+        $promise = \Amp\filter([new Failure($e)], function () {});
+
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertSame($e, $error);
+        $this->assertNull($result);
+    }
+
+    public function testFilterIgnoresFurtherResultsOnceFailed() {
+        $completed = false;
+        (new NativeReactor)->run(function ($reactor) use (&$completed) {
+            $p1 = new Deferred;
+            $p2 = new Deferred;
+            $e = new \RuntimeException(
+                "true progress is to know more, and be more, and to do more"
+            );
+            $reactor->once(function ($reactor) use ($p1, $p2, $e) {
+                $p2->fail($e);
+                $reactor->immediately(function() use ($p1) {
+                    $p1->succeed("woot");
+                });
+            }, 10);
+
+            $toMap = \Amp\promises([$p1, $p2]);
+            $functor = function () { return true; };
+
+            try {
+                yield \Amp\filter($toMap, $functor);
+                $this->fail("this line should not be reached");
+            } catch (\RuntimeException $error) {
+                $this->assertSame($e, $error);
+            }
+
+            yield $p1->promise();
+
+            $completed = true;
+        });
+
+        $this->assertTrue($completed);
+    }
+
     public function testPipeWrapsRawValue() {
         $invoked = 0;
         $promise = \Amp\pipe(21, function($r) { return $r * 2; });

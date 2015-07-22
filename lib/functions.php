@@ -376,20 +376,18 @@ function filter(array $promises, callable $functor) {
             if (\call_user_func($struct->functor, $result)) {
                 $struct->results[$key] = $result;
             }
+            if ($struct->remaining === 0) {
+                $struct->promisor->succeed($struct->results);
+            }
         } catch (\Throwable $e) {
             $struct->remaining = 0;
             $struct->promisor->fail($e);
-            return;
         } catch (\Exception $e) {
             /**
              * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
              */
             $struct->remaining = 0;
             $struct->promisor->fail($e);
-            return;
-        }
-        if ($struct->remaining === 0) {
-            $struct->promisor->succeed($struct->results);
         }
     };
 
@@ -402,17 +400,20 @@ function filter(array $promises, callable $functor) {
                 if (\call_user_func($struct->functor, $promise)) {
                     $struct->results[$key] = $promise;
                 }
+                if ($struct->remaining === 0) {
+                    $struct->promisor->succeed($struct->results);
+                    break;
+                }
             } catch (\Throwable $e) {
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
+                break;
             } catch (\Exception $e) {
                 /**
                  * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
                  */
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
-            }
-            if ($struct->remaining === 0) {
                 break;
             }
         }
