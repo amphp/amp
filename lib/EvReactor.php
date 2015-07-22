@@ -169,10 +169,6 @@ class EvReactor implements ExtensionReactor {
      * {@inheritdoc}
      */
     public function tick($noWait = false) {
-        if ($this->isRunning) {
-            // If we're already running/ticking this method is superfluous
-            return;
-        }
         $noWait = (bool) $noWait;
         $this->isRunning = true;
 

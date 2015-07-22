@@ -123,10 +123,6 @@ class LibeventReactor implements ExtensionReactor {
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
-        if ($this->isRunning) {
-            return;
-        }
-
         $noWait = (bool) $noWait;
         $this->isRunning = true;
 
