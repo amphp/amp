@@ -24,7 +24,7 @@ class NativeReactor implements Reactor {
             if (empty($e)) {
                 return;
             } elseif ($this->onError) {
-                call_user_func($this->onError, $e);
+                \call_user_func($this->onError, $e);
             } else {
                 throw $e;
             }
@@ -122,7 +122,7 @@ class NativeReactor implements Reactor {
                         $this->immediates[$watcherId],
                         $this->watchers[$watcherId]
                     );
-                    $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+                    $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -140,7 +140,7 @@ class NativeReactor implements Reactor {
                 $timeToNextAlarm = 1;
             } else {
                 if ($this->isTimerSortNeeded) {
-                    asort($this->timerOrder);
+                    \asort($this->timerOrder);
                     $this->isTimerSortNeeded = false;
                 }
                 // This reset() is important ... don't remove it!
@@ -184,7 +184,7 @@ class NativeReactor implements Reactor {
             foreach ($r as $readableStream) {
                 $streamId = (int) $readableStream;
                 foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
-                    $result = call_user_func($watcher->callback, $this, $watcherId, $readableStream, $watcher->callbackData);
+                    $result = \call_user_func($watcher->callback, $this, $watcherId, $readableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -193,7 +193,7 @@ class NativeReactor implements Reactor {
             foreach ($w as $writableStream) {
                 $streamId = (int) $writableStream;
                 foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
-                    $result = call_user_func($watcher->callback, $this, $watcherId, $writableStream, $watcher->callbackData);
+                    $result = \call_user_func($watcher->callback, $this, $watcherId, $writableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
                         resolve($result, $this)->when($this->onCoroutineResolution);
                     }
@@ -220,7 +220,7 @@ class NativeReactor implements Reactor {
 
             $watcher = $this->watchers[$watcherId];
 
-            $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
             if ($result instanceof \Generator) {
                 resolve($result, $this)->when($this->onCoroutineResolution);
             }
@@ -300,7 +300,7 @@ class NativeReactor implements Reactor {
         assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
         $msDelay = isset($options["ms_delay"]) ? $options["ms_delay"] : (int) $msInterval;
         assert(($msDelay >= 0), "ms_delay option expects integer >= 0");
-        
+
         /* In the php7 branch we use an anonymous class with Struct for this.
          * Using a stdclass isn't terribly readable and it's prone to error but
          * it's the easiest way to minimize the distance between 5.x and 7 code
