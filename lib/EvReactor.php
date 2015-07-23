@@ -119,7 +119,7 @@ class EvReactor implements ExtensionReactor {
             unset($this->enabledImmediates[$watcherId]);
             $out = \call_user_func($callback, $this, $watcherId, $cbData);
             if ($out instanceof \Generator) {
-                Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
+                resolve($out, $this)->when($this->onCoroutineResolution);
             }
         } catch (\Throwable $e) {
             // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -272,7 +272,7 @@ class EvReactor implements ExtensionReactor {
                     $out = \call_user_func($callback, $this, $watcherId, $evHandle->data);
                 }
                 if ($out instanceof \Generator) {
-                    Coroutine::resolve($out, $this)->when($this->onCoroutineResolution);
+                    resolve($out, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required

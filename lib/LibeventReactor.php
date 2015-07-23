@@ -98,7 +98,7 @@ class LibeventReactor implements ExtensionReactor {
                 );
                 $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -220,7 +220,7 @@ class LibeventReactor implements ExtensionReactor {
                         break;
                 }
                 if ($result instanceof \Generator) {
-                    Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result, $this)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required

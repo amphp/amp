@@ -124,7 +124,7 @@ class NativeReactor implements Reactor {
                     );
                     $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
                     if ($result instanceof \Generator) {
-                        Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                        resolve($result, $this)->when($this->onCoroutineResolution);
                     }
                 }
             }
@@ -186,7 +186,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
                     $result = call_user_func($watcher->callback, $this, $watcherId, $readableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
-                        Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                        resolve($result, $this)->when($this->onCoroutineResolution);
                     }
                 }
             }
@@ -195,7 +195,7 @@ class NativeReactor implements Reactor {
                 foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
                     $result = call_user_func($watcher->callback, $this, $watcherId, $writableStream, $watcher->callbackData);
                     if ($result instanceof \Generator) {
-                        Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                        resolve($result, $this)->when($this->onCoroutineResolution);
                     }
                 }
             }
@@ -222,7 +222,7 @@ class NativeReactor implements Reactor {
 
             $result = call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
             if ($result instanceof \Generator) {
-                Coroutine::resolve($result, $this)->when($this->onCoroutineResolution);
+                resolve($result, $this)->when($this->onCoroutineResolution);
             }
 
             if ($watcher->type === Watcher::TIMER_ONCE) {

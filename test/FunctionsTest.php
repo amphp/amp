@@ -7,6 +7,8 @@ use Amp\Success;
 use Amp\Failure;
 use Amp\Deferred;
 use Amp\PromiseStream;
+use Amp\Pause;
+use Amp\CoroutineResult;
 
 class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
@@ -140,7 +142,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertNull($error);
         $this->assertSame([1=>"test2", 2=>"test2", 3=>"test2"], $result);
     }
-    
+
     public function testFilterReturnsEmptySuccessOnEmptyInput() {
         $promise = \Amp\filter([], function () {});
         $this->assertInstanceOf("Amp\Success", $promise);
@@ -635,5 +637,138 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $completed = true;
         });
         $this->assertTrue($completed);
+    }
+
+    public function testCoroutine() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $co = function($reactor) use (&$invoked) {
+                yield new Success;
+                yield;
+                yield new Pause(25, $reactor);
+                $invoked++;
+            };
+            $wrapped = \Amp\coroutine($co, $reactor);
+            $wrapped($reactor);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    public function testNestedCoroutineResolutionContinuation() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $co = function() use (&$invoked) {
+                yield new Success;
+                yield new Success;
+                yield new Success;
+                yield new Success;
+                yield new Success;
+                yield new CoroutineResult(42);
+                $invoked++;
+            };
+            $result = (yield \Amp\resolve($co(), $reactor));
+            $this->assertSame(42, $result);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    public function testCoroutineFauxReturnValue() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $co = function() use (&$invoked) {
+                yield;
+                yield new CoroutineResult(42);
+                yield;
+                $invoked++;
+            };
+            $result = (yield \Amp\resolve($co(), $reactor));
+            $this->assertSame(42, $result);
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    public function testResolutionFailuresAreThrownIntoGeneratorCoroutine() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $foo = function() {
+                $a = (yield new Success(21));
+                $b = 1;
+                try {
+                    yield new Failure(new \Exception("test"));
+                    $this->fail("Code path should not be reached");
+                } catch (\Exception $e) {
+                    $this->assertSame("test", $e->getMessage());
+                    $b = 2;
+                }
+            };
+            $result = (yield \Amp\resolve($foo(), $reactor));
+            $invoked++;
+        });
+        $this->assertSame(1, $invoked);
+    }
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage a moveable feast
+     */
+    public function testExceptionOnInitialAdvanceFailsCoroutineResolution() {
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $co = function() {
+                throw new \Exception("a moveable feast");
+                yield;
+            };
+            $result = (yield \Amp\resolve($co(), $reactor));
+        });
+    }
+
+    /**
+     * @dataProvider provideInvalidYields
+     */
+    public function testInvalidYieldFailsCoroutineResolution($badYield) {
+        try {
+            (new NativeReactor)->run(function($reactor) use (&$invoked, $badYield) {
+                $gen = function() use ($badYield) {
+                    yield;
+                    yield $badYield;
+                    yield;
+                };
+                yield \Amp\resolve($gen(), $reactor);
+            });
+            $this->fail("execution should not reach this point");
+        } catch (\DomainException $e) {
+            $pos = strpos($e->getMessage(), "Unexpected yield (Promise|CoroutineResult|null expected);");
+            $this->assertSame(0, $pos);
+            return;
+        }
+        $this->fail("execution should not reach this point");
+    }
+
+    public function provideInvalidYields() {
+        return [
+            [42],
+            [3.14],
+            ["string"],
+            [true],
+            [new \StdClass],
+        ];
+    }
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage When in the chronicle of wasted time
+     */
+    public function testUncaughtGeneratorExceptionFailsCoroutineResolution() {
+        $invoked = 0;
+        (new NativeReactor)->run(function($reactor) use (&$invoked) {
+            $gen = function() {
+                yield;
+                throw new \Exception("When in the chronicle of wasted time");
+                yield;
+            };
+
+            yield \Amp\resolve($gen(), $reactor);
+            $invoked++;
+        });
+        $this->assertSame(1, $invoked);
     }
 }

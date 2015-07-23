@@ -565,6 +565,148 @@ function wait(Promise $promise, Reactor $reactor = null) {
 }
 
 /**
+ * Return a new function that will be resolved as a coroutine when invoked
+ *
+ * @param callable $func The callable to be wrapped for coroutine resolution
+ * @param \Amp\Reactor $reactor
+ * @return callable Returns a wrapped callable
+ * @TODO Use variadic function instead of func_get_args() once PHP5.5 is no longer supported
+ */
+function coroutine(callable $func, Reactor $reactor = null) {
+    return function() use ($func, $reactor) {
+        $out = \call_user_func_array($func, \func_get_args());
+        return ($out instanceof \Generator)
+            ? resolve($out, $reactor)
+            : $out;
+    };
+}
+
+/**
+ * Resolve a Generator coroutine function
+ *
+ * Upon resolution the Generator return value is used to succeed the promised result. If an
+ * error occurs during coroutine resolution the returned promise fails.
+ *
+ * @param \Generator $generator The generator to resolve as a coroutine
+ * @param \Amp\Reactor $reactor
+ */
+function resolve(\Generator $generator, Reactor $reactor = null) {
+    $cs = new CoroutineState;
+    $cs->reactor = $reactor ?: reactor();
+    $cs->promisor = new Deferred;
+    $cs->generator = $generator;
+    $cs->returnValue = null;
+    $cs->currentPromise = null;
+    $cs->nestingLevel = 0;
+
+    __coroutineAdvance($cs);
+
+    return $cs->promisor->promise();
+}
+
+/**
+ * This function is used internally when resolving coroutines.
+ * It is not considered part of the public API and library users
+ * should not rely upon it in applications.
+ */
+function __coroutineAdvance(CoroutineState $cs) {
+    try {
+        $yielded = $cs->generator->current();
+        if (!isset($yielded)) {
+            if ($cs->generator->valid()) {
+                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            } elseif (isset($cs->returnValue)) {
+                $cs->promisor->succeed($cs->returnValue);
+            } else {
+                $result = (PHP_MAJOR_VERSION >= 7) ? $cs->generator->getReturn() : null;
+                $cs->promisor->succeed($result);
+            }
+        } elseif ($yielded instanceof Promise) {
+            if ($cs->nestingLevel < 3) {
+                $cs->nestingLevel++;
+                $yielded->when("Amp\__coroutineSend", $cs);
+                $cs->nestingLevel--;
+            } else {
+                $cs->currentPromise = $yielded;
+                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+            }
+        } elseif ($yielded instanceof CoroutineResult) {
+            /**
+             * @TODO This block is necessary for PHP5; remove once PHP7 is required and
+             *       we have return expressions in generators
+             */
+            $cs->returnValue = $yielded->getReturn();
+            __coroutineSend(null, null, $cs);
+        } else {
+            /**
+             * @TODO Remove CoroutineResult from error message once PHP7 is required
+             */
+            $error = new \DomainException(makeGeneratorError($cs->generator, \sprintf(
+                "Unexpected yield (Promise|CoroutineResult|null expected); %s yielded at key %s",
+                \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
+                $cs->generator->key()
+            )));
+            $cs->reactor->immediately(function() use ($cs, $error) {
+                $cs->promisor->fail($error);
+            });
+        }
+    } catch (\Throwable $uncaught) {
+        /**
+         * @codeCoverageIgnoreStart
+         * @TODO Remove these coverage ignore lines once PHP7 is required
+         */
+        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+            $cs->promisor->fail($uncaught);
+        });
+        /**
+         * @codeCoverageIgnoreEnd
+         */
+    } catch (\Exception $uncaught) {
+        /**
+         * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+         */
+        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+            $cs->promisor->fail($uncaught);
+        });
+    }
+}
+
+/**
+ * This function is used internally when resolving coroutines.
+ * It is not considered part of the public API and library users
+ * should not rely upon it in applications.
+ */
+function __coroutineNextTick(Reactor $reactor, $watcherId, CoroutineState $cs) {
+    if ($cs->currentPromise) {
+        $promise = $cs->currentPromise;
+        $cs->currentPromise = null;
+        $promise->when("Amp\__coroutineSend", $cs);
+    } else {
+        __coroutineSend(null, null, $cs);
+    }
+}
+
+/**
+ * This function is used internally when resolving coroutines.
+ * It is not considered part of the public API and library users
+ * should not rely upon it in applications.
+ */
+function __coroutineSend($error, $result, CoroutineState $cs) {
+    try {
+        if ($error) {
+            $cs->generator->throw($error);
+        } else {
+            $cs->generator->send($result);
+        }
+        __coroutineAdvance($cs);
+    } catch (\Exception $uncaught) {
+        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+            $cs->promisor->fail($uncaught);
+        });
+    }
+}
+
+/**
  * A general purpose function for creating error messages from generator yields
  *
  * @param \Generator $generator
