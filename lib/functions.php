@@ -489,6 +489,55 @@ function promises(array $values) {
 }
 
 /**
+ * Coalesce Promise updates into a generator "stream"
+ *
+ * This function simplifies the consumption of promise updates
+ * within coroutines (avoids callbacks).
+ *
+ * Example:
+ *
+ *      <?php
+ *      $promise = someAsyncThingWithUpdates();
+ *      $generator = stream($promise);
+ *      foreach ($generator as $promisedUpdate) {
+ *          $update = (yield $promisedUpdate);
+ *      }
+ *
+ * @param \Amp\Promise $promise A promise that receives watch() updates
+ * @return \Generator A generator yielding a promise for each watch() update
+ */
+function stream(Promise $promise) {
+    $index = 0;
+    $promisors[] = new Deferred;
+    $promise->watch(function($data) use (&$promisors, &$index) {
+        $promisors[$index + 1] = new Deferred;
+        $promisors[$index++]->succeed($data);
+    });
+    $promise->when(function($error, $result) use (&$promisors, &$index) {
+        if ($error) {
+            $promisors[$index]->fail($error);
+        } else {
+            $promisors[$index]->succeed($result);
+        }
+    });
+
+    return __streamGenerator($promisors);
+}
+
+/**
+ * This function is used internally when streaming promise updates.
+ * It is not considered part of the public API and library users
+ * should not rely upon it in applications.
+ */
+function __streamGenerator(&$promisors) {
+    while ($promisors) {
+        $key = \key($promisors);
+        yield $promisors[$key]->promise();
+        unset($promisors[$key]);
+    }
+}
+
+/**
  * Create an artificial timeout for any Promise instance
  *
  * If the timeout expires prior to promise resolution the returned

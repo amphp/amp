@@ -54,7 +54,7 @@ trait Placeholder {
             );
         }
 
-        $baseArgs = func_get_args();
+        $baseArgs = \func_get_args();
         foreach ($this->watchers as $watcher) {
             $args = $baseArgs;
             $args[] = $watcher[1];
