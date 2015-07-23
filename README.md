@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/amphp/amp.svg?branch=v1.0.x)](https://travis-ci.org/amphp/amp)
 [![Coverage Status](https://coveralls.io/repos/amphp/amp/badge.svg?branch=master&service=github)](https://coveralls.io/github/amphp/amp?branch=master)
-![Unstable](https://img.shields.io/badge/pre_alpha-unstable-orange.svg)
+![Unstable](https://img.shields.io/badge/api-unstable-orange.svg)
 
 `amphp/amp` is a non-blocking concurrency framework for PHP applications.
 
@@ -21,5 +21,5 @@ Learn more about `amphp/amp` in [the guide](https://stackedit.io/viewer#!url=htt
 **Installation**
 
 ```bash
-$ composer require amphp/amp
+$ composer require amphp/amp dev-master
 ```
