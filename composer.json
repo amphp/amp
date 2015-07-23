@@ -39,7 +39,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-v1.0.x": "1.0.0-dev"
+            "master": "1.0.0-dev"
         }
     }
 }
