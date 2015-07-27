@@ -16,32 +16,32 @@ trait Placeholder {
     private $result;
 
     /**
-     * Notify the $func callback when the promise resolves (whether successful or not)
+     * Notify the $cb callback when the promise resolves (whether successful or not)
      *
-     * @param callable $func An error-first callback to invoke upon promise resolution
-     * @param mixed $data Optional data to pass as a third parameter to $func
+     * @param callable $cb An error-first callback to invoke upon promise resolution
+     * @param mixed $cbData Optional data to pass as a third parameter to $cb
      * @return self
      */
-    public function when(callable $func, $data = null) {
+    public function when(callable $cb, $cbData = null) {
         if ($this->isResolved) {
-            \call_user_func($func, $this->error, $this->result, $data);
+            \call_user_func($cb, $this->error, $this->result, $cbData);
         } else {
-            $this->whens[] = [$func, $data];
+            $this->whens[] = [$cb, $cbData];
         }
 
         return $this;
     }
 
     /**
-     * Notify the $func callback when resolution progress events are emitted
+     * Notify the $cb callback when resolution progress events are emitted
      *
-     * @param callable $func A callback to invoke when data updates are available
-     * @param mixed $data Optional data to pass as a second parameter to $func
+     * @param callable $cb A callback to invoke when data updates are available
+     * @param mixed $cbData Optional data to pass as a second parameter to $cb
      * @return self
      */
-    public function watch(callable $func, $data = null) {
+    public function watch(callable $cb, $cbData = null) {
         if (!$this->isResolved) {
-            $this->watchers[] = [$func, $data];
+            $this->watchers[] = [$cb, $cbData];
         }
 
         return $this;
@@ -53,12 +53,9 @@ trait Placeholder {
                 "Cannot update resolved promise"
             );
         }
-
-        $baseArgs = \func_get_args();
         foreach ($this->watchers as $watcher) {
-            $args = $baseArgs;
-            $args[] = $watcher[1];
-            \call_user_func_array($watcher[0], $args);
+            list($cb, $cbData) = $watcher;
+            \call_user_func($cb, $progress, $cbData);
         }
     }
 
@@ -90,7 +87,8 @@ trait Placeholder {
             $this->error = $error;
             $this->result = $result;
             foreach ($this->whens as $when) {
-                \call_user_func($when[0], $error, $result, $when[1]);
+                list($cb, $cbData) = $when;
+                \call_user_func($cb, $error, $result, $cbData);
             }
             $this->whens = $this->watchers = [];
         }

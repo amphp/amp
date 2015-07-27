@@ -19,10 +19,10 @@ class Success implements Promise {
      * {@inheritdoc}
      *
      * NOTE: because this object represents a resolved Promise it will *always* invoke
-     * the specified $func callback immediately.
+     * the specified $cb callback immediately.
      */
-    public function when(callable $func, $data = null) {
-        \call_user_func($func, $error = null, $this->result, $data);
+    public function when(callable $cb, $cbData = null) {
+        \call_user_func($cb, $error = null, $this->result, $cbData);
 
         return $this;
     }
@@ -32,7 +32,7 @@ class Success implements Promise {
      * 
      * Does nothing; a resolved promise has no progress updates
      */
-    public function watch(callable $func, $data = null) {
+    public function watch(callable $cb, $cbData = null) {
         return $this;
     }
 }

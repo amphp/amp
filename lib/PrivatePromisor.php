@@ -13,14 +13,15 @@ trait PrivatePromisor {
     private $promise;
 
     public function __construct() {
+        // @TODO Replace PrivatePlaceholder with an anonymous class once PHP7 is required
         $placeholder = new PrivatePlaceholder;
         $resolver = function($error = null, $result = null) {
-            // bound to private PrivatePlaceholder::resolve()
+            // bound to private $placeholder::resolve()
             $this->resolve($error, $result);
         };
         $updater = function($progress) {
-            // bound to private PrivatePlaceholder::update()
-            \call_user_func_array([$this, "update"], \func_get_args());
+            // bound to private $placeholder::update()
+            \call_user_func([$this, "update"], $progress);
         };
         $this->resolver = $resolver->bindTo($placeholder, $placeholder);
         $this->updater = $updater->bindTo($placeholder, $placeholder);
@@ -43,7 +44,7 @@ trait PrivatePromisor {
      * @return void
      */
     public function update($progress) {
-        \call_user_func_array($this->updater, func_get_args());
+        \call_user_func($this->updater, $progress);
     }
 
     /**
