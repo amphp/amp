@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class LibeventReactor implements ExtensionReactor {
+class LibeventReactor extends ExtensionReactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
@@ -19,13 +19,7 @@ class LibeventReactor implements ExtensionReactor {
     private $garbage = [];
     private $isGcScheduled = false;
 
-    private static $instanceCount = 0;
-
     public function __construct() {
-        if (!defined("Amp\\REACTOR")) {
-            define("Amp\\REACTOR", true);
-        }
-
         // @codeCoverageIgnoreStart
         if (!extension_loaded("libevent")) {
             throw new \RuntimeException(
@@ -58,7 +52,11 @@ class LibeventReactor implements ExtensionReactor {
             }
         };
 
-        self::$instanceCount++;
+        Reactor::$instanceCount++;
+    }
+
+    public function __destruct() {
+        Reactor::$instanceCount--;
     }
 
     /**
@@ -463,10 +461,6 @@ class LibeventReactor implements ExtensionReactor {
      */
     public function onError(callable $callback) {
         $this->onError = $callback;
-    }
-
-    public function __destruct() {
-        self::$instanceCount--;
     }
 
     public function __debugInfo() {

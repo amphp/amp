@@ -2,14 +2,25 @@
 
 namespace Amp;
 
-interface Reactor {
+abstract class Reactor {
+    protected static $instanceCount = 0;
+
+    /**
+     * Returns the global count of Reactor instances.
+     *
+     * @return int
+     */
+    public static function getInstanceCount() {
+        return self::$instanceCount;
+    }
+
     /**
      * Start the event reactor and assume program flow control
      *
      * @param callable $onStart An optional callback to invoke upon event loop start
      * @return void
      */
-    public function run(callable $onStart = null);
+    abstract public function run(callable $onStart = null);
 
     /**
      * Execute a single event loop iteration
@@ -17,14 +28,14 @@ interface Reactor {
      * @param bool $noWait Should tick return immediately if no watchers are ready to trigger?
      * @return void
      */
-    public function tick($noWait = false);
+    abstract public function tick($noWait = false);
 
     /**
      * Stop the event reactor
      *
      * @return void
      */
-    public function stop();
+    abstract public function stop();
 
     /**
      * Schedule a callback for immediate invocation in the next event loop iteration
@@ -33,7 +44,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function immediately(callable $callback, array $options = []);
+    abstract public function immediately(callable $callback, array $options = []);
 
     /**
      * Schedule a callback to execute once
@@ -43,7 +54,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function once(callable $callback, $msDelay, array $options = []);
+    abstract public function once(callable $callback, $msDelay, array $options = []);
 
     /**
      * Schedule a recurring callback to execute every $interval seconds until cancelled
@@ -53,7 +64,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function repeat(callable $callback, $msInterval, array $options = []);
+    abstract public function repeat(callable $callback, $msInterval, array $options = []);
 
     /**
      * Watch a stream resource for readable data and trigger the callback when actionable
@@ -63,7 +74,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onReadable($stream, callable $callback, array $options = []);
+    abstract public function onReadable($stream, callable $callback, array $options = []);
 
     /**
      * Watch a stream resource to become writable and trigger the callback when actionable
@@ -73,7 +84,7 @@ interface Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onWritable($stream, callable $callback, array $options = []);
+    abstract public function onWritable($stream, callable $callback, array $options = []);
 
     /**
      * Cancel an existing timer/stream watcher
@@ -81,7 +92,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be canceled
      * @return void
      */
-    public function cancel($watcherId);
+    abstract public function cancel($watcherId);
 
     /**
      * Temporarily disable (but don't cancel) an existing timer/stream watcher
@@ -89,7 +100,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be disabled
      * @return void
      */
-    public function disable($watcherId);
+    abstract public function disable($watcherId);
 
     /**
      * Enable a disabled timer/stream watcher
@@ -97,7 +108,7 @@ interface Reactor {
      * @param string $watcherId The watcher ID to be enabled
      * @return void
      */
-    public function enable($watcherId);
+    abstract public function enable($watcherId);
 
     /**
      * An optional "last-chance" exception handler for errors resulting during callback invocation
@@ -117,5 +128,5 @@ interface Reactor {
      * @param callable $callback A callback to invoke when an exception occurs inside the event loop
      * @return void
      */
-    public function onError(callable $callback);
+    abstract public function onError(callable $callback);
 }

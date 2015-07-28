@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class NativeReactor implements Reactor {
+class NativeReactor extends Reactor {
     private $watchers = [];
     private $immediates = [];
     private $timerOrder = [];
@@ -16,14 +16,8 @@ class NativeReactor implements Reactor {
     private $isTicking = false;
     private $onError;
     private $onCoroutineResolution;
-    private static $instanceCount = 0;
 
     public function __construct() {
-        if (!defined("Amp\\REACTOR")) {
-            define("Amp\\REACTOR", true);
-        }
-
-        self::$instanceCount++;
         $this->onCoroutineResolution = function($e = null, $r = null) {
             if (empty($e)) {
                 return;
@@ -33,10 +27,12 @@ class NativeReactor implements Reactor {
                 throw $e;
             }
         };
+
+        Reactor::$instanceCount++;
     }
 
     public function __destruct() {
-        self::$instanceCount--;
+        Reactor::$instanceCount--;
     }
 
     public function __debugInfo() {

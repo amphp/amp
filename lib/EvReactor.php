@@ -8,9 +8,7 @@ use EvLoop;
 use EvTimer;
 use EvSignal;
 
-class EvReactor implements ExtensionReactor {
-    private static $instanceCount = 0;
-
+class EvReactor extends ExtensionReactor {
     private $loop;
     private $lastWatcherId = "a";
     private $enabledWatchers = [];
@@ -23,10 +21,6 @@ class EvReactor implements ExtensionReactor {
     private $onCoroutineResolution;
 
     public function __construct($flags = null) {
-        if (!defined("Amp\\REACTOR")) {
-            define("Amp\\REACTOR", true);
-        }
-
         // @codeCoverageIgnoreStart
         if (!extension_loaded("ev")) {
             throw new \RuntimeException(
@@ -42,11 +36,13 @@ class EvReactor implements ExtensionReactor {
                 $this->onCallbackError($e);
             }
         };
-        self::$instanceCount++;
+
+        Reactor::$instanceCount++;
     }
 
     public function __destruct() {
-        self::$instanceCount--;
+        Reactor::$instanceCount--;
+
         foreach (array_keys($this->enabledWatchers) as $watcherId) {
             $this->cancel($watcherId);
         }

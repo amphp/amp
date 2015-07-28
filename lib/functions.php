@@ -14,11 +14,9 @@ function reactor(Reactor $assignReactor = null) {
         return ($reactor = $assignReactor);
     } elseif ($reactor) {
         return $reactor;
-    } elseif (defined("Amp\\REACTOR")) {
-        trigger_error(
-            "You can't use Amp\\reactor() after having instantiated " .
-            "a reactor manually!",
-            E_USER_ERROR
+    } elseif (Reactor::getInstanceCount() > 0) {
+        throw new \RuntimeException(
+            "You can't use Amp\\reactor() while another instance of Reactor exists!"
         );
     } elseif (\extension_loaded("uv")) {
         return ($reactor = new UvReactor);

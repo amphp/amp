@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-interface ExtensionReactor extends Reactor {
+abstract class ExtensionReactor extends Reactor {
     /**
      * React to process control signals
      *
@@ -11,12 +11,12 @@ interface ExtensionReactor extends Reactor {
      * @param array $options Watcher options
      * @return string Returns unique (to the process) string watcher ID
      */
-    public function onSignal($signo, callable $func, array $options = []);
+    abstract public function onSignal($signo, callable $func, array $options = []);
 
     /**
      * Retrieve the underlying event loop representation
      *
      * @return mixed
      */
-    public function getUnderlyingLoop();
+    abstract public function getUnderlyingLoop();
 }

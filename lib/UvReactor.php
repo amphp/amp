@@ -25,13 +25,7 @@ class UvReactor implements ExtensionReactor {
     private $gcWatcher;
     private $gcCallback;
 
-    private static $instanceCount = 0;
-
     public function __construct() {
-        if (!defined("Amp\\REACTOR")) {
-            define("Amp\\REACTOR", true);
-        }
-
         // @codeCoverageIgnoreStart
         if (!extension_loaded("uv")) {
             throw new \RuntimeException(
@@ -64,7 +58,11 @@ class UvReactor implements ExtensionReactor {
             }
         };
 
-        self::$instanceCount++;
+        Reactor::$instanceCount++;
+    }
+
+    public function __destruct() {
+        Reactor::$instanceCount--;
     }
 
     /**
@@ -677,10 +675,6 @@ class UvReactor implements ExtensionReactor {
      */
     public function onError(callable $callback) {
         $this->onError = $callback;
-    }
-
-    public function __destruct() {
-        self::$instanceCount--;
     }
 
     public function __debugInfo() {
