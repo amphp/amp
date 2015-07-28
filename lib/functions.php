@@ -14,6 +14,12 @@ function reactor(Reactor $assignReactor = null) {
         return ($reactor = $assignReactor);
     } elseif ($reactor) {
         return $reactor;
+    } elseif (defined("Amp\\REACTOR")) {
+        trigger_error(
+            "You can't use Amp\\reactor() after having instantiated " .
+            "a reactor manually!",
+            E_USER_ERROR
+        );
     } elseif (\extension_loaded("uv")) {
         return ($reactor = new UvReactor);
     } elseif (\extension_loaded("ev")) {

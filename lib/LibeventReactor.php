@@ -22,6 +22,10 @@ class LibeventReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        if (!defined("Amp\\REACTOR")) {
+            define("Amp\\REACTOR", true);
+        }
+
         // @codeCoverageIgnoreStart
         if (!extension_loaded("libevent")) {
             throw new \RuntimeException(

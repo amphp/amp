@@ -28,6 +28,10 @@ class UvReactor implements ExtensionReactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        if (!defined("Amp\\REACTOR")) {
+            define("Amp\\REACTOR", true);
+        }
+
         // @codeCoverageIgnoreStart
         if (!extension_loaded("uv")) {
             throw new \RuntimeException(

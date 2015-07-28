@@ -23,6 +23,10 @@ class EvReactor implements ExtensionReactor {
     private $onCoroutineResolution;
 
     public function __construct($flags = null) {
+        if (!defined("Amp\\REACTOR")) {
+            define("Amp\\REACTOR", true);
+        }
+
         // @codeCoverageIgnoreStart
         if (!extension_loaded("ev")) {
             throw new \RuntimeException(

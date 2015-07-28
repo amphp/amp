@@ -19,6 +19,10 @@ class NativeReactor implements Reactor {
     private static $instanceCount = 0;
 
     public function __construct() {
+        if (!defined("Amp\\REACTOR")) {
+            define("Amp\\REACTOR", true);
+        }
+
         self::$instanceCount++;
         $this->onCoroutineResolution = function($e = null, $r = null) {
             if (empty($e)) {
