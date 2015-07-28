@@ -1,8 +1,9 @@
 # amp
 
-[![Build Status](https://travis-ci.org/amphp/amp.svg?branch=master)](https://travis-ci.org/amphp/amp)
-[![Coverage Status](https://coveralls.io/repos/amphp/amp/badge.svg?branch=master&service=github)](https://coveralls.io/github/amphp/amp?branch=master)
-![Unstable](https://img.shields.io/badge/stable-v1-green.svg)
+[![Build Status](https://img.shields.io/travis/amphp/amp/master.svg?style=flat-square)](https://travis-ci.org/amphp/amp)
+[![CoverageStatus](https://img.shields.io/coveralls/amphp/amp/master.svg?style=flat-square)](https://coveralls.io/github/amphp/amp?branch=master)
+![Stable v1](https://img.shields.io/badge/stable-v1-green.svg?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
 
 `amphp/amp` is a non-blocking concurrency framework for PHP applications.
 
