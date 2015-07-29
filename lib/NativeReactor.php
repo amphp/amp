@@ -14,57 +14,32 @@ class NativeReactor implements Reactor {
     private $lastWatcherId = "a";
     private $isRunning = false;
     private $isTicking = false;
-    private $onError;
     private $onCoroutineResolution;
-    private static $instanceCount = 0;
+    private $hasExtPcntl;
+    private $signalState;
+    private $signalHandler;
 
     public function __construct() {
-        self::$instanceCount++;
-        $this->onCoroutineResolution = function($e = null, $r = null) {
-            if (empty($e)) {
+        $this->hasExtPcntl = \extension_loaded("pcntl");
+        $this->signalState = $signalState = new \StdClass;
+        $this->signalState->shouldDispatch = false;
+        $this->signalState->handlers = [];
+        $this->signalHandler = static function($signo) use ($signalState) {
+            if (empty($signalState->handlers[$signo])) {
                 return;
-            } elseif ($this->onError) {
-                \call_user_func($this->onError, $e);
-            } else {
-                throw $e;
+            }
+            foreach ($signalState->handlers[$signo] as $watcherId => $watcher) {
+                $out = \call_user_func($watcher->callback, $watcherId, $signo, $watcher->callbackData);
+                if ($out instanceof \Generator) {
+                    resolve($out)->when($this->onCoroutineResolution);
+                }
             }
         };
-    }
-
-    public function __destruct() {
-        self::$instanceCount--;
-    }
-
-    public function __debugInfo() {
-        $timers = $immediates = $readers = $writers = $disabled = 0;
-        foreach ($this->watchers as $watcher) {
-            switch ($watcher->type) {
-                case Watcher::TIMER_ONCE:
-                    // fallthrough
-                case Watcher::TIMER_REPEAT:
-                    if ($watcher->isEnabled) { $timers++; } else { $disabled++; }
-                    break;
-                case Watcher::IO_READER:
-                    if ($watcher->isEnabled) { $readers++; } else { $disabled++; }
-                    break;
-                case Watcher::IO_WRITER:
-                    if ($watcher->isEnabled) { $writers++; } else { $disabled++; }
-                    break;
-                case Watcher::IMMEDIATE:
-                    if ($watcher->isEnabled) { $immediates++; } else { $disabled++; }
-                    break;
+        $this->onCoroutineResolution = static function ($error = null, $result = null) {
+            if ($error) {
+                throw $error;
             }
-        }
-
-        return [
-            'timers'            => $timers,
-            'immediates'        => $immediates,
-            'io_readers'        => $readers,
-            'io_writers'        => $writers,
-            'disabled'          => $disabled,
-            'last_watcher_id'   => $this->lastWatcherId,
-            'instances'         => self::$instanceCount,
-        ];
+        };
     }
 
     /**
@@ -109,61 +84,72 @@ class NativeReactor implements Reactor {
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
-        try {
-            $noWait = (bool) $noWait;
-            $this->isTicking = true;
-            if (!$this->isRunning) {
-                $this->enableTimers();
+        $noWait = (bool) $noWait;
+        $this->isTicking = true;
+        if (!$this->isRunning) {
+            $this->enableTimers();
+        }
+
+        if ($immediates = $this->immediates) {
+            $this->doImmediates($immediates);
+        }
+        if ($this->signalState->shouldDispatch) {
+            \pcntl_signal_dispatch();
+        }
+
+        // If an immediately watcher called stop() we pull out here
+        if (!$this->isTicking) {
+            return;
+        }
+
+        if ($this->immediates || $noWait) {
+            $timeToNextAlarm = 0;
+        } elseif (empty($this->timerOrder)) {
+            $timeToNextAlarm = 1;
+        } else {
+            if ($this->isTimerSortNeeded) {
+                \asort($this->timerOrder);
+                $this->isTimerSortNeeded = false;
+            }
+            $nextTimerAt = \reset($this->timerOrder);
+            $timeToNextAlarm = \round($nextTimerAt - \microtime(true), 4);
+            $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
+        }
+
+        if ($this->readStreams || $this->writeStreams) {
+            $this->selectActionableStreams($timeToNextAlarm);
+        } elseif (!($this->timerOrder || $this->immediates || $this->signalState->handlers)) {
+            $this->stop();
+        } elseif ($timeToNextAlarm > 0) {
+            \usleep($timeToNextAlarm * 1000000);
+        }
+
+        if ($this->timerOrder || $this->immediates) {
+            $this->executeTimers();
+        }
+
+        $this->isTicking = false;
+    }
+
+    private function doImmediates($immediates) {
+        foreach ($immediates as $watcherId => $watcher) {
+            try {
+                unset(
+                    $this->immediates[$watcherId],
+                    $this->watchers[$watcherId]
+                );
+                $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
+            } catch (\Throwable $e) {
+                \call_user_func($this->onCoroutineResolution, $e);
+                continue;
+            } catch (\Exception $e) {
+                \call_user_func($this->onCoroutineResolution, $e);
+                continue;
             }
 
-            if ($immediates = $this->immediates) {
-                foreach ($immediates as $watcherId => $watcher) {
-                    unset(
-                        $this->immediates[$watcherId],
-                        $this->watchers[$watcherId]
-                    );
-                    $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
-                    if ($result instanceof \Generator) {
-                        resolve($result, $this)->when($this->onCoroutineResolution);
-                    }
-                }
+            if ($result instanceof \Generator) {
+                resolve($result)->when($this->onCoroutineResolution);
             }
-
-            // If an immediately watcher called stop() we pull out here
-            if (!$this->isTicking) {
-                return;
-            }
-
-            if ($this->immediates || $noWait) {
-                $timeToNextAlarm = 0;
-            } elseif (empty($this->timerOrder)) {
-                $timeToNextAlarm = 1;
-            } else {
-                if ($this->isTimerSortNeeded) {
-                    \asort($this->timerOrder);
-                    $this->isTimerSortNeeded = false;
-                }
-                // This reset() is important ... don't remove it!
-                $nextTimerAt = reset($this->timerOrder);
-                $timeToNextAlarm = round($nextTimerAt - microtime(true), 4);
-                $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
-            }
-
-            if ($this->readStreams || $this->writeStreams) {
-                $this->selectActionableStreams($timeToNextAlarm);
-            } elseif (!($this->timerOrder || $this->immediates)) {
-                $this->stop();
-            } elseif ($timeToNextAlarm > 0) {
-                usleep($timeToNextAlarm * 1000000);
-            }
-
-            if ($this->timerOrder || $this->immediates) {
-                $this->executeTimers();
-            }
-            $this->isTicking = false;
-        } catch (\Exception $error) {
-            $errorHandler = $this->onCoroutineResolution;
-            $errorHandler($error);
         }
     }
 
@@ -179,33 +165,40 @@ class NativeReactor implements Reactor {
             $sec = floor($timeout);
             $usec = ($timeout - $sec) * 1000000;
         }
+        if (!@stream_select($r, $w, $e, $sec, $usec)) {
+            return;
+        }
+        foreach ($r as $stream) {
+            $streamId = (int) $stream;
+            foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
+                $this->doIoCallback($watcherId, $watcher, $stream);
+            }
+        }
+        foreach ($w as $stream) {
+            $streamId = (int) $stream;
+            foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
+                $this->doIoCallback($watcherId, $watcher, $stream);
+            }
+        }
+    }
 
-        if (@stream_select($r, $w, $e, $sec, $usec)) {
-            foreach ($r as $readableStream) {
-                $streamId = (int) $readableStream;
-                foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
-                    $result = \call_user_func($watcher->callback, $this, $watcherId, $readableStream, $watcher->callbackData);
-                    if ($result instanceof \Generator) {
-                        resolve($result, $this)->when($this->onCoroutineResolution);
-                    }
-                }
+    private function doIoCallback($watcherId, $watcher, $stream) {
+        try {
+            $result = \call_user_func($watcher->callback, $watcherId, $stream, $watcher->callbackData);
+            if ($result instanceof \Generator) {
+                resolve($result)->when($this->onCoroutineResolution);
             }
-            foreach ($w as $writableStream) {
-                $streamId = (int) $writableStream;
-                foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
-                    $result = \call_user_func($watcher->callback, $this, $watcherId, $writableStream, $watcher->callbackData);
-                    if ($result instanceof \Generator) {
-                        resolve($result, $this)->when($this->onCoroutineResolution);
-                    }
-                }
-            }
+        } catch (\Throwable $e) {
+            \call_user_func($this->onCoroutineResolution, $e);
+        } catch (\Exception $e) {
+            \call_user_func($this->onCoroutineResolution, $e);
         }
     }
 
     private function executeTimers() {
         $now = microtime(true);
         if ($this->isTimerSortNeeded) {
-            asort($this->timerOrder);
+            \asort($this->timerOrder);
             $this->isTimerSortNeeded = false;
         }
 
@@ -220,9 +213,9 @@ class NativeReactor implements Reactor {
 
             $watcher = $this->watchers[$watcherId];
 
-            $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
             if ($result instanceof \Generator) {
-                resolve($result, $this)->when($this->onCoroutineResolution);
+                resolve($result)->when($this->onCoroutineResolution);
             }
 
             if ($watcher->type === Watcher::TIMER_ONCE) {
@@ -374,6 +367,53 @@ class NativeReactor implements Reactor {
 
     /**
      * {@inheritDoc}
+     * @throws \RuntimeException if ext/pcntl unavailable or signal handler registration fails
+     */
+    public function onSignal($signo, callable $func, array $options = []) {
+        if (empty($this->hasExtPcntl)) {
+            throw new \RuntimeException(
+                "Cannot react to signals; ext/pcntl not loaded"
+            );
+        }
+
+        $signo = (int) $signo;
+
+        $watcher = new \StdClass;
+        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->type = Watcher::SIGNAL;
+        $watcher->callback = $func;
+        $watcher->callbackData = isset($options["cb_data"]) ? $options["cb_data"] : null;
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->signo = $signo;
+
+        if ($watcher->isEnabled) {
+            if (empty($this->signalState->handlers[$signo]) && !@\pcntl_signal($signo, $this->signalHandler)) {
+                throw new \RuntimeException(
+                    "Failed registering signal handler"
+                );
+            }
+            $this->signalState->shouldDispatch = true;
+            $this->signalState->handlers[$signo][$watcherId] = $watcher;
+        }
+
+        $this->watchers[$watcherId] = $watcher;
+
+        return $watcherId;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function onError(callable $func) {
+        $this->onCoroutineResolution = static function($e = null, $r = null) use ($func) {
+            if ($e) {
+                \call_user_func($func, $e);
+            }
+        };
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function cancel($watcherId) {
         $this->disable($watcherId);
@@ -421,8 +461,14 @@ class NativeReactor implements Reactor {
             case Watcher::IMMEDIATE:
                 $this->immediates[$watcherId] = $watcher;
                 break;
-            default:
-                assert(false, "Unexpected Watcher type constant encountered");
+            case Watcher::SIGNAL:
+                $signo = $watcher->signo;
+                if (empty($this->signalState->handlers[$signo])) {
+                    \pcntl_signal($signo, $this->signalHandler);
+                }
+                $this->signalState->handlers[$signo][$watcherId] = $watcher;
+                $this->signalState->shouldDispatch = true;
+                break;
         }
     }
 
@@ -463,15 +509,57 @@ class NativeReactor implements Reactor {
             case Watcher::IMMEDIATE:
                 unset($this->immediates[$watcherId]);
                 break;
-            default:
-                assert(false, "Unexpected Watcher type constant encountered");
+            case Watcher::SIGNAL:
+                $signo = $watcher->signo;
+                unset($this->signalState->handlers[$signo][$watcherId]);
+                if (empty($this->signalState->handlers[$signo])) {
+                    unset($this->signalState->handlers[$signo]);
+                    \pcntl_signal($signo, \SIG_DFL);
+                    if (empty($this->signalState->handlers)) {
+                        $this->signalState->shouldDispatch = false;
+                    }
+                }
+                break;
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public function onError(callable $func) {
-        $this->onError = $func;
+    public function info() {
+        $once = $repeat = $immediately = $onReadable = $onWritable = $onSignal = [
+            "enabled" => 0,
+            "disabled" => 0,
+        ];
+        foreach ($this->watchers as $watcher) {
+            switch ($watcher->type) {
+                case Watcher::IMMEDIATE:    $arr =& $immediately;   break;
+                case Watcher::TIMER_ONCE:   $arr =& $once;          break;
+                case Watcher::TIMER_REPEAT: $arr =& $repeat;        break;
+                case Watcher::IO_READER:    $arr =& $onReadable;    break;
+                case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
+                case Watcher::SIGNAL:       $arr =& $onSignal;      break;
+            }
+
+            if ($watcher->isEnabled) {
+                $arr["enabled"] += 1;
+            } else {
+                $arr["disabled"] += 1;
+            }
+        }
+
+        return [
+            "immediately"       => $immediately,
+            "once"              => $once,
+            "repeat"            => $repeat,
+            "on_readable"       => $onReadable,
+            "on_writable"       => $onWritable,
+            "on_signal"         => $onSignal,
+            "last_watcher_id"   => $this->lastWatcherId,
+        ];
+    }
+
+    public function __debugInfo() {
+        return $this->info();
     }
 }

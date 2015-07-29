@@ -7,12 +7,16 @@ use Amp\NativeReactor;
 abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
     abstract protected function getPromisor();
 
+    protected function setUp() {
+        \Amp\reactor($assign = new NativeReactor);
+    }
+
     public function testWhenInvokesCallbackWithResultIfAlreadySucceeded() {
         $invoked = 0;
         $promisor = $this->getPromisor();
         $promise = $promisor->promise();
         $promisor->succeed(42);
-        $promise->when(function($e, $r) use (&$invoked) {
+        $promise->when(function ($e, $r) use (&$invoked) {
             $this->assertSame(42, $r);
             $this->assertNull($e);
             ++$invoked;
@@ -26,7 +30,7 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
         $promise = $promisor->promise();
         $exception = new \Exception('test');
         $promisor->fail($exception);
-        $promise->when(function($e, $r) use ($exception, &$invoked) {
+        $promise->when(function ($e, $r) use ($exception, &$invoked) {
             $invoked++;
             $this->assertSame($exception, $e);
             $this->assertNull($r);
@@ -65,12 +69,13 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testSucceedingWithPromisePipelinesResult() {
-        (new NativeReactor)->run(function($reactor) {
+        \Amp\run(function () {
             $next = $this->getPromisor();
             $promisor = $this->getPromisor();
             $promisor->succeed($next->promise());
-            $once = function() use ($next) { $next->succeed(42); };
-            $reactor->once($once, $msDelay = 10);
+            \Amp\once(function () use ($next) {
+                $next->succeed(42);
+            }, $msDelay = 10);
             yield;
             $result = (yield $promisor->promise());
             $this->assertSame(42, $result);
@@ -82,36 +87,36 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage fugazi
      */
     public function testFailingWithPromisePipelinesResult() {
-        (new NativeReactor)->run(function($reactor) {
+        \Amp\run(function () {
             $promisor = $this->getPromisor();
             $next = $this->getPromisor();
-            $once = function() use ($next) { $next->fail(new \RuntimeException('fugazi')); };
-            $reactor->once($once, $msDelay = 10);
+            \Amp\once(function () use ($next) {
+                $next->fail(new \RuntimeException('fugazi'));
+            }, $msDelay = 10);
             yield;
             $promisor->succeed($next->promise());
-
             yield $promisor->promise();
         });
     }
 
     public function testUpdate() {
         $updatable = 0;
-        (new NativeReactor)->run(function($reactor) use (&$updatable) {
+        \Amp\run(function () use (&$updatable) {
             $i = 0;
             $promisor = $this->getPromisor();
-            $updater = function($reactor, $watcherId) use ($promisor, &$i) {
+            $updater = function ($watcherId) use ($promisor, &$i) {
                 $promisor->update(++$i);
                 if ($i === 3) {
-                    $reactor->cancel($watcherId);
+                    \Amp\cancel($watcherId);
                     // reactor run loop should now be able to exit
                 }
             };
             $promise = $promisor->promise();
 
-            $promise->watch(function($updateData) use (&$updatable) {
+            $promise->watch(function ($updateData) use (&$updatable) {
                 $updatable += $updateData;
             });
-            $reactor->repeat($updater, $msDelay = 10);
+            \Amp\repeat($updater, $msDelay = 10);
         });
 
         $this->assertSame(6, $updatable);
@@ -123,7 +128,7 @@ abstract class PromisorTest extends \PHPUnit_Framework_TestCase {
 
         $promisor = $this->getPromisor();
         $promise = $promisor->promise();
-        $promise->watch(function($progress, $cbData) use ($updates) {
+        $promise->watch(function ($progress, $cbData) use ($updates) {
             $updates->arr[] = \func_get_args();
         }, "cb_data");
 

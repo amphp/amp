@@ -3,263 +3,91 @@
 namespace Amp\Test;
 
 abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
-    abstract protected function getReactor();
-
     public function testMultipleCallsToRunHaveNoEffect() {
-        $reactor = $this->getReactor();
-        $reactor->run(function($reactor) {
-            $reactor->run();
+        \Amp\run(function () {
+            \Amp\run();
         });
     }
 
-    public function testImmediatelyWatcherRegistrationAndCancellation() {
-        $reactor = $this->getReactor();
-
-        $watcherId = $reactor->immediately(function () {});
-        $this->assertInternalType("string", $watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["immediates"]);
-
-        // invoke enable() on active watcher to ensure it has no side-effects
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["immediates"]);
-
-        // invoke disable() twice to ensure it has no side-effects
-        $reactor->disable($watcherId);
-        $reactor->disable($watcherId);
-
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["immediates"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["immediates"]);
-
-        $watcherId = $reactor->immediately(function () {});
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["immediates"]);
-
-        $reactor->disable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["immediates"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["immediates"]);
-        $this->assertSame(0, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["immediates"]);
-
-        // invoke cancel() again to ensure it has no side-effects
-        $reactor->cancel($watcherId);
+    public function provideRegistrationAndCancellationArgs() {
+        return [
+            ["immediately", [function () {}]],
+            ["once",        [function () {}, 1000]],
+            ["repeat",      [function () {}, 1000]],
+            ["onWritable",  [STDOUT, function () {}]],
+            ["onReadable",  [STDIN, function () {}]],
+            ["onSignal",    [SIGUSR1, function () {}]],
+        ];
     }
 
-    public function testOnceWatcherRegistrationAndCancellation() {
-        $reactor = $this->getReactor();
+    /**
+     * @dataProvider provideRegistrationAndCancellationArgs
+     */
+    public function testWatcherRegistrationAndCancellationInfo($type, $args) {
+        $func = '\Amp\\' . $type;
+        if (substr($type, 0, 2) === "on" && $type !== "once") {
+            $type = "on_" . lcfirst(substr($type, 2));
+        }
 
-        $watcherId = $reactor->once(function () {}, 1000);
+        $watcherId = \call_user_func_array($func, $args);
         $this->assertInternalType("string", $watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
+        $info = \Amp\info();
+        $expected = ["enabled" => 1, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
         // invoke enable() on active watcher to ensure it has no side-effects
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
+        \Amp\enable($watcherId);
+        $info = \Amp\info();
+        $expected = ["enabled" => 1, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
         // invoke disable() twice to ensure it has no side-effects
-        $reactor->disable($watcherId);
-        $reactor->disable($watcherId);
+        \Amp\disable($watcherId);
+        \Amp\disable($watcherId);
 
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-        $this->assertSame(1, $info["disabled"]);
+        $info = \Amp\info();
+        $expected = ["enabled" => 0, "disabled" => 1];
+        $this->assertSame($expected, $info[$type]);
 
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
+        \Amp\cancel($watcherId);
+        $info = \Amp\info();
+        $expected = ["enabled" => 0, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
-        $watcherId = $reactor->once(function () {}, 1000);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
+        $watcherId = \call_user_func_array($func, $args);
+        $info = \Amp\info();
+        $expected = ["enabled" => 1, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
-        $reactor->disable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-        $this->assertSame(1, $info["disabled"]);
+        \Amp\disable($watcherId);
+        $info = \Amp\info();
+        $expected = ["enabled" => 0, "disabled" => 1];
+        $this->assertSame($expected, $info[$type]);
 
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
-        $this->assertSame(0, $info["disabled"]);
+        \Amp\enable($watcherId);
+        $info = \Amp\info();
+        $expected = ["enabled" => 1, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-
-        // invoke cancel() again to ensure it has no side-effects
-        $reactor->cancel($watcherId);
-    }
-
-    public function testRepeatWatcherRegistrationAndCancellation() {
-        $reactor = $this->getReactor();
-
-        $watcherId = $reactor->repeat(function () {}, 1000);
-        $this->assertInternalType("string", $watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
-
-        // invoke enable() on active watcher to ensure it has no side-effects
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
-
-        // invoke disable() twice to ensure it has no side-effects
-        $reactor->disable($watcherId);
-        $reactor->disable($watcherId);
-
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-
-        $watcherId = $reactor->repeat(function () {}, 1000);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
-
-        $reactor->disable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["timers"]);
-        $this->assertSame(0, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["timers"]);
+        \Amp\cancel($watcherId);
+        $info = \Amp\info();
+        $expected = ["enabled" => 0, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
 
         // invoke cancel() again to ensure it has no side-effects
-        $reactor->cancel($watcherId);
-    }
-
-    public function testOnWritableWatcherRegistrationAndCancellation() {
-        $reactor = $this->getReactor();
-
-        $watcherId = $reactor->onWritable(STDIN, function () {});
-        $this->assertInternalType("string", $watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_writers"]);
-
-        // invoke enable() on active watcher to ensure it has no side-effects
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_writers"]);
-
-        // invoke disable() twice to ensure it has no side-effects
-        $reactor->disable($watcherId);
-        $reactor->disable($watcherId);
-
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_writers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_writers"]);
-
-        $watcherId = $reactor->onWritable(STDIN, function () {});
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_writers"]);
-
-        $reactor->disable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_writers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_writers"]);
-        $this->assertSame(0, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_writers"]);
-
-        // invoke cancel() again to ensure it has no side-effects
-        $reactor->cancel($watcherId);
-    }
-
-    public function testOnReadableWatcherRegistrationAndCancellation() {
-        $reactor = $this->getReactor();
-
-        $watcherId = $reactor->onReadable(STDIN, function () {});
-        $this->assertInternalType("string", $watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_readers"]);
-
-        // invoke enable() on active watcher to ensure it has no side-effects
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_readers"]);
-
-        // invoke disable() twice to ensure it has no side-effects
-        $reactor->disable($watcherId);
-        $reactor->disable($watcherId);
-
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_readers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_readers"]);
-
-        $watcherId = $reactor->onReadable(STDIN, function () {});
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_readers"]);
-
-        $reactor->disable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_readers"]);
-        $this->assertSame(1, $info["disabled"]);
-
-        $reactor->enable($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(1, $info["io_readers"]);
-        $this->assertSame(0, $info["disabled"]);
-
-        $reactor->cancel($watcherId);
-        $info = $reactor->__debugInfo();
-        $this->assertSame(0, $info["io_readers"]);
-
-        // invoke cancel() again to ensure it has no side-effects
-        $reactor->cancel($watcherId);
+        \Amp\cancel($watcherId);
     }
 
     public function testEnableHasNoEffectOnNonexistentWatcher() {
-        $reactor = $this->getReactor();
-        $reactor->enable("nonexistentWatcher");
+        \Amp\enable("nonexistentWatcher");
     }
 
     public function testDisableHasNoEffectOnNonexistentWatcher() {
-        $reactor = $this->getReactor();
-        $reactor->disable("nonexistentWatcher");
+        \Amp\disable("nonexistentWatcher");
     }
 
     public function testCancelHasNoEffectOnNonexistentWatcher() {
-        $reactor = $this->getReactor();
-        $reactor->cancel("nonexistentWatcher");
+        \Amp\cancel("nonexistentWatcher");
     }
 
     /**
@@ -267,21 +95,19 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage coroutine error
      */
     public function testImmediateCoroutineResolutionError() {
-        $reactor = $this->getReactor();
-        $reactor->run(function($reactor) {
+        \Amp\run(function () {
             yield;
-            yield new \Amp\Pause(10, $reactor);
+            yield new \Amp\Pause(10);
             throw new \Exception("coroutine error");
         });
     }
 
     public function testOnErrorCapturesUncaughtException() {
-        $reactor = $this->getReactor();
         $msg = "";
-        $reactor->onError(function ($error) use (&$msg, $reactor) {
+        \Amp\onError(function ($error) use (&$msg) {
             $msg = $error->getMessage();
         });
-        $reactor->run(function($reactor) {
+        \Amp\run(function () {
             throw new \Exception("coroutine error");
         });
         $this->assertSame("coroutine error", $msg);
@@ -292,9 +118,10 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage errorception
      */
     public function testOnErrorFailure() {
-        $reactor = $this->getReactor();
-        $reactor->onError(function () { throw new \Exception("errorception"); });
-        $reactor->run(function($reactor) {
+        \Amp\onError(function () {
+            throw new \Exception("errorception");
+        });
+        \Amp\run(function () {
             yield;
             yield new \Amp\Pause(10, $reactor);
             throw new \Exception("coroutine error");
@@ -302,151 +129,138 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testEnablingWatcherAllowsSubsequentInvocation() {
-        $reactor = $this->getReactor();
         $increment = 0;
+        $watcherId = \Amp\immediately(function () use (&$increment) {
+            $increment++;
+        });
 
-        $watcherId = $reactor->immediately(function() use (&$increment) { $increment++; });
-        $reactor->disable($watcherId);
+        \Amp\disable($watcherId);
+        \Amp\once('\Amp\stop', $msDelay = 50);
 
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
-
-        $reactor->run();
+        \Amp\run();
         $this->assertEquals(0, $increment);
 
-        $reactor->enable($watcherId);
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
-
-        $reactor->run();
+        \Amp\enable($watcherId);
+        \Amp\once('\Amp\stop', $msDelay = 50);
+        \Amp\run();
 
         $this->assertEquals(1, $increment);
     }
 
     public function testTimerWatcherParameterOrder() {
-        $reactor = $this->getReactor();
         $counter = 0;
-        $reactor->immediately(function($reactorArg, $watcherId) use ($reactor, &$counter) {
-            $this->assertSame($reactor, $reactorArg);
+        \Amp\immediately(function ($watcherId) use (&$counter) {
+            $this->assertInternalType("string", $watcherId);
             if (++$counter === 3) {
-                $reactor->stop();
+                \Amp\stop();
             }
         });
-        $reactor->once(function($reactorArg, $watcherId) use ($reactor, &$counter) {
-            $this->assertSame($reactor, $reactorArg);
+        \Amp\once(function ($watcherId) use (&$counter) {
+            $this->assertInternalType("string", $watcherId);
             if (++$counter === 3) {
-                $reactor->stop();
+                \Amp\stop();
             }
         }, $msDelay = 1);
-        $reactor->repeat(function($reactorArg, $watcherId) use ($reactor, &$counter) {
-            $this->assertSame($reactor, $reactorArg);
-            $reactor->cancel($watcherId);
+        \Amp\repeat(function ($watcherId) use (&$counter) {
+            $this->assertInternalType("string", $watcherId);
+            \Amp\cancel($watcherId);
             if (++$counter === 3) {
-                $reactor->stop();
+                \Amp\stop();
             }
         }, $msDelay = 1);
 
-        $reactor->run();
+        \Amp\run();
     }
 
     public function testStreamWatcherParameterOrder() {
-        $reactor = $this->getReactor();
-        $reactor->onWritable(STDOUT, function($reactorArg, $watcherId) use ($reactor) {
-            $this->assertSame($reactor, $reactorArg);
-            $this->assertTrue(is_string($watcherId));
-            $reactor->stop();
+        $invoked = 0;
+        \Amp\onWritable(STDOUT, function ($watcherId, $stream) use (&$invoked) {
+            $this->assertInternalType("string", $watcherId);
+            $this->assertSame(STDOUT, $stream);
+            $invoked++;
+            \Amp\cancel($watcherId);
         });
+        \Amp\run();
+        $this->assertSame(1, $invoked);
     }
 
     public function testDisablingWatcherPreventsSubsequentInvocation() {
-        $reactor = $this->getReactor();
         $increment = 0;
-        $watcherId = $reactor->immediately(function () use (&$increment) {
+        $watcherId = \Amp\immediately(function () use (&$increment) {
             $increment++;
         });
 
-        $reactor->disable($watcherId);
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
-        $reactor->run();
+        \Amp\disable($watcherId);
+        \Amp\once('\Amp\stop', $msDelay = 50);
+        \Amp\run();
 
         $this->assertEquals(0, $increment);
     }
 
     public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
-        $reactor = $this->getReactor();
         $increment = 0;
-        $reactor->once(function($reactor) use (&$increment) {
+        \Amp\once(function () use (&$increment) {
             $increment++;
-            $reactor->stop();
-        }, $msDelay = 200);
+            \Amp\stop();
+        }, $msDelay = 150);
 
-        $reactor->run(function($reactor) {
-            $reactor->stop();
-        });
+        \Amp\run('\Amp\stop');
 
         $this->assertEquals(0, $increment);
-        usleep(150000);
-        $reactor->run();
+        \usleep(150000);
+        \Amp\run();
         $this->assertEquals(1, $increment);
     }
 
     public function testImmediateExecution() {
-        $reactor = $this->getReactor();
-
         $increment = 0;
-        $reactor->immediately(function() use (&$increment) { $increment++; });
-        $reactor->tick();
+        \Amp\immediately(function () use (&$increment) {
+            $increment++;
+        });
+        \Amp\tick();
 
         $this->assertEquals(1, $increment);
     }
 
     public function testImmediatelyCallbacksDontRecurseInSameTick() {
-        $reactor = $this->getReactor();
-
         $increment = 0;
-        $reactor->immediately(function() use (&$increment, $reactor) {
+        \Amp\immediately(function () use (&$increment) {
             $increment++;
-            $reactor->immediately(function() use (&$increment) {
+            \Amp\immediately(function () use (&$increment) {
                 $increment++;
             });
         });
-        $reactor->tick();
-
+        \Amp\tick();
         $this->assertEquals(1, $increment);
     }
 
     public function testTickExecutesReadyEvents() {
-        $reactor = $this->getReactor();
-
         $increment = 0;
-
-        $reactor->immediately(function() use (&$increment) { $increment++; });
-        $reactor->tick();
-
+        \Amp\immediately(function () use (&$increment) {
+            $increment++;
+        });
+        \Amp\tick();
         $this->assertEquals(1, $increment);
     }
 
     public function testRunExecutesEventsUntilExplicitlyStopped() {
-        $reactor = $this->getReactor();
         $increment = 0;
-        $reactor->repeat(function($reactor, $watcherId) use (&$increment) {
+        \Amp\repeat(function ($watcherId) use (&$increment) {
             $increment++;
             if ($increment === 10) {
-                $reactor->cancel($watcherId);
+                \Amp\cancel($watcherId);
             }
         }, $msInterval = 5);
-
-        $reactor->run();
-
+        \Amp\run();
         $this->assertEquals(10, $increment);
     }
 
     public function testOnceReturnsEventWatcher() {
-        $reactor = $this->getReactor();
-
-        $firstWatcherId = 'a';
-        $watcherId = $reactor->once(function(){}, $delay = 0);
+        $firstWatcherId = "a";
+        $watcherId = \Amp\once(function (){}, $delay = 0);
         $this->assertSame($firstWatcherId, $watcherId);
 
-        $watcherId = $reactor->immediately(function(){});
+        $watcherId = \Amp\immediately(function (){});
         $this->assertSame(++$firstWatcherId, $watcherId);
     }
 
@@ -455,9 +269,10 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage test
      */
     public function testReactorAllowsExceptionToBubbleUpDuringTick() {
-        $reactor = $this->getReactor();
-        $reactor->immediately(function(){ throw new \RuntimeException('test'); });
-        $reactor->tick();
+        \Amp\immediately(function () {
+            throw new \RuntimeException("test");
+        });
+        \Amp\tick();
     }
 
     /**
@@ -465,9 +280,10 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage test
      */
     public function testReactorAllowsExceptionToBubbleUpDuringRun() {
-        $reactor = $this->getReactor();
-        $reactor->immediately(function(){ throw new \RuntimeException('test'); });
-        $reactor->run();
+        \Amp\immediately(function () {
+            throw new \RuntimeException("test");
+        });
+        \Amp\run();
     }
 
     /**
@@ -475,73 +291,114 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage test
      */
     public function testReactorAllowsExceptionToBubbleUpFromRepeatingAlarmDuringRun() {
-        $reactor = $this->getReactor();
-        $reactor->repeat(function(){ throw new \RuntimeException('test'); }, $msInterval = 0);
-        $reactor->run();
+        \Amp\repeat(function () {
+            throw new \RuntimeException("test");
+        }, $msInterval = 0);
+        \Amp\run();
+    }
+
+    public function testOnSignalWatcher() {
+        if (!\extension_loaded("posix")) {
+            $this->markTestSkipped(
+                "ext/posix required to test onSignal() capture"
+            );
+        }
+        $this->expectOutputString("caught SIGUSR1");
+        \Amp\run(function () {
+            \Amp\once(function () {
+                \posix_kill(\getmypid(), \SIGUSR1);
+                \Amp\once(function () {
+                    \Amp\stop();
+                }, 100);
+            }, 1);
+
+            \Amp\onSignal(SIGUSR1, function ($watcherId) {
+                \Amp\cancel($watcherId);
+                echo "caught SIGUSR1";
+            });
+        });
+    }
+
+    public function testInitiallyDisabledOnSignalWatcher() {
+        if (!\extension_loaded("posix")) {
+            $this->markTestSkipped(
+                "ext/posix required to test onSignal() capture"
+            );
+        }
+        $this->expectOutputString("caught SIGUSR1");
+
+        \Amp\run(function () {
+            $sigWatcherId = \Amp\onSignal(SIGUSR1, function () {
+                echo "caught SIGUSR1";
+                \Amp\stop();
+            }, $options = ["enable" => false]);
+
+            \Amp\once(function () use ($sigWatcherId) {
+                \Amp\enable($sigWatcherId);
+                \Amp\once(function () use ($sigWatcherId) {
+                    \posix_kill(\getmypid(), \SIGUSR1);
+                }, 10);
+            }, 10);
+        });
     }
 
     public function testRepeatReturnsEventWatcher() {
-        $reactor = $this->getReactor();
-
-        $firstWatcherId = 'a';
-        $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
+        $firstWatcherId = "a";
+        $watcherId = \Amp\repeat(function () {}, $msInterval = 1000);
         $this->assertSame($firstWatcherId, $watcherId);
 
-        $watcherId = $reactor->repeat(function(){}, $msInterval = 1000);
+        $watcherId = \Amp\repeat(function () {}, $msInterval = 1000);
         $this->assertSame(++$firstWatcherId, $watcherId);
     }
 
     public function testCancelRemovesWatcher() {
-        $reactor = $this->getReactor();
-
-        $watcherId = $reactor->once(function(){
+        $watcherId = \Amp\once(function (){
             $this->fail('Watcher was not cancelled as expected');
         }, $msDelay = 20);
 
-        $reactor->immediately(function() use ($reactor, $watcherId) { $reactor->cancel($watcherId); });
-        $reactor->once(function() use ($reactor) { $reactor->stop(); }, $msDelay = 5);
-        $reactor->run();
+        \Amp\immediately(function () use ($watcherId) {
+            \Amp\cancel($watcherId);
+        });
+        \Amp\once('\Amp\stop', $msDelay = 5);
+        \Amp\run();
     }
 
     public function testOnWritableWatcher() {
-        $reactor = $this->getReactor();
-
-        $flag = FALSE;
-
-        $reactor->onWritable(STDOUT, function() use ($reactor, &$flag) {
-            $flag = TRUE;
-            $reactor->stop();
+        $flag = false;
+        \Amp\onWritable(STDOUT, function () use (&$flag) {
+            $flag = true;
+            \Amp\stop();
         });
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
+        \Amp\once('\Amp\stop', $msDelay = 50);
 
-        $reactor->run();
+        \Amp\run();
         $this->assertTrue($flag);
     }
 
     public function testInitiallyDisabledWriteWatcher() {
-        $reactor = $this->getReactor();
-
         $increment = 0;
         $options = ["enable" => false];
-        $reactor->onWritable(STDOUT, function() use (&$increment) { $increment++; }, $options);
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
-        $reactor->run();
+        \Amp\onWritable(STDOUT, function () use (&$increment) {
+            $increment++;
+        }, $options);
+        \Amp\once('\Amp\stop', $msDelay = 50);
+        \Amp\run();
 
         $this->assertSame(0, $increment);
     }
 
     public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
-        $reactor = $this->getReactor();
-
         $increment = 0;
         $options = ["enable" => false];
-        $watcherId = $reactor->onWritable(STDOUT, function() use (&$increment) { $increment++; }, $options);
-        $reactor->immediately(function() use ($reactor, $watcherId) {
-            $reactor->enable($watcherId);
+        $watcherId = \Amp\onWritable(STDOUT, function () use (&$increment) {
+            $increment++;
+        }, $options);
+        \Amp\immediately(function () use ($watcherId) {
+            \Amp\enable($watcherId);
         });
 
-        $reactor->once([$reactor, "stop"], $msDelay = 250);
-        $reactor->run();
+        \Amp\once('\Amp\stop', $msDelay = 250);
+        \Amp\run();
 
         $this->assertTrue($increment > 0);
     }
@@ -550,113 +407,105 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
      * @expectedException RuntimeException
      */
     public function testStreamWatcherDoesntSwallowExceptions() {
-        $reactor = $this->getReactor();
-        $reactor->onWritable(STDOUT, function() { throw new \RuntimeException; });
-        $reactor->once([$reactor, "stop"], $msDelay = 50);
-        $reactor->run();
+        \Amp\onWritable(STDOUT, function () { throw new \RuntimeException; });
+        \Amp\once('\Amp\stop', $msDelay = 50);
+        \Amp\run();
     }
 
     public function testGarbageCollection() {
-        $reactor = $this->getReactor();
-        $reactor->once([$reactor, "stop"], $msDelay = 100);
-        $reactor->run();
+        \Amp\once('\Amp\stop', $msDelay = 100);
+        \Amp\run();
     }
 
     public function testOnStartGeneratorResolvesAutomatically() {
         $test = '';
-        $this->getReactor()->run(function($reactor) use (&$test) {
+        \Amp\run(function () use (&$test) {
             yield;
             $test = "Thus Spake Zarathustra";
-            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 1);
+            \Amp\once('\Amp\stop', 1);
         });
         $this->assertSame("Thus Spake Zarathustra", $test);
     }
 
     public function testImmediatelyGeneratorResolvesAutomatically() {
-        $reactor = $this->getReactor();
         $test = '';
-        $reactor->immediately(function($reactor) use (&$test) {
+        \Amp\immediately(function () use (&$test) {
             yield;
             $test = "The abyss will gaze back into you";
-            $reactor->once(function($reactor) { $reactor->stop(); }, 50);
+            \Amp\once('\Amp\stop', 50);
         });
-        $reactor->run();
+        \Amp\run();
         $this->assertSame("The abyss will gaze back into you", $test);
     }
 
     public function testOnceGeneratorResolvesAutomatically() {
-        $reactor = $this->getReactor();
         $test = '';
-        $gen = function($reactor) use (&$test) {
+        $gen = function () use (&$test) {
             yield;
             $test = "There are no facts, only interpretations.";
-            $reactor->once(function() use ($reactor) { $reactor->stop(); }, 50);
+            \Amp\once('\Amp\stop', 50);
         };
-        $reactor->once($gen, 1);
-        $reactor->run();
+        \Amp\once($gen, 1);
+        \Amp\run();
         $this->assertSame("There are no facts, only interpretations.", $test);
     }
 
     public function testRepeatGeneratorResolvesAutomatically() {
-        $reactor = $this->getReactor();
         $test = '';
-        $gen = function($reactor, $watcherId) use (&$test) {
-            $reactor->cancel($watcherId);
+        $gen = function ($watcherId) use (&$test) {
+            \Amp\cancel($watcherId);
             yield;
             $test = "Art is the supreme task";
-            $reactor->stop();
+            \Amp\stop();
         };
-        $reactor->repeat($gen, 50);
-        $reactor->run();
+        \Amp\repeat($gen, 50);
+        \Amp\run();
         $this->assertSame("Art is the supreme task", $test);
     }
 
     public function testOnErrorCallbackInterceptsUncaughtException() {
         $var = null;
-        $reactor = $this->getReactor();
-        $reactor->onError(function($e) use (&$var) { $var = $e->getMessage(); });
-        $reactor->run(function() { throw new \Exception('test'); });
+        \Amp\onError(function ($e) use (&$var) {
+            $var = $e->getMessage();
+        });
+        \Amp\run(function () { throw new \Exception('test'); });
         $this->assertSame('test', $var);
     }
 
     public function testReactorRunsUntilNoWatchersRemain() {
-        $reactor = $this->getReactor();
-
         $var1 = 0;
-        $reactor->repeat(function($reactor, $watcherId) use (&$var1) {
+        \Amp\repeat(function ($watcherId) use (&$var1) {
             if (++$var1 === 3) {
-                $reactor->cancel($watcherId);
+                \Amp\cancel($watcherId);
             }
         }, 0);
 
         $var2 = 0;
-        $reactor->onWritable(STDOUT, function($reactor, $watcherId) use (&$var2) {
+        \Amp\onWritable(STDOUT, function ($watcherId) use (&$var2) {
             if (++$var2 === 4) {
-                $reactor->cancel($watcherId);
+                \Amp\cancel($watcherId);
             }
         });
 
-        $reactor->run();
+        \Amp\run();
 
         $this->assertSame(3, $var1);
         $this->assertSame(4, $var2);
     }
 
     public function testReactorRunsUntilNoWatchersRemainWhenStartedImmediately() {
-        $reactor = $this->getReactor();
-
         $var1 = 0;
         $var2 = 0;
-        $reactor->run(function($reactor) use (&$var1, &$var2) {
-            $reactor->repeat(function($reactor, $watcherId) use (&$var1) {
+        \Amp\run(function () use (&$var1, &$var2) {
+            \Amp\repeat(function ($watcherId) use (&$var1) {
                 if (++$var1 === 3) {
-                    $reactor->cancel($watcherId);
+                    \Amp\cancel($watcherId);
                 }
             }, 0);
 
-            $reactor->onWritable(STDOUT, function($reactor, $watcherId) use (&$var2) {
+            \Amp\onWritable(STDOUT, function ($watcherId) use (&$var2) {
                 if (++$var2 === 4) {
-                    $reactor->cancel($watcherId);
+                    \Amp\cancel($watcherId);
                 }
             });
         });
@@ -668,22 +517,23 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     public function testOptionalCallbackDataPassedOnInvocation() {
         $callbackData = new \StdClass;
         $options = ["cb_data" => $callbackData];
-        $reactor = $this->getReactor();
-        $reactor->immediately(function($reactor, $watcherId, $callbackData) {
+
+        \Amp\immediately(function ($watcherId, $callbackData) {
             $callbackData->immediately = true;
         }, $options);
-        $reactor->once(function($reactor, $watcherId, $callbackData) {
+        \Amp\once(function ($watcherId, $callbackData) {
             $callbackData->once = true;
         }, 1, $options);
-        $reactor->repeat(function($reactor, $watcherId, $callbackData) {
+        \Amp\repeat(function ($watcherId, $callbackData) {
             $callbackData->repeat = true;
-            $reactor->cancel($watcherId);
+            \Amp\cancel($watcherId);
         }, 1, $options);
-        $reactor->onWritable(STDERR, function($reactor, $watcherId, $stream, $callbackData) {
+        \Amp\onWritable(STDERR, function ($watcherId, $stream, $callbackData) {
             $callbackData->onWritable = true;
-            $reactor->cancel($watcherId);
+            \Amp\cancel($watcherId);
         }, $options);
-        $reactor->run();
+
+        \Amp\run();
 
         $this->assertTrue($callbackData->immediately);
         $this->assertTrue($callbackData->once);
@@ -692,36 +542,34 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testOptionalRepeatWatcherDelay() {
-        $reactor = $this->getReactor();
         $invoked = false;
-        $reactor->repeat(function($reactor, $watcherId) use (&$invoked) {
+        \Amp\repeat(function ($watcherId) use (&$invoked) {
             $invoked = true;
-            $reactor->cancel($watcherId);
+            \Amp\cancel($watcherId);
         }, $msInterval = 10000, $options = ["ms_delay" => 1]);
-        $reactor->once([$reactor, "stop"], 50);
-        $reactor->run();
+        \Amp\once('\Amp\stop', 50);
+        \Amp\run();
         $this->assertTrue($invoked);
     }
 
     public function testOptionalDisable() {
-        $reactor = $this->getReactor();
         $options = ["enable" => false];
 
-        $reactor->immediately(function($reactor, $watcherId, $callbackData) {
+        \Amp\immediately(function ($watcherId, $callbackData) {
             $this->fail("disabled watcher should not invoke callback");
         }, $options);
-        $reactor->once(function($reactor, $watcherId, $callbackData) {
+        \Amp\once(function ($watcherId, $callbackData) {
             $this->fail("disabled watcher should not invoke callback");
         }, 1, $options);
-        $reactor->repeat(function($reactor, $watcherId, $callbackData) {
+        \Amp\repeat(function ($watcherId, $callbackData) {
             $this->fail("disabled watcher should not invoke callback");
-            $reactor->cancel($watcherId);
+            \Amp\cancel($watcherId);
         }, 1, $options);
-        $reactor->onWritable(STDERR, function($reactor, $watcherId, $stream, $callbackData) {
+        \Amp\onWritable(STDERR, function ($watcherId, $stream, $callbackData) {
             $this->fail("disabled watcher should not invoke callback");
-            $reactor->cancel($watcherId);
+            \Amp\cancel($watcherId);
         }, $options);
 
-        $reactor->run();
+        \Amp\run();
     }
 }

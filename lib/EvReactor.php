@@ -8,9 +8,7 @@ use EvLoop;
 use EvTimer;
 use EvSignal;
 
-class EvReactor implements ExtensionReactor {
-    private static $instanceCount = 0;
-
+class EvReactor implements Reactor {
     private $loop;
     private $lastWatcherId = "a";
     private $enabledWatchers = [];
@@ -38,45 +36,15 @@ class EvReactor implements ExtensionReactor {
                 $this->onCallbackError($e);
             }
         };
-        self::$instanceCount++;
     }
 
     public function __destruct() {
-        self::$instanceCount--;
         foreach (array_keys($this->enabledWatchers) as $watcherId) {
             $this->cancel($watcherId);
         }
         foreach (array_keys($this->disabledWatchers) as $watcherId) {
             $this->cancel($watcherId);
         }
-    }
-
-    public function __debugInfo() {
-        $timers = $readers = $writers = $signals = 0;
-        foreach ($this->enabledWatchers as $evHandle) {
-            switch (get_class($evHandle)) {
-                case "EvTimer":
-                    $timers++;
-                    break;
-                case "EvIo":
-                    if ($evHandle->events === Ev::READ) { $readers++; } else { $writers++; }
-                    break;
-                case "EvSignal":
-                    $signals++;
-                    break;
-            }
-        }
-
-        return [
-            "immediates"        => count($this->enabledImmediates),
-            "timers"            => $timers,
-            "io_readers"        => $readers,
-            "io_writers"        => $writers,
-            "signals"           => $signals,
-            "disabled"          => count($this->disabledWatchers) + count($this->disabledImmediates),
-            "last_watcher_id"   => $this->lastWatcherId,
-            "instances"         => self::$instanceCount,
-        ];
     }
 
     /**
@@ -100,7 +68,7 @@ class EvReactor implements ExtensionReactor {
                     break;
                 }
             }
-            if (!($this->enabledWatchers || $this->enabledImmediates)) {
+            if (!$this->isRunning || !($this->enabledWatchers || $this->enabledImmediates)) {
                 break;
             }
             $flags = $this->enabledImmediates ? (Ev::RUN_ONCE | Ev::RUN_NOWAIT) : Ev::RUN_ONCE;
@@ -117,9 +85,9 @@ class EvReactor implements ExtensionReactor {
     private function tryImmediate($watcherId, $callback, $cbData) {
         try {
             unset($this->enabledImmediates[$watcherId]);
-            $out = \call_user_func($callback, $this, $watcherId, $cbData);
+            $out = \call_user_func($callback, $watcherId, $cbData);
             if ($out instanceof \Generator) {
-                resolve($out, $this)->when($this->onCoroutineResolution);
+                resolve($out)->when($this->onCoroutineResolution);
             }
         } catch (\Throwable $e) {
             // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -265,14 +233,14 @@ class EvReactor implements ExtensionReactor {
             try {
                 if ($type === Watcher::TIMER_ONCE) {
                     unset($this->enabledWatchers[$watcherId]);
-                    $out = \call_user_func($callback, $this, $watcherId, $evHandle->data);
+                    $out = \call_user_func($callback, $watcherId, $evHandle->data);
                 } elseif ($type & Watcher::IO) {
-                    $out = \call_user_func($callback, $this, $watcherId, $stream, $evHandle->data);
+                    $out = \call_user_func($callback, $watcherId, $stream, $evHandle->data);
                 } else {
-                    $out = \call_user_func($callback, $this, $watcherId, $evHandle->data);
+                    $out = \call_user_func($callback, $watcherId, $evHandle->data);
                 }
                 if ($out instanceof \Generator) {
-                    resolve($out, $this)->when($this->onCoroutineResolution);
+                    resolve($out)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -332,7 +300,7 @@ class EvReactor implements ExtensionReactor {
         if ($isEnabled) {
             $this->enabledWatchers[$watcherId] = $watcher;
         } else {
-            $timer->stop();
+            $watcher->stop();
             $this->disabledWatchers[$watcherId] = $watcher;
         }
 
@@ -353,10 +321,10 @@ class EvReactor implements ExtensionReactor {
             $watcher->clear();
             unset($this->disabledWatchers[$watcherId]);
         } elseif (isset($this->enabledImmediates[$watcherId])) {
-            $watcher = $this->enabledImmediates[$watcherId];
+            $this->enabledImmediates[$watcherId];
             unset($this->enabledImmediates[$watcherId]);
         } elseif (isset($this->disabledImmediates[$watcherId])) {
-            $watcher = $this->disabledImmediates[$watcherId];
+            $this->disabledImmediates[$watcherId];
             unset($this->disabledImmediates[$watcherId]);
         }
     }
@@ -401,9 +369,66 @@ class EvReactor implements ExtensionReactor {
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function getUnderlyingLoop() {
+    public function info() {
+        $once = $repeat = $onReadable = $onWritable = $onSignal = [
+            "enabled"  => 0,
+            "disabled" => 0,
+        ];
+        $immediately = [
+            "enabled"  => count($this->enabledImmediates),
+            "disabled" => count($this->disabledImmediates),
+        ];
+
+        foreach (["enabled", "disabled"] as $key) {
+            foreach ($this->{"{$key}Watchers"} as $evHandle) {
+                switch (get_class($evHandle)) {
+                    case "EvTimer":
+                        if ($evHandle->repeat === 0.0) {
+                            $once[$key] += 1;
+                        } else {
+                            $repeat[$key] += 1;
+                        }
+                        break;
+                    case "EvIo":
+                        if ($evHandle->events === Ev::READ) {
+                            $onReadable[$key] += 1;
+                        } else {
+                            $onWritable[$key] += 1;
+                        }
+                        break;
+                    case "EvSignal":
+                        $onSignal[$key] += 1;
+                        break;
+                }
+            }
+        }
+
+        return [
+            "immediately"       => $immediately,
+            "once"              => $once,
+            "repeat"            => $repeat,
+            "on_readable"       => $onReadable,
+            "on_writable"       => $onWritable,
+            "on_signal"         => $onSignal,
+            "last_watcher_id"   => $this->lastWatcherId,
+        ];
+    }
+
+    /**
+     * Access the underlying ev extension loop instance
+     *
+     * This method provides access to the underlying ev event loop object for
+     * code that wishes to interact with lower-level ev extension functionality.
+     *
+     * @return \EvLoop
+     */
+    public function getLoop() {
         return $this->loop;
+    }
+
+    public function __debugInfo() {
+        return $this->info();
     }
 }

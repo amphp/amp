@@ -3,33 +3,41 @@
 namespace Amp;
 
 /**
- * Get the default event reactor instance
+ * Retrieve the application-wide event reactor instance
  *
- * @param \Amp\Reactor $assignReactor Optionally specify a new default event reactor instance
- * @return \Amp\Reactor Returns the default reactor instance
+ * @param \Amp\Reactor $assign Optionally specify a new default event reactor instance
+ * @return \Amp\Reactor Returns the application-wide reactor instance
  */
-function reactor(Reactor $assignReactor = null) {
+function reactor(Reactor $assign = null) {
     static $reactor;
-    if ($assignReactor) {
-        return ($reactor = $assignReactor);
+    if ($assign) {
+        return ($reactor = $assign);
     } elseif ($reactor) {
         return $reactor;
-    } elseif (\extension_loaded("uv")) {
-        return ($reactor = new UvReactor);
-    } elseif (\extension_loaded("ev")) {
-        return ($reactor = new EvReactor);
-    } elseif (\extension_loaded("libevent")) {
-        return ($reactor = new LibeventReactor);
     } else {
-        return ($reactor = new NativeReactor);
+        return ($reactor = init());
     }
 }
 
 /**
- * Start the default event reactor and assume program flow control
+ * Select and create a new event reactor best-suited for the current environment
  *
- * This is a shortcut function for invoking Reactor::run() on the global
- * default event reactor.
+ * @return \Amp\Reactor
+ */
+function init() {
+    if (\extension_loaded("uv")) {
+        return new UvReactor;
+    } elseif (\extension_loaded("ev")) {
+        return new EvReactor;
+    } elseif (\extension_loaded("libevent")) {
+        return new LibeventReactor;
+    } else {
+        return new NativeReactor;
+    }
+}
+
+/**
+ * Start the event reactor and assume program flow control
  *
  * @param callable $onStart An optional callback to invoke immediately when the Reactor starts
  * @return void
@@ -39,15 +47,169 @@ function run(callable $onStart = null) {
 }
 
 /**
- * Stop the default event reactor and return program flow control
+ * Execute a single event loop iteration
  *
- * This is a shortcut function for invoking Reactor::stop() on the global
- * default event reactor.
+ * @param bool $noWait Should the function return immediately if no watchers are ready to trigger?
+ * @return void
+ */
+function tick($noWait = false) {
+    reactor()->tick($noWait);
+}
+
+/**
+ * Stop the default event reactor and return program flow control
  *
  * @return void
  */
 function stop() {
     reactor()->stop();
+}
+
+/**
+ * Schedule a callback for immediate invocation in the next event loop iteration
+ *
+ * @param callable $callback A callback to invoke in the next iteration of the event loop
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function immediately(callable $callback, array $options = []) {
+    return reactor()->immediately($callback, $options);
+}
+
+/**
+ * Schedule a callback to execute once
+ *
+ * @param callable $callback A callback to invoke after the specified millisecond delay
+ * @param int $msDelay the number of milliseconds to wait before invoking $callback
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function once(callable $callback, $msDelay, array $options = []) {
+    return reactor()->once($callback, $msDelay, $options);
+}
+
+/**
+ * Schedule a recurring callback to execute every $interval seconds until cancelled
+ *
+ * @param callable $callback A callback to invoke at the $msDelay interval until cancelled
+ * @param int $msInterval The interval at which to repeat $callback invocations
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function repeat(callable $callback, $msInterval, array $options = []) {
+    return reactor()->repeat($callback, $msInterval, $options);
+}
+
+/**
+ * Watch a stream resource for readable data and trigger the callback when actionable
+ *
+ * @param resource $stream The stream resource to watch for readability
+ * @param callable $callback A callback to invoke when the stream reports as readable
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function onReadable($stream, callable $callback, array $options = []) {
+    return reactor()->onReadable($stream, $callback, $options);
+}
+
+/**
+ * Watch a stream resource to become writable and trigger the callback when actionable
+ *
+ * @param resource $stream The stream resource to watch for writability
+ * @param callable $callback A callback to invoke when the stream reports as writable
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function onWritable($stream, callable $callback, array $options = []) {
+    return reactor()->onWritable($stream, $callback, $options);
+}
+
+/**
+ * React to process control signals
+ *
+ * @param int $signo The signal number for which to watch
+ * @param callable $callback A callback to invoke when the specified signal is received
+ * @param array $options Watcher options
+ * @return string Returns unique (to the process) string watcher ID
+ */
+function onSignal($signo, callable $callback, array $options = []) {
+    return reactor()->onSignal($signo, $callback, $options);
+}
+
+/**
+ * An optional "last-chance" exception handler for errors resulting during callback invocation
+ *
+ * If an application throws inside the event loop and no onError callback is specified the
+ * exception bubbles up and the event loop is stopped. This is undesirable in long-running
+ * applications (like servers) where stopping the event loop for an application error is
+ * problematic. Amp applications can instead specify the onError callback to handle uncaught
+ * exceptions without stopping the event loop.
+ *
+ * Additionally, generator callbacks which are auto-resolved by the event reactor may fail.
+ * Coroutine resolution failures are treated like uncaught exceptions and stop the event reactor
+ * if no onError callback is specified to handle these situations.
+ *
+ * onError callback functions are passed a single parameter: the uncaught exception.
+ *
+ * @param callable $callback A callback to invoke when an exception occurs inside the event loop
+ * @return void
+ */
+function onError(callable $callback) {
+    reactor()->onError($callback);
+}
+
+/**
+ * Cancel an existing timer/stream watcher
+ *
+ * @param string $watcherId The watcher ID to be canceled
+ * @return void
+ */
+function cancel($watcherId) {
+    reactor()->cancel($watcherId);
+}
+
+/**
+ * Temporarily disable (but don't cancel) an existing timer/stream watcher
+ *
+ * @param string $watcherId The watcher ID to be disabled
+ * @return void
+ */
+function disable($watcherId) {
+    reactor()->disable($watcherId);
+}
+
+/**
+ * Enable a disabled timer/stream watcher
+ *
+ * @param string $watcherId The watcher ID to be enabled
+ * @return void
+ */
+function enable($watcherId) {
+    reactor()->enable($watcherId);
+}
+
+/**
+ * Retrieve an associative array of information about the event reactor
+ *
+ * The returned array matches the following data describing the reactor's
+ * currently registered watchers:
+ *
+ *  [
+ *      "immediately"   => ["enabled" => int, "disabled" => int],
+ *      "once"          => ["enabled" => int, "disabled" => int],
+ *      "repeat"        => ["enabled" => int, "disabled" => int],
+ *      "on_readable"   => ["enabled" => int, "disabled" => int],
+ *      "on_writable"   => ["enabled" => int, "disabled" => int],
+ *      "on_signal"     => ["enabled" => int, "disabled" => int],
+ *  ];
+ *
+ * Reactor implementations may optionally add more information in the return array but
+ * at minimum the above key=>value format is always provided.
+ *
+ * @return array
+ */
+function info() {
+    return reactor()->info();
 }
 
 /**
@@ -72,7 +234,7 @@ function all(array $promises) {
     $struct->results = [];
     $struct->promisor = new Deferred;
 
-    $onResolve = function($error, $result, $cbData) {
+    $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
         if (empty($struct->remaining)) {
             // If the promisor already resolved we don't need to bother
@@ -134,7 +296,7 @@ function some(array $promises) {
     $struct->results = [];
     $struct->promisor = new Deferred;
 
-    $onResolve = function($error, $result, $cbData) {
+    $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
         if ($error) {
             $struct->errors[$key] = $error;
@@ -188,7 +350,7 @@ function any(array $promises) {
     $struct->results = [];
     $struct->promisor = new Deferred;
 
-    $onResolve = function($error, $result, $cbData) {
+    $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
         if ($error) {
             $struct->errors[$key] = $error;
@@ -232,8 +394,8 @@ function first(array $promises) {
     $struct->remaining = count($promises);
     $struct->promisor = new Deferred;
 
-    $onResolve = function($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
+    $onResolve = function ($error, $result, $cbData) {
+        $struct = $cbData;
         if (empty($struct->remaining)) {
             return;
         }
@@ -251,7 +413,7 @@ function first(array $promises) {
 
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
+            $promise->when($onResolve, $struct);
         } else {
             $struct->remaining = 0;
             $struct->promisor->succeed($promise);
@@ -280,7 +442,7 @@ function map(array $promises, callable $functor) {
     $struct->promisor = new Deferred;
     $struct->functor = $functor;
 
-    $onResolve = function($error, $result, $cbData) {
+    $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
         if (empty($struct->remaining)) {
             // If the promisor already resolved we don't need to bother
@@ -359,7 +521,7 @@ function filter(array $promises, callable $functor) {
     $struct->promisor = new Deferred;
     $struct->functor = $functor;
 
-    $onResolve = function($error, $result, $cbData) {
+    $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
         if (empty($struct->remaining)) {
             // If the promisor already resolved we don't need to bother
@@ -447,7 +609,7 @@ function pipe($promise, callable $functor) {
     }
 
     $promisor = new Deferred;
-    $promise->when(function($error, $result) use ($promisor, $functor) {
+    $promise->when(function ($error, $result) use ($promisor, $functor) {
         if ($error) {
             $promisor->fail($error);
             return;
@@ -514,11 +676,11 @@ function promises(array $values) {
 function stream(Promise $promise) {
     $index = 0;
     $promisors[] = new Deferred;
-    $promise->watch(function($data) use (&$promisors, &$index) {
+    $promise->watch(function ($data) use (&$promisors, &$index) {
         $promisors[$index + 1] = new Deferred;
         $promisors[$index++]->succeed($data);
     });
-    $promise->when(function($error, $result) use (&$promisors, &$index) {
+    $promise->when(function ($error, $result) use (&$promisors, &$index) {
         if ($error) {
             $promisors[$index]->fail($error);
         } else {
@@ -550,25 +712,23 @@ function __streamGenerator(&$promisors) {
  *
  * @param \Amp\Promise $promise The promise to which the timeout applies
  * @param int $msTimeout The timeout in milliseconds
- * @param \Amp\Reactor $reactor Optional reactor instance -- defaults to the global reactor
  * @return \Amp\Promise
  */
-function timeout(Promise $promise, $msTimeout, Reactor $reactor = null) {
-    $reactor = $reactor ?: reactor();
+function timeout(Promise $promise, $msTimeout) {
     $resolved = false;
     $promisor = new Deferred;
-    $watcherId = $reactor->once(function() use ($promisor, &$resolved) {
+    $watcherId = once(function () use ($promisor, &$resolved) {
         $resolved = true;
         $promisor->fail(new \RuntimeException(
             "Promise resolution timed out"
         ));
     }, $msTimeout);
-    $promise->when(function($error = null, $result = null) use ($reactor, $promisor, $watcherId, &$resolved) {
+    $promise->when(function ($error = null, $result = null) use ($promisor, $watcherId, &$resolved) {
         if ($resolved) {
             return;
         }
         $resolved = true;
-        $reactor->cancel($watcherId);
+        cancel($watcherId);
         if ($error) {
             $promisor->fail($error);
         } else {
@@ -591,24 +751,22 @@ function timeout(Promise $promise, $msTimeout, Reactor $reactor = null) {
  * reactor instance from that specified in this method the wait() call will never return.
  *
  * @param \Amp\Promise $promise The promise on which to wait
- * @param \Amp\Reactor $reactor
  * @throws \Exception if the promise fails
  * @return mixed Returns the eventual resolution result for the specified promise
  */
-function wait(Promise $promise, Reactor $reactor = null) {
+function wait(Promise $promise) {
     $isWaiting = true;
     $resolvedError = null;
     $resolvedResult = null;
 
-    $promise->when(function($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
+    $promise->when(function ($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
         $isWaiting = false;
         $resolvedError = $error;
         $resolvedResult = $result;
     });
 
-    $reactor = $reactor ?: reactor();
     while ($isWaiting) {
-        $reactor->tick();
+        tick();
     }
 
     if ($resolvedError) {
@@ -622,16 +780,13 @@ function wait(Promise $promise, Reactor $reactor = null) {
  * Return a new function that will be resolved as a coroutine when invoked
  *
  * @param callable $func The callable to be wrapped for coroutine resolution
- * @param \Amp\Reactor $reactor
  * @return callable Returns a wrapped callable
  * @TODO Use variadic function instead of func_get_args() once PHP5.5 is no longer supported
  */
-function coroutine(callable $func, Reactor $reactor = null) {
-    return function() use ($func, $reactor) {
+function coroutine(callable $func) {
+    return function () use ($func) {
         $out = \call_user_func_array($func, \func_get_args());
-        return ($out instanceof \Generator)
-            ? resolve($out, $reactor)
-            : $out;
+        return ($out instanceof \Generator) ? resolve($out) : $out;
     };
 }
 
@@ -642,16 +797,15 @@ function coroutine(callable $func, Reactor $reactor = null) {
  * error occurs during coroutine resolution the returned promise fails.
  *
  * @param \Generator $generator The generator to resolve as a coroutine
- * @param \Amp\Reactor $reactor
  */
-function resolve(\Generator $generator, Reactor $reactor = null) {
+function resolve(\Generator $generator) {
     $cs = new CoroutineState;
-    $cs->reactor = $reactor ?: reactor();
     $cs->promisor = new Deferred;
     $cs->generator = $generator;
     $cs->returnValue = null;
     $cs->currentPromise = null;
     $cs->nestingLevel = 0;
+    $cs->reactor = reactor();
 
     __coroutineAdvance($cs);
 
@@ -700,7 +854,7 @@ function __coroutineAdvance(CoroutineState $cs) {
                 \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
                 $cs->generator->key()
             )));
-            $cs->reactor->immediately(function() use ($cs, $error) {
+            $cs->reactor->immediately(function () use ($cs, $error) {
                 $cs->promisor->fail($error);
             });
         }
@@ -709,7 +863,7 @@ function __coroutineAdvance(CoroutineState $cs) {
          * @codeCoverageIgnoreStart
          * @TODO Remove these coverage ignore lines once PHP7 is required
          */
-        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+        $cs->reactor->immediately(function () use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
         });
         /**
@@ -719,7 +873,7 @@ function __coroutineAdvance(CoroutineState $cs) {
         /**
          * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
          */
-        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+        $cs->reactor->immediately(function () use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
         });
     }
@@ -730,7 +884,7 @@ function __coroutineAdvance(CoroutineState $cs) {
  * It is not considered part of the public API and library users
  * should not rely upon it in applications.
  */
-function __coroutineNextTick(Reactor $reactor, $watcherId, CoroutineState $cs) {
+function __coroutineNextTick($watcherId, CoroutineState $cs) {
     if ($cs->currentPromise) {
         $promise = $cs->currentPromise;
         $cs->currentPromise = null;
@@ -754,7 +908,7 @@ function __coroutineSend($error, $result, CoroutineState $cs) {
         }
         __coroutineAdvance($cs);
     } catch (\Exception $uncaught) {
-        $cs->reactor->immediately(function() use ($cs, $uncaught) {
+        $cs->reactor->immediately(function () use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
         });
     }

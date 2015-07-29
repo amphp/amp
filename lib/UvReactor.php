@@ -6,7 +6,7 @@ namespace Amp;
  * @codeCoverageIgnore
  * @TODO remove code coverage ignore once we're able to install php-uv on travis
  */
-class UvReactor implements ExtensionReactor {
+class UvReactor implements Reactor {
     private $loop;
     private $lastWatcherId = "a";
     private $watchers;
@@ -14,7 +14,6 @@ class UvReactor implements ExtensionReactor {
     private $streamIdPollMap = [];
     private $isRunning = false;
     private $stopException;
-    private $resolution = 1000;
     private $isWindows;
     private $immediates = [];
     private $onError;
@@ -25,8 +24,6 @@ class UvReactor implements ExtensionReactor {
     private $gcWatcher;
     private $gcCallback;
 
-    private static $instanceCount = 0;
-
     public function __construct() {
         // @codeCoverageIgnoreStart
         if (!extension_loaded("uv")) {
@@ -36,7 +33,7 @@ class UvReactor implements ExtensionReactor {
         }
         // @codeCoverageIgnoreEnd
 
-        $this->loop = uv_loop_new();
+        $this->loop = \uv_loop_new();
         $this->isWindows = (stripos(PHP_OS, 'win') === 0);
 
         /**
@@ -47,7 +44,7 @@ class UvReactor implements ExtensionReactor {
          */
         if (PHP_MAJOR_VERSION < 7) {
             $this->garbage = [];
-            $this->gcWatcher = uv_timer_init($this->loop);
+            $this->gcWatcher = \uv_timer_init($this->loop);
             $this->gcCallback = function() {
                 $this->garbage = [];
                 $this->isGcScheduled = false;
@@ -59,8 +56,6 @@ class UvReactor implements ExtensionReactor {
                 $this->onCallbackError($e);
             }
         };
-
-        self::$instanceCount++;
     }
 
     /**
@@ -83,7 +78,7 @@ class UvReactor implements ExtensionReactor {
             if (empty($this->enabledWatcherCount)) {
                 break;
             }
-            uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
+            \uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
         }
 
         if ($this->stopException) {
@@ -102,9 +97,9 @@ class UvReactor implements ExtensionReactor {
                     $this->immediates[$watcherId],
                     $this->watchers[$watcherId]
                 );
-                $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -134,7 +129,7 @@ class UvReactor implements ExtensionReactor {
 
         if (empty($this->immediates) || $this->doImmediates()) {
             $flags = $noWait || !empty($this->immediates) ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;
-            uv_run($this->loop, $flags);
+            \uv_run($this->loop, $flags);
         }
 
         $this->isRunning = false;
@@ -150,7 +145,7 @@ class UvReactor implements ExtensionReactor {
      * {@inheritDoc}
      */
     public function stop() {
-        uv_stop($this->loop);
+        \uv_stop($this->loop);
         $this->isRunning = false;
     }
 
@@ -218,7 +213,7 @@ class UvReactor implements ExtensionReactor {
 
         if ($watcher->isEnabled) {
             $this->enabledWatcherCount++;
-            uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
+            \uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
         }
 
         return $watcherId;
@@ -228,9 +223,9 @@ class UvReactor implements ExtensionReactor {
         return function() use ($watcher, $callback) {
             try {
                 $watcherId = $watcher->id;
-                $result = \call_user_func($callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($callback, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result)->when($this->onCoroutineResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
@@ -333,7 +328,7 @@ class UvReactor implements ExtensionReactor {
         }
         if ($newFlags != $poll->flags) {
             $poll->flags = $newFlags;
-            uv_poll_start($poll->handle, $newFlags, $poll->callback);
+            \uv_poll_start($poll->handle, $newFlags, $poll->callback);
         }
 
         return $watcherId;
@@ -374,15 +369,15 @@ class UvReactor implements ExtensionReactor {
         $streamType = stream_get_meta_data($stream)['stream_type'];
 
         return ($streamType === 'tcp_socket/ssl' || $streamType === 'tcp_socket')
-            ? 'uv_poll_init_socket'
-            : 'uv_poll_init';
+            ? '\uv_poll_init_socket'
+            : '\uv_poll_init';
     }
 
     private function invokePollWatcher($watcher) {
         try {
-            $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $watcher->id, $watcher->stream, $watcher->callbackData);
             if ($result instanceof \Generator) {
-                resolve($result, $this)->when($this->onCoroutineResolution);
+                resolve($result)->when($this->onCoroutineResolution);
             }
         } catch (\Throwable $e) {
             // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -410,7 +405,7 @@ class UvReactor implements ExtensionReactor {
 
         if ($watcher->isEnabled) {
             $this->enabledWatcherCount++;
-            uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
+            \uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
         }
 
         $this->watchers[$watcherId] = $watcher;
@@ -421,9 +416,9 @@ class UvReactor implements ExtensionReactor {
     private function wrapSignalCallback($watcher, $callback) {
         return function() use ($watcher, $callback) {
             try {
-                $result = \call_user_func($callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
+                $result = \call_user_func($callback, $watcher->id, $watcher->signo, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -465,7 +460,7 @@ class UvReactor implements ExtensionReactor {
                     break;
                 case Watcher::TIMER_ONCE:
                 case Watcher::TIMER_REPEAT:
-                    @uv_timer_stop($watcher->uvHandle);
+                    @\uv_timer_stop($watcher->uvHandle);
                     break;
             }
         } elseif ($watcher->type == Watcher::IO_READER || $watcher->type == Watcher::IO_WRITER) {
@@ -475,7 +470,7 @@ class UvReactor implements ExtensionReactor {
         if (PHP_MAJOR_VERSION < 7) {
             $this->garbage[] = $watcher;
             if (!$this->isGcScheduled) {
-                uv_timer_start($this->gcWatcher, 250, 0, $this->gcCallback);
+                \uv_timer_start($this->gcWatcher, 250, 0, $this->gcCallback);
                 $this->isGcScheduled = true;
             }
         }
@@ -498,7 +493,7 @@ class UvReactor implements ExtensionReactor {
         }
 
         // Always stop polling if no enabled watchers remain
-        uv_poll_stop($poll->handle);
+        \uv_poll_stop($poll->handle);
 
         // If all watchers are disabled we can pull out here
         $hasDisabledWatchers = (bool) $poll->disable;
@@ -531,7 +526,7 @@ class UvReactor implements ExtensionReactor {
                 $this->disablePollFromWatcher($watcher);
                 break;
             case Watcher::SIGNAL:
-                uv_signal_stop($watcher->uvHandle);
+                \uv_signal_stop($watcher->uvHandle);
                 break;
             case Watcher::IMMEDIATE:
                 unset($this->immediates[$watcherId]);
@@ -539,7 +534,7 @@ class UvReactor implements ExtensionReactor {
             case Watcher::TIMER_ONCE:
                 // fallthrough
             case Watcher::TIMER_REPEAT:
-                uv_timer_stop($watcher->uvHandle);
+                \uv_timer_stop($watcher->uvHandle);
                 break;
             default:
                 throw new \RuntimeException("Unexpected Watcher type encountered");
@@ -561,7 +556,7 @@ class UvReactor implements ExtensionReactor {
         $poll->disable[$watcherId] = $watcher;
 
         if (!($poll->readers || $poll->writers)) {
-            uv_poll_stop($poll->handle);
+            \uv_poll_stop($poll->handle);
             return;
         }
 
@@ -575,7 +570,7 @@ class UvReactor implements ExtensionReactor {
         }
         if ($poll->flags != $newFlags) {
             $poll->flags = $newFlags;
-            uv_poll_start($poll->handle, $newFlags, $poll->callback);
+            \uv_poll_start($poll->handle, $newFlags, $poll->callback);
         }
     }
 
@@ -595,14 +590,14 @@ class UvReactor implements ExtensionReactor {
         switch ($watcher->type) {
             case Watcher::TIMER_ONCE: // fallthrough
             case Watcher::TIMER_REPEAT:
-                uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
+                \uv_timer_start($watcher->uvHandle, $watcher->msDelay, $watcher->msInterval, $watcher->callback);
                 break;
             case Watcher::IO_READER: // fallthrough
             case Watcher::IO_WRITER:
                 $this->enablePollFromWatcher($watcher);
                 break;
             case Watcher::SIGNAL:
-                uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
+                \uv_signal_start($watcher->uvHandle, $watcher->callback, $watcher->signo);
                 break;
             case Watcher::IMMEDIATE:
                 $this->immediates[$watcherId] = $watcher;
@@ -629,20 +624,7 @@ class UvReactor implements ExtensionReactor {
             $poll->writers[$watcherId] = $watcher;
         }
 
-        @uv_poll_start($poll->handle, $poll->flags, $poll->callback);
-    }
-
-    /**
-     * Access the underlying php-uv extension loop resource
-     *
-     * This method exists outside the base Reactor API. It provides access to the underlying php-uv
-     * event loop resource for code that wishes to interact with lower-level php-uv extension
-     * functionality.
-     *
-     * @return resource
-     */
-    public function getUnderlyingLoop() {
-        return $this->loop;
+        @\uv_poll_start($poll->handle, $poll->flags, $poll->callback);
     }
 
     /**
@@ -675,48 +657,55 @@ class UvReactor implements ExtensionReactor {
         $this->onError = $callback;
     }
 
-    public function __destruct() {
-        self::$instanceCount--;
-    }
-
-    public function __debugInfo() {
-        $immediates = $timers = $readers = $writers = $signals = $disabled = 0;
+    /**
+     * {@inheritDoc}
+     */
+    public function info() {
+        $once = $repeat = $immediately = $onReadable = $onWritable = $onSignal = [
+            "enabled" => 0,
+            "disabled" => 0,
+        ];
         foreach ($this->watchers as $watcher) {
             switch ($watcher->type) {
-                case Watcher::IMMEDIATE:
-                    $immediates++;
-                    break;
-                case Watcher::TIMER_ONCE:
-                case Watcher::TIMER_REPEAT:
-                    $timers++;
-                    break;
-                case Watcher::IO_READER:
-                    $readers++;
-                    break;
-                case Watcher::IO_WRITER:
-                    $writers++;
-                    break;
-                case Watcher::SIGNAL:
-                    $signals++;
-                    break;
-                default:
-                    throw new \DomainException(
-                        "Unexpected watcher type: {$watcher->type}"
-                    );
+                case Watcher::IMMEDIATE:    $arr =& $immediately;   break;
+                case Watcher::TIMER_ONCE:   $arr =& $once;          break;
+                case Watcher::TIMER_REPEAT: $arr =& $repeat;        break;
+                case Watcher::IO_READER:    $arr =& $onReadable;    break;
+                case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
+                case Watcher::SIGNAL:       $arr =& $onSignal;      break;
             }
 
-            $disabled += !$watcher->isEnabled;
+            if ($watcher->isEnabled) {
+                $arr["enabled"] += 1;
+            } else {
+                $arr["disabled"] += 1;
+            }
         }
 
         return [
-            "immediates"        => $immediates,
-            "timers"            => $timers,
-            "io_readers"        => $readers,
-            "io_writers"        => $writers,
-            "signals"           => $signals,
-            "disabled"          => $disabled,
+            "immediately"       => $immediately,
+            "once"              => $once,
+            "repeat"            => $repeat,
+            "on_readable"       => $onReadable,
+            "on_writable"       => $onWritable,
+            "on_signal"         => $onSignal,
             "last_watcher_id"   => $this->lastWatcherId,
-            "instances"         => self::$instanceCount,
         ];
+    }
+
+    /**
+     * Access the underlying php-uv extension loop resource
+     *
+     * This method provides access to the underlying php-uv event loop resource for
+     * code that wishes to interact with lower-level php-uv extension functionality.
+     *
+     * @return resource
+     */
+    public function getLoop() {
+        return $this->loop;
+    }
+
+    public function __debugInfo() {
+        return $this->info();
     }
 }

@@ -5,14 +5,19 @@ namespace Amp\Test;
 use Amp\EvReactor;
 
 class EvReactorTest extends ReactorTest {
-    protected function getReactor() {
+    protected function setUp() {
         if (extension_loaded("ev")) {
-            return new EvReactor;
+            \Amp\reactor($assign = new EvReactor);
         } else {
             $this->markTestSkipped(
                 "ev extension not loaded"
             );
         }
+    }
+
+    public function testGetLoop() {
+        $result = \Amp\reactor()->getLoop();
+        $this->assertInstanceOf("EvLoop", $result);
     }
 
     public function testImmediateCoroutineResolutionError() {

@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class LibeventReactor implements ExtensionReactor {
+class LibeventReactor implements Reactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
@@ -19,8 +19,6 @@ class LibeventReactor implements ExtensionReactor {
     private $garbage = [];
     private $isGcScheduled = false;
 
-    private static $instanceCount = 0;
-
     public function __construct() {
         // @codeCoverageIgnoreStart
         if (!extension_loaded("libevent")) {
@@ -30,7 +28,7 @@ class LibeventReactor implements ExtensionReactor {
         }
         // @codeCoverageIgnoreEnd
 
-        $this->base = event_base_new();
+        $this->base = \event_base_new();
 
         /**
          * Prior to PHP7 we can't cancel closure watchers inside their own callbacks
@@ -40,12 +38,12 @@ class LibeventReactor implements ExtensionReactor {
          */
         if (PHP_MAJOR_VERSION < 7) {
             $this->gcEvent = event_new();
-            event_timer_set($this->gcEvent, function() {
+            \event_timer_set($this->gcEvent, function() {
                 $this->garbage = [];
                 $this->isGcScheduled = false;
-                event_del($this->gcEvent);
+                \event_del($this->gcEvent);
             });
-            event_base_set($this->gcEvent, $this->base);
+            \event_base_set($this->gcEvent, $this->base);
         }
 
         $this->onCoroutineResolution = function($e = null, $r = null) {
@@ -53,8 +51,6 @@ class LibeventReactor implements ExtensionReactor {
                 $this->onCallbackError($e);
             }
         };
-
-        self::$instanceCount++;
     }
 
     /**
@@ -96,9 +92,9 @@ class LibeventReactor implements ExtensionReactor {
                     $this->immediates[$watcherId],
                     $this->watchers[$watcherId]
                 );
-                $result = \call_user_func($watcher->callback, $this, $watcherId, $watcher->callbackData);
+                $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -202,25 +198,25 @@ class LibeventReactor implements ExtensionReactor {
                     case Watcher::IO_READER:
                         // fallthrough
                     case Watcher::IO_WRITER:
-                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->stream, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->stream, $watcher->callbackData);
                         break;
                     case Watcher::TIMER_ONCE:
-                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->callbackData);
                         $this->cancel($watcher->id);
                         break;
                     case Watcher::TIMER_REPEAT:
-                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->callbackData);
                         // If the watcher cancelled itself this will no longer exist
                         if (isset($this->watchers[$watcher->id])) {
                             event_add($watcher->eventResource, $watcher->msInterval);
                         }
                         break;
                     case Watcher::SIGNAL:
-                        $result = \call_user_func($watcher->callback, $this, $watcher->id, $watcher->signo, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->signo, $watcher->callbackData);
                         break;
                 }
                 if ($result instanceof \Generator) {
-                    resolve($result, $this)->when($this->onCoroutineResolution);
+                    resolve($result)->when($this->onCoroutineResolution);
                 }
             } catch (\Throwable $e) {
                 // @TODO Remove coverage ignore block once PHP5 support is no longer required
@@ -442,66 +438,61 @@ class LibeventReactor implements ExtensionReactor {
     }
 
     /**
-     * Access the underlying libevent extension event base
-     *
-     * This method exists outside the base Reactor API. It provides access to the underlying
-     * libevent base for code that wishes to interact with lower-level libevent extension
-     * functionality.
-     *
-     * @return resource
-     */
-    public function getUnderlyingLoop() {
-        return $this->base;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function onError(callable $callback) {
         $this->onError = $callback;
     }
 
-    public function __destruct() {
-        self::$instanceCount--;
-    }
-
-    public function __debugInfo() {
-        $immediates = $timers = $readers = $writers = $signals = $disabled = 0;
+    /**
+     * {@inheritDoc}
+     */
+    public function info() {
+        $once = $repeat = $immediately = $onReadable = $onWritable = $onSignal = [
+            "enabled" => 0,
+            "disabled" => 0,
+        ];
         foreach ($this->watchers as $watcher) {
-            if (!$watcher->isEnabled) {
-                $disabled++;
-                continue;
+            switch ($watcher->type) {
+                case Watcher::IMMEDIATE:    $arr =& $immediately;   break;
+                case Watcher::TIMER_ONCE:   $arr =& $once;          break;
+                case Watcher::TIMER_REPEAT: $arr =& $repeat;        break;
+                case Watcher::IO_READER:    $arr =& $onReadable;    break;
+                case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
+                case Watcher::SIGNAL:       $arr =& $onSignal;      break;
             }
 
-            switch ($watcher->type) {
-                case Watcher::IMMEDIATE:
-                    $immediates++;
-                    break;
-                case Watcher::TIMER_ONCE:
-                case Watcher::TIMER_REPEAT:
-                    $timers++;
-                    break;
-                case Watcher::IO_READER:
-                    $readers++;
-                    break;
-                case Watcher::IO_WRITER:
-                    $writers++;
-                    break;
-                case Watcher::SIGNAL:
-                    $signals++;
-                    break;
+            if ($watcher->isEnabled) {
+                $arr["enabled"] += 1;
+            } else {
+                $arr["disabled"] += 1;
             }
         }
 
         return [
-            "immediates"        => $immediates,
-            "timers"            => $timers,
-            "io_readers"        => $readers,
-            "io_writers"        => $writers,
-            "signals"           => $signals,
-            "disabled"          => $disabled,
+            "immediately"       => $immediately,
+            "once"              => $once,
+            "repeat"            => $repeat,
+            "on_readable"       => $onReadable,
+            "on_writable"       => $onWritable,
+            "on_signal"         => $onSignal,
             "last_watcher_id"   => $this->lastWatcherId,
-            "instances"         => self::$instanceCount,
         ];
+    }
+
+    /**
+     * Access the underlying libevent extension event base
+     *
+     * This method provides access to the underlying libevent event loop resource for
+     * code that wishes to interact with lower-level libevent extension functionality.
+     *
+     * @return resource
+     */
+    public function getLoop() {
+        return $this->base;
+    }
+
+    public function __debugInfo() {
+        return $this->info();
     }
 }

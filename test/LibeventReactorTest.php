@@ -5,13 +5,18 @@ namespace Amp\Test;
 use Amp\LibeventReactor;
 
 class LibeventReactorTest extends ReactorTest {
-    protected function getReactor() {
+    protected function setUp() {
         if (extension_loaded("libevent")) {
-            return new LibeventReactor;
+            \Amp\reactor($assign = new LibeventReactor);
         } else {
             $this->markTestSkipped(
                 "libevent extension not loaded"
             );
         }
+    }
+
+    public function testGetLoop() {
+        $result = \Amp\reactor()->getLoop();
+        $this->assertInternalType("resource", $result);
     }
 }
