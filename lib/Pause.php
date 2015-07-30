@@ -2,6 +2,9 @@
 
 namespace Amp;
 
+/**
+ * Coroutines can yield Pause objects to suspend execution until the specified timeout elapses
+ */
 class Pause implements Promise {
     use Placeholder;
 

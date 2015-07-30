@@ -3,6 +3,8 @@
 namespace Amp;
 
 class LibeventReactor implements Reactor {
+    use Struct;
+
     private $base;
     private $watchers = [];
     private $immediates = [];

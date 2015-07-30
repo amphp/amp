@@ -7,6 +7,8 @@ namespace Amp;
  * @TODO remove code coverage ignore once we're able to install php-uv on travis
  */
 class UvReactor implements Reactor {
+    use Struct;
+
     private $loop;
     private $watchers;
     private $enabledWatcherCount = 0;

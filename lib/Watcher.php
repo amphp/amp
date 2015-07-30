@@ -1,10 +1,11 @@
 <?php
 
 namespace Amp;
-
-class Watcher {
-    use Struct;
-
+/**
+ * This class exists to provide faux enum values in internal Reactor code.
+ * Applications should not rely upon these values as part of the public API.
+ */
+final class Watcher {
     const IMMEDIATE    = 0b00000001;
     const TIMER        = 0b00000010;
     const TIMER_ONCE   = 0b00000110;
@@ -13,10 +14,4 @@ class Watcher {
     const IO_READER    = 0b00110000;
     const IO_WRITER    = 0b01010000;
     const SIGNAL       = 0b10000000;
-
-    public $id;
-    public $type;
-    public $callback;
-    public $callbackData;
-    public $isEnabled;
 }

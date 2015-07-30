@@ -3,7 +3,10 @@
 namespace Amp;
 
 /**
- * @TODO This class is only necessary for PHP5; use an anonymous class once PHP7 is required
+ * This class only exists for legacy PHP5; applications should not treat
+ * it as part of the public API.
+ *
+ * @TODO Remove in favor of an anonymous class once PHP 5 is no longer supported
  */
 class CoroutineState {
     use Struct;

@@ -3,6 +3,8 @@
 namespace Amp;
 
 class NativeReactor implements Reactor {
+    use Struct;
+
     private $watchers = [];
     private $immediates = [];
     private $timerOrder = [];
@@ -237,7 +239,7 @@ class NativeReactor implements Reactor {
      * {@inheritDoc}
      */
     public function immediately(callable $callback, array $options = []) {
-        $watcher = new Watcher;
+        $watcher = new \StdClass;
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;

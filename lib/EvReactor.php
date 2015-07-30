@@ -9,6 +9,8 @@ use EvTimer;
 use EvSignal;
 
 class EvReactor implements Reactor {
+    use Struct;
+
     private $loop;
     private $watchers = [];
     private $immediates = [];

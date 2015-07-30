@@ -6,8 +6,8 @@ namespace Amp;
  * Create a "return" value for a generator coroutine
  *
  * Prior to PHP7 Generators do not support return expressions. In order to work around
- * this language limitation coroutine authors may yield the result of this function to
- * indicate a coroutine's "return" value in a cross-version-compatible manner.
+ * this language limitation amp coroutines can yield the result of this function to
+ * indicate a coroutine's "return" value in a legacy-compatible way.
  *
  * Amp users who want their code to work in both PHP5 and PHP7 environments should yield
  * this object to indicate coroutine results.
