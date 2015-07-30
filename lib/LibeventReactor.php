@@ -6,7 +6,6 @@ class LibeventReactor implements Reactor {
     private $base;
     private $watchers = [];
     private $immediates = [];
-    private $lastWatcherId = "a";
     private $enabledWatcherCount = 0;
     private $resolution = 1000;
     private $isRunning = false;
@@ -158,9 +157,8 @@ class LibeventReactor implements Reactor {
     }
 
     private function initWatcher($type, $callback, $options) {
-        $watcherId = $this->lastWatcherId++;
-        $this->watchers[$watcherId] = $watcher = new \StdClass;
-        $watcher->id = $watcherId;
+        $watcher = new \StdClass;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -169,6 +167,8 @@ class LibeventReactor implements Reactor {
         if ($type !== Watcher::IMMEDIATE) {
             $watcher->eventResource = event_new();
         }
+
+        $this->watchers[$watcherId] = $watcher;
 
         return $watcher;
     }
@@ -461,7 +461,6 @@ class LibeventReactor implements Reactor {
                 case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
                 case Watcher::SIGNAL:       $arr =& $onSignal;      break;
             }
-
             if ($watcher->isEnabled) {
                 $arr["enabled"] += 1;
             } else {
@@ -476,7 +475,6 @@ class LibeventReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
-            "last_watcher_id"   => $this->lastWatcherId,
         ];
     }
 

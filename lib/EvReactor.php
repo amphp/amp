@@ -10,11 +10,10 @@ use EvSignal;
 
 class EvReactor implements Reactor {
     private $loop;
-    private $lastWatcherId = "a";
-    private $enabledWatchers = [];
-    private $disabledWatchers = [];
-    private $enabledImmediates = [];
-    private $disabledImmediates = [];
+    private $watchers = [];
+    private $immediates = [];
+    private $watcherCallback;
+    private $enabledNonImmediates = 0;
     private $isRunning = false;
     private $stopException;
     private $onError;
@@ -36,15 +35,43 @@ class EvReactor implements Reactor {
                 $this->onCallbackError($e);
             }
         };
-    }
-
-    public function __destruct() {
-        foreach (array_keys($this->enabledWatchers) as $watcherId) {
-            $this->cancel($watcherId);
-        }
-        foreach (array_keys($this->disabledWatchers) as $watcherId) {
-            $this->cancel($watcherId);
-        }
+        $this->watcherCallback = function($evHandle, $revents) {
+            try {
+                $w = $evHandle->data;
+                switch ($w->type) {
+                    case Watcher::IO_READER:
+                        // fallthrough
+                    case Watcher::IO_WRITER:
+                        $out = \call_user_func($w->callback, $w->id, $w->stream, $w->cbData);
+                        break;
+                    case Watcher::TIMER_ONCE:
+                        $this->enabledNonImmediates--;
+                        unset($this->watchers[$w->id]);
+                        $out = \call_user_func($w->callback, $w->id, $w->cbData);
+                        break;
+                    case Watcher::TIMER_REPEAT:
+                        $out = \call_user_func($w->callback, $w->id, $w->cbData);
+                        break;
+                    case Watcher::SIGNAL:
+                        $out = \call_user_func($w->callback, $w->id, $w->signo, $w->cbData);
+                        break;
+                    default:
+                        // this is an error
+                        return;
+                }
+                if ($out instanceof \Generator) {
+                    resolve($out)->when($this->onCoroutineResolution);
+                }
+            } catch (\Throwable $e) {
+                // @TODO Remove coverage ignore block once PHP5 support is no longer required
+                // @codeCoverageIgnoreStart
+                $this->onCallbackError($e);
+                // @codeCoverageIgnoreEnd
+            } catch (\Exception $e) {
+                // @TODO Remove this catch block once PHP5 support is no longer required
+                $this->onCallbackError($e);
+            }
+        };
     }
 
     /**
@@ -61,17 +88,16 @@ class EvReactor implements Reactor {
         }
 
         while ($this->isRunning) {
-            $immediates = $this->enabledImmediates;
-            foreach ($immediates as $watcherId => $immediateArr) {
-                list($callback, $cbData) = $immediateArr;
-                if (!$this->tryImmediate($watcherId, $callback, $cbData)) {
+            $immediates = $this->immediates;
+            foreach ($immediates as $watcher) {
+                if (!$this->tryImmediate($watcher)) {
                     break;
                 }
             }
-            if (!$this->isRunning || !($this->enabledWatchers || $this->enabledImmediates)) {
+            if (!$this->isRunning || !($this->enabledNonImmediates || $this->immediates)) {
                 break;
             }
-            $flags = $this->enabledImmediates ? (Ev::RUN_ONCE | Ev::RUN_NOWAIT) : Ev::RUN_ONCE;
+            $flags = $this->immediates ? (Ev::RUN_ONCE | Ev::RUN_NOWAIT) : Ev::RUN_ONCE;
             $this->loop->run($flags);
         }
 
@@ -82,10 +108,10 @@ class EvReactor implements Reactor {
         }
     }
 
-    private function tryImmediate($watcherId, $callback, $cbData) {
+    private function tryImmediate($watcher) {
         try {
-            unset($this->enabledImmediates[$watcherId]);
-            $out = \call_user_func($callback, $watcherId, $cbData);
+            unset($this->immediates[$watcher->id]);
+            $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
             if ($out instanceof \Generator) {
                 resolve($out)->when($this->onCoroutineResolution);
             }
@@ -140,16 +166,15 @@ class EvReactor implements Reactor {
         $noWait = (bool) $noWait;
         $this->isRunning = true;
 
-        $immediates = $this->enabledImmediates;
-        foreach ($immediates as $watcherId => $immediateArr) {
-            list($callback, $cbData) = $immediateArr;
-            if (!$this->tryImmediate($watcherId, $callback, $cbData)) {
+        $immediates = $this->immediates;
+        foreach ($immediates as $watcher) {
+            if (!$this->tryImmediate($watcher)) {
                 break;
             }
         }
 
         if ($this->isRunning) {
-            $flags = $noWait || $this->enabledImmediates ? Ev::RUN_NOWAIT | Ev::RUN_ONCE : Ev::RUN_ONCE;
+            $flags = $noWait || $this->immediates ? Ev::RUN_NOWAIT | Ev::RUN_ONCE : Ev::RUN_ONCE;
             $this->loop->run($flags);
             $this->isRunning = false;
         }
@@ -173,192 +198,119 @@ class EvReactor implements Reactor {
      * {@inheritdoc}
      */
     public function immediately(callable $callback, array $options = []) {
-        $watcherId = $this->lastWatcherId++;
-        $cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
-        $isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
-        if ($isEnabled) {
-            $this->enabledImmediates[$watcherId] = [$callback, $cbData];
-        } else {
-            $this->disabledImmediates[$watcherId] = [$callback, $cbData];
+        $watcher = $this->initWatcher(Watcher::IMMEDIATE, $callback, $options);
+        if ($watcher->isEnabled) {
+            $this->immediates[$watcher->id] = $watcher;
         }
+        $this->watchers[$watcher->id] = $watcher;
 
-        return $watcherId;
+        return $watcher->id;
+    }
+
+    private function initWatcher($type, $callback, $options) {
+        $watcher = new \StdClass;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
+        $watcher->type = $type;
+        $watcher->callback = $callback;
+        $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
+        $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+
+        return $watcher;
     }
 
     /**
      * {@inheritdoc}
      */
     public function once(callable $callback, $msDelay, array $options = []) {
-        $type = Watcher::TIMER_ONCE;
+        $watcher = $this->initWatcher(Watcher::TIMER_ONCE, $callback, $options);
+        // A zero interval indicates "non-repeating"
         $msInterval = 0.0;
-        // @TODO assert($msDelay > 0)
+        // ev uses full second resolution with floats so we need to
+        // divide our millisecond units by 1000
+        $msDelay = $msDelay/1000;
+        $msInterval = $msInterval ? ($msInterval/1000) : 0.0;
+        $evHandle = $this->loop->timer($msDelay, $msInterval, $this->watcherCallback, $watcher);
+        $watcher->evHandle = $evHandle;
+        if ($watcher->isEnabled) {
+            $this->enabledNonImmediates++;
+        } else {
+            $evHandle->stop();
+        }
+        $this->watchers[$watcher->id] = $watcher;
 
-        return $this->registerTimer($type, $callback, $msDelay, $msInterval, $options);
+        return $watcher->id;
     }
 
     /**
      * {@inheritdoc}
      */
     public function repeat(callable $callback, $msInterval, array $options = []) {
-        $type = Watcher::TIMER_REPEAT;
+        $watcher = $this->initWatcher(Watcher::TIMER_REPEAT, $callback, $options);
         $msDelay = isset($options["ms_delay"]) ? $options["ms_delay"] : $msInterval;
-        if ($msInterval == 0) {
-            $msInterval = 1;
-        }
-
-        return $this->registerTimer($type, $callback, $msDelay, $msInterval, $options);
-    }
-
-    private function registerTimer($type, $callback, $msDelay, $msInterval, $options = []) {
-        // ev uses one second resolution
+        // A zero interval indicates "non-repeating" so use the closest thing we can: 0.001
+        $msInterval = ($msInterval == 0) ? 0.001 : $msInterval;
+        // ev uses full second resolution with floats so we need to
+        // divide our millisecond units by 1000
         $msDelay = $msDelay/1000;
-        $msInterval = $msInterval/1000;
-        $watcherId = $this->lastWatcherId++;
-        $wrappedCallback = $this->wrapWatcherCallback($type, $watcherId, $callback);
-        $cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
-        $isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
-        $watcher = $this->loop->timer($msDelay, $msInterval, $wrappedCallback, $cbData);
-        if ($isEnabled) {
-            $this->enabledWatchers[$watcherId] = $watcher;
+        $msInterval = $msInterval ? ($msInterval/1000) : 0.0;
+        $evHandle = $this->loop->timer($msDelay, $msInterval, $this->watcherCallback, $watcher);
+        $watcher->evHandle = $evHandle;
+        if ($watcher->isEnabled) {
+            $this->enabledNonImmediates++;
         } else {
-            $watcher->stop();
-            $this->disabledWatchers[$watcherId] = $watcher;
+            $evHandle->stop();
         }
+        $this->watchers[$watcher->id] = $watcher;
 
-        return $watcherId;
-    }
-
-    private function wrapWatcherCallback($type, $watcherId, $callback, $stream = null) {
-        return function($evHandle) use ($type, $watcherId, $callback, $stream) {
-            try {
-                if ($type === Watcher::TIMER_ONCE) {
-                    unset($this->enabledWatchers[$watcherId]);
-                    $out = \call_user_func($callback, $watcherId, $evHandle->data);
-                } elseif ($type & Watcher::IO) {
-                    $out = \call_user_func($callback, $watcherId, $stream, $evHandle->data);
-                } else {
-                    $out = \call_user_func($callback, $watcherId, $evHandle->data);
-                }
-                if ($out instanceof \Generator) {
-                    resolve($out)->when($this->onCoroutineResolution);
-                }
-            } catch (\Throwable $e) {
-                // @TODO Remove coverage ignore block once PHP5 support is no longer required
-                // @codeCoverageIgnoreStart
-                $this->onCallbackError($e);
-                // @codeCoverageIgnoreEnd
-            } catch (\Exception $e) {
-                // @TODO Remove this catch block once PHP5 support is no longer required
-                $this->onCallbackError($e);
-            }
-        };
+        return $watcher->id;
     }
 
     /**
      * {@inheritdoc}
      */
     public function onReadable($stream, callable $callback, array $options = []) {
-        return $this->registerIo($events = Ev::READ, $stream, $callback, $options);
+        return $this->registerIo($type = Watcher::IO_READER, $stream, $callback, $options);
     }
 
     /**
      * {@inheritdoc}
      */
     public function onWritable($stream, callable $callback, array $options = []) {
-        return $this->registerIo($events = Ev::WRITE, $stream, $callback, $options);
+        return $this->registerIo($type = Watcher::IO_WRITER, $stream, $callback, $options);
     }
 
-    private function registerIo($events, $stream, $callback, $options) {
-        $watcherId = $this->lastWatcherId++;
-        $type = Watcher::IO;
-        $wrappedCallback = $this->wrapWatcherCallback($type, $watcherId, $callback, $stream);
-        $cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
-        $isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
-
-        $watcher = $this->loop->io($stream, $events, $wrappedCallback, $cbData);
-        if ($isEnabled) {
-            $this->enabledWatchers[$watcherId] = $watcher;
+    private function registerIo($type, $stream, $callback, $options) {
+        $watcher = $this->initWatcher($type, $callback, $options);
+        $watcher->stream = $stream;
+        $events = ($type === Watcher::IO_READER) ? Ev::READ : Ev::WRITE;
+        $evHandle = $this->loop->io($stream, $events, $this->watcherCallback, $watcher);
+        $watcher->evHandle = $evHandle;
+        if ($watcher->isEnabled) {
+            $this->enabledNonImmediates++;
         } else {
-            $watcher->stop();
-            $this->disabledWatchers[$watcherId] = $watcher;
+            $evHandle->stop();
         }
+        $this->watchers[$watcher->id] = $watcher;
 
-        return $watcherId;
+        return $watcher->id;
     }
 
     /**
      * {@inheritDoc}
      */
     public function onSignal($signo, callable $callback, array $options = []) {
-        $watcherId = $this->lastWatcherId++;
-        $type = Watcher::SIGNAL;
-        $wrappedCallback = $this->wrapWatcherCallback($type, $watcherId, $callback);
-        $cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
-        $isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
-
-        $watcher = $this->loop->signal($signo, $wrappedCallback, $cbData);
-        if ($isEnabled) {
-            $this->enabledWatchers[$watcherId] = $watcher;
+        $watcher = $this->initWatcher(Watcher::SIGNAL, $callback, $options);
+        $watcher->signo = $signo;
+        $evHandle = $this->loop->signal($signo, $this->watcherCallback, $watcher);
+        $watcher->evHandle = $evHandle;
+        if ($watcher->isEnabled) {
+            $this->enabledNonImmediates++;
         } else {
-            $watcher->stop();
-            $this->disabledWatchers[$watcherId] = $watcher;
-        }
-
-        return $watcherId;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cancel($watcherId) {
-        if (isset($this->enabledWatchers[$watcherId])) {
-            $watcher = $this->enabledWatchers[$watcherId];
-            $watcher->clear();
-            $watcher->stop();
-            unset($this->enabledWatchers[$watcherId]);
-        } elseif (isset($this->disabledWatchers[$watcherId])) {
-            $watcher = $this->disabledWatchers[$watcherId];
-            $watcher->clear();
-            unset($this->disabledWatchers[$watcherId]);
-        } elseif (isset($this->enabledImmediates[$watcherId])) {
-            $this->enabledImmediates[$watcherId];
-            unset($this->enabledImmediates[$watcherId]);
-        } elseif (isset($this->disabledImmediates[$watcherId])) {
-            $this->disabledImmediates[$watcherId];
-            unset($this->disabledImmediates[$watcherId]);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function disable($watcherId) {
-        if (isset($this->enabledWatchers[$watcherId])) {
-            $evHandle = $this->enabledWatchers[$watcherId];
-            unset($this->enabledWatchers[$watcherId]);
-            $this->disabledWatchers[$watcherId] = $evHandle;
             $evHandle->stop();
-        } elseif (isset($this->enabledImmediates[$watcherId])) {
-            $immediateArr = $this->enabledImmediates[$watcherId];
-            $this->disabledImmediates[$watcherId] = $immediateArr;
-            unset($this->enabledImmediates[$watcherId]);
         }
-    }
+        $this->watchers[$watcher->id] = $watcher;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function enable($watcherId) {
-        if (isset($this->disabledWatchers[$watcherId])) {
-            $evHandle = $this->disabledWatchers[$watcherId];
-            unset($this->disabledWatchers[$watcherId]);
-            $this->enabledWatchers[$watcherId] = $evHandle;
-            $evHandle->start();
-        } elseif (isset($this->disabledImmediates[$watcherId])) {
-            $immediateArr = $this->disabledImmediates[$watcherId];
-            $this->enabledImmediates[$watcherId] = $immediateArr;
-            unset($this->disabledImmediates[$watcherId]);
-        }
+        return $watcher->id;
     }
 
     /**
@@ -369,39 +321,92 @@ class EvReactor implements Reactor {
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function cancel($watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            return;
+        }
+        $watcher = $this->watchers[$watcherId];
+        if ($watcher->isEnabled) {
+            $watcher->isEnabled = false;
+            if ($watcher->type === Watcher::IMMEDIATE) {
+                unset($this->immediates[$watcherId]);
+            } else {
+                $watcher->evHandle->stop();
+                $watcher->evHandle->clear();
+                $watcher->evHandle = null;
+                $this->enabledNonImmediates--;
+            }
+        } elseif ($watcher->type !== Watcher::IMMEDIATE) {
+            $watcher->evHandle->clear();
+        }
+        $watcher->callback = null;
+        $watcher->cbData = null;
+        unset($this->watchers[$watcherId]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function disable($watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            return;
+        }
+        $watcher = $this->watchers[$watcherId];
+        if (!$watcher->isEnabled) {
+            return;
+        }
+        $watcher->isEnabled = false;
+        if ($watcher->type === Watcher::IMMEDIATE) {
+            unset($this->immediates[$watcherId]);
+        } else {
+            $watcher->evHandle->stop();
+            $this->enabledNonImmediates--;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function enable($watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            return;
+        }
+        $watcher = $this->watchers[$watcherId];
+        if ($watcher->isEnabled) {
+            return;
+        }
+        $watcher->isEnabled = true;
+        if ($watcher->type === Watcher::IMMEDIATE) {
+            $this->immediates[$watcherId] = $watcher;
+        } else {
+            $watcher->evHandle->start();
+            $this->enabledNonImmediates++;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function info() {
-        $once = $repeat = $onReadable = $onWritable = $onSignal = [
-            "enabled"  => 0,
+        $once = $repeat = $immediately = $onReadable = $onWritable = $onSignal = [
+            "enabled" => 0,
             "disabled" => 0,
         ];
-        $immediately = [
-            "enabled"  => count($this->enabledImmediates),
-            "disabled" => count($this->disabledImmediates),
-        ];
-
-        foreach (["enabled", "disabled"] as $key) {
-            foreach ($this->{"{$key}Watchers"} as $evHandle) {
-                switch (get_class($evHandle)) {
-                    case "EvTimer":
-                        if ($evHandle->repeat === 0.0) {
-                            $once[$key] += 1;
-                        } else {
-                            $repeat[$key] += 1;
-                        }
-                        break;
-                    case "EvIo":
-                        if ($evHandle->events === Ev::READ) {
-                            $onReadable[$key] += 1;
-                        } else {
-                            $onWritable[$key] += 1;
-                        }
-                        break;
-                    case "EvSignal":
-                        $onSignal[$key] += 1;
-                        break;
-                }
+        foreach ($this->watchers as $watcher) {
+            switch ($watcher->type) {
+                case Watcher::IMMEDIATE:    $arr =& $immediately;   break;
+                case Watcher::TIMER_ONCE:   $arr =& $once;          break;
+                case Watcher::TIMER_REPEAT: $arr =& $repeat;        break;
+                case Watcher::IO_READER:    $arr =& $onReadable;    break;
+                case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
+                case Watcher::SIGNAL:       $arr =& $onSignal;      break;
+            }
+            if ($watcher->isEnabled) {
+                $arr["enabled"] += 1;
+            } else {
+                $arr["disabled"] += 1;
             }
         }
 
@@ -412,7 +417,6 @@ class EvReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
-            "last_watcher_id"   => $this->lastWatcherId,
         ];
     }
 
@@ -430,5 +434,12 @@ class EvReactor implements Reactor {
 
     public function __debugInfo() {
         return $this->info();
+    }
+
+    public function __destruct() {
+        foreach (array_keys($this->watchers) as $watcherId) {
+            $this->cancel($watcherId);
+        }
+        $this->watchers = [];
     }
 }

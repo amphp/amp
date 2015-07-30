@@ -255,15 +255,6 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals(10, $increment);
     }
 
-    public function testOnceReturnsEventWatcher() {
-        $firstWatcherId = "a";
-        $watcherId = \Amp\once(function (){}, $delay = 0);
-        $this->assertSame($firstWatcherId, $watcherId);
-
-        $watcherId = \Amp\immediately(function (){});
-        $this->assertSame(++$firstWatcherId, $watcherId);
-    }
-
     /**
      * @expectedException RuntimeException
      * @expectedExceptionMessage test
@@ -340,15 +331,6 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
                 }, 10);
             }, 10);
         });
-    }
-
-    public function testRepeatReturnsEventWatcher() {
-        $firstWatcherId = "a";
-        $watcherId = \Amp\repeat(function () {}, $msInterval = 1000);
-        $this->assertSame($firstWatcherId, $watcherId);
-
-        $watcherId = \Amp\repeat(function () {}, $msInterval = 1000);
-        $this->assertSame(++$firstWatcherId, $watcherId);
     }
 
     public function testCancelRemovesWatcher() {
@@ -532,7 +514,6 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
             $callbackData->onWritable = true;
             \Amp\cancel($watcherId);
         }, $options);
-
         \Amp\run();
 
         $this->assertTrue($callbackData->immediately);

@@ -11,7 +11,6 @@ class NativeReactor implements Reactor {
     private $readWatchers = [];
     private $writeWatchers = [];
     private $isTimerSortNeeded;
-    private $lastWatcherId = "a";
     private $isRunning = false;
     private $isTicking = false;
     private $onCoroutineResolution;
@@ -239,7 +238,7 @@ class NativeReactor implements Reactor {
      */
     public function immediately(callable $callback, array $options = []) {
         $watcher = new Watcher;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -265,7 +264,7 @@ class NativeReactor implements Reactor {
          * and keep maintenance simple.
          */
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::TIMER_ONCE;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -300,7 +299,7 @@ class NativeReactor implements Reactor {
          * and keep maintenance simple.
          */
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::TIMER_REPEAT;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -342,7 +341,7 @@ class NativeReactor implements Reactor {
          * and keep maintenance simple.
          */
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -379,7 +378,7 @@ class NativeReactor implements Reactor {
         $signo = (int) $signo;
 
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::SIGNAL;
         $watcher->callback = $func;
         $watcher->callbackData = isset($options["cb_data"]) ? $options["cb_data"] : null;
@@ -540,7 +539,6 @@ class NativeReactor implements Reactor {
                 case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
                 case Watcher::SIGNAL:       $arr =& $onSignal;      break;
             }
-
             if ($watcher->isEnabled) {
                 $arr["enabled"] += 1;
             } else {
@@ -555,7 +553,6 @@ class NativeReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
-            "last_watcher_id"   => $this->lastWatcherId,
         ];
     }
 

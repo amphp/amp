@@ -8,7 +8,6 @@ namespace Amp;
  */
 class UvReactor implements Reactor {
     private $loop;
-    private $lastWatcherId = "a";
     private $watchers;
     private $enabledWatcherCount = 0;
     private $streamIdPollMap = [];
@@ -154,7 +153,7 @@ class UvReactor implements Reactor {
      */
     public function immediately(callable $callback, array $options = []) {
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -200,7 +199,7 @@ class UvReactor implements Reactor {
         $isRepeating = ($msInterval !== -1);
 
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = ($isRepeating) ? Watcher::TIMER_REPEAT : Watcher::TIMER_ONCE;
         $watcher->uvHandle = uv_timer_init($this->loop);
         $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
@@ -290,9 +289,8 @@ class UvReactor implements Reactor {
     }
 
     private function watchStream($stream, callable $callback, $type, array $options) {
-        $watcherId = $this->lastWatcherId++;
         $watcher = new \StdClass;
-        $watcher->id = $watcherId;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
         $watcher->callbackData = @$options["cb_data"];
@@ -395,7 +393,7 @@ class UvReactor implements Reactor {
      */
     public function onSignal($signo, callable $func, array $options = []) {
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = $this->lastWatcherId++;
+        $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::SIGNAL;
         $watcher->callback = $this->wrapSignalCallback($watcher, $func);
         $watcher->callbackData = @$options["cb_data"];
@@ -674,7 +672,6 @@ class UvReactor implements Reactor {
                 case Watcher::IO_WRITER:    $arr =& $onWritable;    break;
                 case Watcher::SIGNAL:       $arr =& $onSignal;      break;
             }
-
             if ($watcher->isEnabled) {
                 $arr["enabled"] += 1;
             } else {
@@ -689,7 +686,6 @@ class UvReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
-            "last_watcher_id"   => $this->lastWatcherId,
         ];
     }
 
