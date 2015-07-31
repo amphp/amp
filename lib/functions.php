@@ -15,16 +15,16 @@ function reactor(Reactor $assign = null) {
     } elseif ($reactor) {
         return $reactor;
     } else {
-        return ($reactor = init());
+        return ($reactor = driver());
     }
 }
 
 /**
- * Select and create a new event reactor best-suited for the current environment
+ * Create a new event reactor best-suited for the current environment
  *
  * @return \Amp\Reactor
  */
-function init() {
+function driver() {
     if (\extension_loaded("uv")) {
         return new UvReactor;
     } elseif (\extension_loaded("ev")) {
