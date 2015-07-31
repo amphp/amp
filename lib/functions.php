@@ -720,7 +720,7 @@ function timeout(Promise $promise, $msTimeout) {
     $promisor = new Deferred;
     $watcherId = once(function () use ($promisor, &$resolved) {
         $resolved = true;
-        $promisor->fail(new \RuntimeException(
+        $promisor->fail(new TimeoutException(
             "Promise resolution timed out"
         ));
     }, $msTimeout);
