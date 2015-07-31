@@ -15,7 +15,7 @@ class EvReactor implements Reactor {
     private $watchers = [];
     private $immediates = [];
     private $watcherCallback;
-    private $enabledNonImmediates = 0;
+    private $keepAliveCount = 0;
     private $isRunning = false;
     private $stopException;
     private $onError;
@@ -47,7 +47,7 @@ class EvReactor implements Reactor {
                         $out = \call_user_func($w->callback, $w->id, $w->stream, $w->cbData);
                         break;
                     case Watcher::TIMER_ONCE:
-                        $this->enabledNonImmediates--;
+                        $this->keepAliveCount -= $w->keepAlive;
                         unset($this->watchers[$w->id]);
                         $out = \call_user_func($w->callback, $w->id, $w->cbData);
                         break;
@@ -86,7 +86,12 @@ class EvReactor implements Reactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately($onStart);
+            $onStartWatcherId = $this->immediately($onStart);
+            $this->tryImmediate($this->watchers[$onStartWatcherId]);
+            if (empty($this->keepAliveCount)) {
+                $this->isRunning = false;
+                return;
+            }
         }
 
         while ($this->isRunning) {
@@ -96,7 +101,7 @@ class EvReactor implements Reactor {
                     break;
                 }
             }
-            if (!$this->isRunning || !($this->enabledNonImmediates || $this->immediates)) {
+            if (!$this->isRunning || empty($this->keepAliveCount)) {
                 break;
             }
             $flags = $this->immediates ? (Ev::RUN_ONCE | Ev::RUN_NOWAIT) : Ev::RUN_ONCE;
@@ -113,6 +118,7 @@ class EvReactor implements Reactor {
     private function tryImmediate($watcher) {
         try {
             unset($this->immediates[$watcher->id]);
+            $this->keepAliveCount -= $watcher->keepAlive;
             $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
             if ($out instanceof \Generator) {
                 resolve($out)->when($this->onCoroutineResolution);
@@ -216,6 +222,8 @@ class EvReactor implements Reactor {
         $watcher->callback = $callback;
         $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
+        $this->keepAliveCount += ($watcher->isEnabled && $watcher->keepAlive);
 
         return $watcher;
     }
@@ -232,10 +240,9 @@ class EvReactor implements Reactor {
         $msDelay = $msDelay/1000;
         $msInterval = $msInterval ? ($msInterval/1000) : 0.0;
         $evHandle = $this->loop->timer($msDelay, $msInterval, $this->watcherCallback, $watcher);
+        $evHandle->keepalive($watcher->keepAlive);
         $watcher->evHandle = $evHandle;
-        if ($watcher->isEnabled) {
-            $this->enabledNonImmediates++;
-        } else {
+        if (empty($watcher->isEnabled)) {
             $evHandle->stop();
         }
         $this->watchers[$watcher->id] = $watcher;
@@ -256,10 +263,9 @@ class EvReactor implements Reactor {
         $msDelay = $msDelay/1000;
         $msInterval = $msInterval ? ($msInterval/1000) : 0.0;
         $evHandle = $this->loop->timer($msDelay, $msInterval, $this->watcherCallback, $watcher);
+        $evHandle->keepalive($watcher->keepAlive);
         $watcher->evHandle = $evHandle;
-        if ($watcher->isEnabled) {
-            $this->enabledNonImmediates++;
-        } else {
+        if (empty($watcher->isEnabled)) {
             $evHandle->stop();
         }
         $this->watchers[$watcher->id] = $watcher;
@@ -286,10 +292,9 @@ class EvReactor implements Reactor {
         $watcher->stream = $stream;
         $events = ($type === Watcher::IO_READER) ? Ev::READ : Ev::WRITE;
         $evHandle = $this->loop->io($stream, $events, $this->watcherCallback, $watcher);
+        $evHandle->keepalive($watcher->keepAlive);
         $watcher->evHandle = $evHandle;
-        if ($watcher->isEnabled) {
-            $this->enabledNonImmediates++;
-        } else {
+        if (empty($watcher->isEnabled)) {
             $evHandle->stop();
         }
         $this->watchers[$watcher->id] = $watcher;
@@ -304,10 +309,9 @@ class EvReactor implements Reactor {
         $watcher = $this->initWatcher(Watcher::SIGNAL, $callback, $options);
         $watcher->signo = $signo;
         $evHandle = $this->loop->signal($signo, $this->watcherCallback, $watcher);
+        $evHandle->keepalive($watcher->keepAlive);
         $watcher->evHandle = $evHandle;
-        if ($watcher->isEnabled) {
-            $this->enabledNonImmediates++;
-        } else {
+        if (empty($watcher->isEnabled)) {
             $evHandle->stop();
         }
         $this->watchers[$watcher->id] = $watcher;
@@ -332,13 +336,13 @@ class EvReactor implements Reactor {
         $watcher = $this->watchers[$watcherId];
         if ($watcher->isEnabled) {
             $watcher->isEnabled = false;
+            $this->keepAliveCount -= $watcher->keepAlive;
             if ($watcher->type === Watcher::IMMEDIATE) {
                 unset($this->immediates[$watcherId]);
             } else {
                 $watcher->evHandle->stop();
                 $watcher->evHandle->clear();
                 $watcher->evHandle = null;
-                $this->enabledNonImmediates--;
             }
         } elseif ($watcher->type !== Watcher::IMMEDIATE) {
             $watcher->evHandle->clear();
@@ -360,11 +364,11 @@ class EvReactor implements Reactor {
             return;
         }
         $watcher->isEnabled = false;
+        $this->keepAliveCount -= $watcher->keepAlive;
         if ($watcher->type === Watcher::IMMEDIATE) {
             unset($this->immediates[$watcherId]);
         } else {
             $watcher->evHandle->stop();
-            $this->enabledNonImmediates--;
         }
     }
 
@@ -380,11 +384,11 @@ class EvReactor implements Reactor {
             return;
         }
         $watcher->isEnabled = true;
+        $this->keepAliveCount += $watcher->keepAlive;
         if ($watcher->type === Watcher::IMMEDIATE) {
             $this->immediates[$watcherId] = $watcher;
         } else {
             $watcher->evHandle->start();
-            $this->enabledNonImmediates++;
         }
     }
 
@@ -419,6 +423,7 @@ class EvReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
+            "keep_alive"        => $this->keepAliveCount,
         ];
     }
 

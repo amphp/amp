@@ -9,21 +9,153 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function provideRegistrationAndCancellationArgs() {
-        return [
-            ["immediately", [function () {}]],
-            ["once",        [function () {}, 1000]],
-            ["repeat",      [function () {}, 1000]],
-            ["onWritable",  [STDOUT, function () {}]],
-            ["onReadable",  [STDIN, function () {}]],
-            ["onSignal",    [SIGUSR1, function () {}]],
-        ];
+    public function testImmediatelyWatcherKeepAliveRunResult() {
+        $invoked = false;
+        \Amp\run(function () use (&$invoked) {
+            \Amp\immediately(function () use (&$invoked) {
+                $invoked = true;
+            }, ["keep_alive" => false]);
+        });
+        $this->assertFalse($invoked);
+    }
+
+    public function testOnceWatcherKeepAliveRunResult() {
+        $invoked = false;
+        \Amp\run(function () use (&$invoked) {
+            \Amp\once(function () use (&$invoked) {
+                $invoked = true;
+            }, 2000, $options = ["keep_alive" => false]);
+        });
+        $this->assertFalse($invoked);
+    }
+
+    public function testRepeatWatcherKeepAliveRunResult() {
+        $invoked = false;
+        \Amp\run(function () use (&$invoked) {
+            \Amp\repeat(function () use (&$invoked) {
+                $invoked = true;
+            }, 2000, $options = ["keep_alive" => false]);
+        });
+        $this->assertFalse($invoked);
+    }
+
+    public function testOnReadableWatcherKeepAliveRunResult() {
+        \Amp\run(function () {
+            \Amp\onReadable(STDIN, function () {
+                // empty
+            }, $options = ["keep_alive" => false]);
+        });
+    }
+
+    public function testOnWritableWatcherKeepAliveRunResult() {
+        \Amp\run(function () {
+            \Amp\onWritable(STDOUT, function () {
+                // empty
+            }, $options = ["keep_alive" => false]);
+        });
+    }
+
+    public function testOnSignalWatcherKeepAliveRunResult() {
+        if (!\extension_loaded("pcntl")) {
+            $this->markTestSkipped("ext/pcntl required to test onSignal() registration");
+        }
+
+        \Amp\run(function () {
+            \Amp\onSignal(SIGUSR1, function () {
+                // empty
+            }, $options = ["keep_alive" => false]);
+        });
     }
 
     /**
-     * @dataProvider provideRegistrationAndCancellationArgs
+     * @dataProvider provideRegistrationArgs
+     */
+    public function testWatcherKeepAliveRegistrationInfo($type, $args) {
+        if ($type === "skip") {
+            $this->markTestSkipped($args);
+        } elseif ($type === "onSignal") {
+            $requiresCancel = true;
+        } else {
+            $requiresCancel = false;
+        }
+
+        $func = '\Amp\\' . $type;
+        if (substr($type, 0, 2) === "on" && $type !== "once") {
+            $type = "on_" . lcfirst(substr($type, 2));
+        }
+
+        // keep_alive is the default
+        $watcherId1 = \call_user_func_array($func, $args);
+        $info = \Amp\info();
+        $expected = ["enabled" => 1, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
+        $this->assertSame(1, $info["keep_alive"]);
+
+        // explicitly keep_alive even though it's the default setting
+        $argsCopy = $args;
+        $argsCopy[] = ["keep_alive" => true];
+        $watcherId2 = \call_user_func_array($func, $argsCopy);
+        $info = \Amp\info();
+        $expected = ["enabled" => 2, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
+        $this->assertSame(2, $info["keep_alive"]);
+
+        // disabling a keep_alive watcher should decrement the count
+        \Amp\disable($watcherId2);
+        $info = \Amp\info();
+        $this->assertSame(1, $info["keep_alive"]);
+
+        // enabling a keep_alive watcher should increment the count
+        \Amp\enable($watcherId2);
+        $info = \Amp\info();
+        $this->assertSame(2, $info["keep_alive"]);
+
+        // cancelling a keep_alive watcher should decrement the count
+        \Amp\cancel($watcherId2);
+        $info = \Amp\info();
+        $this->assertSame(1, $info["keep_alive"]);
+
+        // keep_alive => false should leave the count untouched
+        $argsCopy = $args;
+        $argsCopy[] = ["keep_alive" => false];
+        $watcherId2 = \call_user_func_array($func, $argsCopy);
+        $info = \Amp\info();
+        $expected = ["enabled" => 2, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
+        $this->assertSame(1, $info["keep_alive"]);
+
+        if ($requiresCancel) {
+            \Amp\cancel($watcherId1);
+            \Amp\cancel($watcherId2);
+        }
+    }
+
+    public function provideRegistrationArgs() {
+        $args = [
+            ["immediately", [function () {}]],
+            ["once",        [function () {}, 5000]],
+            ["repeat",      [function () {}, 5000]],
+            ["onWritable",  [\STDOUT, function () {}]],
+            ["onReadable",  [\STDIN, function () {}]],
+        ];
+
+        if (\extension_loaded("pcntl")) {
+            $args[] = ["onSignal",    [\SIGUSR1, function () {}]];
+        } else {
+            $args[] = ["skip", "ext/pcntl required to test onSignal() registration"];
+        }
+
+        return $args;
+    }
+
+    /**
+     * @dataProvider provideRegistrationArgs
      */
     public function testWatcherRegistrationAndCancellationInfo($type, $args) {
+        if ($type === "skip") {
+            $this->markTestSkipped($args);
+        }
+
         $func = '\Amp\\' . $type;
         if (substr($type, 0, 2) === "on" && $type !== "once") {
             $type = "on_" . lcfirst(substr($type, 2));

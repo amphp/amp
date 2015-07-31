@@ -6,9 +6,10 @@ class LibeventReactor implements Reactor {
     use Struct;
 
     private $base;
+    private $keepAliveBase;
     private $watchers = [];
     private $immediates = [];
-    private $enabledWatcherCount = 0;
+    private $keepAliveCount = 0;
     private $resolution = 1000;
     private $isRunning = false;
     private $stopException;
@@ -30,6 +31,7 @@ class LibeventReactor implements Reactor {
         // @codeCoverageIgnoreEnd
 
         $this->base = \event_base_new();
+        $this->keepAliveBase = \event_base_new();
 
         /**
          * Prior to PHP7 we can't cancel closure watchers inside their own callbacks
@@ -44,7 +46,7 @@ class LibeventReactor implements Reactor {
                 $this->isGcScheduled = false;
                 \event_del($this->gcEvent);
             });
-            \event_base_set($this->gcEvent, $this->base);
+            \event_base_set($this->gcEvent, $this->keepAliveBase);
         }
 
         $this->onCoroutineResolution = function($e = null, $r = null) {
@@ -64,17 +66,28 @@ class LibeventReactor implements Reactor {
 
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately($onStart);
+            $onStartWatcherId = $this->immediately($onStart);
+            $this->tryImmediate($this->watchers[$onStartWatcherId]);
+            if (empty($this->keepAliveCount)) {
+                $this->isRunning = false;
+                return;
+            }
         }
 
         while ($this->isRunning) {
-            if ($this->immediates && !$this->doImmediates()) {
+            $immediates = $this->immediates;
+            foreach ($immediates as $watcher) {
+                if (!$this->tryImmediate($watcher)) {
+                    break;
+                }
+            }
+            if (!$this->isRunning || empty($this->keepAliveCount)) {
                 break;
             }
-            if (empty($this->enabledWatcherCount)) {
-                break;
-            }
-            event_base_loop($this->base, EVLOOP_ONCE | (empty($this->immediates) ? 0 : EVLOOP_NONBLOCK));
+            $flags = \EVLOOP_ONCE | \EVLOOP_NONBLOCK;
+            \event_base_loop($this->base, $flags);
+            $flags = empty($this->immediates) ? \EVLOOP_ONCE : (\EVLOOP_ONCE | \EVLOOP_NONBLOCK);
+            \event_base_loop($this->keepAliveBase, $flags);
         }
 
         if ($this->stopException) {
@@ -84,33 +97,25 @@ class LibeventReactor implements Reactor {
         }
     }
 
-    private function doImmediates() {
-        $immediates = $this->immediates;
-        foreach ($immediates as $watcherId => $watcher) {
-            try {
-                $this->enabledWatcherCount--;
-                unset(
-                    $this->immediates[$watcherId],
-                    $this->watchers[$watcherId]
-                );
-                $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
-                if ($result instanceof \Generator) {
-                    resolve($result)->when($this->onCoroutineResolution);
-                }
-            } catch (\Throwable $e) {
-                // @TODO Remove coverage ignore block once PHP5 support is no longer required
-                // @codeCoverageIgnoreStart
-                $this->onCallbackError($e);
-                // @codeCoverageIgnoreEnd
-            } catch (\Exception $e) {
-                // @TODO Remove this catch block once PHP5 support is no longer required
-                $this->onCallbackError($e);
+    private function tryImmediate($watcher) {
+        try {
+            $this->keepAliveCount -= $watcher->keepAlive;
+            unset(
+                $this->immediates[$watcher->id],
+                $this->watchers[$watcher->id]
+            );
+            $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
+            if ($out instanceof \Generator) {
+                resolve($out)->when($this->onCoroutineResolution);
             }
-
-            if (!$this->isRunning) {
-                // If one of the immediately watchers stops the reactor break out of the loop
-                return false;
-            }
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            $this->onCallbackError($e);
+            // @codeCoverageIgnoreEnd
+        } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
+            $this->onCallbackError($e);
         }
 
         return $this->isRunning;
@@ -120,16 +125,20 @@ class LibeventReactor implements Reactor {
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
-        $noWait = (bool) $noWait;
         $this->isRunning = true;
-
-        if (empty($this->immediates) || $this->doImmediates()) {
-            $flags = $noWait || !empty($this->immediates) ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
-            event_base_loop($this->base, $flags);
+        $immediates = $this->immediates;
+        foreach ($immediates as $watcher) {
+            if (!$this->tryImmediate($watcher)) {
+                break;
+            }
         }
-
+        if ($this->isRunning) {
+            $flags = \EVLOOP_ONCE | \EVLOOP_NONBLOCK;
+            \event_base_loop($this->base, \EVLOOP_ONCE | \EVLOOP_NONBLOCK);
+            $flags = $noWait || !empty($this->immediates) ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
+            \event_base_loop($this->keepAliveBase, $flags);
+        }
         $this->isRunning = false;
-
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -141,7 +150,8 @@ class LibeventReactor implements Reactor {
      * {@inheritDoc}
      */
     public function stop() {
-        event_base_loopexit($this->base);
+        \event_base_loopexit($this->base);
+        \event_base_loopexit($this->keepAliveBase);
         $this->isRunning = false;
     }
 
@@ -151,7 +161,6 @@ class LibeventReactor implements Reactor {
     public function immediately(callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::IMMEDIATE, $callback, $options);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
             $this->immediates[$watcher->id] = $watcher;
         }
 
@@ -160,17 +169,20 @@ class LibeventReactor implements Reactor {
 
     private function initWatcher($type, $callback, $options) {
         $watcher = new \StdClass;
-        $watcher->id = $watcherId = \spl_object_hash($watcher);
+        $watcher->id = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["cb_data"];
+        $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
+        $this->keepAliveCount += ($watcher->isEnabled && $watcher->keepAlive);
 
         if ($type !== Watcher::IMMEDIATE) {
-            $watcher->eventResource = event_new();
+            $watcher->eventResource = \event_new();
+            $watcher->eventBase = $watcher->keepAlive ? $this->keepAliveBase : $this->base;
         }
 
-        $this->watchers[$watcherId] = $watcher;
+        $this->watchers[$watcher->id] = $watcher;
 
         return $watcher;
     }
@@ -182,12 +194,10 @@ class LibeventReactor implements Reactor {
         assert(($msDelay >= 0), "\$msDelay at Argument 2 expects integer >= 0");
         $watcher = $this->initWatcher(Watcher::TIMER_ONCE, $callback, $options);
         $watcher->msDelay = ($msDelay * $this->resolution);
-        event_timer_set($watcher->eventResource, $this->wrapCallback($watcher));
-        event_base_set($watcher->eventResource, $this->base);
-
+        \event_timer_set($watcher->eventResource, $this->wrapCallback($watcher));
+        \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
-            event_add($watcher->eventResource, $watcher->msDelay);
+            \event_add($watcher->eventResource, $watcher->msDelay);
         }
 
         return $watcher->id;
@@ -200,21 +210,21 @@ class LibeventReactor implements Reactor {
                     case Watcher::IO_READER:
                         // fallthrough
                     case Watcher::IO_WRITER:
-                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->stream, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->stream, $watcher->cbData);
                         break;
                     case Watcher::TIMER_ONCE:
-                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
                         $this->cancel($watcher->id);
                         break;
                     case Watcher::TIMER_REPEAT:
-                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
                         // If the watcher cancelled itself this will no longer exist
                         if (isset($this->watchers[$watcher->id])) {
                             event_add($watcher->eventResource, $watcher->msInterval);
                         }
                         break;
                     case Watcher::SIGNAL:
-                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->signo, $watcher->callbackData);
+                        $result = \call_user_func($watcher->callback, $watcher->id, $watcher->signo, $watcher->cbData);
                         break;
                 }
                 if ($result instanceof \Generator) {
@@ -278,11 +288,10 @@ class LibeventReactor implements Reactor {
 
         $watcher = $this->initWatcher(Watcher::TIMER_REPEAT, $callback, $options);
         $watcher->msInterval = (int) $msInterval;
-        event_timer_set($watcher->eventResource, $this->wrapCallback($watcher));
-        event_base_set($watcher->eventResource, $this->base);
+        \event_timer_set($watcher->eventResource, $this->wrapCallback($watcher));
+        \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
-            event_add($watcher->eventResource, $msDelay);
+            \event_add($watcher->eventResource, $msDelay);
         }
 
         return $watcher->id;
@@ -294,12 +303,11 @@ class LibeventReactor implements Reactor {
     public function onReadable($stream, callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::IO_READER, $callback, $options);
         $watcher->stream = $stream;
-        $evFlags = EV_PERSIST|EV_READ;
-        event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
-        event_base_set($watcher->eventResource, $this->base);
+        $evFlags = \EV_PERSIST | \EV_READ;
+        \event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
+        \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
-            event_add($watcher->eventResource);
+            \event_add($watcher->eventResource);
         }
 
         return $watcher->id;
@@ -311,12 +319,11 @@ class LibeventReactor implements Reactor {
     public function onWritable($stream, callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::IO_WRITER, $callback, $options);
         $watcher->stream = $stream;
-        $evFlags = EV_PERSIST|EV_WRITE;
-        event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
-        event_base_set($watcher->eventResource, $this->base);
+        $evFlags = \EV_PERSIST | \EV_WRITE;
+        \event_set($watcher->eventResource, $stream, $evFlags, $this->wrapCallback($watcher));
+        \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
-            event_add($watcher->eventResource);
+            \event_add($watcher->eventResource);
         }
 
         return $watcher->id;
@@ -328,12 +335,11 @@ class LibeventReactor implements Reactor {
     public function onSignal($signo, callable $callback, array $options = []) {
         $watcher = $this->initWatcher(Watcher::SIGNAL, $callback, $options);
         $watcher->signo = $signo = (int) $signo;
-        $evFlags = EV_SIGNAL | EV_PERSIST;
-        event_set($watcher->eventResource, $signo, $evFlags, $this->wrapCallback($watcher));
-        event_base_set($watcher->eventResource, $this->base);
+        $evFlags = \EV_SIGNAL | \EV_PERSIST;
+        \event_set($watcher->eventResource, $signo, $evFlags, $this->wrapCallback($watcher));
+        \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount++;
-            event_add($watcher->eventResource);
+            \event_add($watcher->eventResource);
         }
 
         return $watcher->id;
@@ -349,7 +355,7 @@ class LibeventReactor implements Reactor {
 
         $watcher = $this->watchers[$watcherId];
         if ($watcher->isEnabled) {
-            $this->enabledWatcherCount--;
+            $this->keepAliveCount -= $watcher->keepAlive;
         }
 
         if ($watcher->type === Watcher::IMMEDIATE) {
@@ -358,7 +364,7 @@ class LibeventReactor implements Reactor {
                 $this->watchers[$watcherId]
             );
         } else {
-            event_del($watcher->eventResource);
+            \event_del($watcher->eventResource);
             unset($this->watchers[$watcherId]);
         }
 
@@ -381,6 +387,9 @@ class LibeventReactor implements Reactor {
             return;
         }
 
+        $watcher->isEnabled = false;
+        $this->keepAliveCount -= $watcher->keepAlive;
+
         switch ($watcher->type) {
             case Watcher::IMMEDIATE:
                 unset($this->immediates[$watcherId]);
@@ -390,12 +399,9 @@ class LibeventReactor implements Reactor {
             case Watcher::SIGNAL:       // fallthrough
             case Watcher::TIMER_ONCE:   // fallthrough
             case Watcher::TIMER_REPEAT:
-                event_del($watcher->eventResource);
+                \event_del($watcher->eventResource);
                 break;
         }
-
-        $watcher->isEnabled = false;
-        $this->enabledWatcherCount--;
     }
 
     /**
@@ -411,30 +417,30 @@ class LibeventReactor implements Reactor {
             return;
         }
 
+        $watcher->isEnabled = true;
+        $this->keepAliveCount += $watcher->keepAlive;
+
         switch ($watcher->type) {
             case Watcher::IMMEDIATE:
                 $this->immediates[$watcherId] = $watcher;
                 break;
             case Watcher::TIMER_ONCE:
-                event_add($watcher->eventResource, $watcher->msDelay);
+                \event_add($watcher->eventResource, $watcher->msDelay);
                 break;
             case Watcher::TIMER_REPEAT:
-                event_add($watcher->eventResource, $watcher->msInterval);
+                \event_add($watcher->eventResource, $watcher->msInterval);
                 break;
             case Watcher::IO_READER: // fallthrough
             case Watcher::IO_WRITER: // fallthrough
             case Watcher::SIGNAL:
-                event_add($watcher->eventResource);
+                \event_add($watcher->eventResource);
                 break;
         }
-
-        $watcher->isEnabled = true;
-        $this->enabledWatcherCount++;
     }
 
     private function scheduleGarbageCollection() {
         if (!$this->isGcScheduled) {
-            event_add($this->gcEvent, 0);
+            \event_add($this->gcEvent, 0);
             $this->isGcScheduled = true;
         }
     }
@@ -477,6 +483,7 @@ class LibeventReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
+            "keep_alive"        => $this->keepAliveCount,
         ];
     }
 
@@ -489,7 +496,7 @@ class LibeventReactor implements Reactor {
      * @return resource
      */
     public function getLoop() {
-        return $this->base;
+        return $this->keepAliveBase;
     }
 
     public function __debugInfo() {

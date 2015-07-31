@@ -19,6 +19,7 @@ class NativeReactor implements Reactor {
     private $hasExtPcntl;
     private $signalState;
     private $signalHandler;
+    private $keepAliveCount = 0;
 
     public function __construct() {
         $this->hasExtPcntl = \extension_loaded("pcntl");
@@ -30,7 +31,7 @@ class NativeReactor implements Reactor {
                 return;
             }
             foreach ($signalState->handlers[$signo] as $watcherId => $watcher) {
-                $out = \call_user_func($watcher->callback, $watcherId, $signo, $watcher->callbackData);
+                $out = \call_user_func($watcher->callback, $watcherId, $signo, $watcher->cbData);
                 if ($out instanceof \Generator) {
                     resolve($out)->when($this->onCoroutineResolution);
                 }
@@ -50,16 +51,43 @@ class NativeReactor implements Reactor {
         if ($this->isRunning) {
             return;
         }
-
         $this->isRunning = true;
         if ($onStart) {
-            $this->immediately($onStart);
+            $onStartWatcherId = $this->immediately($onStart);
+            $this->tryImmediate($this->watchers[$onStartWatcherId]);
+            if (empty($this->keepAliveCount)) {
+                $this->isRunning = false;
+                return;
+            }
+        }
+        $this->enableTimers();
+        while ($this->isRunning) {
+            $this->tick();
+            if (empty($this->keepAliveCount)) {
+                break;
+            }
+        }
+    }
+
+    private function tryImmediate($watcher) {
+        try {
+            unset($this->immediates[$watcher->id]);
+            $this->keepAliveCount -= $watcher->keepAlive;
+            $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
+            if ($out instanceof \Generator) {
+                resolve($out)->when($this->onCoroutineResolution);
+            }
+        } catch (\Throwable $e) {
+            // @TODO Remove coverage ignore block once PHP5 support is no longer required
+            // @codeCoverageIgnoreStart
+            \call_user_func($this->onCoroutineResolution, $e);
+            // @codeCoverageIgnoreEnd
+        } catch (\Exception $e) {
+            // @TODO Remove this catch block once PHP5 support is no longer required
+            \call_user_func($this->onCoroutineResolution, $e);
         }
 
-        $this->enableTimers();
-        while ($this->isRunning || $this->immediates) {
-            $this->tick();
-        }
+        return $this->isRunning;
     }
 
     private function enableTimers() {
@@ -91,8 +119,11 @@ class NativeReactor implements Reactor {
             $this->enableTimers();
         }
 
-        if ($immediates = $this->immediates) {
-            $this->doImmediates($immediates);
+        $immediates = $this->immediates;
+        foreach ($immediates as $watcher) {
+            if (!$this->tryImmediate($watcher)) {
+                break;
+            }
         }
         if ($this->signalState->shouldDispatch) {
             \pcntl_signal_dispatch();
@@ -112,12 +143,27 @@ class NativeReactor implements Reactor {
                 \asort($this->timerOrder);
                 $this->isTimerSortNeeded = false;
             }
-            $nextTimerAt = \reset($this->timerOrder);
-            $timeToNextAlarm = \round($nextTimerAt - \microtime(true), 4);
-            $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
+
+            // Don't block the run() loop if no keep-alive timers exist
+            // @TODO Instead of iterating all timers hunting for a keep-alive
+            //       we should just use a specific counter to cache the number
+            //       of keep-alive timers in use at any given time
+            $timeToNextAlarm = 0;
+            foreach ($this->timerOrder as $watcherId => $time) {
+                if ($this->watchers[$watcherId]->keepAlive) {
+                    // The reset() is important because the foreach modifies
+                    // the internal array pointer.
+                    $nextTimerAt = \reset($this->timerOrder);
+                    $timeToNextAlarm = \round($nextTimerAt - \microtime(true), 4);
+                    $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
+                    break;
+                }
+            }
         }
 
-        if ($this->readStreams || $this->writeStreams) {
+        if (empty($this->keepAliveCount)) {
+            return;
+        } elseif ($this->readStreams || $this->writeStreams) {
             $this->selectActionableStreams($timeToNextAlarm);
         } elseif (!($this->timerOrder || $this->immediates || $this->signalState->handlers)) {
             $this->stop();
@@ -130,28 +176,6 @@ class NativeReactor implements Reactor {
         }
 
         $this->isTicking = false;
-    }
-
-    private function doImmediates($immediates) {
-        foreach ($immediates as $watcherId => $watcher) {
-            try {
-                unset(
-                    $this->immediates[$watcherId],
-                    $this->watchers[$watcherId]
-                );
-                $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
-            } catch (\Throwable $e) {
-                \call_user_func($this->onCoroutineResolution, $e);
-                continue;
-            } catch (\Exception $e) {
-                \call_user_func($this->onCoroutineResolution, $e);
-                continue;
-            }
-
-            if ($result instanceof \Generator) {
-                resolve($result)->when($this->onCoroutineResolution);
-            }
-        }
     }
 
     private function selectActionableStreams($timeout) {
@@ -185,7 +209,7 @@ class NativeReactor implements Reactor {
 
     private function doIoCallback($watcherId, $watcher, $stream) {
         try {
-            $result = \call_user_func($watcher->callback, $watcherId, $stream, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $watcherId, $stream, $watcher->cbData);
             if ($result instanceof \Generator) {
                 resolve($result)->when($this->onCoroutineResolution);
             }
@@ -214,12 +238,13 @@ class NativeReactor implements Reactor {
 
             $watcher = $this->watchers[$watcherId];
 
-            $result = \call_user_func($watcher->callback, $watcherId, $watcher->callbackData);
+            $result = \call_user_func($watcher->callback, $watcherId, $watcher->cbData);
             if ($result instanceof \Generator) {
                 resolve($result)->when($this->onCoroutineResolution);
             }
 
             if ($watcher->type === Watcher::TIMER_ONCE) {
+                $this->keepAliveCount -= $watcher->keepAlive;
                 unset(
                     $this->watchers[$watcherId],
                     $this->timerOrder[$watcherId]
@@ -243,11 +268,13 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["cb_data"];
+        $watcher->cbData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
 
         if ($watcher->isEnabled) {
             $this->watchers[$watcherId] = $this->immediates[$watcherId] = $watcher;
+            $this->keepAliveCount += $watcher->keepAlive;
         }
 
         return $watcherId;
@@ -269,10 +296,13 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::TIMER_ONCE;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["cb_data"];
+        $watcher->cbData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $watcher->msDelay = round(($msDelay / 1000), 3);
         $watcher->nextExecutionAt = null;
+
+        $this->keepAliveCount += ($watcher->keepAlive && $watcher->isEnabled);
 
         if ($watcher->isEnabled && $this->isRunning) {
             $nextExecutionAt = microtime(true) + $watcher->msDelay;
@@ -304,11 +334,14 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::TIMER_REPEAT;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["cb_data"];
+        $watcher->cbData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $watcher->msInterval = round(($msInterval / 1000), 3);
         $watcher->msDelay = round(($msDelay / 1000), 3);
         $watcher->nextExecutionAt = null; // only needed for php5.x
+
+        $this->keepAliveCount += ($watcher->keepAlive && $watcher->isEnabled);
 
         if ($watcher->isEnabled && $this->isRunning) {
             $increment = (isset($watcher->msDelay) ? $watcher->msDelay : $watcher->msInterval);
@@ -346,12 +379,14 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->callbackData = @$options["cb_data"];
+        $watcher->cbData = @$options["cb_data"];
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $watcher->stream = $stream;
         $watcher->streamId = $streamId = (int) $stream;
 
         if ($watcher->isEnabled) {
+            $this->keepAliveCount += $watcher->keepAlive;
             if ($type === Watcher::IO_READER) {
                 $this->readStreams[$streamId] = $stream;
                 $this->readWatchers[$streamId][$watcherId] = $watcher;
@@ -383,8 +418,9 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::SIGNAL;
         $watcher->callback = $func;
-        $watcher->callbackData = isset($options["cb_data"]) ? $options["cb_data"] : null;
+        $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
+        $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $watcher->signo = $signo;
 
         if ($watcher->isEnabled) {
@@ -395,6 +431,7 @@ class NativeReactor implements Reactor {
             }
             $this->signalState->shouldDispatch = true;
             $this->signalState->handlers[$signo][$watcherId] = $watcher;
+            $this->keepAliveCount += $watcher->keepAlive;
         }
 
         $this->watchers[$watcherId] = $watcher;
@@ -439,6 +476,7 @@ class NativeReactor implements Reactor {
         }
 
         $watcher->isEnabled = true;
+        $this->keepAliveCount += $watcher->keepAlive;
 
         switch ($watcher->type) {
             case Watcher::TIMER_ONCE:
@@ -487,6 +525,7 @@ class NativeReactor implements Reactor {
         }
 
         $watcher->isEnabled = false;
+        $this->keepAliveCount -= $watcher->keepAlive;
 
         switch ($watcher->type) {
             case Watcher::TIMER_ONCE:
@@ -555,6 +594,7 @@ class NativeReactor implements Reactor {
             "on_readable"       => $onReadable,
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
+            "keep_alive"        => $this->keepAliveCount,
         ];
     }
 
