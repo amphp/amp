@@ -511,9 +511,15 @@ function map(array $promises, callable $functor) {
  * @param callable $functor The filtering function to apply to eventual promise results
  * @return \Amp\Promise
  */
-function filter(array $promises, callable $functor) {
+function filter(array $promises, callable $functor = null) {
     if (empty($promises)) {
         return new Success([]);
+    }
+
+    if (empty($functor)) {
+        $functor = function ($r) {
+            return (bool) $r;
+        };
     }
 
     $struct = new \StdClass;

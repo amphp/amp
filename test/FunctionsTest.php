@@ -204,6 +204,20 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame([1=>"test2", 2=>"test2", 3=>"test2"], $result);
     }
 
+    public function testFilterUsesBoolComparisonOnUnspecifiedFunctor() {
+        $promises = ["test1", new Success, null, false, 0, new Success("test2"), new Success(0), new Success(false) ];
+        $promise = \Amp\filter($promises);
+        $error = null;
+        $result = null;
+        $promise->when(function ($e, $r) use (&$error, &$result) {
+            $error = $e;
+            $result = $r;
+        });
+
+        $this->assertNull($error);
+        $this->assertSame([0=>"test1", 5=>"test2"], $result);
+    }
+
     public function testFilter2() {
         $promises = ["test1", "test2", new Success("test2"), new Success("test2")];
         $functor = function ($el) { return $el === "test2"; };
@@ -853,7 +867,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         \Amp\once(function () use ($promisor) {
             $promisor->succeed(42);
         }, 10);
-        
+
         $result = \Amp\wait($promisor->promise());
         $this->assertSame(42, $result);
     }
@@ -869,7 +883,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
                 "If the reader prefers, this code may be regarded as fiction"
             ));
         }, 10);
-        
+
         \Amp\wait($promisor->promise());
     }
 }
