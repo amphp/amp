@@ -672,11 +672,6 @@ function promises(array $values) {
  *          $update = (yield $promisedUpdate);
  *      }
  *
- * NOTE: Promise::watch() updates allow variadic parameters. Only the first
- * argument passed using Promisor::update() is resolved when yielding stream
- * elements. Update producers are encouraged to limit update data to a single
- * parameter.
- *
  * @param \Amp\Promise $promise A promise that receives watch() updates
  * @return \Generator A generator yielding a promise for each watch() update
  */
