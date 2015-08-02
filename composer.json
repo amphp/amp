@@ -23,8 +23,7 @@
     "minimum-stability": "dev",
     "require-dev": {
         "phpunit/phpunit": "4.8.x-dev",
-        "fabpot/php-cs-fixer": "~1.9",
-        "satooshi/php-coveralls": "dev-master"
+        "fabpot/php-cs-fixer": "~1.9"
     },
     "autoload": {
         "psr-4": {
