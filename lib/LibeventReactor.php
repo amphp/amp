@@ -10,8 +10,7 @@ class LibeventReactor implements Reactor {
     private $watchers = [];
     private $immediates = [];
     private $keepAliveCount = 0;
-    private $resolution = 1000;
-    private $isRunning = false;
+    private $state = self::STOPPED;
     private $stopException;
     private $onError;
     private $onCoroutineResolution;
@@ -23,7 +22,7 @@ class LibeventReactor implements Reactor {
 
     public function __construct() {
         // @codeCoverageIgnoreStart
-        if (!extension_loaded("libevent")) {
+        if (!\extension_loaded("libevent")) {
             throw new \RuntimeException(
                 "The pecl libevent extension is required to use " . __CLASS__
             );
@@ -60,28 +59,31 @@ class LibeventReactor implements Reactor {
      * {@inheritDoc}
      */
     public function run(callable $onStart = null) {
-        if ($this->isRunning) {
-            return;
+        if ($this->state !== self::STOPPED) {
+            throw new \LogicException(
+                "Cannot run() recursively; event reactor already active"
+            );
         }
 
-        $this->isRunning = true;
         if ($onStart) {
+            $this->state = self::STARTING;
             $onStartWatcherId = $this->immediately($onStart);
             $this->tryImmediate($this->watchers[$onStartWatcherId]);
-            if (empty($this->keepAliveCount)) {
-                $this->isRunning = false;
-                return;
+            if (empty($this->keepAliveCount) && empty($this->stopException)) {
+                $this->state = self::STOPPED;
             }
+        } else {
+            $this->state = self::RUNNING;
         }
 
-        while ($this->isRunning) {
+        while ($this->state > self::STOPPED) {
             $immediates = $this->immediates;
             foreach ($immediates as $watcher) {
                 if (!$this->tryImmediate($watcher)) {
                     break;
                 }
             }
-            if (!$this->isRunning || empty($this->keepAliveCount)) {
+            if (empty($this->keepAliveCount) || $this->state <= self::STOPPED) {
                 break;
             }
             $flags = \EVLOOP_ONCE | \EVLOOP_NONBLOCK;
@@ -90,6 +92,13 @@ class LibeventReactor implements Reactor {
             \event_base_loop($this->keepAliveBase, $flags);
         }
 
+        if ($this->watchers) {
+            foreach (array_keys($this->watchers) as $watcherId) {
+                $this->cancel($watcherId);
+            }
+        }
+
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -118,27 +127,36 @@ class LibeventReactor implements Reactor {
             $this->onCallbackError($e);
         }
 
-        return $this->isRunning;
+        return $this->state;
     }
 
     /**
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
-        $this->isRunning = true;
+        if ($this->state) {
+            throw new \LogicException(
+                "Cannot tick() recursively; event reactor already active"
+            );
+        }
+
+        $this->state = self::TICKING;
         $immediates = $this->immediates;
         foreach ($immediates as $watcher) {
             if (!$this->tryImmediate($watcher)) {
                 break;
             }
         }
-        if ($this->isRunning) {
+
+        // Check the conditional again because a manual stop() could've changed the state
+        if ($this->state) {
             $flags = \EVLOOP_ONCE | \EVLOOP_NONBLOCK;
             \event_base_loop($this->base, \EVLOOP_ONCE | \EVLOOP_NONBLOCK);
             $flags = $noWait || !empty($this->immediates) ? (EVLOOP_ONCE | EVLOOP_NONBLOCK) : EVLOOP_ONCE;
             \event_base_loop($this->keepAliveBase, $flags);
         }
-        $this->isRunning = false;
+
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -150,9 +168,15 @@ class LibeventReactor implements Reactor {
      * {@inheritDoc}
      */
     public function stop() {
-        \event_base_loopexit($this->base);
-        \event_base_loopexit($this->keepAliveBase);
-        $this->isRunning = false;
+        if ($this->state !== self::STOPPED) {
+            \event_base_loopexit($this->base);
+            \event_base_loopexit($this->keepAliveBase);
+            $this->state = self::STOPPING;
+        } else {
+            throw new \LogicException(
+                "Cannot stop(); event reactor not currently active"
+            );
+        }
     }
 
     /**
@@ -193,7 +217,7 @@ class LibeventReactor implements Reactor {
     public function once(callable $callback, $msDelay, array $options = []) {
         assert(($msDelay >= 0), "\$msDelay at Argument 2 expects integer >= 0");
         $watcher = $this->initWatcher(Watcher::TIMER_ONCE, $callback, $options);
-        $watcher->msDelay = ($msDelay * $this->resolution);
+        $watcher->msDelay = ($msDelay * 1000);
         \event_timer_set($watcher->eventResource, $this->wrapCallback($watcher));
         \event_base_set($watcher->eventResource, $watcher->eventBase);
         if ($watcher->isEnabled) {
@@ -281,7 +305,7 @@ class LibeventReactor implements Reactor {
         if (isset($options["ms_delay"])) {
             $msDelay = (int) $options["ms_delay"];
             assert(($msDelay >= 0), "ms_delay option expects integer >= 0");
-            $msDelay = ($msDelay * $this->resolution);
+            $msDelay = ($msDelay * 1000);
         } else {
             $msDelay = $msInterval;
         }

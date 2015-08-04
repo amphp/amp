@@ -13,7 +13,7 @@ class UvReactor implements Reactor {
     private $watchers;
     private $keepAliveCount = 0;
     private $streamIdPollMap = [];
-    private $isRunning = false;
+    private $state = self::STOPPED;
     private $stopException;
     private $isWindows;
     private $immediates = [];
@@ -27,7 +27,7 @@ class UvReactor implements Reactor {
 
     public function __construct() {
         // @codeCoverageIgnoreStart
-        if (!extension_loaded("uv")) {
+        if (!\extension_loaded("uv")) {
             throw new \RuntimeException(
                 "The php-uv extension is required to use " . __CLASS__
             );
@@ -63,33 +63,43 @@ class UvReactor implements Reactor {
      * {@inheritDoc}
      */
     public function run(callable $onStart = null) {
-        if ($this->isRunning) {
-            return;
+        if ($this->state !== self::STOPPED) {
+            throw new \LogicException(
+                "Cannot run() recursively; event reactor already active"
+            );
         }
 
-        $this->isRunning = true;
         if ($onStart) {
+            $this->state = self::STARTING;
             $onStartWatcherId = $this->immediately($onStart);
             $this->tryImmediate($this->watchers[$onStartWatcherId]);
-            if (empty($this->keepAliveCount)) {
-                $this->isRunning = false;
-                return;
+            if (empty($this->keepAliveCount) && empty($this->stopException)) {
+                $this->state = self::STOPPED;
             }
+        } else {
+            $this->state = self::RUNNING;
         }
 
-        while ($this->isRunning) {
+        while ($this->state > self::STOPPED) {
             $immediates = $this->immediates;
             foreach ($immediates as $watcher) {
                 if (!$this->tryImmediate($watcher)) {
                     break;
                 }
             }
-            if (empty($this->keepAliveCount)) {
+            if (empty($this->keepAliveCount) || $this->state <= self::STOPPED) {
                 break;
             }
             \uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
         }
 
+        if ($this->watchers) {
+            foreach (array_keys($this->watchers) as $watcherId) {
+                $this->cancel($watcherId);
+            }
+        }
+
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -115,26 +125,36 @@ class UvReactor implements Reactor {
             $this->onCallbackError($e);
         }
 
-        return $this->isRunning;
+        return $this->state;
     }
 
     /**
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
+        if ($this->state) {
+            throw new \LogicException(
+                "Cannot tick() recursively; event reactor already active"
+            );
+        }
+        
+        $this->state = self::TICKING;
+
         $noWait = (bool) $noWait;
-        $this->isRunning = true;
         $immediates = $this->immediates;
         foreach ($immediates as $watcher) {
             if (!$this->tryImmediate($watcher)) {
                 break;
             }
         }
-        if ($this->isRunning) {
+        
+        // Check the conditional again because a manual stop() could've changed the state
+        if ($this->state) {
             $flags = $noWait || !empty($this->immediates) ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;
             \uv_run($this->loop, $flags);
         }
-        $this->isRunning = false;
+
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -146,8 +166,14 @@ class UvReactor implements Reactor {
      * {@inheritDoc}
      */
     public function stop() {
-        \uv_stop($this->loop);
-        $this->isRunning = false;
+        if ($this->state !== self::STOPPED) {
+            \uv_stop($this->loop);
+            $this->state = self::STOPPING;
+        } else {
+            throw new \LogicException(
+                "Cannot stop(); event reactor not currently active"
+            );
+        }
     }
 
     /**

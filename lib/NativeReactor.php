@@ -12,9 +12,9 @@ class NativeReactor implements Reactor {
     private $writeStreams = [];
     private $readWatchers = [];
     private $writeWatchers = [];
-    private $isTimerSortNeeded;
-    private $isRunning = false;
-    private $isTicking = false;
+    private $timersEnabled = false;
+    private $isTimerSortNeeded = false;
+    private $state = self::STOPPED;
     private $onCoroutineResolution;
     private $hasExtPcntl;
     private $signalState;
@@ -48,25 +48,43 @@ class NativeReactor implements Reactor {
      * {@inheritDoc}
      */
     public function run(callable $onStart = null) {
-        if ($this->isRunning) {
-            return;
+        if ($this->state !== self::STOPPED) {
+            throw new \LogicException(
+                "Cannot run() recursively; event reactor already active"
+            );
         }
-        $this->isRunning = true;
+
         if ($onStart) {
-            $onStartWatcherId = $this->immediately($onStart);
-            $this->tryImmediate($this->watchers[$onStartWatcherId]);
-            if (empty($this->keepAliveCount)) {
-                $this->isRunning = false;
+            $this->state = self::STARTING;
+            $watcherId = $this->immediately($onStart);
+            if (!$this->tryImmediate($this->watchers[$watcherId]) || empty($this->keepAliveCount)) {
+                $this->unload();
                 return;
             }
+        } else {
+            $this->state = self::RUNNING;
         }
+
         $this->enableTimers();
-        while ($this->isRunning) {
-            $this->tick();
+
+        while ($this->state > self::STOPPED) {
+            $this->doTick($noWait = false);
             if (empty($this->keepAliveCount)) {
                 break;
             }
         }
+
+        $this->unload();
+    }
+
+    private function unload() {
+        if ($this->watchers) {
+            foreach (array_keys($this->watchers) as $watcherId) {
+                $this->cancel($watcherId);
+            }
+        }
+        $this->timersEnabled = false;
+        $this->state = self::STOPPED;
     }
 
     private function tryImmediate($watcher) {
@@ -87,7 +105,7 @@ class NativeReactor implements Reactor {
             \call_user_func($this->onCoroutineResolution, $e);
         }
 
-        return $this->isRunning;
+        return $this->state;
     }
 
     private function enableTimers() {
@@ -99,6 +117,7 @@ class NativeReactor implements Reactor {
             $watcher->nextExecutionAt = $now + $watcher->msDelay;
             $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
         }
+        $this->timersEnabled = true;
         $this->isTimerSortNeeded = true;
     }
 
@@ -106,16 +125,41 @@ class NativeReactor implements Reactor {
      * {@inheritDoc}
      */
     public function stop() {
-        $this->isRunning = $this->isTicking = false;
+        if ($this->state !== self::STOPPED) {
+            $this->state = self::STOPPED;
+            $this->timersEnabled = false;
+        } else {
+            throw new \LogicException(
+                "Cannot stop(); event reactor not currently active"
+            );
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public function tick($noWait = false) {
-        $noWait = (bool) $noWait;
-        $this->isTicking = true;
-        if (!$this->isRunning) {
+        if ($this->state) {
+            throw new \LogicException(
+                "Cannot tick() recursively; event reactor already active"
+            );
+        }
+
+        try {
+            $this->state = self::TICKING;
+            $this->doTick((bool) $noWait);
+            $this->state = self::STOPPED;
+        } catch (\Throwable $e) {
+            $this->unload();
+            throw $e;
+        } catch (\Exception $e) {
+            $this->unload();
+            throw $e;
+        }
+    }
+
+    private function doTick($noWait) {
+        if (empty($this->timersEnabled)) {
             $this->enableTimers();
         }
 
@@ -130,7 +174,7 @@ class NativeReactor implements Reactor {
         }
 
         // If an immediately watcher called stop() we pull out here
-        if (!$this->isTicking) {
+        if ($this->state <= self::STOPPING) {
             return;
         }
 
@@ -174,8 +218,6 @@ class NativeReactor implements Reactor {
         if ($this->timerOrder || $this->immediates) {
             $this->executeTimers();
         }
-
-        $this->isTicking = false;
     }
 
     private function selectActionableStreams($timeout) {
@@ -304,7 +346,7 @@ class NativeReactor implements Reactor {
 
         $this->keepAliveCount += ($watcher->keepAlive && $watcher->isEnabled);
 
-        if ($watcher->isEnabled && $this->isRunning) {
+        if ($watcher->isEnabled && $this->state > self::STOPPED) {
             $nextExecutionAt = microtime(true) + $watcher->msDelay;
             $watcher->nextExecutionAt = $nextExecutionAt;
             $this->timerOrder[$watcherId] = $nextExecutionAt;
@@ -343,7 +385,7 @@ class NativeReactor implements Reactor {
 
         $this->keepAliveCount += ($watcher->keepAlive && $watcher->isEnabled);
 
-        if ($watcher->isEnabled && $this->isRunning) {
+        if ($watcher->isEnabled && $this->state > self::STOPPED) {
             $increment = (isset($watcher->msDelay) ? $watcher->msDelay : $watcher->msInterval);
             $nextExecutionAt = microtime(true) + $increment;
             $this->timerOrder[$watcherId] = $watcher->nextExecutionAt = $nextExecutionAt;

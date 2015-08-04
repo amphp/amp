@@ -3,6 +3,12 @@
 namespace Amp;
 
 interface Reactor {
+    const STOPPING = -1;
+    const STOPPED  = 0;
+    const STARTING = 1;
+    const TICKING  = 2;
+    const RUNNING  = 3;
+
     /**
      * Start the event reactor and assume program flow control
      *

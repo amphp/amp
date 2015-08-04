@@ -3,9 +3,40 @@
 namespace Amp\Test;
 
 abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
-    public function testMultipleCallsToRunHaveNoEffect() {
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Cannot stop(); event reactor not currently active
+     */
+    public function testStopThrowsIfNotCurrentlyRunning() {
+        \Amp\stop();
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Cannot run() recursively; event reactor already active
+     */
+    public function testRecursiveRunCallThrows() {
         \Amp\run(function () {
             \Amp\run();
+        });
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Cannot tick() recursively; event reactor already active
+     */
+    public function testRecursiveTickCallThrows() {
+        \Amp\immediately('\Amp\tick');
+        \Amp\tick();
+    }
+
+    /**
+     * @expectedException \LogicException
+     * @expectedExceptionMessage Cannot tick() recursively; event reactor already active
+     */
+    public function testRecursiveTickCallThrowsInsideRun() {
+        \Amp\run(function () {
+            \Amp\tick();
         });
     }
 
@@ -260,23 +291,36 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    public function testEnablingWatcherAllowsSubsequentInvocation() {
+    public function testThatWatchersAreCollectedWhenRunLoopExits() {
         $increment = 0;
         $watcherId = \Amp\immediately(function () use (&$increment) {
             $increment++;
         });
-
         \Amp\disable($watcherId);
-        \Amp\once('\Amp\stop', $msDelay = 50);
+
+        $watcherId = \Amp\once(function () use (&$increment) {
+            $increment++;
+        }, 1);
+        \Amp\disable($watcherId);
+
+        $watcherId = \Amp\repeat(function () use (&$increment) {
+            $increment++;
+        }, 1);
+        \Amp\disable($watcherId);
+
+        $watcherId = \Amp\onReadable(STDIN, function () use (&$increment) {
+            $increment++;
+        });
+        \Amp\disable($watcherId);
+
+        $watcherId = \Amp\onWritable(STDOUT, function () use (&$increment) {
+            $increment++;
+        });
+        \Amp\disable($watcherId);
 
         \Amp\run();
         $this->assertEquals(0, $increment);
-
-        \Amp\enable($watcherId);
-        \Amp\once('\Amp\stop', $msDelay = 50);
-        \Amp\run();
-
-        $this->assertEquals(1, $increment);
+        $this->assertEquals(0, \Amp\info()["keep_alive"]);
     }
 
     public function testTimerWatcherParameterOrder() {
@@ -327,21 +371,6 @@ abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
         \Amp\run();
 
         $this->assertEquals(0, $increment);
-    }
-
-    public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
-        $increment = 0;
-        \Amp\once(function () use (&$increment) {
-            $increment++;
-            \Amp\stop();
-        }, $msDelay = 150);
-
-        \Amp\run('\Amp\stop');
-
-        $this->assertEquals(0, $increment);
-        \usleep(150000);
-        \Amp\run();
-        $this->assertEquals(1, $increment);
     }
 
     public function testImmediateExecution() {

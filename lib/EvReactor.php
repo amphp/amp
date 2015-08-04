@@ -16,14 +16,14 @@ class EvReactor implements Reactor {
     private $immediates = [];
     private $watcherCallback;
     private $keepAliveCount = 0;
-    private $isRunning = false;
+    private $state = self::STOPPED;
     private $stopException;
     private $onError;
     private $onCoroutineResolution;
 
     public function __construct($flags = null) {
         // @codeCoverageIgnoreStart
-        if (!extension_loaded("ev")) {
+        if (!\extension_loaded("ev")) {
             throw new \RuntimeException(
                 "The pecl ev extension is required to use " . __CLASS__
             );
@@ -80,34 +80,44 @@ class EvReactor implements Reactor {
      * {@inheritdoc}
      */
     public function run(callable $onStart = null) {
-        if ($this->isRunning) {
-            return;
+        if ($this->state !== self::STOPPED) {
+            throw new \LogicException(
+                "Cannot run() recursively; event reactor already active"
+            );
         }
 
-        $this->isRunning = true;
         if ($onStart) {
+            $this->state = self::STARTING;
             $onStartWatcherId = $this->immediately($onStart);
             $this->tryImmediate($this->watchers[$onStartWatcherId]);
-            if (empty($this->keepAliveCount)) {
-                $this->isRunning = false;
-                return;
+            if (empty($this->keepAliveCount) && empty($this->stopException)) {
+                $this->state = self::STOPPED;
             }
+        } else {
+            $this->state = self::RUNNING;
         }
 
-        while ($this->isRunning) {
+        while ($this->state > self::STOPPED) {
             $immediates = $this->immediates;
             foreach ($immediates as $watcher) {
                 if (!$this->tryImmediate($watcher)) {
                     break;
                 }
             }
-            if (!$this->isRunning || empty($this->keepAliveCount)) {
+            if (empty($this->keepAliveCount) || $this->state <= self::STOPPED) {
                 break;
             }
             $flags = $this->immediates ? (Ev::RUN_ONCE | Ev::RUN_NOWAIT) : Ev::RUN_ONCE;
             $this->loop->run($flags);
         }
 
+        if ($this->watchers) {
+            foreach (array_keys($this->watchers) as $watcherId) {
+                $this->cancel($watcherId);
+            }
+        }
+
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -133,7 +143,7 @@ class EvReactor implements Reactor {
             $this->onCallbackError($e);
         }
 
-        return $this->isRunning;
+        return $this->state;
     }
 
     /**
@@ -171,9 +181,15 @@ class EvReactor implements Reactor {
      * {@inheritdoc}
      */
     public function tick($noWait = false) {
-        $noWait = (bool) $noWait;
-        $this->isRunning = true;
+        if ($this->state) {
+            throw new \LogicException(
+                "Cannot tick() recursively; event reactor already active"
+            );
+        }
 
+        $this->state = self::TICKING;
+
+        $noWait = (bool) $noWait;
         $immediates = $this->immediates;
         foreach ($immediates as $watcher) {
             if (!$this->tryImmediate($watcher)) {
@@ -181,12 +197,13 @@ class EvReactor implements Reactor {
             }
         }
 
-        if ($this->isRunning) {
+        // Check the conditional again because a manual stop() could've changed the state
+        if ($this->state) {
             $flags = $noWait || $this->immediates ? Ev::RUN_NOWAIT | Ev::RUN_ONCE : Ev::RUN_ONCE;
             $this->loop->run($flags);
-            $this->isRunning = false;
         }
 
+        $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
             $this->stopException = null;
@@ -198,8 +215,14 @@ class EvReactor implements Reactor {
      * {@inheritDoc}
      */
     public function stop() {
-        $this->loop->stop();
-        $this->isRunning = false;
+        if ($this->state !== self::STOPPED) {
+            $this->loop->stop();
+            $this->state = self::STOPPING;
+        } else {
+            throw new \LogicException(
+                "Cannot stop(); event reactor not currently active"
+            );
+        }
     }
 
     /**
