@@ -94,7 +94,7 @@ class UvReactor implements Reactor {
         }
 
         if ($this->watchers) {
-            foreach (array_keys($this->watchers) as $watcherId) {
+            foreach (\array_keys($this->watchers) as $watcherId) {
                 $this->cancel($watcherId);
             }
         }
