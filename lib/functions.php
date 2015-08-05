@@ -658,55 +658,6 @@ function promises(array $values) {
 }
 
 /**
- * Coalesce Promise updates into a generator "stream"
- *
- * This function simplifies the consumption of promise updates
- * within coroutines (avoids callbacks).
- *
- * Example:
- *
- *      <?php
- *      $promise = someAsyncThingWithUpdates();
- *      $generator = stream($promise);
- *      foreach ($generator as $promisedUpdate) {
- *          $update = (yield $promisedUpdate);
- *      }
- *
- * @param \Amp\Promise $promise A promise that receives watch() updates
- * @return \Generator A generator yielding a promise for each watch() update
- */
-function stream(Promise $promise) {
-    $index = 0;
-    $promisors[] = new Deferred;
-    $promise->watch(function ($data) use (&$promisors, &$index) {
-        $promisors[$index + 1] = new Deferred;
-        $promisors[$index++]->succeed($data);
-    });
-    $promise->when(function ($error, $result) use (&$promisors, &$index) {
-        if ($error) {
-            $promisors[$index]->fail($error);
-        } else {
-            $promisors[$index]->succeed($result);
-        }
-    });
-
-    return __streamGenerator($promisors);
-}
-
-/**
- * This function is used internally when streaming promise updates.
- * It is not considered part of the public API and library users
- * should not rely upon it in applications.
- */
-function __streamGenerator(&$promisors) {
-    while ($promisors) {
-        $key = \key($promisors);
-        yield $promisors[$key]->promise();
-        unset($promisors[$key]);
-    }
-}
-
-/**
  * Create an artificial timeout for any Promise instance
  *
  * If the timeout expires prior to promise resolution the returned
@@ -746,11 +697,6 @@ function timeout(Promise $promise, $msTimeout) {
  *
  * In the event of promise failure this method will throw the exception responsible for the failure.
  * Otherwise the promise's resolved value is returned.
- *
- * If the optional event reactor instance is not specified then the global default event reactor
- * is used. Applications should be very careful to avoid instantiating multiple event reactors as
- * this can lead to hard-to-debug failures. If the async value producer uses a different event
- * reactor instance from that specified in this method the wait() call will never return.
  *
  * @param \Amp\Promise $promise The promise on which to wait
  * @throws \Exception if the promise fails

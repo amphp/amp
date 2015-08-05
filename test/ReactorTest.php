@@ -2,7 +2,7 @@
 
 namespace Amp\Test;
 
-abstract class ReactorTest extends \PHPUnit_Framework_TestCase {
+abstract class ReactorTest extends BaseTest {
     /**
      * @expectedException \LogicException
      * @expectedExceptionMessage Cannot stop(); event reactor not currently active
