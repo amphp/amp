@@ -89,7 +89,10 @@ class NativeReactor implements Reactor {
 
     private function tryImmediate($watcher) {
         try {
-            unset($this->immediates[$watcher->id]);
+            unset(
+                $this->watchers[$watcher->id],
+                $this->immediates[$watcher->id]
+            );
             $this->keepAliveCount -= $watcher->keepAlive;
             $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
             if ($out instanceof \Generator) {

@@ -110,8 +110,8 @@ class LibeventReactor implements Reactor {
         try {
             $this->keepAliveCount -= $watcher->keepAlive;
             unset(
-                $this->immediates[$watcher->id],
-                $this->watchers[$watcher->id]
+                $this->watchers[$watcher->id],
+                $this->immediates[$watcher->id]
             );
             $out = \call_user_func($watcher->callback, $watcher->id, $watcher->cbData);
             if ($out instanceof \Generator) {
