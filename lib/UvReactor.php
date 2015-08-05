@@ -93,12 +93,6 @@ class UvReactor implements Reactor {
             \uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
         }
 
-        if ($this->watchers) {
-            foreach (\array_keys($this->watchers) as $watcherId) {
-                $this->cancel($watcherId);
-            }
-        }
-
         $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;

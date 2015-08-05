@@ -92,12 +92,6 @@ class LibeventReactor implements Reactor {
             \event_base_loop($this->keepAliveBase, $flags);
         }
 
-        if ($this->watchers) {
-            foreach (\array_keys($this->watchers) as $watcherId) {
-                $this->cancel($watcherId);
-            }
-        }
-
         $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;

@@ -58,7 +58,6 @@ class NativeReactor implements Reactor {
             $this->state = self::STARTING;
             $watcherId = $this->immediately($onStart);
             if (!$this->tryImmediate($this->watchers[$watcherId]) || empty($this->keepAliveCount)) {
-                $this->unload();
                 return;
             }
         } else {
@@ -74,7 +73,8 @@ class NativeReactor implements Reactor {
             }
         }
 
-        $this->unload();
+        $this->timersEnabled = false;
+        $this->state = self::STOPPED;
     }
 
     private function unload() {
@@ -153,10 +153,8 @@ class NativeReactor implements Reactor {
             $this->doTick((bool) $noWait);
             $this->state = self::STOPPED;
         } catch (\Throwable $e) {
-            $this->unload();
             throw $e;
         } catch (\Exception $e) {
-            $this->unload();
             throw $e;
         }
     }

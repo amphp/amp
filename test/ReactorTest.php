@@ -291,36 +291,34 @@ abstract class ReactorTest extends BaseTest {
         });
     }
 
-    public function testThatWatchersAreCollectedWhenRunLoopExits() {
+    public function testEnablingWatcherAllowsSubsequentInvocation() {
         $increment = 0;
         $watcherId = \Amp\immediately(function () use (&$increment) {
             $increment++;
         });
         \Amp\disable($watcherId);
-
-        $watcherId = \Amp\once(function () use (&$increment) {
-            $increment++;
-        }, 1);
-        \Amp\disable($watcherId);
-
-        $watcherId = \Amp\repeat(function () use (&$increment) {
-            $increment++;
-        }, 1);
-        \Amp\disable($watcherId);
-
-        $watcherId = \Amp\onReadable(STDIN, function () use (&$increment) {
-            $increment++;
-        });
-        \Amp\disable($watcherId);
-
-        $watcherId = \Amp\onWritable(STDOUT, function () use (&$increment) {
-            $increment++;
-        });
-        \Amp\disable($watcherId);
-
+        \Amp\once('\Amp\stop', $msDelay = 50);
         \Amp\run();
         $this->assertEquals(0, $increment);
-        $this->assertEquals(0, \Amp\info()["keep_alive"]);
+        \Amp\enable($watcherId);
+        \Amp\once('\Amp\stop', $msDelay = 50);
+        \Amp\run();
+        $this->assertEquals(1, $increment);
+    }
+
+    public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
+        $increment = 0;
+        \Amp\once(function () use (&$increment) {
+            $increment++;
+            \Amp\stop();
+        }, $msDelay = 150);
+
+        \Amp\run('\Amp\stop');
+
+        $this->assertEquals(0, $increment);
+        \usleep(150000);
+        \Amp\run();
+        $this->assertEquals(1, $increment);
     }
 
     public function testTimerWatcherParameterOrder() {
