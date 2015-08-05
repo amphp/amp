@@ -640,6 +640,7 @@ class NativeReactor implements Reactor {
             "on_writable"       => $onWritable,
             "on_signal"         => $onSignal,
             "keep_alive"        => $this->keepAliveCount,
+            "state"             => $this->state,
         ];
     }
 
