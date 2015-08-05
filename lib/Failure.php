@@ -14,7 +14,7 @@ class Failure implements Promise {
      * where PHP5.x compatibility is required because PHP7 Throwable
      * instances will break the typehint.
      * 
-     * @param Exception $error
+     * @param \Exception $error
      * @TODO Add Throwable typehint and remove conditional once PHP7 is required
      */
     public function __construct($error) {
