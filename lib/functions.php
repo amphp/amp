@@ -734,7 +734,13 @@ function wait(Promise $promise) {
 function coroutine(callable $func) {
     return function () use ($func) {
         $out = \call_user_func_array($func, \func_get_args());
-        return ($out instanceof \Generator) ? resolve($out) : $out;
+        if ($out instanceof \Generator) {
+            return resolve($out);
+        } elseif ($out instanceof Promise) {
+            return $out;
+        } else {
+            return new Success($out);
+        }
     };
 }
 

@@ -671,6 +671,30 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
+    public function testCoroutineWrapsNonGeneratorReturnInPromise() {
+        $co = \Amp\coroutine(function () {
+            return 42;
+        });
+        $out = $co();
+        $this->assertInstanceOf("\Amp\Success", $out);
+        $invoked = false;
+        $out->when(function ($error, $result) use (&$invoked) {
+            $this->assertNull($error);
+            $this->assertSame(42, $result);
+            $invoked = true;
+        });
+        $this->assertTrue($invoked);
+    }
+
+    public function testCoroutineReturnsPromiseResultUnmodified() {
+        $success = new \Amp\Success;
+        $co = \Amp\coroutine(function () use ($success) {
+            return $success;
+        });
+        $out = $co();
+        $this->assertSame($success, $out);
+    }
+
     public function testNestedCoroutineResolutionContinuation() {
         $invoked = 0;
         \Amp\run(function () use (&$invoked) {
