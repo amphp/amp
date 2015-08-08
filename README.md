@@ -7,7 +7,7 @@
 
 `amphp/amp` is a non-blocking concurrency framework for PHP applications.
 
-Learn more about `amphp/amp` in [the guide](https://stackedit.io/viewer#!url=https://gist.githubusercontent.com/rdlowrey/41d4067c4b24ef99b87b/raw/d62894bc68334b01e5bcb91e3079635e67af4727/amp-guide.md).
+Learn more about `amphp/amp` in [the guide](http://amphp.org/docs/amp/).
 
 **Required PHP Version**
 
