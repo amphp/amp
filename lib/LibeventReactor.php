@@ -92,8 +92,6 @@ class LibeventReactor implements Reactor {
             \event_base_loop($this->keepAliveBase, $flags);
         }
 
-        \gc_collect_cycles();
-
         $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
