@@ -93,6 +93,8 @@ class UvReactor implements Reactor {
             \uv_run($this->loop, \UV::RUN_DEFAULT | (empty($this->immediates) ? \UV::RUN_ONCE : \UV::RUN_NOWAIT));
         }
 
+        \gc_collect_cycles();
+
         $this->state = self::STOPPED;
         if ($this->stopException) {
             $e = $this->stopException;
@@ -134,7 +136,7 @@ class UvReactor implements Reactor {
                 "Cannot tick() recursively; event reactor already active"
             );
         }
-        
+
         $this->state = self::TICKING;
 
         $noWait = (bool) $noWait;
@@ -144,7 +146,7 @@ class UvReactor implements Reactor {
                 break;
             }
         }
-        
+
         // Check the conditional again because a manual stop() could've changed the state
         if ($this->state) {
             $flags = $noWait || !empty($this->immediates) ? (\UV::RUN_NOWAIT | \UV::RUN_ONCE) : \UV::RUN_ONCE;

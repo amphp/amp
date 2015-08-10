@@ -73,6 +73,8 @@ class NativeReactor implements Reactor {
             }
         }
 
+        \gc_collect_cycles();
+
         $this->timersEnabled = false;
         $this->state = self::STOPPED;
     }
