@@ -1,0 +1,13 @@
+# dev
+
+- n/a
+
+### 1.0.1
+
+- Fix bug preventing UvReactor::tick() from returning when no
+  events are ready for a single active IO watcher.
+
+1.0.0
+-----
+
+- Initial stable API release
