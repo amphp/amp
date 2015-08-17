@@ -202,6 +202,7 @@ function enable($watcherId) {
  *      "on_writable"   => ["enabled" => int, "disabled" => int],
  *      "on_signal"     => ["enabled" => int, "disabled" => int],
  *      "keep_alive"    => int,
+ *      "state"         => int,
  *  ];
  *
  * Reactor implementations may optionally add more information in the return array but
