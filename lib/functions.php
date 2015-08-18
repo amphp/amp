@@ -862,7 +862,21 @@ function __coroutineSend($error, $result, CoroutineState $cs) {
             $cs->generator->send($result);
         }
         __coroutineAdvance($cs);
+    } catch (\Throwable $uncaught) {
+        /**
+         * @codeCoverageIgnoreStart
+         * @TODO Remove these coverage ignore lines once PHP7 is required
+         */
+        $cs->reactor->immediately(function () use ($cs, $uncaught) {
+            $cs->promisor->fail($uncaught);
+        });
+        /**
+         * @codeCoverageIgnoreEnd
+         */
     } catch (\Exception $uncaught) {
+        /**
+         * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
+         */
         $cs->reactor->immediately(function () use ($cs, $uncaught) {
             $cs->promisor->fail($uncaught);
         });
