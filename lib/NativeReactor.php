@@ -313,7 +313,7 @@ class NativeReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::IMMEDIATE;
         $watcher->callback = $callback;
-        $watcher->cbData = @$options["cb_data"];
+        $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
 
