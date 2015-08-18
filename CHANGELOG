@@ -2,6 +2,14 @@
 
 - n/a
 
+### 1.0.2
+
+- Fix PHP7 issue in which top-level Throwables weren't caught
+  in certain coroutine contexts.
+- Remove error suppression operater on optionally null option
+  assignment to avoid spurious E_NOTICE output when custom
+  error handlers are used.
+
 ### 1.0.1
 
 - Fix bug preventing UvReactor::tick() from returning when no
