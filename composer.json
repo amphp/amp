@@ -37,5 +37,10 @@
     },
     "support": {
         "issues": "https://github.com/amphp/amp/issues"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
     }
 }
