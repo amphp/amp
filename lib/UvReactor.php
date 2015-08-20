@@ -90,8 +90,7 @@ class UvReactor implements Reactor {
             if (empty($this->keepAliveCount) || $this->state <= self::STOPPED) {
                 break;
             }
-            $flags = \UV::RUN_ONCE | ($this->immediates ? \UV::RUN_NOWAIT : 0);
-            \uv_run($this->loop, $flags);
+            \uv_run($this->loop, $this->immediates ? \UV::RUN_NOWAIT : \UV::RUN_ONCE);
         }
 
         \gc_collect_cycles();
@@ -150,8 +149,7 @@ class UvReactor implements Reactor {
 
         // Check the conditional again because a manual stop() could've changed the state
         if ($this->state > 0) {
-            $flags = ($noWait || $this->immediates) ? (\UV::RUN_DEFAULT | \UV::RUN_NOWAIT) : \UV::RUN_ONCE;
-            \uv_run($this->loop, $flags);
+            \uv_run($this->loop, $noWait || $this->immediates ? \UV::RUN_NOWAIT : \UV::RUN_ONCE);
         }
 
         $this->state = self::STOPPED;

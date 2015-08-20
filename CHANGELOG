@@ -7,6 +7,8 @@
 - Fix issue in NativeReactor capable of causing keep alive
   counter corruption when a watcher was cancelled inside its
   own callback.
+- Fix issue in UvReactor with libuv >= 1.1.0 causing busy loop
+  with immediates present, but no watchers being triggered.
 
 ### 1.0.2
 
