@@ -288,13 +288,14 @@ class NativeReactor implements Reactor {
                 resolve($result)->when($this->onCoroutineResolution);
             }
 
-            if ($watcher->type === Watcher::TIMER_ONCE) {
+            if (!isset($this->watchers[$watcherId])) {
+                // This check is necessary as the watcher may have been disabled during callback invocation
+            } elseif ($watcher->type === Watcher::TIMER_ONCE) {
                 $this->keepAliveCount -= $watcher->keepAlive;
                 unset(
                     $this->watchers[$watcherId],
                     $this->timerOrder[$watcherId]
                 );
-                continue;
             } elseif ($watcher->isEnabled) {
                 $this->isTimerSortNeeded = true;
                 $watcher->nextExecutionAt = $now + $watcher->msInterval;
