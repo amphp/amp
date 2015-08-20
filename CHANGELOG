@@ -2,6 +2,12 @@
 
 - n/a
 
+### 1.0.3
+
+- Fix issue in NativeReactor capable of causing keep alive
+  counter corruption when a watcher was cancelled inside its
+  own callback.
+
 ### 1.0.2
 
 - Fix PHP7 issue in which top-level Throwables weren't caught
