@@ -298,10 +298,11 @@ class LibeventReactor implements Reactor {
      */
     public function repeat(callable $callback, $msInterval, array $options = []) {
         assert(($msInterval >= 0), "\$msInterval at Argument 2 expects integer >= 0");
+        $msInterval *= 1000;
         if (isset($options["ms_delay"])) {
             $msDelay = (int) $options["ms_delay"];
             assert(($msDelay >= 0), "ms_delay option expects integer >= 0");
-            $msDelay = ($msDelay * 1000);
+            $msDelay *= 1000;
         } else {
             $msDelay = $msInterval;
         }
