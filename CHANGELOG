@@ -1,5 +1,9 @@
 # dev
 
+- n/a
+
+### 1.0.4
+
 - Repeat watchers in LibeventReactor internally were handled in
   microsecond intervals instead of milliseconds.
 
