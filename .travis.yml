@@ -8,7 +8,6 @@ php:
   - 7.0
 
 before_script:
-  - phpenv rehash
   - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0")
   - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install ev)
   - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (mkdir libuv && (curl -L https://github.com/libuv/libuv/archive/v1.6.1.tar.gz | tar xzf -) && cd libuv-1.6.1 && ./autogen.sh && ./configure --prefix=$(readlink -f `pwd`/../libuv) && make && make install && cd ..)
