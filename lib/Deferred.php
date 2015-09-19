@@ -11,7 +11,7 @@ try {
         // PHP < 7 or dev environment (zend.assertions=1, assert.exception=0)
         final class Deferred implements Promisor { use PrivatePromisor; }
     }
-} catch (\AssertionException $e) {
+} catch (\AssertionError $e) {
     // PHP7 dev environment (zend.assertions=1, assert.exception=1)
     eval("namespace Amp; final class Deferred implements Promisor { use PrivatePromisor; }");
 }
