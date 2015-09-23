@@ -310,7 +310,7 @@ function some(array $promises) {
         }
         if (empty($struct->results)) {
             array_unshift($struct->errors, "All promises passed to Amp\some() failed");
-            $struct->promisor->fail(new \RuntimeException(
+            $struct->promisor->fail(new CombinatorException(
                 implode("\n\n", $struct->errors)
             ));
         } else {
@@ -407,7 +407,7 @@ function first(array $promises) {
             return;
         }
         if (--$struct->remaining === 0) {
-            $struct->promisor->fail(new \RuntimeException(
+            $struct->promisor->fail(new CombinatorException(
                 "All promises failed"
             ));
         }

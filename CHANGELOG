@@ -1,6 +1,7 @@
 # dev
 
-- n/a
+- Convert general `\RuntimeException` to more specific
+  `Amp\CombinatorException`.
 
 ### 1.0.4
 
