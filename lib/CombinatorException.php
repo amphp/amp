@@ -2,6 +2,4 @@
 
 namespace Amp;
 
-class CombinatorException extends \RuntimeException {
-
-}
+class CombinatorException extends \RuntimeException {}

@@ -412,7 +412,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Amp\CombinatorException
      */
     public function testSomeThrowsIfNoPromisesResolveSuccessfully() {
         \Amp\some([
@@ -481,7 +481,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Amp\CombinatorException
      * @expectedExceptionMessage All promises failed
      */
     public function testFirstFailsIfAllPromisesFail() {
@@ -494,7 +494,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Amp\TimeoutException
      * @expectedExceptionMessage Promise resolution timed out
      */
     public function testTimeout() {
@@ -521,7 +521,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException RuntimeException
+     * @expectedException \RuntimeException
      * @expectedExceptionMessage nothing that is worth knowing can be taught
      */
     public function testTimeoutOnFailure() {
@@ -625,7 +625,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Amp\CombinatorException
      */
     public function testExplicitSomeCombinatorResolutionFailsOnError() {
         \Amp\run(function () {
