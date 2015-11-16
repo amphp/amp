@@ -5,6 +5,12 @@ namespace Amp\Test;
 use Amp\UvReactor;
 
 class UvReactorTest extends ReactorTest {
+    public static function setUpBeforeClass() {
+        if (!defined('SIGUSR1')) {
+            define('SIGUSR1', \Uv::SIGUSR1);
+        }
+    }
+
     protected function setUp() {
         if (extension_loaded("uv")) {
             \Amp\reactor($assign = new UvReactor);

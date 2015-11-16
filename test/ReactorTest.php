@@ -2,6 +2,8 @@
 
 namespace Amp\Test;
 
+use Amp\UvReactor;
+
 abstract class ReactorTest extends BaseTest {
     /**
      * @expectedException \LogicException
@@ -87,8 +89,8 @@ abstract class ReactorTest extends BaseTest {
     }
 
     public function testOnSignalWatcherKeepAliveRunResult() {
-        if (!\extension_loaded("pcntl")) {
-            $this->markTestSkipped("ext/pcntl required to test onSignal() registration");
+        if (!\extension_loaded("pcntl") && !\Amp\reactor() instanceof UvReactor) {
+            $this->markTestSkipped("ext/pcntl or UvReactor required to test onSignal() registration");
         }
 
         \Amp\run(function () {
@@ -102,9 +104,10 @@ abstract class ReactorTest extends BaseTest {
      * @dataProvider provideRegistrationArgs
      */
     public function testWatcherKeepAliveRegistrationInfo($type, $args) {
-        if ($type === "skip") {
-            $this->markTestSkipped($args);
-        } elseif ($type === "onSignal") {
+         if ($type === "onSignal") {
+            if (!\extension_loaded("pcntl") && !\Amp\reactor() instanceof UvReactor) {
+                $this->markTestSkipped("ext/pcntl or UvReactor required to test onSignal() registration");
+            }
             $requiresCancel = true;
         } else {
             $requiresCancel = false;
@@ -170,11 +173,7 @@ abstract class ReactorTest extends BaseTest {
             ["onReadable",  [\STDIN, function () {}]],
         ];
 
-        if (\extension_loaded("pcntl")) {
-            $args[] = ["onSignal",    [\SIGUSR1, function () {}]];
-        } else {
-            $args[] = ["skip", "ext/pcntl required to test onSignal() registration"];
-        }
+        $args[] = ["onSignal",    [defined('SIGUSR1') ? \SIGUSR1 : -1, function () {}]];
 
         return $args;
     }
@@ -183,8 +182,10 @@ abstract class ReactorTest extends BaseTest {
      * @dataProvider provideRegistrationArgs
      */
     public function testWatcherRegistrationAndCancellationInfo($type, $args) {
-        if ($type === "skip") {
-            $this->markTestSkipped($args);
+        if ($type === "onSignal") {
+            if (!\extension_loaded("pcntl") && !\Amp\reactor() instanceof UvReactor) {
+                $this->markTestSkipped("ext/pcntl or UvReactor required to test onSignal() registration");
+            }
         }
 
         $func = '\Amp\\' . $type;
@@ -286,7 +287,7 @@ abstract class ReactorTest extends BaseTest {
         });
         \Amp\run(function () {
             yield;
-            yield new \Amp\Pause(10, $reactor);
+            yield new \Amp\Pause(10);
             throw new \Exception("coroutine error");
         });
     }
@@ -448,9 +449,9 @@ abstract class ReactorTest extends BaseTest {
     }
 
     public function testOnSignalWatcher() {
-        if (!\extension_loaded("posix")) {
+        if (!\extension_loaded("posix") || !(\extension_loaded("pcntl") || \Amp\reactor() instanceof UvReactor)) {
             $this->markTestSkipped(
-                "ext/posix required to test onSignal() capture"
+                "ext/posix and UvReactor or ext/pcntl required to test onSignal() capture"
             );
         }
         $this->expectOutputString("caught SIGUSR1");
@@ -470,9 +471,9 @@ abstract class ReactorTest extends BaseTest {
     }
 
     public function testInitiallyDisabledOnSignalWatcher() {
-        if (!\extension_loaded("posix")) {
+        if (!\extension_loaded("posix") || !(\extension_loaded("pcntl") || \Amp\reactor() instanceof UvReactor)) {
             $this->markTestSkipped(
-                "ext/posix required to test onSignal() capture"
+                "ext/posix and UvReactor or ext/pcntl required to test onSignal() capture"
             );
         }
         $this->expectOutputString("caught SIGUSR1");
