@@ -177,7 +177,7 @@ class NativeReactor implements Reactor {
         }
 
         // If an immediately watcher called stop() we pull out here
-        if ($this->state <= self::STOPPING) {
+        if ($this->state <= self::STOPPED) {
             return;
         }
 

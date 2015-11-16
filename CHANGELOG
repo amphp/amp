@@ -1,3 +1,8 @@
+### 1.0.6
+
+- Fix issue in NativeReactor causing `stop()` to be delayed by
+  one second.
+
 ### 1.0.5
 
 - Convert general `RuntimeException` to more specific
