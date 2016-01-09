@@ -238,7 +238,7 @@ function all(array $promises) {
 
     $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
-        if (empty($struct->remaining)) {
+        if ($struct->remaining <= 0) {
             // If the promisor already resolved we don't need to bother
             return;
         }
@@ -305,16 +305,15 @@ function some(array $promises) {
         } else {
             $struct->results[$key] = $result;
         }
-        if (--$struct->remaining) {
-            return;
-        }
-        if (empty($struct->results)) {
-            array_unshift($struct->errors, "All promises passed to Amp\some() failed");
-            $struct->promisor->fail(new CombinatorException(
-                implode("\n\n", $struct->errors)
-            ));
-        } else {
-            $struct->promisor->succeed([$struct->errors, $struct->results]);
+        if (--$struct->remaining === 0) {
+            if (empty($struct->results)) {
+                array_unshift($struct->errors, "All promises passed to Amp\some() failed");
+                $struct->promisor->fail(new CombinatorException(
+                    implode("\n\n", $struct->errors)
+                ));
+            } else {
+                $struct->promisor->succeed([$struct->errors, $struct->results]);
+            }
         }
     };
 
@@ -398,7 +397,7 @@ function first(array $promises) {
 
     $onResolve = function ($error, $result, $cbData) {
         $struct = $cbData;
-        if (empty($struct->remaining)) {
+        if ($struct->remaining === 0) {
             return;
         }
         if (empty($error)) {
@@ -446,7 +445,7 @@ function map(array $promises, callable $functor) {
 
     $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
-        if (empty($struct->remaining)) {
+        if ($struct->remaining <= 0) {
             // If the promisor already resolved we don't need to bother
             return;
         }
@@ -487,13 +486,12 @@ function map(array $promises, callable $functor) {
                 // @codeCoverageIgnoreStart
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
+                break;
                 // @codeCoverageIgnoreEnd
             } catch (\Exception $e) {
                 // @TODO Remove this catch block once PHP5 support is no longer required
                 $struct->remaining = 0;
                 $struct->promisor->fail($e);
-            }
-            if ($struct->remaining === 0) {
                 break;
             }
         }
@@ -531,7 +529,7 @@ function filter(array $promises, callable $functor = null) {
 
     $onResolve = function ($error, $result, $cbData) {
         list($struct, $key) = $cbData;
-        if (empty($struct->remaining)) {
+        if ($struct->remaining <= 0) {
             // If the promisor already resolved we don't need to bother
             return;
         }

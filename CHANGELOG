@@ -1,3 +1,9 @@
+### 1.0.7
+
+- Several combinator functions could result in a Promise already
+  resolved exception in case some values of the array weren't
+  Promises.
+
 ### 1.0.6
 
 - Fix issue in NativeReactor causing `stop()` to be delayed by
@@ -25,7 +31,7 @@
 
 - Fix PHP7 issue in which top-level Throwables weren't caught
   in certain coroutine contexts.
-- Remove error suppression operater on optionally null option
+- Remove error suppression operator on optionally null option
   assignment to avoid spurious E_NOTICE output when custom
   error handlers are used.
 
