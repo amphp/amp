@@ -20,37 +20,37 @@ interface EventLoopInterface
     public function stop();
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function queue(callable $callback, ...$args);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function timer(callable $callback, float $time, $data = null);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function periodic(callable $callback, float $interval, $data = null);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function onReadable($stream, callable $callback, $data = null);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function onWritable($stream, callable $callback, $data = null);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function onSignal(int $signo, callable $callback, $data = null);
 
     /**
-     * @return Watcher
+     * @return WatcherInterface
      */
     public function onError(callable $callback);
 }
