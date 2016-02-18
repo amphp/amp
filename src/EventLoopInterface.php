@@ -27,12 +27,12 @@ interface EventLoopInterface
     /**
      * @return WatcherInterface
      */
-    public function timer(callable $callback, float $time, $data = null);
+    public function once(callable $callback, float $time, $data = null);
 
     /**
      * @return WatcherInterface
      */
-    public function periodic(callable $callback, float $interval, $data = null);
+    public function repeat(callable $callback, float $interval, $data = null);
 
     /**
      * @return WatcherInterface
