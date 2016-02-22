@@ -6,7 +6,7 @@ use Amp\UvReactor;
 
 class UvReactorTest extends ReactorTest {
     public static function setUpBeforeClass() {
-        if (!defined('SIGUSR1')) {
+        if (!defined('SIGUSR1') && extension_loaded("uv")) {
             define('SIGUSR1', \Uv::SIGUSR1);
         }
     }

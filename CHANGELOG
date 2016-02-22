@@ -1,3 +1,8 @@
+### 1.0.8
+
+- Fix NativeReactor running a busy loop if no timers are active.
+  Properly block now in NativeReactor inside stream_select().
+
 ### 1.0.7
 
 - Several combinator functions could result in a Promise already

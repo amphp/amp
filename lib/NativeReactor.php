@@ -195,14 +195,13 @@ class NativeReactor implements Reactor {
             // @TODO Instead of iterating all timers hunting for a keep-alive
             //       we should just use a specific counter to cache the number
             //       of keep-alive timers in use at any given time
-            $timeToNextAlarm = 0;
+            $timeToNextAlarm = null;
             foreach ($this->timerOrder as $watcherId => $time) {
                 if ($this->watchers[$watcherId]->keepAlive) {
                     // The reset() is important because the foreach modifies
-                    // the internal array pointer.
+                    // the internal array pointer with PHP 5.
                     $nextTimerAt = \reset($this->timerOrder);
                     $timeToNextAlarm = \round($nextTimerAt - \microtime(true), 4);
-                    $timeToNextAlarm = ($timeToNextAlarm > 0) ? $timeToNextAlarm : 0;
                     break;
                 }
             }
@@ -228,7 +227,10 @@ class NativeReactor implements Reactor {
         $w = $this->writeStreams;
         $e = null;
 
-        if ($timeout <= 0) {
+        if ($timeout === null) {
+            $sec = null;
+            $usec = null;
+        } elseif ($timeout <= 0) {
             $sec = 0;
             $usec = 0;
         } else {
