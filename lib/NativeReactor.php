@@ -184,7 +184,7 @@ class NativeReactor implements Reactor {
         if ($this->immediates || $noWait) {
             $timeToNextAlarm = 0;
         } elseif (empty($this->timerOrder)) {
-            $timeToNextAlarm = 1;
+            $timeToNextAlarm = null;
         } else {
             if ($this->isTimerSortNeeded) {
                 \asort($this->timerOrder);
