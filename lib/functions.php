@@ -775,7 +775,7 @@ function __coroutineAdvance(CoroutineState $cs) {
         $yielded = $cs->generator->current();
         if (!isset($yielded)) {
             if ($cs->generator->valid()) {
-                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+                $cs->reactor->immediately('Amp\__coroutineNextTick', ["cb_data" => $cs]);
             } elseif (isset($cs->returnValue)) {
                 $cs->promisor->succeed($cs->returnValue);
             } else {
@@ -785,11 +785,11 @@ function __coroutineAdvance(CoroutineState $cs) {
         } elseif ($yielded instanceof Promise) {
             if ($cs->nestingLevel < 3) {
                 $cs->nestingLevel++;
-                $yielded->when("Amp\__coroutineSend", $cs);
+                $yielded->when('Amp\__coroutineSend', $cs);
                 $cs->nestingLevel--;
             } else {
                 $cs->currentPromise = $yielded;
-                $cs->reactor->immediately("Amp\__coroutineNextTick", ["cb_data" => $cs]);
+                $cs->reactor->immediately('Amp\__coroutineNextTick', ["cb_data" => $cs]);
             }
         } elseif ($yielded instanceof CoroutineResult) {
             /**
@@ -841,7 +841,7 @@ function __coroutineNextTick($watcherId, CoroutineState $cs) {
     if ($cs->currentPromise) {
         $promise = $cs->currentPromise;
         $cs->currentPromise = null;
-        $promise->when("Amp\__coroutineSend", $cs);
+        $promise->when('Amp\__coroutineSend', $cs);
     } else {
         __coroutineSend(null, null, $cs);
     }
