@@ -2,6 +2,7 @@
 
 namespace Amp\Test;
 
+use Amp\CombinatorException;
 use Amp\NativeReactor;
 use Amp\Success;
 use Amp\Failure;
@@ -32,7 +33,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testMapReturnsEmptySuccessOnEmptyInput() {
         $promise = \Amp\map([], function () {});
-        $this->assertInstanceOf("Amp\Success", $promise);
+        $this->assertInstanceOf('Amp\Success', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -162,7 +163,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testFilterReturnsEmptySuccessOnEmptyInput() {
         $promise = \Amp\filter([], function () {});
-        $this->assertInstanceOf("Amp\Success", $promise);
+        $this->assertInstanceOf('Amp\Success', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -301,6 +302,18 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
+    public function testSomeResolutionWhenAllPromisesFail() {
+        $ex1 = new \RuntimeException("1");
+        $ex2 = new \RuntimeException("2");
+        $promises = [new Failure($ex1), new Failure($ex2)];
+        \Amp\some($promises)->when(function ($e, $r) use ($ex1, $ex2) {
+            $this->assertNull($r);
+            $this->assertInstanceOf(CombinatorException::class, $e);
+            $this->assertSame($e->getExceptions()[0], $ex1);
+            $this->assertSame($e->getExceptions()[1], $ex2);
+        });
+    }
+
     public function testAllResolutionWhenNoPromiseInstancesCombined() {
         $promises = [null, 1, 2, true];
         \Amp\all($promises)->when(function ($e, $r) {
@@ -338,7 +351,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testAnyReturnsImmediatelyOnEmptyPromiseArray() {
         $promise = \Amp\any([]);
-        $this->assertInstanceOf("Amp\Success", $promise);
+        $this->assertInstanceOf('Amp\Success', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -358,7 +371,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testAllReturnsImmediatelyOnEmptyPromiseArray() {
         $promise = \Amp\all([]);
-        $this->assertInstanceOf("Amp\Success", $promise);
+        $this->assertInstanceOf('Amp\Success', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -391,7 +404,8 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             'r2' => new Failure($exception),
             'r3' => new Success(40),
         ])->when(function ($error, $result) use ($exception) {
-            list($errors, $results) = (yield \Amp\some($promises));
+            $this->assertNull($error);
+            list($errors, $results) = $result;
             $this->assertSame(['r2' => $exception], $errors);
             $this->assertSame(['r1' => 42, 'r3' => 40], $results);
         });
@@ -399,7 +413,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testSomeFailsImmediatelyOnEmptyPromiseArrayInput() {
         $promise = \Amp\some([]);
-        $this->assertInstanceOf("Amp\Failure", $promise);
+        $this->assertInstanceOf('Amp\Failure', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -407,7 +421,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $result = $r;
         });
         $this->assertNull($result);
-        $this->assertInstanceOf("\LogicException", $error);
+        $this->assertInstanceOf('\LogicException', $error);
         $this->assertSame("No promises or values provided for resolution", $error->getMessage());
     }
 
@@ -425,7 +439,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
     public function testFirstFailsImmediatelyOnEmptyPromiseArrayInput() {
         $promise = \Amp\first([]);
-        $this->assertInstanceOf("Amp\Failure", $promise);
+        $this->assertInstanceOf('Amp\Failure', $promise);
         $error = null;
         $result = null;
         $promise->when(function ($e, $r) use (&$error, &$result) {
@@ -433,7 +447,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
             $result = $r;
         });
         $this->assertNull($result);
-        $this->assertInstanceOf("\LogicException", $error);
+        $this->assertInstanceOf('\LogicException', $error);
         $this->assertSame("No promises or values provided", $error->getMessage());
     }
 
@@ -461,7 +475,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
 
             $promises = [$p1->promise(), $p2->promise(), $p3->promise()];
             $allPromise = \Amp\all($promises);
-            $allPromise->when("\Amp\stop");
+            $allPromise->when('\Amp\stop');
 
             $result = (yield \Amp\first($promises));
         });
