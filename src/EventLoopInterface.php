@@ -12,45 +12,55 @@ interface EventLoopInterface
     /**
      * @return void
      */
-    public function tick(bool $block = true);
+    public function stop();
+
+    /**
+     * @return string
+     */
+    public function defer(callable $callback);
+
+    /**
+     * @return string
+     */
+    public function delay(callable $callback, float $time);
+
+    /**
+     * @return string
+     */
+    public function repeat(callable $callback, float $interval);
+
+    /**
+     * @return string
+     */
+    public function onReadable($stream, callable $callback);
+
+    /**
+     * @return string
+     */
+    public function onWritable($stream, callable $callback);
+
+    /**
+     * @return string
+     */
+    public function onSignal(int $signo, callable $callback);
+
+    /**
+     * @return string
+     */
+    public function onError(callable $callback);
 
     /**
      * @return void
      */
-    public function stop();
+    public function enable(string $watcherId);
 
     /**
-     * @return WatcherInterface
+     * @return void
      */
-    public function queue(callable $callback, ...$args);
+    public function disable(string $watcherId);
 
     /**
-     * @return WatcherInterface
+     * @return void
      */
-    public function once(callable $callback, float $time, $data = null);
-
-    /**
-     * @return WatcherInterface
-     */
-    public function repeat(callable $callback, float $interval, $data = null);
-
-    /**
-     * @return WatcherInterface
-     */
-    public function onReadable($stream, callable $callback, $data = null);
-
-    /**
-     * @return WatcherInterface
-     */
-    public function onWritable($stream, callable $callback, $data = null);
-
-    /**
-     * @return WatcherInterface
-     */
-    public function onSignal(int $signo, callable $callback, $data = null);
-
-    /**
-     * @return WatcherInterface
-     */
-    public function onError(callable $callback);
+    public function cancel(string $watcherId);
 }
