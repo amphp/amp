@@ -1,3 +1,8 @@
+### 1.0.9
+
+- Fix NativeReactor not ending up in stopped state if primary
+  callback didn't install any events.
+
 ### 1.0.8
 
 - Fix NativeReactor running a busy loop if no timers are active.

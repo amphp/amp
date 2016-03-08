@@ -58,6 +58,7 @@ class NativeReactor implements Reactor {
             $this->state = self::STARTING;
             $watcherId = $this->immediately($onStart);
             if (!$this->tryImmediate($this->watchers[$watcherId]) || empty($this->keepAliveCount)) {
+                $this->state = self::STOPPED;
                 return;
             }
         } else {
