@@ -1,5 +1,8 @@
-### 1.0.9
+1.1.0
+-----
 
+- Add getExceptions() method to CombinatorException to get an
+  array of all the exceptions (affecting some() and first()).
 - Fix NativeReactor not ending up in stopped state if primary
   callback didn't install any events.
 
