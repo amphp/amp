@@ -223,7 +223,7 @@ function info() {
  *
  * If any one of the Promises fails the resulting Promise will immediately fail.
  *
- * @param array An array of promises to flatten into a single promise
+ * @param array $promises An array of promises to flatten into a single promise
  * @return \Amp\Promise
  */
 function all(array $promises) {
@@ -282,7 +282,7 @@ function all(array $promises) {
  * The individual keys in the resulting arrays are preserved from the initial Promise array
  * passed to the function for evaluation.
  *
- * @param array An array of promises to flatten into a single promise
+ * @param array $promises An array of promises to flatten into a single promise
  * @return \Amp\Promise
  */
 function some(array $promises) {
@@ -307,9 +307,8 @@ function some(array $promises) {
         }
         if (--$struct->remaining === 0) {
             if (empty($struct->results)) {
-                array_unshift($struct->errors, "All promises passed to Amp\some() failed");
                 $struct->promisor->fail(new CombinatorException(
-                    implode("\n\n", $struct->errors)
+                    "All promises passed to Amp\\some() failed", $struct->errors
                 ));
             } else {
                 $struct->promisor->succeed([$struct->errors, $struct->results]);
@@ -337,7 +336,7 @@ function some(array $promises) {
  * This function is the same as some() with the notable exception that it will never fail even
  * if all promises in the array resolve unsuccessfully.
  *
- * @param array An array of promises to flatten into a single promise
+ * @param array $promises An array of promises to flatten into a single promise
  * @return \Amp\Promise
  */
 function any(array $promises) {
@@ -381,7 +380,7 @@ function any(array $promises) {
  * Resolves with the first successful Promise value. The resulting Promise will only fail if all
  * Promise values in the group fail or if the initial Promise array is empty.
  *
- * @param array An array of promises to flatten into a single promise
+ * @param array $promises An array of promises to flatten into a single promise
  * @return \Amp\Promise
  */
 function first(array $promises) {
@@ -392,29 +391,32 @@ function first(array $promises) {
     }
 
     $struct = new \StdClass;
+    $struct->errors = [];
     $struct->remaining = count($promises);
     $struct->promisor = new Deferred;
 
     $onResolve = function ($error, $result, $cbData) {
-        $struct = $cbData;
+        list($struct, $key) = $cbData;
         if ($struct->remaining === 0) {
             return;
         }
-        if (empty($error)) {
+        if ($error) {
+            $struct->errors[$key] = $error;
+        } else {
             $struct->remaining = 0;
             $struct->promisor->succeed($result);
             return;
         }
         if (--$struct->remaining === 0) {
             $struct->promisor->fail(new CombinatorException(
-                "All promises failed"
+                "All promises failed", $struct->errors
             ));
         }
     };
 
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
-            $promise->when($onResolve, $struct);
+            $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->remaining = 0;
             $struct->promisor->succeed($promise);
@@ -426,9 +428,9 @@ function first(array $promises) {
 }
 
 /**
- * Map promised deferred values using the specified functor
+ * Map promised deferred values using the specified functor.
  *
- * @param array An array of promises whose values -- once resoved -- will be mapped by the functor
+ * @param array $promises An array of promises whose values -- once resolved -- will be mapped by the functor
  * @param callable $functor The mapping function to apply to eventual promise results
  * @return \Amp\Promise
  */
@@ -501,12 +503,12 @@ function map(array $promises, callable $functor) {
 }
 
 /**
- * Filter deferred values using the specified functor
+ * Filter deferred values using the specified functor.
  *
  * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
  * discarded. Array keys are retained for any results not filtered out by the functor.
  *
- * @param array An array of promises whose values -- once resoved -- will be filtered by the functor
+ * @param array $promises An array of promises whose values -- once resolved -- will be filtered by the functor
  * @param callable $functor The filtering function to apply to eventual promise results
  * @return \Amp\Promise
  */
@@ -593,7 +595,7 @@ function filter(array $promises, callable $functor = null) {
 }
 
 /**
- * Pipe the promised value through the specified functor once it resolves
+ * Pipe the promised value through the specified functor once it resolves.
  *
  * @param mixed $promise Any value is acceptable -- non-promises are normalized to promise form
  * @param callable $functor The functor through which to pipe the resolved promise value
@@ -717,6 +719,7 @@ function wait(Promise $promise) {
     }
 
     if ($resolvedError) {
+        /** @var $resolvedError \Throwable|\Exception */
         throw $resolvedError;
     }
 
