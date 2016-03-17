@@ -2,7 +2,7 @@
 
 namespace Interop\Async\EventLoop;
 
-interface EventLoopInterface
+interface EventLoopDriver
 {
     /**
      * Start the event loop.
