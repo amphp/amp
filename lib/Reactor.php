@@ -158,4 +158,6 @@ interface Reactor {
      * @return array
      */
     public function info();
+    
+    /* MUST NOT IMPLEMENT __set() */
 }

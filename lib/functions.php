@@ -37,6 +37,27 @@ function driver() {
 }
 
 /**
+ * Get reactor bound state by identifier
+ *
+ * @param string $key identifier for state
+ */
+function getState($key) {
+    $reactor = reactor();
+    return isset($reactor->__dynamicState[$key]) ? $reactor->__dynamicState[$key] : null;
+}
+
+/**
+ * Set reactor bound state by identifier to a value
+ *
+ * @param string $key identifier for state
+ * @param $value
+ * @return void
+ */
+function setState($key, $value) {
+    reactor()->__dynamicState[$key] = $value;
+}
+
+/**
  * Start the event reactor and assume program flow control
  *
  * @param callable $onStart An optional callback to invoke immediately when the Reactor starts
