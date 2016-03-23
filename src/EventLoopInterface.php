@@ -112,4 +112,27 @@ interface EventLoopDriver
      * @return void
      */
     public function cancel(string $eventIdentifier);
+
+    /**
+     * Reference an event.
+     * 
+     * This will keep the event loop alive whilst the event is still being monitored. Events have this state by default.
+     * 
+     * @param string $eventIdentifier The event identifier.
+     * 
+     * @return void
+     */
+     public function reference(string $eventIdentifier);
+
+    /**
+     * Unreference an event.
+     * 
+     * The event loop should exit the run method when only unreferenced events are still being monitored. Events are all
+     * referenced by default.
+     * 
+     * @param string $eventIdentifier The event identifier.
+     * 
+     * @return void
+     */
+     public function unreference(string $eventIdentifier);
 }
