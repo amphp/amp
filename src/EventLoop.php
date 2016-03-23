@@ -123,7 +123,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onWritable($stream, callable $callback)
+    public static function onWritable($stream, callable $callback)
     {
         self::inScope();
 
@@ -138,7 +138,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onSignal(int $signo, callable $callback)
+    public static function onSignal(int $signo, callable $callback)
     {
         self::inScope();
 
@@ -152,7 +152,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onError(callable $callback)
+    public static function onError(callable $callback)
     {
         self::inScope();
 
@@ -166,7 +166,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public function enable(string $eventIdentifier)
+    public static function enable(string $eventIdentifier)
     {
         self::inScope();
 
@@ -180,7 +180,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public function disable(string $eventIdentifier)
+    public static function disable(string $eventIdentifier)
     {
         self::inScope();
 
@@ -194,7 +194,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public function cancel(string $eventIdentifier)
+    public static function cancel(string $eventIdentifier)
     {
         self::inScope();
 
@@ -210,7 +210,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public function reference(string $eventIdentifier)
+    public static function reference(string $eventIdentifier)
     {
         self::inScope();
 
@@ -227,7 +227,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public function unreference(string $eventIdentifier)
+    public static function unreference(string $eventIdentifier)
     {
         self::inScope();
 
