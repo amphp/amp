@@ -122,7 +122,7 @@ interface EventLoopDriver
      * 
      * @return void
      */
-     public function reference(string $eventIdentifier);
+    public function reference(string $eventIdentifier);
 
     /**
      * Unreference an event.
@@ -134,5 +134,5 @@ interface EventLoopDriver
      * 
      * @return void
      */
-     public function unreference(string $eventIdentifier);
+    public function unreference(string $eventIdentifier);
 }
