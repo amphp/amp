@@ -23,3 +23,7 @@ script:
 
 after_script:
   - php vendor/bin/coveralls -v
+  
+cache:
+  directories:
+    - $HOME/.composer/cache
