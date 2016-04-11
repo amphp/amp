@@ -35,7 +35,7 @@ interface EventLoopDriver
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function delay(callable $callback, float $time);
+    public function delay(callable $callback, $time);
 
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
@@ -45,7 +45,7 @@ interface EventLoopDriver
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function repeat(callable $callback, float $interval);
+    public function repeat(callable $callback, $interval);
 
     /**
      * Execute a callback when a stream resource becomes readable.
