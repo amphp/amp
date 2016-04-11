@@ -76,7 +76,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function delay(callable $callback, float $time)
+    public static function delay(callable $callback, $time)
     {
         return self::get()->delay($callback, $time);
     }
@@ -89,7 +89,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function repeat(callable $callback, float $interval)
+    public static function repeat(callable $callback, $interval)
     {
         return self::get()->repeat($callback, $interval);
     }
@@ -128,7 +128,7 @@ final class EventLoop
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function onSignal(int $signo, callable $callback)
+    public static function onSignal($signo, callable $callback)
     {
         return self::get()->onSignal($signo, $callback);
     }
@@ -152,7 +152,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public static function enable(string $eventIdentifier)
+    public static function enable($eventIdentifier)
     {
         self::get()->enable($eventIdentifier);
     }
@@ -164,7 +164,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public static function disable(string $eventIdentifier)
+    public static function disable($eventIdentifier)
     {
         self::get()->disable($eventIdentifier);
     }
@@ -176,7 +176,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public static function cancel(string $eventIdentifier)
+    public static function cancel($eventIdentifier)
     {
         self::get()->cancel($eventIdentifier);
     }
@@ -190,7 +190,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public static function reference(string $eventIdentifier)
+    public static function reference($eventIdentifier)
     {
         self::get()->reference($eventIdentifier);
     }
@@ -205,7 +205,7 @@ final class EventLoop
      * 
      * @return void
      */
-    public static function unreference(string $eventIdentifier)
+    public static function unreference($eventIdentifier)
     {
         self::get()->unreference($eventIdentifier);
     }
