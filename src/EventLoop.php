@@ -39,7 +39,9 @@ final class EventLoop
      */
     public static function get()
     {
-        self::inScope();
+        if (null === self::$driver) {
+            throw new \RuntimeException('Not within the scope of an event loop driver');
+        }
 
         return self::$driver;
     }
@@ -51,9 +53,7 @@ final class EventLoop
      */
     public static function stop()
     {
-        self::inScope();
-
-        self::$driver->stop();
+        self::get()->stop();
     }
 
     /**
@@ -65,9 +65,7 @@ final class EventLoop
      */
     public static function defer(callable $callback)
     {
-        self::inScope();
-
-        return self::$driver->defer($callback);
+        return self::get()->defer($callback);
     }
 
     /**
@@ -80,9 +78,7 @@ final class EventLoop
      */
     public static function delay(callable $callback, float $time)
     {
-        self::inScope();
-
-        return self::$driver->delay($callback, $time);
+        return self::get()->delay($callback, $time);
     }
 
     /**
@@ -95,9 +91,7 @@ final class EventLoop
      */
     public static function repeat(callable $callback, float $interval)
     {
-        self::inScope();
-
-        return self::$driver->repeat($callback, $interval);
+        return self::get()->repeat($callback, $interval);
     }
 
     /**
@@ -110,9 +104,7 @@ final class EventLoop
      */
     public static function onReadable($stream, callable $callback)
     {
-        self::inScope();
-
-        return self::$driver->onReadable($stream, $callback);
+        return self::get()->onReadable($stream, $callback);
     }
 
     /**
@@ -125,9 +117,7 @@ final class EventLoop
      */
     public static function onWritable($stream, callable $callback)
     {
-        self::inScope();
-
-        return self::$driver->onWritable($stream, $callback);
+        return self::get()->onWritable($stream, $callback);
     }
 
     /**
@@ -140,9 +130,7 @@ final class EventLoop
      */
     public static function onSignal(int $signo, callable $callback)
     {
-        self::inScope();
-
-        return self::$driver->onSignal($signo, $callback);
+        return self::get()->onSignal($signo, $callback);
     }
 
     /**
@@ -154,9 +142,7 @@ final class EventLoop
      */
     public static function onError(callable $callback)
     {
-        self::inScope();
-
-        return self::$driver->onError($callback);
+        return self::get()->onError($callback);
     }
 
     /**
@@ -168,9 +154,7 @@ final class EventLoop
      */
     public static function enable(string $eventIdentifier)
     {
-        self::inScope();
-
-        self::$driver->enable($eventIdentifier);
+        self::get()->enable($eventIdentifier);
     }
 
     /**
@@ -182,9 +166,7 @@ final class EventLoop
      */
     public static function disable(string $eventIdentifier)
     {
-        self::inScope();
-
-        self::$driver->disable($eventIdentifier);
+        self::get()->disable($eventIdentifier);
     }
 
     /**
@@ -196,9 +178,7 @@ final class EventLoop
      */
     public static function cancel(string $eventIdentifier)
     {
-        self::inScope();
-
-        self::$driver->cancel($eventIdentifier);
+        self::get()->cancel($eventIdentifier);
     }
 
     /**
@@ -212,9 +192,7 @@ final class EventLoop
      */
     public static function reference(string $eventIdentifier)
     {
-        self::inScope();
-
-        self::$driver->reference($eventIdentifier);
+        self::get()->reference($eventIdentifier);
     }
 
     /**
@@ -229,21 +207,7 @@ final class EventLoop
      */
     public static function unreference(string $eventIdentifier)
     {
-        self::inScope();
-
-        self::$driver->unreference($eventIdentifier);
-    }
-
-    /**
-     * Validate that the event loop is currently within the scope of a driver.
-     * 
-     * @return void
-     */
-    private static function inScope()
-    {
-        if (null === self::$driver) {
-            throw new \RuntimeException('Not within the scope of an event loop driver');
-        }
+        self::get()->unreference($eventIdentifier);
     }
 
     /**
