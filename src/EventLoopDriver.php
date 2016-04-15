@@ -35,7 +35,7 @@ interface EventLoopDriver
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function delay(callable $callback, float $time);
+    public function delay(callable $callback, $time);
 
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
@@ -45,7 +45,7 @@ interface EventLoopDriver
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function repeat(callable $callback, float $interval);
+    public function repeat(callable $callback, $interval);
 
     /**
      * Execute a callback when a stream resource becomes readable.
@@ -75,7 +75,7 @@ interface EventLoopDriver
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onSignal(int $signo, callable $callback);
+    public function onSignal($signo, callable $callback);
 
     /**
      * Execute a callback when an error occurs.
@@ -93,7 +93,7 @@ interface EventLoopDriver
      * 
      * @return void
      */
-    public function enable(string $eventIdentifier);
+    public function enable($eventIdentifier);
 
     /**
      * Disable an event.
@@ -102,7 +102,7 @@ interface EventLoopDriver
      * 
      * @return void
      */
-    public function disable(string $eventIdentifier);
+    public function disable($eventIdentifier);
 
     /**
      * Cancel an event.
@@ -111,7 +111,7 @@ interface EventLoopDriver
      * 
      * @return void
      */
-    public function cancel(string $eventIdentifier);
+    public function cancel($eventIdentifier);
 
     /**
      * Reference an event.
@@ -122,7 +122,7 @@ interface EventLoopDriver
      * 
      * @return void
      */
-    public function reference(string $eventIdentifier);
+    public function reference($eventIdentifier);
 
     /**
      * Unreference an event.
@@ -134,5 +134,5 @@ interface EventLoopDriver
      * 
      * @return void
      */
-    public function unreference(string $eventIdentifier);
+    public function unreference($eventIdentifier);
 }
