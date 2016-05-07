@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use React\Promise\PromiseInterface as ReactPromise;
+
 /**
  * Retrieve the application-wide event reactor instance
  *
@@ -258,6 +260,9 @@ function all(array $promises) {
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
             $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
+            $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->results[$key] = $promise;
             if (--$struct->remaining === 0) {
@@ -319,6 +324,9 @@ function some(array $promises) {
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
             $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
+            $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->results[$key] = $promise;
             if (--$struct->remaining === 0) {
@@ -364,6 +372,9 @@ function any(array $promises) {
 
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
+            $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
             $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->results[$key] = $promise;
@@ -416,6 +427,9 @@ function first(array $promises) {
 
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
+            $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
             $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->remaining = 0;
@@ -478,6 +492,9 @@ function map(array $promises, callable $functor) {
 
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
+            $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
             $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->remaining--;
@@ -565,6 +582,9 @@ function filter(array $promises, callable $functor = null) {
     foreach ($promises as $key => $promise) {
         if ($promise instanceof Promise) {
             $promise->when($onResolve, [$struct, $key]);
+        } else if ($promise instanceof ReactPromise) {
+            $promise = __transformReactPromise($promise);
+            $promise->when($onResolve, [$struct, $key]);
         } else {
             $struct->remaining--;
             try {
@@ -602,7 +622,9 @@ function filter(array $promises, callable $functor = null) {
  * @return \Amp\Promise
  */
 function pipe($promise, callable $functor) {
-    if (!$promise instanceof Promise) {
+    if ($promise instanceof ReactPromise) {
+       $promise = __transformReactPromise($promise);
+    } else if (!$promise instanceof Promise) {
         try {
             return new Success(\call_user_func($functor, $promise));
         } catch (\Throwable $e) {
@@ -650,6 +672,9 @@ function promises(array $values) {
             continue;
         } elseif ($value instanceof Promisor) {
             $values[$key] = $value->promise();
+        } else if ($value instanceof ReactPromise) {
+            $value = __transformReactPromise($value);
+            $values[$key] = $value;
         } else {
             $values[$key] = new Success($value);
         }
@@ -740,6 +765,8 @@ function coroutine(callable $func) {
             return resolve($out);
         } elseif ($out instanceof Promise) {
             return $out;
+        } else if ($out instanceof ReactPromise) {
+            return __transformReactPromise($promise);
         } else {
             return new Success($out);
         }
@@ -785,7 +812,11 @@ function __coroutineAdvance(CoroutineState $cs) {
                 $result = (PHP_MAJOR_VERSION >= 7) ? $cs->generator->getReturn() : null;
                 $cs->promisor->succeed($result);
             }
-        } elseif ($yielded instanceof Promise) {
+        } elseif ($yielded instanceof Promise || $yielded instanceof ReactPromise) {
+            if ($yielded instanceof ReactPromise) {
+                $yielded = __transformReactPromise($yielded);
+            }
+
             if ($cs->nestingLevel < 3) {
                 $cs->nestingLevel++;
                 $yielded->when('Amp\__coroutineSend', $cs);
@@ -882,6 +913,18 @@ function __coroutineSend($error, $result, CoroutineState $cs) {
             $cs->promisor->fail($uncaught);
         });
     }
+}
+
+function __transformReactPromise(ReactPromise $promise) {
+    $deferred = new Deferred;
+
+    $promise->then(function($value) use ($deferred) {
+        $deferred->succeed($value);
+    }, function($error) use ($deferred) {
+        $deferred->fail($error);
+    });
+
+    return $deferred->promise();
 }
 
 /**
