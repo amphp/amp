@@ -752,7 +752,7 @@ function coroutine(callable $func) {
  * Upon resolution the Generator return value is used to succeed the promised result. If an
  * error occurs during coroutine resolution the returned promise fails.
  *
- * @param \Generator|callable $generator A generator or callable the returns a generator to resolve as a coroutine
+ * @param \Generator|callable $generator A generator or callable that returns a generator to resolve as a coroutine
  * @return \Amp\Promise
  */
 function resolve($generator) {

@@ -1,3 +1,8 @@
+1.2.0
+-----
+
+- resolve() now also accepts callables returning Generators.
+
 ### 1.1.1
 
 - Fix memory leak in NativeReactor, retaining an empty array
