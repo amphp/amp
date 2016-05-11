@@ -742,6 +742,35 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
+    public function testResolveAcceptsGeneratorCallable() {
+        \Amp\run(function() {
+            $result = (yield \Amp\resolve(function () {
+                yield new CoroutineResult(42);
+            }));
+            $this->assertSame(42, $result);
+        });
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testResolveNonGeneratorCallableThrows() {
+        \Amp\run(function() {
+            yield \Amp\resolve(function () {
+                return 42;
+            });
+        });
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testResolveInvalidArgumentThrows() {
+        \Amp\run(function() {
+            yield \Amp\resolve(42);
+        });
+    }
+
     public function testResolutionFailuresAreThrownIntoGeneratorCoroutine() {
         $invoked = 0;
         \Amp\run(function () use (&$invoked) {
