@@ -757,9 +757,11 @@ function coroutine(callable $func) {
  */
 function resolve($generator) {
     if (!$generator instanceof \Generator) {
-        if (is_callable($generator)) {
-            $generator = call_user_func($generator);
+        if (!is_callable($generator)) {
+            throw new \InvalidArgumentException('Coroutine to resolve must be callable or instance of Generator');
         }
+
+        $generator = call_user_func($generator);
 
         if (!$generator instanceof \Generator) {
             throw new \LogicException('Callable passed to resolve() did not return an instance of Generator');
