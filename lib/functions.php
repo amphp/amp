@@ -232,7 +232,7 @@ function all(array $promises) {
     }
 
     $struct = new \StdClass;
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->results = [];
     $struct->promisor = new Deferred;
 
@@ -293,7 +293,7 @@ function some(array $promises) {
     }
 
     $struct = new \StdClass;
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->errors = [];
     $struct->results = [];
     $struct->promisor = new Deferred;
@@ -345,7 +345,7 @@ function any(array $promises) {
     }
 
     $struct = new \StdClass;
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->errors = [];
     $struct->results = [];
     $struct->promisor = new Deferred;
@@ -392,7 +392,7 @@ function first(array $promises) {
 
     $struct = new \StdClass;
     $struct->errors = [];
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->promisor = new Deferred;
 
     $onResolve = function ($error, $result, $cbData) {
@@ -440,7 +440,7 @@ function map(array $promises, callable $functor) {
     }
 
     $struct = new \StdClass;
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->results = [];
     $struct->promisor = new Deferred;
     $struct->functor = $functor;
@@ -524,7 +524,7 @@ function filter(array $promises, callable $functor = null) {
     }
 
     $struct = new \StdClass;
-    $struct->remaining = count($promises);
+    $struct->remaining = \count($promises);
     $struct->results = [];
     $struct->promisor = new Deferred;
     $struct->functor = $functor;
@@ -757,11 +757,11 @@ function coroutine(callable $func) {
  */
 function resolve($generator) {
     if (!$generator instanceof \Generator) {
-        if (!is_callable($generator)) {
-            throw new \InvalidArgumentException('Coroutine to resolve must be callable or instance of Generator');
+        if (!\is_callable($generator)) {
+            throw new \InvalidArgumentException("Coroutine to resolve must be callable or instance of Generator");
         }
 
-        $generator = call_user_func($generator);
+        $generator = \call_user_func($generator);
 
         if (!$generator instanceof \Generator) {
             throw new \LogicException('Callable passed to resolve() did not return an instance of Generator');

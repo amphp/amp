@@ -115,7 +115,7 @@ class NativeReactor implements Reactor {
     }
 
     private function enableTimers() {
-        $now = microtime(true);
+        $now = \microtime(true);
         foreach ($this->watchers as $watcherId => $watcher) {
             if (!($watcher->type & Watcher::TIMER) || isset($watcher->nextExecutionAt) || !$watcher->isEnabled) {
                 continue;
@@ -269,7 +269,7 @@ class NativeReactor implements Reactor {
     }
 
     private function executeTimers() {
-        $now = microtime(true);
+        $now = \microtime(true);
         if ($this->isTimerSortNeeded) {
             \asort($this->timerOrder);
             $this->isTimerSortNeeded = false;
@@ -348,13 +348,13 @@ class NativeReactor implements Reactor {
         $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
-        $watcher->msDelay = round(($msDelay / 1000), 3);
+        $watcher->msDelay = \round(($msDelay / 1000), 3);
         $watcher->nextExecutionAt = null;
 
         $this->keepAliveCount += ($watcher->keepAlive && $watcher->isEnabled);
 
         if ($watcher->isEnabled && $this->state > self::STOPPED) {
-            $nextExecutionAt = microtime(true) + $watcher->msDelay;
+            $nextExecutionAt = \microtime(true) + $watcher->msDelay;
             $watcher->nextExecutionAt = $nextExecutionAt;
             $this->timerOrder[$watcherId] = $nextExecutionAt;
             $this->isTimerSortNeeded = true;
@@ -531,7 +531,7 @@ class NativeReactor implements Reactor {
             case Watcher::TIMER_ONCE:
             case Watcher::TIMER_REPEAT:
                 if (!isset($watcher->nextExecutionAt)) {
-                    $watcher->nextExecutionAt = microtime(true) + $watcher->msDelay;
+                    $watcher->nextExecutionAt = \microtime(true) + $watcher->msDelay;
                 }
                 $this->isTimerSortNeeded = true;
                 $this->timerOrder[$watcherId] = $watcher->nextExecutionAt;
