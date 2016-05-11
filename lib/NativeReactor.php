@@ -585,14 +585,14 @@ class NativeReactor implements Reactor {
                 $streamId = $watcher->streamId;
                 unset($this->readWatchers[$streamId][$watcherId]);
                 if (empty($this->readWatchers[$streamId])) {
-                    unset($this->readStreams[$streamId]);
+                    unset($this->readWatchers[$streamId], $this->readStreams[$streamId]);
                 }
                 break;
             case Watcher::IO_WRITER:
                 $streamId = $watcher->streamId;
                 unset($this->writeWatchers[$streamId][$watcherId]);
                 if (empty($this->writeWatchers[$streamId])) {
-                    unset($this->writeStreams[$streamId]);
+                    unset($this->writeWatchers[$streamId], $this->writeStreams[$streamId]);
                 }
                 break;
             case Watcher::IMMEDIATE:

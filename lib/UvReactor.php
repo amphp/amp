@@ -229,8 +229,7 @@ class UvReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = ($isRepeating) ? Watcher::TIMER_REPEAT : Watcher::TIMER_ONCE;
         $watcher->uvHandle = \uv_timer_init($this->loop);
-        $watcher->callback = $this->wrapTimerCallback($watcher, $callback);
-        $watcher->cbData = @$options["cb_data"];
+        $watcher->callback = $this->wrapTimerCallback($watcher, $callback, isset($options["cb_data"]) ? $options["cb_data"] : null);
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $this->keepAliveCount += ($watcher->isEnabled && $watcher->keepAlive);
@@ -251,17 +250,18 @@ class UvReactor implements Reactor {
         return $watcherId;
     }
 
-    private function wrapTimerCallback($watcher, $callback) {
-        return function() use ($watcher, $callback) {
+    private function wrapTimerCallback($watcher, $callback, $cbData) {
+        $watcherId = $watcher->id;
+        $once = $watcher->type === Watcher::TIMER_ONCE;
+        return function() use ($once, $watcherId, $callback, $cbData) {
             try {
-                $watcherId = $watcher->id;
-                $result = \call_user_func($callback, $watcherId, $watcher->cbData);
+                $result = \call_user_func($callback, $watcherId, $cbData);
                 if ($result instanceof \Generator) {
                     resolve($result)->when($this->onCoroutineResolution);
                 }
                 // The isset() check is necessary because the "once" timer
                 // callback may have cancelled itself when it was invoked.
-                if ($watcher->type === Watcher::TIMER_ONCE && isset($this->watchers[$watcherId])) {
+                if ($once && isset($this->watchers[$watcherId])) {
                     $this->clearWatcher($watcherId);
                 }
             } catch (\Throwable $e) {
@@ -326,7 +326,7 @@ class UvReactor implements Reactor {
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = $type;
         $watcher->callback = $callback;
-        $watcher->cbData = @$options["cb_data"];
+        $watcher->cbData = isset($options["cb_data"]) ? $options["cb_data"] : null;
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
 
@@ -386,19 +386,20 @@ class UvReactor implements Reactor {
         $streamId = (int) $stream;
 
         $poll = new \StdClass;
-        $poll->readers = [];
-        $poll->writers = [];
+        $readers = $writers = [];
+        $poll->readers = &$readers;
+        $poll->writers = &$writers;
         $poll->disable = [];
         $poll->flags = 0;
         $poll->handle = \call_user_func($pollInitFunc, $this->loop, $stream);
-        $poll->callback = function($uvHandle, $stat, $events) use ($poll) {
+        $poll->callback = function($uvHandle, $stat, $events) use (&$readers, &$writers) {
             if ($events & \UV::READABLE) {
-                foreach ($poll->readers as $watcher) {
+                foreach ($readers as $watcher) {
                     $this->invokePollWatcher($watcher);
                 }
             }
             if ($events & \UV::WRITABLE) {
-                foreach ($poll->writers as $watcher) {
+                foreach ($writers as $watcher) {
                     $this->invokePollWatcher($watcher);
                 }
             }
@@ -439,12 +440,11 @@ class UvReactor implements Reactor {
         $watcher = new \StdClass;
         $watcher->id = $watcherId = \spl_object_hash($watcher);
         $watcher->type = Watcher::SIGNAL;
-        $watcher->callback = $this->wrapSignalCallback($watcher, $func);
-        $watcher->cbData = @$options["cb_data"];
+        $watcher->signo = $signo;
+        $watcher->callback = $this->wrapSignalCallback($watcher, $func, isset($options["cb_data"]) ? $options["cb_data"] : null);
         $watcher->isEnabled = isset($options["enable"]) ? (bool) $options["enable"] : true;
         $watcher->keepAlive = isset($options["keep_alive"]) ? (bool) $options["keep_alive"] : true;
         $this->keepAliveCount += ($watcher->isEnabled && $watcher->keepAlive);
-        $watcher->signo = $signo;
         $watcher->uvHandle = \uv_signal_init($this->loop);
         if (empty($watcher->keepAlive)) {
             \uv_unref($watcher->uvHandle);
@@ -457,10 +457,12 @@ class UvReactor implements Reactor {
         return $watcherId;
     }
 
-    private function wrapSignalCallback($watcher, $callback) {
-        return function() use ($watcher, $callback) {
+    private function wrapSignalCallback($watcher, $callback, $cbData) {
+        $watcherId = $watcher->id;
+        $signo = $watcher->signo;
+        return function() use ($watcherId, $signo, $callback, $cbData) {
             try {
-                $result = \call_user_func($callback, $watcher->id, $watcher->signo, $watcher->cbData);
+                $result = \call_user_func($callback, $watcherId, $signo, $cbData);
                 if ($result instanceof \Generator) {
                     resolve($result)->when($this->onCoroutineResolution);
                 }

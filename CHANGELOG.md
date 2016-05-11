@@ -1,3 +1,10 @@
+### 1.1.1
+
+- Fix memory leak in NativeReactor, retaining an empty array
+  for each stream.
+- Remove circular references in UvReactor to avoid garbage
+  collector calls.
+
 1.1.0
 -----
 
