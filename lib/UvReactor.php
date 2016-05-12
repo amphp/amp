@@ -339,10 +339,12 @@ class UvReactor implements Reactor {
             $watcher->poll = $poll = $this->makePollHandle($stream);
             if (empty($watcher->keepAlive)) {
                 \uv_unref($poll->handle);
+            } else {
+                $poll->keepAlives++;
             }
         } else {
             $watcher->poll = $poll = $this->streamIdPollMap[$streamId];
-            if ($watcher->keepAlive) {
+            if ($watcher->keepAlive && $poll->keepAlives++ == 0) {
                 \uv_ref($poll->handle);
             }
         }
@@ -391,6 +393,7 @@ class UvReactor implements Reactor {
         $poll->writers = &$writers;
         $poll->disable = [];
         $poll->flags = 0;
+        $poll->keepAlives = 0;
         $poll->handle = \call_user_func($pollInitFunc, $this->loop, $stream);
         $poll->callback = function($uvHandle, $stat, $events) use (&$readers, &$writers) {
             if ($events & \UV::READABLE) {
@@ -499,7 +502,7 @@ class UvReactor implements Reactor {
                     $this->clearPollFromWatcher($watcher, $unref = $watcher->keepAlive);
                     break;
                 case Watcher::SIGNAL:
-                    uv_signal_stop($watcher->uvHandle);
+                    \uv_signal_stop($watcher->uvHandle);
                     break;
                 case Watcher::IMMEDIATE:
                     unset($this->immediates[$watcherId]);
@@ -538,7 +541,7 @@ class UvReactor implements Reactor {
             return;
         }
 
-        if ($unref) {
+        if ($unref && --$poll->keepAlives == 0) {
             \uv_unref($poll->handle);
         }
 
@@ -553,6 +556,9 @@ class UvReactor implements Reactor {
         // Otherwise there are no watchers left for this poll and we should clear it
         $streamId = (int) $watcher->stream;
         unset($this->streamIdPollMap[$streamId]);
+
+        // Force explicit handle close as libuv does not like two handles simultaneously existing for a same file descriptor (it is referenced until handle close callback end)
+        \uv_close($poll->handle);
     }
 
     /**
@@ -604,7 +610,7 @@ class UvReactor implements Reactor {
 
         $poll->disable[$watcherId] = $watcher;
 
-        if ($watcher->keepAlive) {
+        if ($watcher->keepAlive && --$poll->keepAlives == 0) {
             \uv_unref($poll->handle);
         }
 
@@ -677,7 +683,7 @@ class UvReactor implements Reactor {
             $poll->writers[$watcherId] = $watcher;
         }
 
-        if ($watcher->keepAlive) {
+        if ($watcher->keepAlive && $poll->keepAlives++ == 0) {
             \uv_ref($poll->handle);
         }
 

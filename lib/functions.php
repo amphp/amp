@@ -764,7 +764,7 @@ function resolve($generator) {
         $generator = \call_user_func($generator);
 
         if (!$generator instanceof \Generator) {
-            throw new \LogicException('Callable passed to resolve() did not return an instance of Generator');
+            throw new \LogicException("Callable passed to resolve() did not return an instance of Generator");
         }
     }
 

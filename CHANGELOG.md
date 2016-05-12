@@ -1,3 +1,8 @@
+### 1.2.1
+
+- Fix uv_run() potentially exiting earlier than intended,
+  leading to an infinite loop in UvReactor::run().
+
 1.2.0
 -----
 
