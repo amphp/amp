@@ -72,7 +72,7 @@ final class EventLoop
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      * 
      * @param callable $callback The callback to delay.
-     * @param float $time The amount of time, in seconds, to delay the execution for.
+     * @param int $time The amount of time, in milliseconds, to delay the execution for.
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
@@ -85,7 +85,7 @@ final class EventLoop
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      * 
      * @param callable $callback The callback to repeat.
-     * @param float $interval The time interval, in seconds, to wait between executions.
+     * @param int $interval The time interval, in milliseconds, to wait between executions.
      * 
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
