@@ -241,16 +241,21 @@ class NativeReactor implements Reactor {
         if (!@stream_select($r, $w, $e, $sec, $usec)) {
             return;
         }
+        // check for if (!empty($watchers[$streamId])) as they may have been removed during another callback
         foreach ($r as $stream) {
             $streamId = (int) $stream;
-            foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
-                $this->doIoCallback($watcherId, $watcher, $stream);
+            if (!empty($this->readWatchers[$streamId])) {
+                foreach ($this->readWatchers[$streamId] as $watcherId => $watcher) {
+                    $this->doIoCallback($watcherId, $watcher, $stream);
+                }
             }
         }
         foreach ($w as $stream) {
             $streamId = (int) $stream;
-            foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
-                $this->doIoCallback($watcherId, $watcher, $stream);
+            if (!empty($this->writeWatchers[$streamId])) {
+                foreach ($this->writeWatchers[$streamId] as $watcherId => $watcher) {
+                    $this->doIoCallback($watcherId, $watcher, $stream);
+                }
             }
         }
     }

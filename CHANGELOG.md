@@ -1,3 +1,8 @@
+### 1.2.2
+
+- Fix notice in NativeReactor when removing a handle while
+  an event is waiting for it. (Regression fix from 1.1.1)
+
 ### 1.2.1
 
 - Fix uv_run() potentially exiting earlier than intended,
