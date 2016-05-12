@@ -213,8 +213,5 @@ final class EventLoop
     /**
      * Disable construction as this is a static class.
      */
-    public function __construct()
-    {
-        throw new \LogicException('This class is a static class and should not be initialized');
-    }
+    private function __construct() {}
 }
