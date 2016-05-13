@@ -7,9 +7,22 @@ final class Loop
     use Registry;
 
     /**
+     * @var LoopDriverFactory
+     */
+    private static $factory = null;
+
+    /**
      * @var LoopDriver
      */
     private static $driver = null;
+
+    /**
+     * Set the factory to be used to create a driver if none is passed to
+     * self::execute.
+     */
+    public static function setFactory(LoopDriverFactory $factory = null) {
+        self::$factory = $factory;
+    }
 
     /**
      * Execute a callback within the scope of an event loop driver.
@@ -19,11 +32,12 @@ final class Loop
      *
      * @return void
      */
-    public static function execute(callable $callback, LoopDriver $driver)
+    public static function execute(callable $callback, LoopDriver $driver = null)
     {
-        $previousDriver = self::$driver;
+        $driver = $driver ?: $this->createDriver();
         $previousRegistry = self::$registry;
 
+        $previousDriver = self::$driver;
         self::$driver = $driver;
         self::$registry = [];
 
@@ -35,6 +49,20 @@ final class Loop
             self::$driver = $previousDriver;
             self::$registry = $previousRegistry;
         }
+    }
+
+    /**
+     * Create a new driver if a factory is present, otherwise throw.
+     *
+     * @throws \LogicException if no factory is set
+     */
+    private static function createDriver()
+    {
+        if (self::$factory === null) {
+            throw new \LogicException("Can't create an event loop driver without a factory.");
+        }
+
+        return self::$factory->create();
     }
 
     /**
