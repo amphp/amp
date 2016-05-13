@@ -34,7 +34,7 @@ final class Loop
      */
     public static function execute(callable $callback, LoopDriver $driver = null)
     {
-        $driver = $driver ?: $this->createDriver();
+        $driver = $driver ?: self::createDriver();
         $previousRegistry = self::$registry;
 
         $previousDriver = self::$driver;
