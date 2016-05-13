@@ -211,6 +211,18 @@ final class Loop
     }
 
     /**
+     * Check whether an optional feature is supported by the current event loop
+     * driver.
+     *
+     * @param int $feature Loop::FEATURE_* constant
+     *
+     * @return bool
+     */
+    public static function supports($feature) {
+        return self::get()->supports($feature);
+    }
+
+    /**
      * Disable construction as this is a static class.
      */
     private function __construct() {}
