@@ -24,60 +24,66 @@ interface LoopDriver
      * Defer the execution of a callback.
      *
      * @param callable $callback The callback to defer.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function defer(callable $callback);
+    public function defer(callable $callback, $data = null);
 
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
      * @param callable $callback The callback to delay.
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function delay(callable $callback, $delay);
+    public function delay(callable $callback, $delay, $data = null);
 
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
      * @param callable $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function repeat(callable $callback, $interval);
+    public function repeat(callable $callback, $interval, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes readable.
      *
      * @param resource $stream The stream to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onReadable($stream, callable $callback);
+    public function onReadable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes writable.
      *
      * @param resource $stream The stream to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onWritable($stream, callable $callback);
+    public function onWritable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a signal is received.
      *
      * @param int $signo The signal number to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public function onSignal($signo, callable $callback);
+    public function onSignal($signo, callable $callback, $data = null);
 
     /**
      * Execute a callback when an error occurs.

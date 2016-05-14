@@ -60,12 +60,13 @@ final class Loop
      * Defer the execution of a callback.
      *
      * @param callable $callback The callback to defer.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function defer(callable $callback)
+    public static function defer(callable $callback, $data = null)
     {
-        return self::get()->defer($callback);
+        return self::get()->defer($callback, $data);
     }
 
     /**
@@ -73,12 +74,13 @@ final class Loop
      *
      * @param callable $callback The callback to delay.
      * @param int $time The amount of time, in milliseconds, to delay the execution for.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function delay(callable $callback, $time)
+    public static function delay(callable $callback, $time, $data = null)
     {
-        return self::get()->delay($callback, $time);
+        return self::get()->delay($callback, $time, $data);
     }
 
     /**
@@ -86,12 +88,13 @@ final class Loop
      *
      * @param callable $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function repeat(callable $callback, $interval)
+    public static function repeat(callable $callback, $interval, $data = null)
     {
-        return self::get()->repeat($callback, $interval);
+        return self::get()->repeat($callback, $interval, $data);
     }
 
     /**
@@ -99,12 +102,13 @@ final class Loop
      *
      * @param resource $stream The stream to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function onReadable($stream, callable $callback)
+    public static function onReadable($stream, callable $callback, $data = null)
     {
-        return self::get()->onReadable($stream, $callback);
+        return self::get()->onReadable($stream, $callback, $data);
     }
 
     /**
@@ -112,12 +116,13 @@ final class Loop
      *
      * @param resource $stream The stream to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function onWritable($stream, callable $callback)
+    public static function onWritable($stream, callable $callback, $data = null)
     {
-        return self::get()->onWritable($stream, $callback);
+        return self::get()->onWritable($stream, $callback, $data);
     }
 
     /**
@@ -125,12 +130,13 @@ final class Loop
      *
      * @param int $signo The signal number to monitor.
      * @param callable $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
-    public static function onSignal($signo, callable $callback)
+    public static function onSignal($signo, callable $callback, $data = null)
     {
-        return self::get()->onSignal($signo, $callback);
+        return self::get()->onSignal($signo, $callback, $data);
     }
 
     /**
