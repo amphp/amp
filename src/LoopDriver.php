@@ -4,6 +4,8 @@ namespace Interop\Async\EventLoop;
 
 interface LoopDriver
 {
+    const FEATURE_SIGNAL_HANDLING = 0b001;
+
     /**
      * Start the event loop.
      *
@@ -135,4 +137,18 @@ interface LoopDriver
      * @return void
      */
     public function unreference($eventIdentifier);
+
+    /**
+     * Check whether an optional features is supported by this implementation
+     * and system.
+     *
+     * Example: If the implementation can handle signals using PCNTL, but the
+     * PCNTL extension is not available, the feature MUST NOT be marked as
+     * supported.
+     *
+     * @param int $feature FEATURE constant
+     *
+     * @return bool
+     */
+    public function supports($feature);
 }
