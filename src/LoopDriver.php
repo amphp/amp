@@ -26,7 +26,7 @@ interface LoopDriver
      * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to defer.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function defer(callable $callback, $data = null);
 
@@ -37,7 +37,7 @@ interface LoopDriver
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function delay(callable $callback, $delay, $data = null);
 
@@ -48,7 +48,7 @@ interface LoopDriver
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function repeat(callable $callback, $interval, $data = null);
 
@@ -59,7 +59,7 @@ interface LoopDriver
      * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onReadable($stream, callable $callback, $data = null);
 
@@ -70,7 +70,7 @@ interface LoopDriver
      * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onWritable($stream, callable $callback, $data = null);
 
@@ -81,7 +81,7 @@ interface LoopDriver
      * @param callable(int $signo, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onSignal($signo, callable $callback, $data = null);
 
@@ -90,59 +90,59 @@ interface LoopDriver
      *
      * @param callable(\Throwable|\Exception $exception) $callback The callback to execute.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the event.
+     * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onError(callable $callback);
 
     /**
-     * Enable an event.
+     * Enable a watcher.
      *
-     * @param string $eventIdentifier The event identifier.
-     *
-     * @return void
-     */
-    public function enable($eventIdentifier);
-
-    /**
-     * Disable an event.
-     *
-     * @param string $eventIdentifier The event identifier.
+     * @param string $watcherIdentifier The watcher identifier.
      *
      * @return void
      */
-    public function disable($eventIdentifier);
+    public function enable($watcherIdentifier);
 
     /**
-     * Cancel an event.
+     * Disable a watcher.
      *
-     * @param string $eventIdentifier The event identifier.
+     * @param string $watcherIdentifier The watcher identifier.
      *
      * @return void
      */
-    public function cancel($eventIdentifier);
+    public function disable($watcherIdentifier);
 
     /**
-     * Reference an event.
+     * Cancel a watcher.
+     *
+     * @param string $watcherIdentifier The watcher identifier.
+     *
+     * @return void
+     */
+    public function cancel($watcherIdentifier);
+
+    /**
+     * Reference a watcher.
      *
      * This will keep the event loop alive whilst the event is still being monitored. Events have this state by default.
      *
-     * @param string $eventIdentifier The event identifier.
+     * @param string $watcherIdentifier The watcher identifier.
      *
      * @return void
      */
-    public function reference($eventIdentifier);
+    public function reference($watcherIdentifier);
 
     /**
-     * Unreference an event.
+     * Unreference a watcher.
      *
      * The event loop should exit the run method when only unreferenced events are still being monitored. Events are all
      * referenced by default.
      *
-     * @param string $eventIdentifier The event identifier.
+     * @param string $watcherIdentifier The watcher identifier.
      *
      * @return void
      */
-    public function unreference($eventIdentifier);
+    public function unreference($watcherIdentifier);
 
     /**
      * Check whether an optional features is supported by this implementation
