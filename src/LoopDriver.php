@@ -23,7 +23,7 @@ interface LoopDriver
     /**
      * Defer the execution of a callback.
      *
-     * @param callable $callback The callback to defer.
+     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to defer.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
@@ -33,7 +33,7 @@ interface LoopDriver
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
-     * @param callable $callback The callback to delay.
+     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to delay.
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -44,7 +44,7 @@ interface LoopDriver
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
-     * @param callable $callback The callback to repeat.
+     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -56,7 +56,7 @@ interface LoopDriver
      * Execute a callback when a stream resource becomes readable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable $callback The callback to execute.
+     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
@@ -67,7 +67,7 @@ interface LoopDriver
      * Execute a callback when a stream resource becomes writable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable $callback The callback to execute.
+     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
@@ -78,7 +78,7 @@ interface LoopDriver
      * Execute a callback when a signal is received.
      *
      * @param int $signo The signal number to monitor.
-     * @param callable $callback The callback to execute.
+     * @param callable(int $signo, mixed $data, string $watcherIdentifier) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
@@ -88,7 +88,7 @@ interface LoopDriver
     /**
      * Execute a callback when an error occurs.
      *
-     * @param callable $callback The callback to execute.
+     * @param callable(\Throwable|\Exception $exception) $callback The callback to execute.
      *
      * @return string An identifier that can be used to cancel, enable or disable the event.
      */
