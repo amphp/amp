@@ -54,7 +54,7 @@ final class Loop
     /**
      * Create a new driver if a factory is present, otherwise throw.
      *
-     * @throws \LogicException if no factory is set
+     * @throws \LogicException if no factory is set or no driver returned from factory
      */
     private static function createDriver()
     {
@@ -62,7 +62,13 @@ final class Loop
             throw new \LogicException("Can't create an event loop driver without a factory.");
         }
 
-        return self::$factory->create();
+        $driver = self::$factory->create();
+
+        if (!$driver instanceof LoopDriver) {
+            throw new \LogicException("LoopDriverFactory didn't return a LoopDriver.");
+        }
+
+        return $driver;
     }
 
     /**
