@@ -1,6 +1,6 @@
 <?php
 
-use Interop\Async\EventLoop;
+use Interop\Async;
 
 /**
  * Must be thrown if an optional feature is not supported by the current driver
