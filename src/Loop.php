@@ -4,15 +4,12 @@ namespace Interop\Async;
 
 final class Loop
 {
+    use Registry;
+
     /**
      * @var LoopDriver
      */
     private static $driver = null;
-
-    /**
-     * @var array
-     */
-    private static $registry = [];
 
     /**
      * Execute a callback within the scope of an event loop driver.
@@ -62,49 +59,6 @@ final class Loop
     public static function stop()
     {
         self::get()->stop();
-    }
-
-    /**
-     * Stores information in the loop bound registry. This can be used to store
-     * loop bound information. Stored information is package private.
-     * Packages MUST NOT retrieve the stored state of other packages.
-     *
-     * Therefore packages SHOULD use the following prefix to keys:
-     * `vendor.package.`
-     *
-     * @param string $key namespaced storage key
-     * @param mixed $value the value to be stored
-     *
-     * @return void
-     */
-    public static function storeState($key, $value)
-    {
-        if (self::$driver === null) {
-            throw new \RuntimeException('Not within the scope of an event loop driver');
-        }
-
-        self::$registry[$key] = $value;
-    }
-
-    /**
-     * Fetches information stored bound to the loop. Stored information is
-     * package private. Packages MUST NOT retrieve the stored state of
-     * other packages.
-     *
-     * Therefore packages SHOULD use the following prefix to keys:
-     * `vendor.package.`
-     *
-     * @param string $key namespaced storage key
-     *
-     * @return mixed previously stored value or null if it doesn't exist
-     */
-    public static function fetchState($key)
-    {
-        if (self::$driver === null) {
-            throw new \RuntimeException('Not within the scope of an event loop driver');
-        }
-
-        return isset(self::$registry[$key]) ? self::$registry[$key] : null;
     }
 
     /**
