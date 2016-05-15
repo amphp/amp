@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\EventLoop;
+namespace Interop\Async;
 
 trait Registry {
     /**
