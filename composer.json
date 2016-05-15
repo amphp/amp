@@ -10,5 +10,10 @@
         "psr-4": {
             "Interop\\Async\\": "src"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Interop\\Async\\": "test"
+        }
     }
 }
