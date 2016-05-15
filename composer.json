@@ -1,6 +1,6 @@
 {
     "name": "async-interop/event-loop",
-    "description": "An event loop interface for interoperability.",
+    "description": "An event loop interface",
     "keywords": ["event", "loop", "async", "interop"],
     "license": "MIT",
     "require": {
