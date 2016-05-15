@@ -33,7 +33,7 @@ final class Loop
             self::$driver->run();
         } finally {
             self::$driver = $previousDriver;
-            self::$registry = $registry;
+            self::$registry = $previousRegistry;
         }
     }
 
