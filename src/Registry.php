@@ -2,7 +2,8 @@
 
 namespace Interop\Async;
 
-trait Registry {
+trait Registry
+{
     /**
      * @var array
      */

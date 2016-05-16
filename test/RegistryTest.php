@@ -2,10 +2,12 @@
 
 namespace Interop\Async;
 
-class RegistryTest extends \PHPUnit_Framework_TestCase {
+class RegistryTest extends \PHPUnit_Framework_TestCase
+{
     use Registry;
 
-    protected function setUp() {
+    protected function setUp()
+    {
         self::$registry = null;
     }
 
@@ -13,7 +15,8 @@ class RegistryTest extends \PHPUnit_Framework_TestCase {
      * @test
      * @expectedException \RuntimeException
      */
-    public function fetchfailsOutsideOfLoop() {
+    public function fetchfailsOutsideOfLoop()
+    {
         self::fetchState("foobar");
     }
 
@@ -21,12 +24,14 @@ class RegistryTest extends \PHPUnit_Framework_TestCase {
      * @test
      * @expectedException \RuntimeException
      */
-    public function storefailsOutsideOfLoop() {
+    public function storefailsOutsideOfLoop()
+    {
         self::fetchState("store");
     }
 
     /** @test */
-    public function defaultsToNull() {
+    public function defaultsToNull()
+    {
         // emulate we're in an event loop…
         self::$registry = [];
         $this->assertNull(self::fetchState("foobar"));
@@ -36,7 +41,8 @@ class RegistryTest extends \PHPUnit_Framework_TestCase {
      * @test
      * @dataProvider provideValues
      */
-    public function fetchesStoredValue($value) {
+    public function fetchesStoredValue($value)
+    {
         // emulate we're in an event loop…
         self::$registry = [];
 
@@ -46,7 +52,8 @@ class RegistryTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame($value, self::fetchState("foobar"));
     }
 
-    public function provideValues() {
+    public function provideValues()
+    {
         return [
             ["string"],
             [42],
