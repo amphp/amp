@@ -18,10 +18,12 @@ final class Loop
 
     /**
      * Set the factory to be used to create a driver if none is passed to
-     * self::execute.
+     * self::execute. A default driver will be created if none exists yet
+     * to support synchronous waits in traditional applications.
      */
     public static function setFactory(LoopDriverFactory $factory = null) {
         self::$factory = $factory;
+        self::$driver = self::$driver ?: self::createDriver();
     }
 
     /**
