@@ -86,15 +86,6 @@ interface LoopDriver
     public function onSignal($signo, callable $callback, $data = null);
 
     /**
-     * Execute a callback when an error occurs.
-     *
-     * @param callable(\Throwable|\Exception $exception) $callback The callback to execute.
-     *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
-     */
-    public function onError(callable $callback);
-
-    /**
      * Enable a watcher.
      *
      * @param string $watcherId The watcher identifier.
@@ -143,6 +134,17 @@ interface LoopDriver
      * @return void
      */
     public function unreference($watcherId);
+
+    /**
+     * Set a callback to be executed when an error occurs.
+     *
+     * Subsequent calls to this method will overwrite the previous handler.
+     *
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current handler.
+     *
+     * @return void
+     */
+    public function setErrorHandler(callable $callback = null);
 
     /**
      * Check whether an optional features is supported by this implementation

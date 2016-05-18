@@ -145,18 +145,6 @@ final class Loop
     }
 
     /**
-     * Execute a callback when an error occurs.
-     *
-     * @param callable(\Throwable|\Exception $exception) $callback The callback to execute.
-     *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
-     */
-    public static function onError(callable $callback)
-    {
-        return self::get()->onError($callback);
-    }
-
-    /**
      * Enable a watcher.
      *
      * @param string $watcherId The watcher identifier.
@@ -220,6 +208,20 @@ final class Loop
     public static function unreference($watcherId)
     {
         self::get()->unreference($watcherId);
+    }
+
+    /**
+     * Set a callback to be executed when an error occurs.
+     *
+     * Subsequent calls to this method will overwrite the previous handler.
+     *
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current handler.
+     *
+     * @return void
+     */
+    public static function setErrorHandler(callable $callback = null)
+    {
+        self::get()->setErrorHandler($callback);
     }
 
     /**
