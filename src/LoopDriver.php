@@ -151,4 +151,13 @@ interface LoopDriver
      * @return bool
      */
     public function supports($feature);
+
+    /**
+     * Get the underlying loop handle.
+     *
+     * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver
+     *
+     * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
+     */
+    public static function getLoopHandle();
 }
