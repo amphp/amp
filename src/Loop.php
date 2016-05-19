@@ -74,14 +74,14 @@ final class Loop
     private static function createDriver()
     {
         if (self::$factory === null) {
-            throw new \LogicException("Can't create an event loop driver without a factory.");
+            throw new \LogicException("No loop driver factory set; Either pass a driver to Loop::execute or set a factory.");
         }
 
         $driver = self::$factory->create();
 
         if (!$driver instanceof LoopDriver) {
             $type = is_object($driver) ? "an instance of " . get_class($driver) : gettype($driver);
-            throw new \LogicException("Factory returned {$type}, but must return an instance of LoopDriver.");
+            throw new \LogicException("Loop driver factory returned {$type}, but must return an instance of LoopDriver.");
         }
 
         return $driver;
