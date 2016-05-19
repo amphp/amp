@@ -1,0 +1,29 @@
+{
+    "name": "amphp/event-loop",
+    "description": "",
+    "keywords": [
+        "asynchronous",
+        "async",
+        "loop",
+        "event",
+        "reactor"
+    ],
+    "homepage": "http://amphp.org",
+    "license": "MIT",
+    "require": {
+        "async-interop/event-loop": "dev-master"
+    },
+    "provide": {
+        "async-interop/event-loop-implementation": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "Amp\\Loop\\": "lib"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amp\\Test\\Loop\\": "test"
+        }
+    }
+}
