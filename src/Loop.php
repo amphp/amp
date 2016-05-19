@@ -4,6 +4,8 @@ namespace Interop\Async;
 
 final class Loop
 {
+    use Registry;
+
     /**
      * @var LoopDriver
      */
@@ -20,8 +22,10 @@ final class Loop
     public static function execute(callable $callback, LoopDriver $driver)
     {
         $previousDriver = self::$driver;
+        $previousRegistry = self::$registry;
 
         self::$driver = $driver;
+        self::$registry = [];
 
         try {
             $callback();
@@ -29,6 +33,7 @@ final class Loop
             self::$driver->run();
         } finally {
             self::$driver = $previousDriver;
+            self::$registry = $previousRegistry;
         }
     }
 
