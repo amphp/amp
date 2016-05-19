@@ -16,7 +16,6 @@ cache:
     - $HOME/.composer/cache
 
 install:
-  - phpenv config-rm xdebug.ini
   - composer install
   - composer show --installed
 
