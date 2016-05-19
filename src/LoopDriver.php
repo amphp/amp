@@ -23,7 +23,7 @@ interface LoopDriver
     /**
      * Defer the execution of a callback.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to defer.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -33,7 +33,7 @@ interface LoopDriver
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to delay.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -44,7 +44,7 @@ interface LoopDriver
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to repeat.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -56,7 +56,7 @@ interface LoopDriver
      * Execute a callback when a stream resource becomes readable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -67,7 +67,7 @@ interface LoopDriver
      * Execute a callback when a stream resource becomes writable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -78,7 +78,7 @@ interface LoopDriver
      * Execute a callback when a signal is received.
      *
      * @param int $signo The signal number to monitor.
-     * @param callable(int $signo, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -97,40 +97,40 @@ interface LoopDriver
     /**
      * Enable a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function enable($watcherIdentifier);
+    public function enable($watcherId);
 
     /**
      * Disable a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function disable($watcherIdentifier);
+    public function disable($watcherId);
 
     /**
      * Cancel a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function cancel($watcherIdentifier);
+    public function cancel($watcherId);
 
     /**
      * Reference a watcher.
      *
      * This will keep the event loop alive whilst the event is still being monitored. Events have this state by default.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function reference($watcherIdentifier);
+    public function reference($watcherId);
 
     /**
      * Unreference a watcher.
@@ -138,11 +138,11 @@ interface LoopDriver
      * The event loop should exit the run method when only unreferenced events are still being monitored. Events are all
      * referenced by default.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function unreference($watcherIdentifier);
+    public function unreference($watcherId);
 
     /**
      * Check whether an optional features is supported by this implementation

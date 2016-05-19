@@ -59,7 +59,7 @@ final class Loop
     /**
      * Defer the execution of a callback.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to defer.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -72,7 +72,7 @@ final class Loop
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to delay.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param int $time The amount of time, in milliseconds, to delay the execution for.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -86,7 +86,7 @@ final class Loop
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
-     * @param callable(mixed $data, string $watcherIdentifier) $callback The callback to repeat.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -101,7 +101,7 @@ final class Loop
      * Execute a callback when a stream resource becomes readable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -115,7 +115,7 @@ final class Loop
      * Execute a callback when a stream resource becomes writable.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(resource $stream, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -129,7 +129,7 @@ final class Loop
      * Execute a callback when a signal is received.
      *
      * @param int $signo The signal number to monitor.
-     * @param callable(int $signo, mixed $data, string $watcherIdentifier) $callback The callback to execute.
+     * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -154,37 +154,37 @@ final class Loop
     /**
      * Enable a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function enable($watcherIdentifier)
+    public static function enable($watcherId)
     {
-        self::get()->enable($watcherIdentifier);
+        self::get()->enable($watcherId);
     }
 
     /**
      * Disable a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function disable($watcherIdentifier)
+    public static function disable($watcherId)
     {
-        self::get()->disable($watcherIdentifier);
+        self::get()->disable($watcherId);
     }
 
     /**
      * Cancel a watcher.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function cancel($watcherIdentifier)
+    public static function cancel($watcherId)
     {
-        self::get()->cancel($watcherIdentifier);
+        self::get()->cancel($watcherId);
     }
 
     /**
@@ -193,13 +193,13 @@ final class Loop
      * This will keep the event loop alive whilst the event is still being monitored. Watchers have this state by
      * default.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function reference($watcherIdentifier)
+    public static function reference($watcherId)
     {
-        self::get()->reference($watcherIdentifier);
+        self::get()->reference($watcherId);
     }
 
     /**
@@ -208,13 +208,13 @@ final class Loop
      * The event loop should exit the run method when only unreferenced watchers are still being monitored. Events are
      * all referenced by default.
      *
-     * @param string $watcherIdentifier The watcher identifier.
+     * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function unreference($watcherIdentifier)
+    public static function unreference($watcherId)
     {
-        self::get()->unreference($watcherIdentifier);
+        self::get()->unreference($watcherId);
     }
 
     /**
