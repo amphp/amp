@@ -1,5 +1,5 @@
 {
-    "name": "amphp/event-loop",
+    "name": "amphp/loop",
     "description": "",
     "keywords": [
         "asynchronous",
