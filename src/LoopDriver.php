@@ -147,20 +147,6 @@ interface LoopDriver
     public function setErrorHandler(callable $callback = null);
 
     /**
-     * Check whether an optional features is supported by this implementation
-     * and system.
-     *
-     * Example: If the implementation can handle signals using PCNTL, but the
-     * PCNTL extension is not available, the feature MUST NOT be marked as
-     * supported.
-     *
-     * @param int $feature FEATURE constant
-     *
-     * @return bool
-     */
-    public function supports($feature);
-
-    /**
      * Get the underlying loop handle.
      *
      * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver
