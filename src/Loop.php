@@ -7,9 +7,34 @@ final class Loop
     use Registry;
 
     /**
+     * @var LoopDriverFactory
+     */
+    private static $factory = null;
+
+    /**
      * @var LoopDriver
      */
     private static $driver = null;
+
+    /**
+     * @var bool
+     */
+    private static $running = false;
+
+    /**
+     * Set the factory to be used to create a driver if none is passed to
+     * self::execute. A default driver will be created if none is running
+     * to support synchronous waits in traditional applications.
+     */
+    public static function setFactory(LoopDriverFactory $factory = null)
+    {
+        self::$factory = $factory;
+
+        if (!self::$running) {
+            self::$driver = self::createDriver();
+            self::$registry = [];
+        }
+    }
 
     /**
      * Execute a callback within the scope of an event loop driver.
@@ -19,13 +44,16 @@ final class Loop
      *
      * @return void
      */
-    public static function execute(callable $callback, LoopDriver $driver)
+    public static function execute(callable $callback, LoopDriver $driver = null)
     {
-        $previousDriver = self::$driver;
         $previousRegistry = self::$registry;
+        $previousDriver = self::$driver;
+
+        $driver = $driver ?: self::createDriver();
 
         self::$driver = $driver;
         self::$registry = [];
+        self::$running = true;
 
         try {
             $callback();
@@ -34,7 +62,29 @@ final class Loop
         } finally {
             self::$driver = $previousDriver;
             self::$registry = $previousRegistry;
+            self::$running = false;
         }
+    }
+
+    /**
+     * Create a new driver if a factory is present, otherwise throw.
+     *
+     * @throws \LogicException if no factory is set or no driver returned from factory
+     */
+    private static function createDriver()
+    {
+        if (self::$factory === null) {
+            throw new \LogicException("No loop driver factory set; Either pass a driver to Loop::execute or set a factory.");
+        }
+
+        $driver = self::$factory->create();
+
+        if (!$driver instanceof LoopDriver) {
+            $type = is_object($driver) ? "an instance of " . get_class($driver) : gettype($driver);
+            throw new \LogicException("Loop driver factory returned {$type}, but must return an instance of LoopDriver.");
+        }
+
+        return $driver;
     }
 
     /**
@@ -45,7 +95,7 @@ final class Loop
     public static function get()
     {
         if (null === self::$driver) {
-            throw new \RuntimeException('Not within the scope of an event loop driver');
+            throw new \RuntimeException('Missing driver; Neither in Loop::execute nor factory set.');
         }
 
         return self::$driver;
@@ -232,12 +282,16 @@ final class Loop
      *
      * @return bool
      */
-    public static function supports($feature) {
+    public static function supports($feature)
+    {
         return self::get()->supports($feature);
     }
 
     /**
      * Disable construction as this is a static class.
      */
-    private function __construct() {}
+    private function __construct()
+    {
+        // intentionally left blank
+    }
 }
