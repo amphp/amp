@@ -157,7 +157,9 @@ interface LoopDriver
      *
      * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver
      *
+     * Note: This function is *not* exposed in the Loop class; users shall access it directly on the respective loop instance.
+     *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
      */
-    public static function getLoopHandle();
+    public static function getHandle();
 }

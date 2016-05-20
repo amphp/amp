@@ -223,16 +223,6 @@ final class Loop
     }
 
     /**
-     * Get the underlying loop handle.
-     *
-     * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
-     */
-    public static function getLoopHandle()
-    {
-        return self::get()->getLoopHandle();
-    }
-
-    /**
      * Disable construction as this is a static class.
      */
     private function __construct() {}
