@@ -1,0 +1,25 @@
+language: php
+
+php:
+  - 5.5
+  - 5.6
+  - 7.0
+  - nightly
+  - hhvm
+
+matrix:
+  allow_failures:
+   - php: nightly
+  fast_finish: true
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+install:
+  - composer install
+  - composer show
+
+script:
+  - find -name "*.php" -not -path "./vendor/*" -print0 | xargs -n 1 -0 php -l
+  - $(php -r 'if (PHP_MAJOR_VERSION >= 7) echo "phpdbg -qrr"; else echo "php";') vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
