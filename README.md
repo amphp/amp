@@ -37,5 +37,6 @@ The functionality exposed by this interface should include the ability to:
 * [Bob Weinand](https://github.com/bwoebi)
 * [Cees-Jan Kiewiet](https://github.com/WyriHaximus)
 * [Christopher Pitt](https://github.com/assertchris)
+* [Daniel Lowrey](https://github.com/rdlowrey)
 * [Niklas Keller](https://github.com/kelunik)
 * [Stephen M. Coakley](https://github.com/coderstephen)
