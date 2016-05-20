@@ -227,7 +227,8 @@ final class Loop
      *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
      */
-    public static function getLoopHandle() {
+    public static function getLoopHandle()
+    {
         return self::get()->getLoopHandle();
     }
 
