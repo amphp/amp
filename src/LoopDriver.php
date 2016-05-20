@@ -7,6 +7,10 @@ interface LoopDriver
     /**
      * Start the event loop.
      *
+     * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
+     * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
+     * error handler or exceptions that would be passed to an error handler but non exists to handle them.
+     *
      * @return void
      */
     public function run();
@@ -14,12 +18,17 @@ interface LoopDriver
     /**
      * Stop the event loop.
      *
+     * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
+     * to stop MUST be ignored and MUST NOT raise an exception.
+     *
      * @return void
      */
     public function stop();
 
     /**
      * Defer the execution of a callback.
+     *
+     * The deferred callable MUST be executed in the next tick of the event loop.
      *
      * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
@@ -29,7 +38,9 @@ interface LoopDriver
     public function defer(callable $callback, $data = null);
 
     /**
-     * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
+     * Delay the execution of a callback.
+     *
+     * The time delay is approximate and accuracy is not guaranteed.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
@@ -40,7 +51,9 @@ interface LoopDriver
     public function delay($delay, callable $callback, $data = null);
 
     /**
-     * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
+     * Repeatedly execute a callback.
+     *
+     * The interval between executions is approximate and accuracy is not guaranteed.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
@@ -113,7 +126,8 @@ interface LoopDriver
     /**
      * Reference a watcher.
      *
-     * This will keep the event loop alive whilst the event is still being monitored. Events have this state by default.
+     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
+     * default.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -124,8 +138,8 @@ interface LoopDriver
     /**
      * Unreference a watcher.
      *
-     * The event loop should exit the run method when only unreferenced events are still being monitored. Events are all
-     * referenced by default.
+     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Watchers
+     * are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
      *

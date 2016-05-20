@@ -233,7 +233,7 @@ final class Loop
     /**
      * Reference a watcher.
      *
-     * This will keep the event loop alive whilst the event is still being monitored. Watchers have this state by
+     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
      * default.
      *
      * @param string $watcherId The watcher identifier.
@@ -248,8 +248,8 @@ final class Loop
     /**
      * Unreference a watcher.
      *
-     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Events are
-     * all referenced by default.
+     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Watchers
+     * are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
      *
