@@ -157,10 +157,8 @@ interface LoopDriver
      *      "on_readable"   => ["enabled" => int, "disabled" => int],
      *      "on_writable"   => ["enabled" => int, "disabled" => int],
      *      "on_signal"     => ["enabled" => int, "disabled" => int],
-     *      "keep_alive"    => int,
+     *      "watchers"      => ["referenced" => int, "unreferenced" => int],
      *  ];
-     *
-     * keep_alive refers to the number of referenced watchers.
      *
      * Implementations MAY optionally add more information in the array but
      * at minimum the above key => value format MUST always be provided.
