@@ -19,7 +19,7 @@ class Success implements Awaitable {
     public function __construct($value)
     {
         if ($value instanceof Awaitable) {
-            throw new \InvalidArgumentException('Cannot use an awaitable as success value');
+            throw new \InvalidArgumentException("Cannot use an awaitable as success value");
         }
 
         $this->value = $value;

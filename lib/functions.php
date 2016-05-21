@@ -57,7 +57,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
             $generator = \call_user_func_array($worker, \func_get_args());
 
             if (!$generator instanceof \Generator) {
-                throw new \LogicException('The callable did not return a Generator');
+                throw new \LogicException("The callable did not return a Generator");
             }
 
             return new Coroutine($generator);
@@ -262,7 +262,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
             };
 
             if (\count($args) < $index) {
-                throw new \InvalidArgumentException('Too few arguments given to function');
+                throw new \InvalidArgumentException("Too few arguments given to function");
             }
 
             \array_splice($args, $index, 0, [$callback]);
@@ -282,8 +282,8 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
      */
     function adapt($thenable) {
-        if (!\is_object($thenable) || !\method_exists($thenable, 'then')) {
-            return fail(new \InvalidArgumentException('Must provide an object with a then() method'));
+        if (!\is_object($thenable) || !\method_exists($thenable, "then")) {
+            return fail(new \InvalidArgumentException("Must provide an object with a then() method"));
         }
         
         return new Promise(function (callable $resolve, callable $fail) use ($thenable) {
@@ -401,7 +401,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      */
     function any(array $awaitables) {
         if (empty($awaitables)) {
-            return fail(new \InvalidArgumentException('No awaitables provided'));
+            return fail(new \InvalidArgumentException("No awaitables provided"));
         }
 
         $deferred = new Deferred();
@@ -447,7 +447,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
         $pending = \count($awaitables);
         
         if ($required > $pending) {
-            return fail(new \InvalidArgumentException('Too few awaitables provided'));
+            return fail(new \InvalidArgumentException("Too few awaitables provided"));
         }
 
         $deferred = new Deferred();
@@ -490,7 +490,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      */
     function choose(array $awaitables) {
         if (empty($awaitables)) {
-            return fail(new \InvalidArgumentException('No awaitables provided'));
+            return fail(new \InvalidArgumentException("No awaitables provided"));
         }
 
         $deferred = new Deferred();

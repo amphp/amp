@@ -18,7 +18,7 @@ class Failure implements Awaitable {
      */
     public function __construct($exception) {
         if (!$exception instanceof \Throwable && !$exception instanceof \Exception) {
-            throw new \InvalidArgumentException('Failure reason must be an exception');
+            throw new \InvalidArgumentException("Failure reason must be an exception");
         }
 
         $this->exception = $exception;

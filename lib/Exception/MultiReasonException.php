@@ -14,7 +14,7 @@ class MultiReasonException extends \Exception {
      */
     public function __construct(array $reasons, $message = null)
     {
-        parent::__construct($message ?: 'Too many awaitables were rejected');
+        parent::__construct($message ?: "Too many awaitables were rejected");
 
         $this->reasons = $reasons;
     }
