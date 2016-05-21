@@ -230,8 +230,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function lazy(callable $promisor /* ...$args */)
-    {
+    function lazy(callable $promisor /* ...$args */) {
         $args = \array_slice(\func_get_args(), 1);
 
         if (empty($args)) {
@@ -252,8 +251,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return callable
      */
-    function promisify(callable $worker, $index = 0)
-    {
+    function promisify(callable $worker, $index = 0) {
         return function (/* ...$args */) use ($worker, $index) {
             $args = \func_get_args();
 
@@ -283,8 +281,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
      */
-    function adapt($thenable)
-    {
+    function adapt($thenable) {
         if (!\is_object($thenable) || !\method_exists($thenable, 'then')) {
             return fail(new \InvalidArgumentException('Must provide an object with a then() method'));
         }
@@ -306,8 +303,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return callable
      */
-    function lift(callable $worker)
-    {
+    function lift(callable $worker) {
         /**
          * @param mixed ...$args Awaitables or values.
          *
@@ -335,8 +331,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function settle(array $awaitables)
-    {
+    function settle(array $awaitables) {
         if (empty($awaitables)) {
             return resolve([]);
         }
@@ -368,8 +363,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function all(array $awaitables)
-    {
+    function all(array $awaitables) {
         if (empty($awaitables)) {
             return resolve([]);
         }
@@ -405,8 +399,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function any(array $awaitables)
-    {
+    function any(array $awaitables) {
         if (empty($awaitables)) {
             return fail(new \InvalidArgumentException('No awaitables provided'));
         }
@@ -444,8 +437,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function some(array $awaitables, $required)
-    {
+    function some(array $awaitables, $required) {
         $required = (int) $required;
         
         if (0 >= $required) {
@@ -496,8 +488,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable
      */
-    function choose(array $awaitables)
-    {
+    function choose(array $awaitables) {
         if (empty($awaitables)) {
             return fail(new \InvalidArgumentException('No awaitables provided'));
         }
@@ -530,8 +521,7 @@ if (!\function_exists(__NAMESPACE__ . '\resolve')) {
      *
      * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
      */
-    function map(callable $callback /* array ...$awaitables */)
-    {
+    function map(callable $callback /* array ...$awaitables */) {
         $args = \func_get_args();
         $args[0] = lift($args[0]);
 

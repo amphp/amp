@@ -46,8 +46,7 @@ class WhenQueue {
      *
      * @param callable $callback
      */
-    public function push(callable $callback)
-    {
+    public function push(callable $callback) {
         if ($callback instanceof self) {
             $this->queue = \array_merge($this->queue, $callback->queue);
             return;

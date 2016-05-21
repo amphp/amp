@@ -16,8 +16,7 @@ class Failure implements Awaitable {
      *
      * @throws \InvalidArgumentException If a non-exception is given.
      */
-    public function __construct($exception)
-    {
+    public function __construct($exception) {
         if (!$exception instanceof \Throwable && !$exception instanceof \Exception) {
             throw new \InvalidArgumentException('Failure reason must be an exception');
         }

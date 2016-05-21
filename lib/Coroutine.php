@@ -29,8 +29,7 @@ final class Coroutine implements Awaitable {
     /**
      * @param \Generator $generator
      */
-    public function __construct(\Generator $generator)
-    {
+    public function __construct(\Generator $generator) {
         $this->generator = $generator;
 
         /**
@@ -77,8 +76,7 @@ final class Coroutine implements Awaitable {
      * @param mixed $yielded Value yielded from generator.
      * @param mixed $last Prior resolved value. No longer needed when PHP 5.x support is dropped.
      */
-    private function next($yielded, $last = null)
-    {
+    private function next($yielded, $last = null) {
         if (!$this->generator->valid()) {
             $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : $last);
             return;
