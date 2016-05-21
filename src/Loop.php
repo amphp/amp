@@ -275,6 +275,34 @@ final class Loop
     }
 
     /**
+     * Retrieve an associative array of information about the event loop driver.
+     *
+     * The returned array MUST contain the following data describing the driver's
+     * currently registered watchers:
+     *
+     *  [
+     *      "defer"         => ["enabled" => int, "disabled" => int],
+     *      "delay"         => ["enabled" => int, "disabled" => int],
+     *      "repeat"        => ["enabled" => int, "disabled" => int],
+     *      "on_readable"   => ["enabled" => int, "disabled" => int],
+     *      "on_writable"   => ["enabled" => int, "disabled" => int],
+     *      "on_signal"     => ["enabled" => int, "disabled" => int],
+     *      "keep_alive"    => int,
+     *  ];
+     *
+     * keep_alive refers to the number of referenced watchers.
+     *
+     * Implementations MAY optionally add more information in the array but
+     * at minimum the above key => value format MUST always be provided.
+     *
+     * @return array
+     */
+    public function info()
+    {
+        self::get()->info();
+    }
+
+    /**
      * Disable construction as this is a static class.
      */
     private function __construct()
