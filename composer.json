@@ -1,0 +1,37 @@
+{
+    "name": "amphp/awaitable",
+    "description": "",
+    "keywords": [
+        "asynchronous",
+        "async",
+        "awaitable",
+        "coroutine",
+        "promise",
+        "future",
+        "delayed"
+    ],
+    "homepage": "http://amphp.org",
+    "license": "MIT",
+    "require": {
+        "async-interop/awaitable": "dev-master",
+        "async-interop/event-loop": "dev-master",
+        "async-interop/event-loop-implementation": "dev-master"
+    },
+    "require-dev": {
+        "amphp/loop": "dev-master"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Amp\\Awaitable\\": "lib"
+        },
+        "files": [
+            "lib/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amp\\Test\\Awaitable\\": "test"
+        }
+    }
+}
