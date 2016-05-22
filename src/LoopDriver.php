@@ -31,24 +31,24 @@ interface LoopDriver
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function delay(callable $callback, $delay, $data = null);
+    public function delay($delay, callable $callback, $data = null);
 
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function repeat(callable $callback, $interval, $data = null);
+    public function repeat($interval, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes readable.
