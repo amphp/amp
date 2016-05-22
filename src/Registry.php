@@ -2,6 +2,12 @@
 
 namespace Interop\Async;
 
+/**
+ * State registry to be used in Interop\Async\Loop.
+ *
+ * THIS TRAIT SHOULD NOT BE USED BY LOOP DRIVERS. It's the responsibility of the
+ * loop accessor to manage this state.
+ */
 trait Registry
 {
     /**
