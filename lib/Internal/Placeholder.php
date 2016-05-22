@@ -92,13 +92,13 @@ trait Placeholder {
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
-            Loop::defer(static function ($watcher, $exception) {
+            Loop::defer(static function () use ($exception) {
                 throw $exception;
-            }, $exception);
+            });
         } catch (\Exception $exception) {
-            Loop::defer(static function ($watcher, $exception) {
+            Loop::defer(static function () use ($exception) {
                 throw $exception;
-            }, $exception);
+            });
         }
     }
 }
