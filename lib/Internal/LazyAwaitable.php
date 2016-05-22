@@ -4,7 +4,7 @@ namespace Amp\Awaitable\Internal;
 
 use Amp\Awaitable;
 
-class Lazy implements \Interop\Async\Awaitable {
+class LazyAwaitable implements \Interop\Async\Awaitable {
     /**
      * @var callable|null
      */

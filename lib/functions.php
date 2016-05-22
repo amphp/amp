@@ -233,10 +233,10 @@ function lazy(callable $promisor /* ...$args */) {
     $args = \array_slice(\func_get_args(), 1);
 
     if (empty($args)) {
-        return new Internal\Lazy($promisor);
+        return new Internal\LazyAwaitable($promisor);
     }
 
-    return new Internal\Lazy(function () use ($promisor, $args) {
+    return new Internal\LazyAwaitable(function () use ($promisor, $args) {
         return \call_user_func_array($promisor, $args);
     });
 }
@@ -322,9 +322,9 @@ function lift(callable $worker) {
 }
 
 /**
- * Returns a awaitable that is resolved when all awaitables are resolved. The returned awaitable will not reject by
- * itself (only if cancelled). Returned awaitable succeeds with an array of resolved awaitables, with keys
- * identical and corresponding to the original given array.
+ * Returns a awaitable that is resolved when all awaitables are resolved. The returned awaitable will not fail.
+ * Returned awaitable succeeds with an array of resolved awaitables, with keys identical and corresponding to the
+ * original given array.
  *
  * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
  *
