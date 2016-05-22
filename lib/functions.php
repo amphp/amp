@@ -7,33 +7,6 @@ use Interop\Async\Loop;
 use Interop\Async\LoopDriver;
 
 /**
- * Return a awaitable using the given value. There are four possible outcomes depending on the type of $value:
- * (1) \Interop\Async\Awaitable: The awaitable is returned without modification.
- * (2) \Generator: The generator is used to create a coroutine.
- * (3) callable: The callable is invoked with no arguments. The return value is pass through this function agian.
- * (4) All other types: A successful awaitable is returned using the given value as the result.
- *
- * @param mixed $value
- *
- * @return \Interop\Async\Awaitable
- */
-function resolve($value = null) {
-    if ($value instanceof Awaitable) {
-        return $value;
-    }
-
-    if ($value instanceof \Generator) {
-        return new Coroutine($value);
-    }
-
-    if (\is_callable($value)) {
-        return resolve($value());
-    }
-
-    return new Success($value);
-}
-
-/**
  * Returns a new function that when invoked runs the Generator returned by $worker as a coroutine.
  *
  * @param callable(mixed ...$args): \Generator $worker
@@ -101,9 +74,9 @@ function wait(Awaitable $awaitable, LoopDriver $driver = null) {
  * @return \Interop\Async\Awaitable
  */
 function pipe(Awaitable $awaitable, callable $functor) {
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
-    $awaitable->when(function ($exception = null, $value = null) use ($deferred, $functor) {
+    $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
         if ($exception) {
             $deferred->fail($exception);
             return;
@@ -128,9 +101,9 @@ function pipe(Awaitable $awaitable, callable $functor) {
  * @return \Interop\Async\Awaitable
  */
 function capture(Awaitable $awaitable, callable $functor) {
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
-    $awaitable->when(function ($exception = null, $value = null) use ($deferred, $functor) {
+    $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
         if (!$exception) {
             $deferred->resolve($value);
             return;
@@ -160,10 +133,10 @@ function capture(Awaitable $awaitable, callable $functor) {
  * @return \Interop\Async\Awaitable
  */
 function timeout(Awaitable $awaitable, $timeout) {
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     $watcher = Loop::delay(function () use ($deferred) {
-        $deferred->fail(new Exception\TimeoutException());
+        $deferred->fail(new Exception\TimeoutException);
     }, $timeout);
 
     $onResolved = function () use ($awaitable, $deferred, $watcher) {
@@ -177,29 +150,18 @@ function timeout(Awaitable $awaitable, $timeout) {
 }
 
 /**
- * Artificially delays the success of an awaitable $delay milliseconds after the awaitable succeeds. If the
- * awaitable fails, the returned awaitable fails immediately.
+ * Returns an awaitable that succeeds after $time elapses.
  *
- * @param \Interop\Async\Awaitable $awaitable
- * @param int $delay Delay in milliseconds.
+ * @param int $time
  *
  * @return \Interop\Async\Awaitable
  */
-function delay(Awaitable $awaitable, $delay) {
-    $deferred = new Deferred();
+function pause($time) {
+    $deferred = new Deferred;
 
-    $onResolved = function ($exception) use ($awaitable, $deferred, $delay) {
-        if ($exception) {
-            $deferred->fail($exception);
-            return;
-        }
-
-        Loop::delay(function () use ($awaitable, $deferred) {
-            $deferred->resolve($awaitable);
-        }, $delay);
-    };
-
-    $awaitable->when($onResolved);
+    Loop::delay(function () use ($deferred) {
+        $deferred->resolve();
+    }, $time);
 
     return $deferred->getAwaitable();
 }
@@ -227,37 +189,6 @@ function lazy(callable $promisor /* ...$args */) {
 }
 
 /**
- * Transforms a function that takes a callback into a function that returns a awaitable. The awaitable is fulfilled
- * with an array of the parameters that would have been passed to the callback function.
- *
- * @param callable $worker Function that normally accepts a callback.
- * @param int $index Position of callback in $worker argument list (0-indexed).
- *
- * @return callable
- */
-function promisify(callable $worker, $index = 0) {
-    return function (/* ...$args */) use ($worker, $index) {
-        $args = \func_get_args();
-
-        $deferred = new Deferred();
-
-        $callback = function (/* ...$args */) use ($deferred) {
-            $deferred->resolve(\func_get_args());
-        };
-
-        if (\count($args) < $index) {
-            throw new \InvalidArgumentException("Too few arguments given to function");
-        }
-
-        \array_splice($args, $index, 0, [$callback]);
-
-        \call_user_func_array($worker, $args);
-
-        return $deferred->getAwaitable();
-    };
-}
-
-/**
  * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a awaitable usable by
  * components depending on placeholders implementing Awaitable.
  *
@@ -267,7 +198,7 @@ function promisify(callable $worker, $index = 0) {
  */
 function adapt($thenable) {
     if (!\is_object($thenable) || !\method_exists($thenable, "then")) {
-        return fail(new \InvalidArgumentException("Must provide an object with a then() method"));
+        return new Failure(new \InvalidArgumentException("Must provide an object with a then() method"));
     }
 
     return new Promise(function (callable $resolve, callable $fail) use ($thenable) {
@@ -296,8 +227,14 @@ function lift(callable $worker) {
     return function (/* ...$args */) use ($worker) {
         $args = \func_get_args();
 
+        foreach ($args as $key => $arg) {
+            if (!$arg instanceof Awaitable) {
+                $args[$key] = new Success($arg);
+            }
+        }
+
         if (1 === \count($args)) {
-            return pipe(resolve($args[0]), $worker);
+            return pipe($args[0], $worker);
         }
 
         return pipe(all($args), function (array $args) use ($worker) {
@@ -311,16 +248,16 @@ function lift(callable $worker) {
  * Returned awaitable succeeds with an array of resolved awaitables, with keys identical and corresponding to the
  * original given array.
  *
- * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
  */
 function settle(array $awaitables) {
     if (empty($awaitables)) {
-        return resolve([]);
+        return new Success([]);
     }
 
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     $pending = \count($awaitables);
 
@@ -331,7 +268,10 @@ function settle(array $awaitables) {
     };
 
     foreach ($awaitables as &$awaitable) {
-        $awaitable = resolve($awaitable);
+        if (!$awaitable instanceof Awaitable) {
+            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+        }
+
         $awaitable->when($onResolved);
     }
 
@@ -343,22 +283,26 @@ function settle(array $awaitables) {
  * awaitable succeeds with an array of values used to succeed each contained awaitable, with keys corresponding to
  * the array of awaitables.
  *
- * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
  */
 function all(array $awaitables) {
     if (empty($awaitables)) {
-        return resolve([]);
+        return new Success([]);
     }
 
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     $pending = \count($awaitables);
     $values = [];
 
     foreach ($awaitables as $key => $awaitable) {
-        $onResolved = function ($exception = null, $value = null) use ($key, &$values, &$pending, $deferred) {
+        if (!$awaitable instanceof Awaitable) {
+            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+        }
+
+        $onResolved = function ($exception, $value) use ($key, &$values, &$pending, $deferred) {
             if ($exception) {
                 $deferred->fail($exception);
                 return;
@@ -370,31 +314,35 @@ function all(array $awaitables) {
             }
         };
 
-        resolve($awaitable)->when($onResolved);
+        $awaitable->when($onResolved);
     }
 
     return $deferred->getAwaitable();
 }
 
 /**
- * Returns a awaitable that succeeds when any awaitable succeeds, and fails only if all awaitables fail.
+ * Returns a awaitable that succeeds when the first awaitable succeeds, and fails only if all awaitables fail.
  *
- * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
  */
-function any(array $awaitables) {
+function first(array $awaitables) {
     if (empty($awaitables)) {
-        return fail(new \InvalidArgumentException("No awaitables provided"));
+        return new Failure(new \InvalidArgumentException("No awaitables provided"));
     }
 
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     $pending = \count($awaitables);
     $exceptions = [];
 
     foreach ($awaitables as $key => $awaitable) {
-        $onResolved = function ($exception = null, $value = null) use ($key, &$exceptions, &$pending, $deferred) {
+        if (!$awaitable instanceof Awaitable) {
+            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+        }
+
+        $onResolved = function ($exception, $value) use ($key, &$exceptions, &$pending, $deferred) {
             if (!$exception) {
                 $deferred->resolve($value);
                 return;
@@ -406,7 +354,7 @@ function any(array $awaitables) {
             }
         };
 
-        resolve($awaitable)->when($onResolved);
+        $awaitable->when($onResolved);
     }
 
     return $deferred->getAwaitable();
@@ -416,7 +364,7 @@ function any(array $awaitables) {
  * Returns a awaitable that succeeds when $required number of awaitables succeed. The awaitable fails if $required
  * number of awaitables can no longer succeed.
  *
- * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] $awaitables
  * @param int $required Number of awaitables that must succeed to succeed the returned awaitable.
  *
  * @return \Interop\Async\Awaitable
@@ -425,23 +373,27 @@ function some(array $awaitables, $required) {
     $required = (int) $required;
 
     if (0 >= $required) {
-        return resolve([]);
+        return new Success([]);
     }
 
     $pending = \count($awaitables);
 
     if ($required > $pending) {
-        return fail(new \InvalidArgumentException("Too few awaitables provided"));
+        return new Failure(new \InvalidArgumentException("Too few awaitables provided"));
     }
 
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     $required = \min($pending, $required);
     $values = [];
     $exceptions = [];
 
     foreach ($awaitables as $key => $awaitable) {
-        $onResolved = function ($exception = null, $value = null) use (
+        if (!$awaitable instanceof Awaitable) {
+            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+        }
+
+        $onResolved = function ($exception, $value) use (
             &$key, &$values, &$exceptions, &$pending, &$required, $deferred
         ) {
             if ($exception) {
@@ -459,7 +411,7 @@ function some(array $awaitables, $required) {
             }
         };
 
-        resolve($awaitable)->when($onResolved);
+        $awaitable->when($onResolved);
     }
 
     return $deferred->getAwaitable();
@@ -468,19 +420,24 @@ function some(array $awaitables, $required) {
 /**
  * Returns a awaitable that succeeds or fails when the first awaitable succeeds or fails.
  *
- * @param mixed[] $awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
  */
 function choose(array $awaitables) {
     if (empty($awaitables)) {
-        return fail(new \InvalidArgumentException("No awaitables provided"));
+        return new Failure(new \InvalidArgumentException("No awaitables provided"));
     }
 
-    $deferred = new Deferred();
+    $deferred = new Deferred;
 
     foreach ($awaitables as $awaitable) {
-        resolve($awaitable)->when(function ($exception = null, $value = null) use ($deferred) {
+        if (!$awaitable instanceof Awaitable) {
+            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+        }
+
+
+        $awaitable->when(function ($exception, $value) use ($deferred) {
             if ($exception) {
                 $deferred->fail($exception);
                 return;
@@ -501,7 +458,7 @@ function choose(array $awaitables) {
  * awaitables in the array have been resolved.
  *
  * @param callable(mixed $value): mixed $callback
- * @param mixed[] ...$awaitables Awaitables or values (passed through resolve() to create awaitables).
+ * @param Awaitable[] ...$awaitables
  *
  * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
  */
@@ -509,5 +466,5 @@ function map(callable $callback /* array ...$awaitables */) {
     $args = \func_get_args();
     $args[0] = lift($args[0]);
 
-    return \call_user_func_array('array_map', $args);
+    return \call_user_func_array("array_map", $args);
 }
