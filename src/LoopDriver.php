@@ -153,5 +153,5 @@ interface LoopDriver
      *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
      */
-    public static function getHandle();
+    public function getHandle();
 }
