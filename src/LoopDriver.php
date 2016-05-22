@@ -9,7 +9,7 @@ interface LoopDriver
      *
      * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
      * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
-     * error handler or exceptions that would be passed to an error handler but non exists to handle them.
+     * error handler or exceptions that would be passed to an error handler but none exists to handle them.
      *
      * @return void
      */
