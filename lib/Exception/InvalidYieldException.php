@@ -3,9 +3,17 @@
 namespace Amp\Awaitable\Exception;
 
 class InvalidYieldException extends \DomainException {
-    public function __construct(\Generator $generator, $yielded) {
+    /**
+     * InvalidYieldException constructor.
+     *
+     * @param \Generator $generator
+     * @param mixed $yielded
+     * @param string $prefix
+     */
+    public function __construct(\Generator $generator, $yielded, $prefix) {
         $prefix = \sprintf(
-            "Unexpected yield (Awaitable expected); %s yielded at key %s",
+            "%s; %s yielded at key %s",
+            $prefix,
             \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
             $generator->key()
         );
