@@ -127,29 +127,29 @@ final class Loop
     /**
      * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param int $time The amount of time, in milliseconds, to delay the execution for.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function delay(callable $callback, $time, $data = null)
+    public static function delay($time, callable $callback, $data = null)
     {
-        return self::get()->delay($callback, $time, $data);
+        return self::get()->delay($time, $callback, $data);
     }
 
     /**
      * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function repeat(callable $callback, $interval, $data = null)
+    public static function repeat($interval, callable $callback, $data = null)
     {
-        return self::get()->repeat($callback, $interval, $data);
+        return self::get()->repeat($interval, $callback, $data);
     }
 
     /**
