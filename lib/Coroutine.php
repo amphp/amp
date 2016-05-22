@@ -53,7 +53,7 @@ final class Coroutine implements Awaitable {
                 }
 
                 // Send the new value and execute to next yield statement.
-                $this->next($this->generator->send($value), $value);
+                $this->next($this->generator->send($value));
             } catch (\Throwable $exception) {
                 $this->fail($exception);
             } catch (\Exception $exception) {
@@ -74,11 +74,10 @@ final class Coroutine implements Awaitable {
      * Examines the value yielded from the generator and prepares the next step in iteration.
      *
      * @param mixed $yielded Value yielded from generator.
-     * @param mixed $last Prior resolved value. No longer needed when PHP 5.x support is dropped.
      */
-    private function next($yielded, $last = null) {
+    private function next($yielded) {
         if (!$this->generator->valid()) {
-            $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : $last);
+            $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
             return;
         }
 
@@ -86,10 +85,24 @@ final class Coroutine implements Awaitable {
 
         if ($yielded instanceof Awaitable) {
             $yielded->when($this->when);
+        } elseif ($yielded instanceof Internal\CoroutineResult) {
+            // @todo Necessary for returning values in PHP 5.x. Remove once PHP 7 is required.
+            $this->resolve($yielded->getValue());
         } else {
-            $this->resolve($yielded);
+            throw new Exception\InvalidYieldException($this->generator, $yielded);
         }
 
         --$this->depth;
+    }
+    
+    /**
+     * Return a value from a coroutine. Required for PHP 5.x only. Use the return keyword in PHP 7.
+     *
+     * @param mixed $value
+     *
+     * @return \Amp\Awaitable\Internal\CoroutineResult
+     */
+    public static function result($value) {
+        return new Internal\CoroutineResult($value);
     }
 }
