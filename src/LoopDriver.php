@@ -4,8 +4,6 @@ namespace Interop\Async;
 
 interface LoopDriver
 {
-    const FEATURE_SIGNAL_HANDLING = 0b001;
-
     /**
      * Start the event loop.
      *
