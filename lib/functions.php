@@ -34,17 +34,6 @@ function resolve($value = null) {
 }
 
 /**
- * Create a new failed awaitable using the given exception.
- *
- * @param \Throwable|\Exception $reason
- *
- * @return \Interop\Async\Awaitable
- */
-function fail($reason) {
-    return new Failure($reason);
-}
-
-/**
  * Returns a new function that when invoked runs the Generator returned by $worker as a coroutine.
  *
  * @param callable(mixed ...$args): \Generator $worker
@@ -69,11 +58,7 @@ function coroutine(callable $worker) {
  * @param \Interop\Async\Awaitable $awaitable
  */
 function rethrow(Awaitable $awaitable) {
-    /**
-     * @param \Throwable|\Exception $exception
-     * @param mixed $value
-     */
-    $awaitable->when(function ($exception = null, $value = null) {
+    $awaitable->when(function ($exception) {
         if ($exception) {
             /** @var \Throwable|\Exception $exception */
             throw $exception;
@@ -93,7 +78,7 @@ function rethrow(Awaitable $awaitable) {
  */
 function wait(Awaitable $awaitable, LoopDriver $driver = null) {
     Loop::execute(function () use (&$value, &$exception, $awaitable) {
-        $awaitable->when(function ($e = null, $v = null) use (&$value, &$exception) {
+        $awaitable->when(function ($e, $v) use (&$value, &$exception) {
             Loop::stop();
             $exception = $e;
             $value = $v;
@@ -203,7 +188,7 @@ function timeout(Awaitable $awaitable, $timeout) {
 function delay(Awaitable $awaitable, $delay) {
     $deferred = new Deferred();
 
-    $onResolved = function ($exception = null) use ($awaitable, $deferred, $delay) {
+    $onResolved = function ($exception) use ($awaitable, $deferred, $delay) {
         if ($exception) {
             $deferred->fail($exception);
             return;
