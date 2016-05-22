@@ -83,7 +83,7 @@ function wait(Awaitable $awaitable, LoopDriver $driver = null) {
             $exception = $e;
             $value = $v;
         });
-    }, $driver);
+    }, $driver ?: Loop::get());
 
     if ($exception) {
         throw $exception;
