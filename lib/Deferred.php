@@ -39,7 +39,7 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->awaitable = new Promise(function (callable $resolve, callable $fail) {
+                $this->awaitable = new Internal\PrivateAwaitable(function (callable $resolve, callable $fail) {
                     $this->resolve = $resolve;
                     $this->fail = $fail;
                 });

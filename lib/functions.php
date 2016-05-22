@@ -201,9 +201,11 @@ function adapt($thenable) {
         return new Failure(new \InvalidArgumentException("Must provide an object with a then() method"));
     }
 
-    return new Promise(function (callable $resolve, callable $fail) use ($thenable) {
-        $thenable->then($resolve, $fail);
-    });
+    $deferred = new Deferred;
+
+    $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
+
+    return $deferred->getAwaitable();
 }
 
 /**
