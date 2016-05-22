@@ -2,7 +2,9 @@
 
 namespace Amp\Awaitable\Internal;
 
-use Amp\Awaitable;
+use Amp\Awaitable\Failure;
+use Amp\Awaitable\Success;
+use Interop\Async\Awaitable;
 
 class LazyAwaitable implements \Interop\Async\Awaitable {
     /**
@@ -31,11 +33,15 @@ class LazyAwaitable implements \Interop\Async\Awaitable {
             $this->provider = null;
 
             try {
-                $this->awaitable = Awaitable\resolve($provider());
+                $this->awaitable = $provider();
+
+                if ($this->awaitable instanceof Awaitable) {
+                    $this->awaitable = new Success($this->awaitable);
+                }
             } catch (\Throwable $exception) {
-                $this->awaitable = Awaitable\fail($exception);
+                $this->awaitable = new Failure($exception);
             } catch (\Exception $exception) {
-                $this->awaitable = Awaitable\fail($exception);
+                $this->awaitable = new Failure($exception);
             }
         }
 
