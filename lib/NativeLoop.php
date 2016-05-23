@@ -76,7 +76,7 @@ class NativeLoop implements LoopDriver {
 
     public function __construct() {
         $this->timerQueue = new \SplPriorityQueue();
-        $this->signalHandling = extension_loaded('pcntl');
+        $this->signalHandling = \extension_loaded('pcntl');
     }
     
     /**
@@ -122,7 +122,7 @@ class NativeLoop implements LoopDriver {
             return false;
         }
 
-        return count($this->watchers) === count($this->unreferenced);
+        return \count($this->watchers) === \count($this->unreferenced);
     }
 
     /**
@@ -137,7 +137,7 @@ class NativeLoop implements LoopDriver {
             $this->invokeTimers();
 
             if ($this->signalHandling) {
-                pcntl_signal_dispatch();
+                \pcntl_signal_dispatch();
             }
         } catch (\Throwable $exception) {
             if (null === $this->errorHandler) {
@@ -176,7 +176,7 @@ class NativeLoop implements LoopDriver {
             $except = null;
 
             // Error reporting suppressed since stream_select() emits an E_WARNING if it is interrupted by a signal.
-            $count = @stream_select($read, $write, $except, $seconds, $microseconds);
+            $count = @\stream_select($read, $write, $except, $seconds, $microseconds);
 
             if ($count) {
                 foreach ($read as $stream) {
@@ -206,7 +206,7 @@ class NativeLoop implements LoopDriver {
         }
 
         if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
-            usleep($timeout * self::MICROSEC_PER_SEC);
+            \usleep($timeout * self::MICROSEC_PER_SEC);
         }
     }
 
@@ -222,7 +222,7 @@ class NativeLoop implements LoopDriver {
                 continue;
             }
 
-            $timeout -= (int) (microtime(true) * self::MILLISEC_PER_SEC);
+            $timeout -= (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
             if ($timeout < 0) {
                 return 0;
@@ -256,10 +256,10 @@ class NativeLoop implements LoopDriver {
                 $callback($watcher->id, $watcher->data);
             }
         } finally {
-            if ($count === count($this->deferQueue)) {
+            if ($count === \count($this->deferQueue)) {
                 $this->deferQueue = [];
             } else {
-                $this->deferQueue = array_slice($this->deferQueue, $count);
+                $this->deferQueue = \array_slice($this->deferQueue, $count);
             }
         }
     }
@@ -268,7 +268,7 @@ class NativeLoop implements LoopDriver {
      * Invokes all pending delay and repeat watchers.
      */
     private function invokeTimers() {
-        $time = (int) (microtime(true) * self::MILLISEC_PER_SEC);
+        $time = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     
         while (!$this->timerQueue->isEmpty()) {
             list($id, $timeout) = $this->timerQueue->top();
@@ -336,7 +336,7 @@ class NativeLoop implements LoopDriver {
     private function timer(Internal\Timer $watcher) {
         $this->watchers[$watcher->id] = $watcher;
 
-        $expiration = (int) (microtime(true) * self::MILLISEC_PER_SEC) + $watcher->interval;
+        $expiration = (int) (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->interval;
 
         $this->timerExpires[$watcher->id] = $expiration;
         $this->timerQueue->insert([$watcher->id, $expiration], -$expiration);
@@ -455,7 +455,7 @@ class NativeLoop implements LoopDriver {
             $this->writeWatchers[$watcher->key] = $watcher->id;
             $this->writeStreams[$watcher->key] = $watcher->stream;
         } elseif ($watcher instanceof Internal\Timer) {
-            $expiration = (int) (microtime(true) * self::MILLISEC_PER_SEC) + $watcher->interval;
+            $expiration = (int) (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->interval;
             $this->timerExpires[$watcher->id] = $expiration;
             $this->timerQueue->insert([$watcher->id, $expiration], -$expiration);
         } elseif ($watcher instanceof Internal\Signal) {
@@ -494,7 +494,6 @@ class NativeLoop implements LoopDriver {
      */
     public function cancel($watcherIdentifier) {
         $this->disable($watcherIdentifier);
-
         unset($this->watchers[$watcherIdentifier], $this->unreferenced[$watcherIdentifier]);
     }
 
@@ -521,8 +520,8 @@ class NativeLoop implements LoopDriver {
      */
     public function info() {
         $watchers = [
-            'referenced'   => count($this->watchers) - count($this->unreferenced),
-            'unreferenced' => count($this->unreferenced),
+            'referenced'   => \count($this->watchers) - \count($this->unreferenced),
+            'unreferenced' => \count($this->unreferenced),
         ];
 
         $defer = $delay = $repeat = $onReadable = $onWritable = $onSignal = [
