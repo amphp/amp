@@ -130,11 +130,15 @@ class NativeLoop implements LoopDriver {
      */
     private function tick() {
         try {
-            $this->invokeDeferred();
+            if (!empty($this->deferQueue)) {
+                $this->invokeDeferred();
+            }
 
             $this->selectStreams($this->readStreams, $this->writeStreams, $this->getTimeout());
 
-            $this->invokeTimers();
+            if (!empty($this->timerExpires)) {
+                $this->invokeTimers();
+            }
 
             if ($this->signalHandling) {
                 \pcntl_signal_dispatch();
@@ -146,7 +150,7 @@ class NativeLoop implements LoopDriver {
 
             $errorHandler = $this->errorHandler;
             $errorHandler($exception);
-        } catch (\Exception $exception) { // Remove when PHP 5.x support is no longer needed.
+        } catch (\Exception $exception) { // @todo Remove when PHP 5.x support is no longer needed.
             if (null === $this->errorHandler) {
                 throw $exception;
             }
@@ -238,11 +242,13 @@ class NativeLoop implements LoopDriver {
      * Invokes all pending defer watchers.
      */
     private function invokeDeferred() {
-        $count = 0;
+        $count = \count($this->deferQueue);
+        $current = 0;
 
         try {
-            foreach ($this->deferQueue as $id) {
-                ++$count;
+            while ($current < $count) {
+                $id = $this->deferQueue[$current];
+                ++$current;
 
                 if (!isset($this->watchers[$id])) {
                     continue;
@@ -256,10 +262,10 @@ class NativeLoop implements LoopDriver {
                 $callback($watcher->id, $watcher->data);
             }
         } finally {
-            if ($count === \count($this->deferQueue)) {
+            if ($current === $count) {
                 $this->deferQueue = [];
             } else {
-                $this->deferQueue = \array_slice($this->deferQueue, $count);
+                $this->deferQueue = \array_slice($this->deferQueue, $current);
             }
         }
     }
@@ -483,7 +489,7 @@ class NativeLoop implements LoopDriver {
                 unset($this->watchers[$watcher->id]);
             }
         } elseif ($watcher instanceof Internal\Defer) {
-            unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
+            unset($this->watchers[$watcher->id]);
         } elseif ($watcher instanceof Internal\Signal) {
             $this->disableSignal($watcher);
         }
@@ -551,7 +557,7 @@ class NativeLoop implements LoopDriver {
                     ++$repeat['disabled'];
                 }
             } elseif ($watcher instanceof Internal\Defer) {
-                ++$delay['enabled'];
+                ++$defer['enabled'];
             }
         }
 
