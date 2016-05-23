@@ -295,7 +295,7 @@ final class Loop
      *
      * @return array
      */
-    public function info()
+    public static function info()
     {
         return self::get()->info();
     }
