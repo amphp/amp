@@ -33,7 +33,6 @@ function coroutine(callable $worker) {
 function rethrow(Awaitable $awaitable) {
     $awaitable->when(function ($exception) {
         if ($exception) {
-            /** @var \Throwable|\Exception $exception */
             throw $exception;
         }
     });
@@ -135,9 +134,9 @@ function capture(Awaitable $awaitable, callable $functor) {
 function timeout(Awaitable $awaitable, $timeout) {
     $deferred = new Deferred;
 
-    $watcher = Loop::delay(function () use ($deferred) {
+    $watcher = Loop::delay($timeout, function () use ($deferred) {
         $deferred->fail(new Exception\TimeoutException);
-    }, $timeout);
+    });
 
     $onResolved = function () use ($awaitable, $deferred, $watcher) {
         Loop::cancel($watcher);
@@ -145,23 +144,6 @@ function timeout(Awaitable $awaitable, $timeout) {
     };
 
     $awaitable->when($onResolved);
-
-    return $deferred->getAwaitable();
-}
-
-/**
- * Returns an awaitable that succeeds after $time elapses.
- *
- * @param int $time
- *
- * @return \Interop\Async\Awaitable
- */
-function pause($time) {
-    $deferred = new Deferred;
-
-    Loop::delay(function () use ($deferred) {
-        $deferred->resolve();
-    }, $time);
 
     return $deferred->getAwaitable();
 }
