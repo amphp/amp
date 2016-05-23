@@ -145,6 +145,29 @@ interface LoopDriver
     public function setErrorHandler(callable $callback = null);
 
     /**
+     * Retrieve an associative array of information about the event loop driver.
+     *
+     * The returned array MUST contain the following data describing the driver's
+     * currently registered watchers:
+     *
+     *  [
+     *      "defer"         => ["enabled" => int, "disabled" => int],
+     *      "delay"         => ["enabled" => int, "disabled" => int],
+     *      "repeat"        => ["enabled" => int, "disabled" => int],
+     *      "on_readable"   => ["enabled" => int, "disabled" => int],
+     *      "on_writable"   => ["enabled" => int, "disabled" => int],
+     *      "on_signal"     => ["enabled" => int, "disabled" => int],
+     *      "watchers"      => ["referenced" => int, "unreferenced" => int],
+     *  ];
+     *
+     * Implementations MAY optionally add more information in the array but
+     * at minimum the above key => value format MUST always be provided.
+     *
+     * @return array
+     */
+    public function info();
+
+    /**
      * Get the underlying loop handle.
      *
      * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver
