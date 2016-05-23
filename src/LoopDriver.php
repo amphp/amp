@@ -40,7 +40,7 @@ interface LoopDriver
     /**
      * Delay the execution of a callback.
      *
-     * The time delay is approximate and accuracy is not guaranteed.
+     * The delay is a minimum and approximate, accuracy is not guaranteed.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
@@ -53,7 +53,8 @@ interface LoopDriver
     /**
      * Repeatedly execute a callback.
      *
-     * The interval between executions is approximate and accuracy is not guaranteed.
+     * The interval between executions is a minimum and approximate, accuracy is not guaranteed.
+     * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
