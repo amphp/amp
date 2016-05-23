@@ -177,10 +177,12 @@ function lazy(callable $promisor /* ...$args */) {
  * @param object $thenable Object with a then() method.
  *
  * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
+ *
+ * @throws \InvalidArgumentException If the provided object does not have a then() method.
  */
 function adapt($thenable) {
     if (!\is_object($thenable) || !\method_exists($thenable, "then")) {
-        return new Failure(new \InvalidArgumentException("Must provide an object with a then() method"));
+        throw new \InvalidArgumentException("Must provide an object with a then() method");
     }
 
     $deferred = new Deferred;
@@ -235,6 +237,8 @@ function lift(callable $worker) {
  * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If a non-Awaitable is in the array.
  */
 function settle(array $awaitables) {
     if (empty($awaitables)) {
@@ -253,7 +257,7 @@ function settle(array $awaitables) {
 
     foreach ($awaitables as &$awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+            throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
         $awaitable->when($onResolved);
@@ -270,6 +274,8 @@ function settle(array $awaitables) {
  * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If a non-Awaitable is in the array.
  */
 function all(array $awaitables) {
     if (empty($awaitables)) {
@@ -283,7 +289,7 @@ function all(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+            throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
         $onResolved = function ($exception, $value) use ($key, &$values, &$pending, $deferred) {
@@ -310,10 +316,12 @@ function all(array $awaitables) {
  * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
  */
 function first(array $awaitables) {
     if (empty($awaitables)) {
-        return new Failure(new \InvalidArgumentException("No awaitables provided"));
+        throw new \InvalidArgumentException("No awaitables provided");
     }
 
     $deferred = new Deferred;
@@ -323,7 +331,7 @@ function first(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+            throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
         $onResolved = function ($exception, $value) use ($key, &$exceptions, &$pending, $deferred) {
@@ -363,7 +371,7 @@ function some(array $awaitables, $required) {
     $pending = \count($awaitables);
 
     if ($required > $pending) {
-        return new Failure(new \InvalidArgumentException("Too few awaitables provided"));
+        throw new \InvalidArgumentException("Too few awaitables provided");
     }
 
     $deferred = new Deferred;
@@ -374,7 +382,7 @@ function some(array $awaitables, $required) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+            throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
         $onResolved = function ($exception, $value) use (
@@ -407,19 +415,20 @@ function some(array $awaitables, $required) {
  * @param Awaitable[] $awaitables
  *
  * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
  */
 function choose(array $awaitables) {
     if (empty($awaitables)) {
-        return new Failure(new \InvalidArgumentException("No awaitables provided"));
+        throw new \InvalidArgumentException("No awaitables provided");
     }
 
     $deferred = new Deferred;
 
     foreach ($awaitables as $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            return new Failure(new \InvalidArgumentException("Non-awaitable provided"));
+            throw new \InvalidArgumentException("Non-awaitable provided");
         }
-
 
         $awaitable->when(function ($exception, $value) use ($deferred) {
             if ($exception) {
@@ -449,6 +458,16 @@ function choose(array $awaitables) {
 function map(callable $callback /* array ...$awaitables */) {
     $args = \func_get_args();
     $args[0] = lift($args[0]);
+
+    $count = count($args);
+
+    for ($i = 1; $i < $count; ++$i) {
+        foreach ($args[$i] as $awaitable) {
+            if ($awaitable instanceof Awaitable) {
+                throw new \InvalidArgumentException('Non-awaitable provided.');
+            }
+        }
+    }
 
     return \call_user_func_array("array_map", $args);
 }
