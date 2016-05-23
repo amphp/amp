@@ -3,12 +3,9 @@
 namespace Amp\Loop;
 
 use Interop\Async\LoopDriver;
-use Interop\Async\Registry;
 use Interop\Async\UnsupportedFeatureException;
 
 class NativeLoop implements LoopDriver {
-    use Registry;
-
     const MILLISEC_PER_SEC = 1e3;
     const MICROSEC_PER_SEC = 1e6;
 
@@ -168,7 +165,7 @@ class NativeLoop implements LoopDriver {
         $timeout /= self::MILLISEC_PER_SEC;
 
         if (!empty($read) || !empty($write)) { // Use stream_select() if there are any streams in the loop.
-            if (0 <= $timeout) {
+            if ($timeout >= 0) {
                 $seconds = (int) $timeout;
                 $microseconds = (int) (($timeout - $seconds) * self::MICROSEC_PER_SEC);
             } else {
@@ -208,7 +205,7 @@ class NativeLoop implements LoopDriver {
             return;
         }
 
-        if (0 < $timeout) { // Otherwise sleep with usleep() if $timeout > 0.
+        if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
             usleep($timeout * self::MICROSEC_PER_SEC);
         }
     }
@@ -227,7 +224,7 @@ class NativeLoop implements LoopDriver {
 
             $timeout -= (int) (microtime(true) * self::MILLISEC_PER_SEC);
 
-            if (0 > $timeout) {
+            if ($timeout < 0) {
                 return 0;
             }
 
@@ -320,14 +317,14 @@ class NativeLoop implements LoopDriver {
     /**
      * {@inheritdoc}
      */
-    public function delay(callable $callback, $delay, $data = null) {
+    public function delay($delay, callable $callback, $data = null) {
         return $this->timer(new Internal\Delay($delay, $callback, $data));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function repeat(callable $callback, $interval, $data = null) {
+    public function repeat($interval, callable $callback, $data = null) {
         return $this->timer(new Internal\Repeat($interval, $callback, $data));
     }
 
@@ -437,13 +434,6 @@ class NativeLoop implements LoopDriver {
     /**
      * {@inheritdoc}
      */
-    public function onError(callable $callback) {
-        // To be removed from LoopDriver interface.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function setErrorHandler(callable $callback = null) {
         $this->errorHandler = $callback;
     }
@@ -529,14 +519,12 @@ class NativeLoop implements LoopDriver {
     /**
      * {@inheritdoc}
      */
-    public function supports($feature) {
-        return false; // To be removed from LoopDriver interface.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function info() {
+        $watchers = [
+            'referenced'   => count($this->watchers) - count($this->unreferenced),
+            'unreferenced' => count($this->unreferenced),
+        ];
+
         $defer = $delay = $repeat = $onReadable = $onWritable = $onSignal = [
             'enabled'  => 0,
             'disabled' => 0,
@@ -569,21 +557,21 @@ class NativeLoop implements LoopDriver {
         }
 
         return [
-            'defer'        => $defer,
-            'once'         => $delay,
-            'repeat'       => $repeat,
-            'on_readable'  => $onReadable,
-            'on_writable'  => $onWritable,
-            'on_signal'    => $onSignal,
-            'unreferenced' => count($this->unreferenced),
-            'running'      => $this->running,
+            'defer'       => $defer,
+            'delay'       => $delay,
+            'repeat'      => $repeat,
+            'on_readable' => $onReadable,
+            'on_writable' => $onWritable,
+            'on_signal'   => $onSignal,
+            'watchers'    => $watchers,
+            'running'     => $this->running,
         ];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getLoopHandle() {
+    public function getHandle() {
         return null;
     }
 }
