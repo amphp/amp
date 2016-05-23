@@ -297,7 +297,7 @@ final class Loop
      */
     public function info()
     {
-        self::get()->info();
+        return self::get()->info();
     }
 
     /**
