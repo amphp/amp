@@ -135,7 +135,7 @@ function timeout(Awaitable $awaitable, $timeout) {
     $deferred = new Deferred;
 
     $watcher = Loop::delay($timeout, function () use ($deferred) {
-        $deferred->fail(new Exception\TimeoutException);
+        $deferred->fail(new TimeoutException);
     });
 
     $onResolved = function () use ($awaitable, $deferred, $watcher) {
@@ -354,7 +354,7 @@ function first(array $awaitables) {
 
             $exceptions[$key] = $exception;
             if (0 === --$pending) {
-                $deferred->fail(new Exception\MultiReasonException($exceptions));
+                $deferred->fail(new MultiReasonException($exceptions));
             }
         };
 
@@ -409,7 +409,7 @@ function some(array $awaitables, $required) {
                 $exceptions[$key] = $exception;
                 if ($required > --$pending) {
                     $resolved = true;
-                    $deferred->fail(new Exception\MultiReasonException($exceptions));
+                    $deferred->fail(new MultiReasonException($exceptions));
                 }
                 return;
             }
@@ -490,7 +490,7 @@ function map(callable $callback /* array ...$awaitables */) {
     for ($i = 1; $i < $count; ++$i) {
         foreach ($args[$i] as $awaitable) {
             if (!$awaitable instanceof Awaitable) {
-                throw new \InvalidArgumentException('Non-awaitable provided.');
+                throw new \InvalidArgumentException('Non-awaitable provided');
             }
         }
     }

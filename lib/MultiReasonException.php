@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Exception;
+namespace Amp;
 
 class MultiReasonException extends \Exception {
     /**

@@ -6,7 +6,7 @@ use Amp\Failure;
 use Amp\Success;
 use Interop\Async\Awaitable;
 
-class LazyAwaitable implements \Interop\Async\Awaitable {
+class LazyAwaitable implements Awaitable {
     /**
      * @var callable|null
      */

@@ -36,7 +36,7 @@ final class Coroutine implements Awaitable {
          * @param \Throwable|\Exception|null $exception Exception to be thrown into the generator.
          * @param mixed $value The value to send to the generator.
          */
-        $this->when = function ($exception = null, $value = null) {
+        $this->when = function ($exception, $value) {
             if (self::MAX_RECURSION_DEPTH < $this->depth) { // Defer continuation to avoid blowing up call stack.
                 Loop::defer(function () use ($exception, $value) {
                     $when = $this->when;
@@ -92,7 +92,7 @@ final class Coroutine implements Awaitable {
                 $value = $this->generator->send($yielded);
                 
                 if ($this->generator->valid()) {
-                    $exception = new Exception\InvalidYieldException(
+                    $exception = new InvalidYieldException(
                         $this->generator,
                         $value,
                         "Unexpected yield after coroutine result"
@@ -112,7 +112,7 @@ final class Coroutine implements Awaitable {
                 $this->fail($exception);
             }
         } else {
-            throw new Exception\InvalidYieldException(
+            throw new InvalidYieldException(
                 $this->generator,
                 $yielded,
                 "Unexpected yield (Awaitable expected)"
