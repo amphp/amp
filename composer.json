@@ -1,0 +1,34 @@
+{
+    "name": "amphp/observable",
+    "description": "",
+    "keywords": [
+        "asynchronous",
+        "async",
+        "observable",
+        "emitter"
+    ],
+    "homepage": "http://amphp.org",
+    "license": "MIT",
+    "require": {
+        "amphp/awaitable": "dev-master",
+        "async-interop/event-loop": "dev-master",
+        "async-interop/event-loop-implementation": "dev-master"
+    },
+    "require-dev": {
+        "amphp/loop": "dev-master"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Amp\\": "lib"
+        },
+        "files": [
+            "lib/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amp\\Test\\": "test"
+        }
+    }
+}
