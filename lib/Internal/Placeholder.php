@@ -29,8 +29,19 @@ trait Placeholder {
         if ($this->resolved) {
             if ($this->result instanceof Awaitable) {
                 $this->result->when($onResolved);
-            } else {
-                $this->execute($onResolved);
+                return;
+            }
+
+            try {
+                $onResolved(null, $this->result);
+            } catch (\Throwable $exception) {
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
+            } catch (\Exception $exception) {
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
             }
             return;
         }
@@ -50,28 +61,37 @@ trait Placeholder {
      */
     protected function resolve($value = null) {
         if ($this->resolved) {
-            return;
+            throw new \LogicException("Awaitable has already been resolved");
         }
 
         $this->resolved = true;
 
         if ($value instanceof Awaitable) {
             if ($this === $value) {
-                $value = new Failure(
-                    new \InvalidArgumentException('Cannot resolve an awaitable with itself')
-                );
+                throw new \InvalidArgumentException("Cannot resolve an awaitable with itself");
             }
 
             $this->result = $value;
 
-            if (null !== $this->onResolved) {
+            if ($this->onResolved !== null) {
                 $this->result->when($this->onResolved);
             }
         } else {
             $this->result = $value;
 
-            if (null !== $this->onResolved) {
-                $this->execute($this->onResolved);
+            if ($this->onResolved !== null) {
+                try {
+                    $onResolved = $this->onResolved;
+                    $onResolved(null, $this->result);
+                } catch (\Throwable $exception) {
+                    Loop::defer(static function () use ($exception) {
+                        throw $exception;
+                    });
+                } catch (\Exception $exception) {
+                    Loop::defer(static function () use ($exception) {
+                        throw $exception;
+                    });
+                }
             }
         }
 
@@ -83,22 +103,5 @@ trait Placeholder {
      */
     protected function fail($reason) {
         $this->resolve(new Failure($reason));
-    }
-
-    /**
-     * @param callable $onResolved
-     */
-    private function execute(callable $onResolved) {
-        try {
-            $onResolved(null, $this->result);
-        } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        } catch (\Exception $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        }
     }
 }

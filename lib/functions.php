@@ -285,6 +285,7 @@ function all(array $awaitables) {
     $deferred = new Deferred;
 
     $pending = \count($awaitables);
+    $resolved = false;
     $values = [];
 
     foreach ($awaitables as $key => $awaitable) {
@@ -292,8 +293,13 @@ function all(array $awaitables) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $onResolved = function ($exception, $value) use ($key, &$values, &$pending, $deferred) {
+        $onResolved = function ($exception, $value) use ($key, &$values, &$pending, &$resolved, $deferred) {
+            if ($resolved) {
+                return;
+            }
+
             if ($exception) {
+                $resolved = true;
                 $deferred->fail($exception);
                 return;
             }
@@ -327,6 +333,7 @@ function first(array $awaitables) {
     $deferred = new Deferred;
 
     $pending = \count($awaitables);
+    $resolved = false;
     $exceptions = [];
 
     foreach ($awaitables as $key => $awaitable) {
@@ -334,8 +341,13 @@ function first(array $awaitables) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $onResolved = function ($exception, $value) use ($key, &$exceptions, &$pending, $deferred) {
+        $onResolved = function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+            if ($resolved) {
+                return;
+            }
+
             if (!$exception) {
+                $resolved = true;
                 $deferred->resolve($value);
                 return;
             }
@@ -377,6 +389,7 @@ function some(array $awaitables, $required) {
     $deferred = new Deferred;
 
     $required = \min($pending, $required);
+    $resolved = false;
     $values = [];
     $exceptions = [];
 
@@ -386,11 +399,16 @@ function some(array $awaitables, $required) {
         }
 
         $onResolved = function ($exception, $value) use (
-            &$key, &$values, &$exceptions, &$pending, &$required, $deferred
+            &$key, &$values, &$exceptions, &$pending, &$resolved, &$required, $deferred
         ) {
+            if ($resolved) {
+                return;
+            }
+
             if ($exception) {
                 $exceptions[$key] = $exception;
                 if ($required > --$pending) {
+                    $resolved = true;
                     $deferred->fail(new Exception\MultiReasonException($exceptions));
                 }
                 return;
@@ -399,6 +417,7 @@ function some(array $awaitables, $required) {
             $values[$key] = $value;
             --$pending;
             if (0 === --$required) {
+                $resolved = true;
                 $deferred->resolve($values);
             }
         };
@@ -424,13 +443,20 @@ function choose(array $awaitables) {
     }
 
     $deferred = new Deferred;
+    $resolved = false;
 
     foreach ($awaitables as $awaitable) {
         if (!$awaitable instanceof Awaitable) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $awaitable->when(function ($exception, $value) use ($deferred) {
+        $awaitable->when(function ($exception, $value) use (&$resolved, $deferred) {
+            if ($resolved) {
+                return;
+            }
+
+            $resolved = true;
+
             if ($exception) {
                 $deferred->fail($exception);
                 return;
@@ -463,7 +489,7 @@ function map(callable $callback /* array ...$awaitables */) {
 
     for ($i = 1; $i < $count; ++$i) {
         foreach ($args[$i] as $awaitable) {
-            if ($awaitable instanceof Awaitable) {
+            if (!$awaitable instanceof Awaitable) {
                 throw new \InvalidArgumentException('Non-awaitable provided.');
             }
         }
