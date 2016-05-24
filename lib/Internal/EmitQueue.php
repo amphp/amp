@@ -11,11 +11,6 @@ use Interop\Async\Awaitable;
 
 class EmitQueue {
     /**
-     * @var \Amp\Observable|null
-     */
-    private $observable;
-
-    /**
      * @var bool
      */
     private $busy = false;
@@ -110,10 +105,6 @@ class EmitQueue {
 
         try {
             if ($value instanceof Observable) {
-                if ($value === $this->observable) {
-                    throw new \InvalidArgumentException("Cannot emit an observable within itself");
-                }
-
                 $iterator = $value->getIterator();
 
                 while (yield $iterator->isValid()) {
