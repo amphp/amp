@@ -242,13 +242,13 @@ class NativeLoop implements LoopDriver {
      * Invokes all pending defer watchers.
      */
     private function invokeDeferred() {
-        $count = \count($this->deferQueue);
-        $current = 0;
+        $queue = $this->deferQueue;
+        $this->deferQueue = [];
+        $count = 0;
 
         try {
-            while ($current < $count) {
-                $id = $this->deferQueue[$current];
-                ++$current;
+            foreach ($queue as $id) {
+                ++$count;
 
                 if (!isset($this->watchers[$id])) {
                     continue;
@@ -261,12 +261,16 @@ class NativeLoop implements LoopDriver {
                 $callback = $watcher->callback;
                 $callback($watcher->id, $watcher->data);
             }
-        } finally {
-            if ($current === $count) {
-                $this->deferQueue = [];
-            } else {
-                $this->deferQueue = \array_slice($this->deferQueue, $current);
+        } catch (\Throwable $exception) {
+            if ($count !== \count($queue)) {
+                $this->deferQueue = \array_merge(\array_slice($queue, $count), $this->deferQueue);
             }
+            throw $exception;
+        } catch (\Exception $exception) {
+            if ($count !== \count($queue)) {
+                $this->deferQueue = \array_merge(\array_slice($queue, $count), $this->deferQueue);
+            }
+            throw $exception;
         }
     }
 
