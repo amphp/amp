@@ -17,9 +17,9 @@ final class Loop
     private static $driver = null;
 
     /**
-     * @var bool
+     * @var int
      */
-    private static $running = false;
+    private static $level = 0;
 
     /**
      * Set the factory to be used to create a driver if none is passed to
@@ -30,7 +30,7 @@ final class Loop
     {
         self::$factory = $factory;
 
-        if (!self::$running) {
+        if (self::$level === 0) {
             self::$driver = self::createDriver();
             self::$registry = [];
         }
@@ -53,7 +53,7 @@ final class Loop
 
         self::$driver = $driver;
         self::$registry = [];
-        self::$running = true;
+        self::$level++;
 
         try {
             $callback();
@@ -62,7 +62,7 @@ final class Loop
         } finally {
             self::$driver = $previousDriver;
             self::$registry = $previousRegistry;
-            self::$running = false;
+            self::$level--;
         }
     }
 
