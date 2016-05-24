@@ -125,7 +125,9 @@ final class Loop
     }
 
     /**
-     * Delay the execution of a callback. The time delay is approximate and accuracy is not guaranteed.
+     * Delay the execution of a callback.
+     *
+     * The delay is a minimum and approximate, accuracy is not guaranteed.
      *
      * @param int $time The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
@@ -139,7 +141,10 @@ final class Loop
     }
 
     /**
-     * Repeatedly execute a callback. The interval between executions is approximate and accuracy is not guaranteed.
+     * Repeatedly execute a callback.
+     *
+     * The interval between executions is a minimum and approximate, accuracy is not guaranteed.
+     * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
@@ -233,7 +238,7 @@ final class Loop
     /**
      * Reference a watcher.
      *
-     * This will keep the event loop alive whilst the event is still being monitored. Watchers have this state by
+     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
      * default.
      *
      * @param string $watcherId The watcher identifier.
@@ -248,8 +253,8 @@ final class Loop
     /**
      * Unreference a watcher.
      *
-     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Events are
-     * all referenced by default.
+     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Watchers
+     * are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
      *
