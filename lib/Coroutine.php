@@ -92,12 +92,13 @@ final class Coroutine implements Awaitable {
                 $value = $this->generator->send($yielded);
                 
                 if ($this->generator->valid()) {
+                    $exception = new Exception\InvalidYieldException(
+                        $this->generator,
+                        $value,
+                        "Unexpected yield after coroutine result"
+                    );
+
                     do {
-                        $exception = new Exception\InvalidYieldException(
-                            $this->generator,
-                            $value,
-                            "Unexpected yield after coroutine result"
-                        );
                         $this->generator->throw($exception);
                     } while ($this->generator->valid());
 
