@@ -1,9 +1,9 @@
 <?php
 
-namespace Amp\Awaitable\Internal;
+namespace Amp\Internal;
 
-use Amp\Awaitable\Failure;
-use Amp\Awaitable\Success;
+use Amp\Failure;
+use Amp\Success;
 use Interop\Async\Awaitable;
 
 class LazyAwaitable implements \Interop\Async\Awaitable {

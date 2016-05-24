@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Awaitable;
+namespace Amp;
 
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
@@ -11,7 +11,7 @@ use Interop\Async\LoopDriver;
  *
  * @param callable(mixed ...$args): \Generator $worker
  *
- * @return callable(mixed ...$args): \Amp\Awaitable\Coroutine
+ * @return callable(mixed ...$args): \Amp\Coroutine
  */
 function coroutine(callable $worker) {
     return function (/* ...$args */) use ($worker) {
@@ -124,7 +124,7 @@ function capture(Awaitable $awaitable, callable $functor) {
  * Create an artificial timeout for any Awaitable.
  *
  * If the timeout expires before the awaitable is resolved, the returned awaitable fails with an instance of
- * \Amp\Awaitable\Exception\TimeoutException.
+ * \Amp\Exception\TimeoutException.
  *
  * @param \Interop\Async\Awaitable $awaitable
  * @param int $timeout Timeout in milliseconds.

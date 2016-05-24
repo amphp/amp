@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Awaitable;
+namespace Amp;
 
 use Interop\Async\Awaitable;
 

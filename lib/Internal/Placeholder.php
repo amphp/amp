@@ -1,8 +1,8 @@
 <?php
 
-namespace Amp\Awaitable\Internal;
+namespace Amp\Internal;
 
-use Amp\Awaitable\Failure;
+use Amp\Failure;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
@@ -18,7 +18,7 @@ trait Placeholder {
     private $result;
     
     /**
-     * @var callable|\Amp\Awaitable\Internal\WhenQueue|null
+     * @var callable|\Amp\Internal\WhenQueue|null
      */
     private $onResolved;
     

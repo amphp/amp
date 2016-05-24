@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Awaitable;
+namespace Amp;
 
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
@@ -127,7 +127,7 @@ final class Coroutine implements Awaitable {
      *
      * @param mixed $value
      *
-     * @return \Amp\Awaitable\Internal\CoroutineResult
+     * @return \Amp\Internal\CoroutineResult
      */
     public static function result($value) {
         return new Internal\CoroutineResult($value);

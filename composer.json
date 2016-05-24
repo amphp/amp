@@ -23,7 +23,7 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Amp\\Awaitable\\": "lib"
+            "Amp\\": "lib"
         },
         "files": [
             "lib/functions.php"
@@ -31,7 +31,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Test\\Awaitable\\": "test"
+            "Amp\\Test\\": "test"
         }
     }
 }

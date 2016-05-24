@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Awaitable\Exception;
+namespace Amp\Exception;
 
 class TimeoutException extends \RuntimeException {
     /**
