@@ -16,7 +16,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Interop\\Async\\": "test"
+            "Interop\\Async\\Loop": "test"
         }
     }
 }

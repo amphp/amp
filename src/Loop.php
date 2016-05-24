@@ -22,15 +22,26 @@ final class Loop
     private static $level = 0;
 
     /**
-     * Set the factory to be used to create a driver if none is passed to
-     * self::execute. A default driver will be created if none is running
-     * to support synchronous waits in traditional applications.
+     * Set the factory to be used to create a default drivers.
+     *
+     * Setting a factory is only allowed as long as no loop is currently running.
+     * Passing null will reset the default driver and remove the factory.
+     *
+     * The factory will be invoked if none is passed to Loop::execute. A default driver will be created to support
+     * synchronous waits in traditional applications.
      */
     public static function setFactory(LoopDriverFactory $factory = null)
     {
+        if (self::$level > 0) {
+            throw new \RuntimeException("Setting a new factory while running isn't allowed!");
+        }
+
         self::$factory = $factory;
 
-        if (self::$level === 0) {
+        if ($factory === null) {
+            self::$driver = null;
+            self::$registry = null;
+        } else {
             self::$driver = self::createDriver();
             self::$registry = [];
         }
