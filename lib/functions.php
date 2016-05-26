@@ -4,7 +4,6 @@ namespace Amp;
 
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
-use Interop\Async\LoopDriver;
 
 /**
  * Returns a new function that when invoked runs the Generator returned by $worker as a coroutine.
@@ -48,14 +47,20 @@ function rethrow(Awaitable $awaitable) {
  *
  * @throws \Throwable|\Exception Awaitable failure reason.
  */
-function wait(Awaitable $awaitable, LoopDriver $driver = null) {
-    Loop::execute(function () use (&$value, &$exception, $awaitable) {
-        $awaitable->when(function ($e, $v) use (&$value, &$exception) {
+function wait(Awaitable $awaitable) {
+    $resolved = false;
+    Loop::execute(function () use (&$resolved, &$value, &$exception, $awaitable) {
+        $awaitable->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
             Loop::stop();
+            $resolved = true;
             $exception = $e;
             $value = $v;
         });
-    }, $driver ?: Loop::get());
+    });
+
+    if (!$resolved) {
+        throw new \LogicException("Loop emptied without resolving awaitable");
+    }
 
     if ($exception) {
         throw $exception;
