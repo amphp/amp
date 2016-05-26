@@ -72,8 +72,7 @@ final class Loop
         self::$level++;
 
         try {
-            $callback();
-
+            self::$driver->defer($callback);
             self::$driver->run();
         } finally {
             self::$driver = $previousDriver;
