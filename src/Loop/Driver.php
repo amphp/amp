@@ -106,7 +106,7 @@ interface Driver
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public function enable($watcherId);
 
@@ -117,7 +117,7 @@ interface Driver
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public function disable($watcherId);
 
@@ -128,7 +128,7 @@ interface Driver
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public function cancel($watcherId);
 
@@ -142,7 +142,7 @@ interface Driver
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public function reference($watcherId);
 
@@ -156,7 +156,7 @@ interface Driver
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public function unreference($watcherId);
 

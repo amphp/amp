@@ -226,7 +226,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function enable($watcherId)
     {
@@ -240,7 +240,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function disable($watcherId)
     {
@@ -254,7 +254,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function cancel($watcherId)
     {
@@ -271,7 +271,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function reference($watcherId)
     {
@@ -288,7 +288,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function unreference($watcherId)
     {
