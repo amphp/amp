@@ -56,7 +56,7 @@ function wait(Awaitable $awaitable) {
             $exception = $e;
             $value = $v;
         });
-    });
+    }, Loop::get());
 
     if (!$resolved) {
         throw new \LogicException("Loop emptied without resolving awaitable");
