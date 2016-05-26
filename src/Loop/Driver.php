@@ -111,7 +111,7 @@ interface Driver
     public function enable($watcherId);
 
     /**
-     * Disable a watcher.
+     * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
