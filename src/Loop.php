@@ -40,19 +40,14 @@ final class Loop
         }
 
         self::$factory = $factory;
-
-        if ($factory === null) {
-            self::$driver = null;
-        } else {
-            self::$driver = self::createDriver();
-        }
+        self::$driver = null; // reset it here, it will be actually instantiated inside execute() or get()
     }
 
     /**
      * Execute a callback within the scope of an event loop driver.
      *
      * @param callable $callback The callback to execute
-     * @param Driver $driver The event loop driver
+     * @param Driver $driver The event loop driver. If null a new one is created from the set factory.
      *
      * @return void
      */
@@ -60,9 +55,7 @@ final class Loop
     {
         $previousDriver = self::$driver;
 
-        $driver = $driver ?: self::createDriver();
-
-        self::$driver = $driver;
+        self::$driver = $driver ?: self::createDriver();
         self::$level++;
 
         try {
@@ -103,11 +96,10 @@ final class Loop
      */
     public static function get()
     {
-        if (null === self::$driver) {
-            throw new \RuntimeException('Missing driver; Neither in Loop::execute nor factory set.');
+        if (self::$driver) {
+            return self::$driver;
         }
-
-        return self::$driver;
+        return self::$driver = self::createDriver();
     }
 
     /**
@@ -117,7 +109,8 @@ final class Loop
      */
     public static function stop()
     {
-        self::get()->stop();
+        $driver = self::$driver ?: self::get();
+        $driver->stop();
     }
 
     /**
@@ -130,7 +123,8 @@ final class Loop
      */
     public static function defer(callable $callback, $data = null)
     {
-        return self::get()->defer($callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->defer($callback, $data);
     }
 
     /**
@@ -146,7 +140,8 @@ final class Loop
      */
     public static function delay($time, callable $callback, $data = null)
     {
-        return self::get()->delay($time, $callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->delay($time, $callback, $data);
     }
 
     /**
@@ -163,7 +158,8 @@ final class Loop
      */
     public static function repeat($interval, callable $callback, $data = null)
     {
-        return self::get()->repeat($interval, $callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->repeat($interval, $callback, $data);
     }
 
     /**
@@ -177,7 +173,8 @@ final class Loop
      */
     public static function onReadable($stream, callable $callback, $data = null)
     {
-        return self::get()->onReadable($stream, $callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->onReadable($stream, $callback, $data);
     }
 
     /**
@@ -191,7 +188,8 @@ final class Loop
      */
     public static function onWritable($stream, callable $callback, $data = null)
     {
-        return self::get()->onWritable($stream, $callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->onWritable($stream, $callback, $data);
     }
 
     /**
@@ -205,7 +203,8 @@ final class Loop
      */
     public static function onSignal($signo, callable $callback, $data = null)
     {
-        return self::get()->onSignal($signo, $callback, $data);
+        $driver = self::$driver ?: self::get();
+        return $driver->onSignal($signo, $callback, $data);
     }
 
     /**
@@ -217,7 +216,8 @@ final class Loop
      */
     public static function enable($watcherId)
     {
-        self::get()->enable($watcherId);
+        $driver = self::$driver ?: self::get();
+        $driver->enable($watcherId);
     }
 
     /**
@@ -229,7 +229,8 @@ final class Loop
      */
     public static function disable($watcherId)
     {
-        self::get()->disable($watcherId);
+        $driver = self::$driver ?: self::get();
+        $driver->disable($watcherId);
     }
 
     /**
@@ -241,7 +242,8 @@ final class Loop
      */
     public static function cancel($watcherId)
     {
-        self::get()->cancel($watcherId);
+        $driver = self::$driver ?: self::get();
+        $driver->cancel($watcherId);
     }
 
     /**
@@ -256,7 +258,8 @@ final class Loop
      */
     public static function reference($watcherId)
     {
-        self::get()->reference($watcherId);
+        $driver = self::$driver ?: self::get();
+        $driver->reference($watcherId);
     }
 
     /**
@@ -271,7 +274,8 @@ final class Loop
      */
     public static function unreference($watcherId)
     {
-        self::get()->unreference($watcherId);
+        $driver = self::$driver ?: self::get();
+        $driver->unreference($watcherId);
     }
 
     /**
@@ -287,7 +291,8 @@ final class Loop
      */
     public static function storeState($key, $value)
     {
-        self::get()->storeState($key, $value);
+        $driver = self::$driver ?: self::get();
+        $driver->storeState($key, $value);
     }
 
     /**
@@ -302,7 +307,8 @@ final class Loop
      */
     public static function fetchState($key)
     {
-        return self::get()->fetchState($key);
+        $driver = self::$driver ?: self::get();
+        return $driver->fetchState($key);
     }
 
     /**
@@ -316,7 +322,8 @@ final class Loop
      */
     public static function setErrorHandler(callable $callback = null)
     {
-        self::get()->setErrorHandler($callback);
+        $driver = self::$driver ?: self::get();
+        $driver->setErrorHandler($callback);
     }
 
     /**
@@ -342,7 +349,8 @@ final class Loop
      */
     public static function info()
     {
-        return self::get()->info();
+        $driver = self::$driver ?: self::get();
+        return $driver->info();
     }
 
     /**
