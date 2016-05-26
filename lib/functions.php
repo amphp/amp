@@ -5,39 +5,6 @@ namespace Amp;
 use Interop\Async\Loop;
 
 /**
- * Throttles an observable to only emit a value every $interval milliseconds.
- *
- * @param \Amp\Observable $observable
- * @param int $interval
- *
- * @return \Amp\Observable
- */
-function throttle(Observable $observable, $interval) {
-    if (0 >= $interval) {
-        throw new \InvalidArgumentException("The interval should be greater than 0");
-    }
-
-    return new Emitter(function (callable $emit) use ($observable, $interval) {
-        $iterator = $observable->getIterator();
-        $start = (int) (\microtime(true) - $interval);
-
-        while (yield $iterator->isValid()) {
-            $diff = $interval + $start - (int) (\microtime(true) * 1e3);
-
-            if (0 < $diff) {
-                yield new Pause($diff);
-            }
-
-            $start = (int) (\microtime(true) * 1e3);
-
-            yield $emit($iterator->getCurrent());
-        }
-
-        yield Coroutine::result($iterator->getReturn());
-    });
-}
-
-/**
  * Creates an observable that emits values emitted from any observable in the array of observables. Values in the
  * array are passed through the from() function, so they may be observables, arrays of values to emit, awaitables,
  * or any other value.
@@ -53,31 +20,35 @@ function merge(array $observables) {
         }
     }
 
-    return new Emitter(function (callable $emit) use ($observables) {
-        $generator = function (Observable $observable) use (&$emitting, $emit) {
-            $iterator = $observable->getIterator();
+    $postponed = new Postponed;
 
-            while (yield $iterator->isValid()) {
-                while ($emitting !== null) {
-                    yield $emitting; // Prevent simultaneous emit.
-                }
+    $generator = function (Observable $observable) use ($postponed) {
+        $observer = $observable->getObserver();
 
-                yield $emitting = $emit($iterator->getCurrent());
-                $emitting = null;
-            }
-
-            yield Coroutine::result($iterator->getReturn());
-        };
-
-        /** @var \Amp\Coroutine[] $coroutines */
-        $coroutines = [];
-
-        foreach ($observables as $observable) {
-            $coroutines[] = new Coroutine($generator($observable));
+        while (yield $observer->isValid()) {
+            yield $postponed->emit($observer->getCurrent());
         }
 
-        yield Coroutine::result(yield all($coroutines));
+        yield Coroutine::result($observer->getReturn());
+    };
+
+    /** @var \Amp\Coroutine[] $coroutines */
+    $coroutines = [];
+
+    foreach ($observables as $observable) {
+        $coroutines[] = new Coroutine($generator($observable));
+    }
+
+    all($coroutines)->when(function ($exception, $value) use ($postponed) {
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
+        }
+
+        $postponed->complete($value);
     });
+
+    return $postponed->getObservable();
 }
 
 /**
@@ -96,26 +67,18 @@ function interval($interval, $count = 0) {
         throw new \InvalidArgumentException("The number of times to emit must be a non-negative value");
     }
 
-    return new Emitter(function (callable $emit) use ($interval, $count) {
-        $i = 0;
-        $future = new Future;
+    $postponed = new Postponed;
 
-        $watcher = Loop::repeat($interval, function ($watcher) use (&$future, &$i) {
-            Loop::disable($watcher);
-            $awaitable = $future;
-            $future = new Future;
-            $awaitable->resolve(++$i);
-        });
+    Loop::repeat($interval, function ($watcher) use (&$i, $postponed, $count) {
+        $postponed->emit(++$i);
 
-        try {
-            while (0 === $count || $i < $count) {
-                yield $emit($future);
-                Loop::enable($watcher);
-            }
-        } finally {
+        if ($i === $count) {
             Loop::cancel($watcher);
+            $postponed->complete();
         }
     });
+
+    return $postponed->getObservable();
 }
 
 /**
@@ -138,9 +101,23 @@ function range($start, $end, $step = 1) {
         throw new \InvalidArgumentException("Step is not of the correct sign");
     }
 
-    return new Emitter(function (callable $emit) use ($start, $end, $step) {
+    $postponed = new Postponed;
+
+    $generator = function (Postponed $postponed, $start, $end, $step) {
         for ($i = $start; $i <= $end; $i += $step) {
-            yield $emit($i);
+            yield $postponed->emit($i);
         }
+    };
+
+    $coroutine = new Coroutine($generator($postponed, $start, $end, $step));
+    $coroutine->when(function ($exception) use ($postponed) {
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
+        }
+
+        $postponed->complete();
     });
+
+    return $postponed->getObservable();
 }

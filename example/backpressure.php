@@ -12,19 +12,25 @@ use Interop\Async\Loop;
 
 Loop::execute(Amp\coroutine(function () {
     try {
+        $coroutines = [];
+
         $postponed = new Postponed;
 
-        $postponed->emit(new Pause(500, 1));
-        $postponed->emit(new Pause(1500, 2));
-        $postponed->emit(new Pause(1000, 3));
-        $postponed->emit(new Pause(2000, 4));
-        $postponed->emit(5);
-        $postponed->emit(6);
-        $postponed->emit(7);
-        $postponed->emit(new Pause(2000, 8));
-        $postponed->emit(9);
-        $postponed->emit(10);
-        $postponed->complete(11);
+        $generator = function (Postponed $postponed) {
+            yield $postponed->emit(new Pause(500, 1));
+            yield $postponed->emit(new Pause(1500, 2));
+            yield $postponed->emit(new Pause(1000, 3));
+            yield $postponed->emit(new Pause(2000, 4));
+            yield $postponed->emit(5);
+            yield $postponed->emit(6);
+            yield $postponed->emit(7);
+            yield $postponed->emit(new Pause(2000, 8));
+            yield $postponed->emit(9);
+            yield $postponed->emit(10);
+            yield $postponed->complete(11);
+        };
+
+        $coroutines[] = new Coroutine($generator($postponed));
 
         $generator = function (Observable $observable) {
             $observer = $observable->getObserver();
@@ -37,7 +43,10 @@ Loop::execute(Amp\coroutine(function () {
             printf("Observable result %d\n", $observer->getReturn());
         };
 
-        yield new Coroutine($generator($postponed->getObservable()));
+
+        $coroutines[] = new Coroutine($generator($postponed->getObservable()));
+
+        yield Amp\all($coroutines);
 
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);

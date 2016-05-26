@@ -3,14 +3,10 @@
 namespace Amp\Internal;
 
 use Amp\Future;
+use Amp\Success;
 use Interop\Async\Awaitable;
 
 final class Emitted {
-    /**
-     * @var \Amp\Future
-     */
-    private $future;
-
     /**
      * @var \Interop\Async\Awaitable
      */
@@ -19,36 +15,54 @@ final class Emitted {
     /**
      * @var int
      */
-    private $waiting = 0;
+    private $waiting;
 
     /**
-     * @param \Interop\Async\Awaitable $awaitable
+     * @var \Amp\Future
      */
-    public function __construct(Awaitable $awaitable) {
-        $this->awaitable = $awaitable;
+    private $future;
+
+    /**
+     * @var bool
+     */
+    private $complete;
+
+    /**
+     * @param mixed $value
+     * @param int $waiting
+     * @param bool $complete
+     */
+    public function __construct($value, $waiting, $complete) {
+        $this->awaitable = $value instanceof Awaitable ? $value : new Success($value);
+        $this->waiting = (int) $waiting;
+        $this->complete = (bool) $complete;
         $this->future = new Future;
     }
 
     /**
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Awaitable|mixed
      */
     public function getAwaitable() {
-        ++$this->waiting;
         return $this->awaitable;
     }
 
     /**
-     * Notifies the placeholder that the consumer is ready.
+     * @return bool
+     */
+    public function isComplete() {
+        return $this->complete;
+    }
+
+    /**
+     * Indicates that a subscriber has consumed the value represented by this object.
      */
     public function ready() {
-        if (0 === --$this->waiting) {
-            $this->future->resolve();
+        if (--$this->waiting === 0) {
+            $this->future->resolve($this->awaitable);
         }
     }
 
     /**
-     * Returns an awaitable that is fulfilled once all consumers are ready.
-     *
      * @return \Interop\Async\Awaitable
      */
     public function wait() {

@@ -2,8 +2,7 @@
 
 namespace Amp;
 
-interface ObservableIterator
-{
+interface Observer {
     /**
      * Succeeds with true if a new value is available by calling getCurrent() or false if the observable has completed.
      * Calling getCurrent() will throw an exception if the observable completed. If an error occurs with the observable,

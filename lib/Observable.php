@@ -2,16 +2,11 @@
 
 namespace Amp;
 
-interface Observable
-{
+interface Observable {
     /**
-     * @return \Amp\ObservableIterator
+     * Returns an observer of the observable.
+     *
+     * @return \Amp\Observer
      */
-    public function getIterator();
-
-    /**
-     * Disposes of the observable, halting emission of values and failing the observable with an instance of
-     * \Amp\DisposedException.
-     */
-    public function dispose();
+    public function getObserver();
 }

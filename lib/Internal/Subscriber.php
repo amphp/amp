@@ -5,9 +5,14 @@ namespace Amp\Internal;
 use Amp\CompletedException;
 use Amp\Coroutine;
 use Amp\IncompleteException;
-use Amp\ObservableIterator;
+use Amp\Observer;
 
-class EmitterIterator implements ObservableIterator {
+final class Subscriber implements Observer {
+    /**
+     * @var \Amp\Internal\Subscription
+     */
+    private $subscription;
+
     /**
      * @var \Amp\Internal\Emitted
      */
@@ -17,28 +22,27 @@ class EmitterIterator implements ObservableIterator {
      * @var mixed
      */
     private $current;
-    
-    /**
-     * @var \Amp\Internal\EmitQueue
-     */
-    private $queue;
-    
+
     /**
      * @var \Interop\Async\Awaitable
      */
     private $awaitable;
-    
+
     /**
      * @var bool
      */
     private $complete = false;
-    
+
     /**
-     * @param \Amp\Internal\EmitQueue $queue
+     * @var \Throwable|\Exception|null
      */
-    public function __construct(EmitQueue $queue) {
-        $this->queue = $queue;
-        $this->queue->increment();
+    private $exception;
+
+    /**
+     * @param \Amp\Internal\Subscription $subscription
+     */
+    public function __construct(Subscription $subscription) {
+        $this->subscription = $subscription;
     }
     
     /**
@@ -48,17 +52,17 @@ class EmitterIterator implements ObservableIterator {
         if ($this->emitted !== null) {
             $this->emitted->ready();
         }
-        
-        $this->queue->decrement();
+
+        $this->subscription->unsubscribe();
     }
 
     /**
      * {@inheritdoc}
      */
     public function isValid() {
-        return new Coroutine($this->doValid());
+        return new Coroutine($this->valid());
     }
-    
+
     /**
      * @coroutine
      *
@@ -68,28 +72,27 @@ class EmitterIterator implements ObservableIterator {
      *
      * @throws \Throwable|\Exception
      */
-    private function doValid() {
-        if ($this->awaitable !== null) {
-            throw new \LogicException("Simultaneous calls to isValid() are not allowed");
+    private function valid() {
+        while ($this->awaitable !== null) {
+            yield $this->awaitable; // Wait for previous calls to resolve.
         }
 
+        if ($this->emitted !== null) {
+            $this->emitted->ready();
+        }
+
+        $this->emitted = (yield $this->subscription->pull());
+
         try {
-            $emitted = $this->queue->pull();
-
-            if ($this->emitted !== null) {
-                $this->emitted->ready();
-            }
-
-            $this->emitted = $emitted;
             $this->current = (yield $this->awaitable = $this->emitted->getAwaitable());
         } catch (\Throwable $exception) {
-            $this->current = null;
+            $this->exception = $exception;
             throw $exception;
         } catch (\Exception $exception) {
-            $this->current = null;
+            $this->exception = $exception;
             throw $exception;
         } finally {
-            $this->complete = $this->queue->isComplete();
+            $this->complete = $this->emitted->isComplete();
             $this->awaitable = null;
         }
         
@@ -105,8 +108,8 @@ class EmitterIterator implements ObservableIterator {
         }
         
         if ($this->complete) {
-            if ($this->queue->isFailed()) {
-                throw $this->queue->getReason();
+            if ($this->exception) {
+                throw $this->exception;
             }
             
             throw new CompletedException("The observable has completed and the iterator is invalid");
@@ -127,8 +130,8 @@ class EmitterIterator implements ObservableIterator {
             throw new IncompleteException("The observable has not completed");
         }
         
-        if ($this->queue->isFailed()) {
-            throw $this->queue->getReason();
+        if ($this->exception) {
+            throw $this->exception;
         }
         
         return $this->current;
