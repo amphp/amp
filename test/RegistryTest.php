@@ -1,6 +1,8 @@
 <?php
 
-namespace Interop\Async;
+namespace Interop\Async\Loop;
+
+use Interop\Async\Registry;
 
 class RegistryTest extends \PHPUnit_Framework_TestCase
 {
