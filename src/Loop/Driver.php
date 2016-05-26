@@ -94,6 +94,8 @@ interface Driver
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     *
+     * @throws UnsupportedFeatureException Thrown if signal handling is not supported.
      */
     public function onSignal($signo, callable $callback, $data = null);
 
@@ -103,6 +105,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function enable($watcherId);
 
@@ -112,6 +116,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function disable($watcherId);
 
@@ -121,6 +127,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function cancel($watcherId);
 
@@ -133,6 +141,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function reference($watcherId);
 
@@ -145,6 +155,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function unreference($watcherId);
 
