@@ -83,11 +83,11 @@ class NativeLoop implements LoopDriver {
     /**
      * {@inheritdoc}
      * 
-     * @throws \Amp\Loop\Exception\AlreadyRunningException
+     * @throws \Amp\Loop\AlreadyRunningException
      */
     public function run() {
         if ($this->running) {
-            throw new Exception\AlreadyRunningException("Cannot run loop recursively; loop already running");
+            throw new AlreadyRunningException("Cannot run loop recursively; loop already running");
         }
 
         $this->running = true;
@@ -421,7 +421,7 @@ class NativeLoop implements LoopDriver {
      * {@inheritdoc}
      *
      * @throws \Interop\Async\UnsupportedFeatureException If the pcntl extension is not available.
-     * @throws \Amp\Loop\Exception\SignalHandlerException If creating the backend signal handler fails.
+     * @throws \Amp\Loop\SignalHandlerException If creating the backend signal handler fails.
      */
     public function onSignal($signo, callable $callback, $data = null) {
         if (!$this->signalHandling) {
@@ -444,7 +444,7 @@ class NativeLoop implements LoopDriver {
     /**
      * @param \Amp\Loop\Internal\Watcher $watcher
      *
-     * @throws \Amp\Loop\Exception\SignalHandlerException If creating the backend signal handler fails.
+     * @throws \Amp\Loop\SignalHandlerException If creating the backend signal handler fails.
      */
     private function enableSignal(Watcher $watcher) {
         if (!isset($this->signalWatchers[$watcher->value])) {
@@ -460,7 +460,7 @@ class NativeLoop implements LoopDriver {
                     $callback($watcher->id, $watcher->value, $watcher->data);
                 }
             })) {
-                throw new Exception\SignalHandlerException("Failed to register signal handler");
+                throw new SignalHandlerException("Failed to register signal handler");
             }
 
             $this->signalWatchers[$watcher->value] = [];

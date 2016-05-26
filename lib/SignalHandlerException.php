@@ -1,5 +1,5 @@
 <?php
 
-namespace Amp\Loop\Exception;
+namespace Amp\Loop;
 
 class SignalHandlerException extends \RuntimeException {}
