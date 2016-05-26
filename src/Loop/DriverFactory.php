@@ -1,13 +1,13 @@
 <?php
 
-namespace Interop\Async;
+namespace Interop\Async\Loop;
 
-interface LoopDriverFactory
+interface DriverFactory
 {
 	/**
 	 * Create a new event loop driver instance.
 	 *
-	 * @return LoopDriver
+	 * @return Driver
 	 */
 	public function create();
 }

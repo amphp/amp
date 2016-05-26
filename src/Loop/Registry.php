@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async;
+namespace Interop\Async\Loop;
 
 /**
  * State registry to be used in Interop\Async\Loop.

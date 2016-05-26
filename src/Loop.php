@@ -2,17 +2,20 @@
 
 namespace Interop\Async;
 
+use Interop\Async\Loop\Driver;
+use Interop\Async\Loop\DriverFactory;
+
 final class Loop
 {
-    use Registry;
+    use Loop\Registry;
 
     /**
-     * @var LoopDriverFactory
+     * @var DriverFactory
      */
     private static $factory = null;
 
     /**
-     * @var LoopDriver
+     * @var Driver
      */
     private static $driver = null;
 
@@ -29,8 +32,10 @@ final class Loop
      *
      * The factory will be invoked if none is passed to Loop::execute. A default driver will be created to support
      * synchronous waits in traditional applications.
+     *
+     * @param DriverFactory|null $factory
      */
-    public static function setFactory(LoopDriverFactory $factory = null)
+    public static function setFactory(DriverFactory $factory = null)
     {
         if (self::$level > 0) {
             throw new \RuntimeException("Setting a new factory while running isn't allowed!");
@@ -51,11 +56,11 @@ final class Loop
      * Execute a callback within the scope of an event loop driver.
      *
      * @param callable $callback The callback to execute
-     * @param LoopDriver $driver The event loop driver
+     * @param Driver $driver The event loop driver
      *
      * @return void
      */
-    public static function execute(callable $callback, LoopDriver $driver = null)
+    public static function execute(callable $callback, Driver $driver = null)
     {
         $previousRegistry = self::$registry;
         $previousDriver = self::$driver;
@@ -90,9 +95,9 @@ final class Loop
 
         $driver = self::$factory->create();
 
-        if (!$driver instanceof LoopDriver) {
+        if (!$driver instanceof Driver) {
             $type = is_object($driver) ? "an instance of " . get_class($driver) : gettype($driver);
-            throw new \LogicException("Loop driver factory returned {$type}, but must return an instance of LoopDriver.");
+            throw new \LogicException("Loop driver factory returned {$type}, but must return an instance of Driver.");
         }
 
         return $driver;
@@ -101,7 +106,7 @@ final class Loop
     /**
      * Retrieve the event loop driver that is in scope.
      *
-     * @return LoopDriver
+     * @return Driver
      */
     public static function get()
     {

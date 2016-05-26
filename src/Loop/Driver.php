@@ -1,8 +1,8 @@
 <?php
 
-namespace Interop\Async;
+namespace Interop\Async\Loop;
 
-interface LoopDriver
+interface Driver
 {
     /**
      * Start the event loop.
