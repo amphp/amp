@@ -10,7 +10,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Interop\\Async\\Loop": "src"
+      "Interop\\Async\\Loop\\": "src"
     }
   }
 }
