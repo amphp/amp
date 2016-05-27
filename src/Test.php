@@ -685,7 +685,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 * @expectedExceptionMessage test
 	 */
 	function testLoopException() {
-		$this->start(function(Driver $loop)	{
+		$this->start(function(Driver $loop) {
 			$loop->defer(function() use ($loop) {
 				// force next tick, outside of primary startup tick
 				$loop->defer(function() {
@@ -721,7 +721,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
 	function testInitiallyDisabledOnSignalWatcher() {
 		if (!\extension_loaded("posix")) {
-			$this->markTestIncomplete("ext/posix required to test signal handlers");
+			$this->markTestSkipped("ext/posix required to test signal handlers");
 		}
 
 		$this->expectOutputString("caught SIGUSR1");
