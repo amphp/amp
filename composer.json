@@ -13,6 +13,9 @@
     "require": {
         "async-interop/event-loop": "dev-master"
     },
+    "require-dev": {
+        "async-interop/event-loop-test": "dev-master"
+    },
     "provide": {
         "async-interop/event-loop-implementation": "dev-master"
     },
