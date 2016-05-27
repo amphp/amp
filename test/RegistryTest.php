@@ -4,37 +4,17 @@ namespace Interop\Async\Loop;
 
 class RegistryTest extends \PHPUnit_Framework_TestCase
 {
-    use Registry;
+    private $registry;
 
     protected function setUp()
     {
-        self::$registry = null;
-    }
-
-    /**
-     * @test
-     * @expectedException \RuntimeException
-     */
-    public function fetchfailsOutsideOfLoop()
-    {
-        self::fetchState("foobar");
-    }
-
-    /**
-     * @test
-     * @expectedException \RuntimeException
-     */
-    public function storefailsOutsideOfLoop()
-    {
-        self::fetchState("store");
+        $this->registry = $this->getMockForTrait(Registry::class);
     }
 
     /** @test */
     public function defaultsToNull()
     {
-        // emulate we're in an event loop…
-        self::$registry = [];
-        $this->assertNull(self::fetchState("foobar"));
+        $this->assertNull($this->registry->fetchState("foobar"));
     }
 
     /**
@@ -43,13 +23,10 @@ class RegistryTest extends \PHPUnit_Framework_TestCase
      */
     public function fetchesStoredValue($value)
     {
-        // emulate we're in an event loop…
-        self::$registry = [];
+        $this->assertNull($this->registry->fetchState("foobar"));
+        $this->registry->storeState("foobar", $value);
 
-        $this->assertNull(self::fetchState("foobar"));
-        self::storeState("foobar", $value);
-
-        $this->assertSame($value, self::fetchState("foobar"));
+        $this->assertSame($value, $this->registry->fetchState("foobar"));
     }
 
     public function provideValues()
