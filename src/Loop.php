@@ -4,8 +4,6 @@ namespace Interop\Async;
 
 use Interop\Async\Loop\Driver;
 use Interop\Async\Loop\DriverFactory;
-use Interop\Async\Loop\InvalidWatcherException;
-use Interop\Async\Loop\UnsupportedFeatureException;
 
 final class Loop
 {
@@ -211,8 +209,6 @@ final class Loop
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
-     *
-     * @throws UnsupportedFeatureException Thrown if signal handling is not supported.
      */
     public static function onSignal($signo, callable $callback, $data = null)
     {
@@ -225,8 +221,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function enable($watcherId)
     {
@@ -239,8 +233,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function disable($watcherId)
     {
@@ -253,8 +245,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function cancel($watcherId)
     {
@@ -270,8 +260,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function reference($watcherId)
     {
@@ -287,8 +275,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid or cancelled.
      */
     public static function unreference($watcherId)
     {
