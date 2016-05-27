@@ -33,10 +33,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->loop->run();
 	}
 	
-	/**
-	 * @expectedException \Exception
-	 */
-	function testStopThrowsIfNotCurrentlyRunning() {
+	function testStopWorksEvenIfNotCurrentlyRunning() {
 		$this->loop->stop();
 	}
 
@@ -703,7 +700,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 */
 	function testOnSignalWatcher() {
 		if (!\extension_loaded("posix")) {
-			$this->markTestIncomplete("ext/posix required to test signal handlers");
+			$this->markTestSkipped("ext/posix required to test signal handlers");
 		}
 
 		$this->expectOutputString("caught SIGUSR1");
