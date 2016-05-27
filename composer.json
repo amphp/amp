@@ -1,0 +1,16 @@
+{
+  "name": "async-interop/event-loop-test",
+  "description": "An abstract test file to ensure compatibility between event-loop implementations.",
+  "keywords": ["event", "loop", "async", "interop", "test"],
+  "license": "MIT",
+  "require": {
+    "php": ">=5.5.0",
+    "async-interop/event-loop": "dev-master",
+    "phpunit/phpunit": "^4|^5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Interop\\Async\\Loop": "src"
+    }
+  }
+}
