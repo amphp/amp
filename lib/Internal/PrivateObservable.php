@@ -8,16 +8,12 @@ use Amp\Observable;
  * An observable that cannot externally emit values. Used by Postponed in development mode.
  */
 final class PrivateObservable implements Observable {
-    use Producer {
-        __construct as init;
-    }
+    use Producer;
 
     /**
      * @param callable(callable $emit, callable $complete, callable $fail): void $emitter
      */
     public function __construct(callable $emitter) {
-        $this->init();
-
         /**
          * Emits a value from the observable.
          *

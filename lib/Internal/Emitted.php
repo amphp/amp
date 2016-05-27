@@ -3,14 +3,12 @@
 namespace Amp\Internal;
 
 use Amp\Future;
-use Amp\Success;
-use Interop\Async\Awaitable;
 
 final class Emitted {
     /**
-     * @var \Interop\Async\Awaitable
+     * @var mixed
      */
-    private $awaitable;
+    private $value;
 
     /**
      * @var int
@@ -20,7 +18,7 @@ final class Emitted {
     /**
      * @var \Amp\Future
      */
-    private $future;
+    private $ready;
 
     /**
      * @var bool
@@ -33,17 +31,21 @@ final class Emitted {
      * @param bool $complete
      */
     public function __construct($value, $waiting, $complete) {
-        $this->awaitable = $value instanceof Awaitable ? $value : new Success($value);
+        $this->value = $value;
         $this->waiting = (int) $waiting;
         $this->complete = (bool) $complete;
-        $this->future = new Future;
+        $this->ready = new Future;
+
+        if ($this->waiting === 0) {
+            $this->ready->resolve($this->value);
+        }
     }
 
     /**
-     * @return \Interop\Async\Awaitable|mixed
+     * @return mixed
      */
-    public function getAwaitable() {
-        return $this->awaitable;
+    public function getValue() {
+        return $this->value;
     }
 
     /**
@@ -58,7 +60,7 @@ final class Emitted {
      */
     public function ready() {
         if (--$this->waiting === 0) {
-            $this->future->resolve($this->awaitable);
+            $this->ready->resolve($this->value);
         }
     }
 
@@ -66,6 +68,6 @@ final class Emitted {
      * @return \Interop\Async\Awaitable
      */
     public function wait() {
-        return $this->future;
+        return $this->ready;
     }
 }

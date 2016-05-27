@@ -22,24 +22,13 @@ function merge(array $observables) {
 
     $postponed = new Postponed;
 
-    $generator = function (Observable $observable) use ($postponed) {
-        $observer = $observable->getObserver();
-
-        while (yield $observer->isValid()) {
-            yield $postponed->emit($observer->getCurrent());
-        }
-
-        yield Coroutine::result($observer->getReturn());
-    };
-
-    /** @var \Amp\Coroutine[] $coroutines */
-    $coroutines = [];
+    $subscriptions = [];
 
     foreach ($observables as $observable) {
-        $coroutines[] = new Coroutine($generator($observable));
+        $subscriptions[] = $observable->subscribe([$postponed, 'emit']);
     }
 
-    all($coroutines)->when(function ($exception, $value) use ($postponed) {
+    all($subscriptions)->when(function ($exception, $value) use ($postponed) {
         if ($exception) {
             $postponed->fail($exception);
             return;

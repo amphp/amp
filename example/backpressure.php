@@ -4,7 +4,6 @@
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Coroutine;
-use Amp\Observable;
 use Amp\Pause;
 use Amp\Postponed;
 use Amp\Loop\NativeLoop;
@@ -12,9 +11,23 @@ use Interop\Async\Loop;
 
 Loop::execute(Amp\coroutine(function () {
     try {
-        $coroutines = [];
-
         $postponed = new Postponed;
+
+        $observable = $postponed->getObservable();
+
+        $disposable = $observable->subscribe(function ($value) {
+            printf("Observable emitted %d\n", $value);
+            return new Pause(500); // Artificial back-pressure on observable.
+        });
+
+        $disposable->when(function ($exception, $value) {
+            if ($exception) {
+                printf("Observable failed: %s\n", $exception->getMessage());
+                return;
+            }
+
+            printf("Observable result %d\n", $value);
+        });
 
         $generator = function (Postponed $postponed) {
             yield $postponed->emit(new Pause(500, 1));
@@ -27,26 +40,10 @@ Loop::execute(Amp\coroutine(function () {
             yield $postponed->emit(new Pause(2000, 8));
             yield $postponed->emit(9);
             yield $postponed->emit(10);
-            yield $postponed->complete(11);
+            $postponed->complete(11);
         };
 
-        $coroutines[] = new Coroutine($generator($postponed));
-
-        $generator = function (Observable $observable) {
-            $observer = $observable->getObserver();
-
-            while (yield $observer->isValid()) {
-                printf("Observable emitted %d\n", $observer->getCurrent());
-                yield new Pause(500); // Artificial back-pressure on observer.
-            }
-
-            printf("Observable result %d\n", $observer->getReturn());
-        };
-
-
-        $coroutines[] = new Coroutine($generator($postponed->getObservable()));
-
-        yield Amp\all($coroutines);
+        yield new Coroutine($generator($postponed));
 
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
