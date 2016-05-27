@@ -3,12 +3,17 @@
 namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
-use Interop\Async\LoopDriver;
-use Interop\Async\UnsupportedFeatureException;
+use Interop\Async\Loop\Driver;
+use Interop\Async\Loop\UnsupportedFeatureException;
 
-class NativeLoop implements LoopDriver {
+class NativeLoop implements Driver {
     const MILLISEC_PER_SEC = 1e3;
     const MICROSEC_PER_SEC = 1e6;
+    
+    /**
+     * @var string
+     */
+    private $nextId = "a";
 
     /**
      * @var \Amp\Loop\Internal\Watcher[]
@@ -242,33 +247,17 @@ class NativeLoop implements LoopDriver {
      */
     private function invokeDeferred() {
         $queue = $this->deferQueue;
-        $this->deferQueue = [];
-        $count = 0;
 
-        try {
-            foreach ($queue as $id) {
-                ++$count;
-
-                if (!isset($this->watchers[$id])) {
-                    continue;
-                }
-
-                $watcher = $this->watchers[$id];
-                unset($this->watchers[$id], $this->unreferenced[$id]);
-
-                $callback = $watcher->callback;
-                $callback($watcher->id, $watcher->data);
+        foreach ($queue as $id) {
+            if (!isset($this->watchers[$id]) || !isset($this->deferQueue[$id])) {
+                continue;
             }
-        } catch (\Throwable $exception) {
-            if ($count !== \count($queue)) {
-                $this->deferQueue = \array_merge(\array_slice($queue, $count), $this->deferQueue);
-            }
-            throw $exception;
-        } catch (\Exception $exception) {
-            if ($count !== \count($queue)) {
-                $this->deferQueue = \array_merge(\array_slice($queue, $count), $this->deferQueue);
-            }
-            throw $exception;
+
+            $watcher = $this->watchers[$id];
+            unset($this->watchers[$id], $this->deferQueue[$id], $this->unreferenced[$id]);
+
+            $callback = $watcher->callback;
+            $callback($watcher->id, $watcher->data);
         }
     }
 
@@ -315,12 +304,12 @@ class NativeLoop implements LoopDriver {
     public function defer(callable $callback, $data = null) {
         $watcher = new Watcher;
         $watcher->type = Watcher::DEFER;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->data = $data;
         
         $this->watchers[$watcher->id] = $watcher;
-        $this->deferQueue[] = $watcher->id;
+        $this->deferQueue[$watcher->id] = $watcher->id;
 
         return $watcher->id;
     }
@@ -337,7 +326,7 @@ class NativeLoop implements LoopDriver {
 
         $watcher = new Watcher;
         $watcher->type = Watcher::DELAY;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $delay;
         $watcher->data = $data;
@@ -364,7 +353,7 @@ class NativeLoop implements LoopDriver {
 
         $watcher = new Watcher;
         $watcher->type = Watcher::REPEAT;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $interval;
         $watcher->data = $data;
@@ -385,7 +374,7 @@ class NativeLoop implements LoopDriver {
     public function onReadable($stream, callable $callback, $data = null) {
         $watcher = new Watcher;
         $watcher->type = Watcher::READABLE;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $stream;
         $watcher->data = $data;
@@ -404,7 +393,7 @@ class NativeLoop implements LoopDriver {
     public function onWritable($stream, callable $callback, $data = null) {
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $stream;
         $watcher->data = $data;
@@ -420,7 +409,7 @@ class NativeLoop implements LoopDriver {
     /**
      * {@inheritdoc}
      *
-     * @throws \Interop\Async\UnsupportedFeatureException If the pcntl extension is not available.
+     * @throws \Interop\Async\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      * @throws \Amp\Loop\SignalHandlerException If creating the backend signal handler fails.
      */
     public function onSignal($signo, callable $callback, $data = null) {
@@ -430,7 +419,7 @@ class NativeLoop implements LoopDriver {
 
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
-        $watcher->id = \spl_object_hash($watcher);
+        $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $signo;
         $watcher->data = $data;
@@ -457,7 +446,7 @@ class NativeLoop implements LoopDriver {
                     $watcher = $this->watchers[$id];
 
                     $callback = $watcher->callback;
-                    $callback($watcher->id, $watcher->value, $watcher->data);
+                    $callback($watcher->id, $signo, $watcher->data);
                 }
             })) {
                 throw new SignalHandlerException("Failed to register signal handler");
@@ -495,7 +484,7 @@ class NativeLoop implements LoopDriver {
      */
     public function enable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            return;
+            throw new \LogicException("Cannot enable invalid watcher");
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
@@ -515,9 +504,17 @@ class NativeLoop implements LoopDriver {
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
+                if (isset($this->timerExpires[$watcher->id])) {
+                    break;
+                }
+
                 $expiration = (int) (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->value;
                 $this->timerExpires[$watcher->id] = $expiration;
                 $this->timerQueue->insert([$watcher->id, $expiration], -$expiration);
+                break;
+
+            case Watcher::DEFER:
+                $this->deferQueue[$watcher->id] = $watcher->id;
                 break;
 
             case Watcher::SIGNAL:
@@ -548,15 +545,12 @@ class NativeLoop implements LoopDriver {
                 break;
 
             case Watcher::DELAY:
-                unset($this->watchers[$watcher->id]);
-                // No break
-
             case Watcher::REPEAT:
                 unset($this->timerExpires[$watcher->id]);
                 break;
 
             case Watcher::DEFER:
-                unset($this->watchers[$watcher->id]);
+                unset($this->deferQueue[$watcher->id]);
                 break;
 
             case Watcher::SIGNAL:
