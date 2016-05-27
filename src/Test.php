@@ -182,10 +182,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	/**
-	 * @expectedException InvalidWatcherException
-	 */
-	function testExceptionOnDeferWatcherIdReuse() {
+	function testSuccessOnDeferWatcherIdReuse() {
 		$this->start(function(Driver $loop) {
 			$watcherId = $loop->defer(function($watcherId) use ($loop) {
 				$loop->disable($watcherId);
@@ -303,7 +300,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
 	/**
 	 * @dataProvider provideRegistrationArgs
-	 * @expectedException InvalidWatcherException
 	 */
 	function testWatcherRegistrationAndCancellationInfo($type, $args) {
 		if ($type === "onSignal") {
@@ -362,8 +358,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$expected = ["enabled" => 0, "disabled" => 0];
 		$this->assertSame($expected, $info[$type]);
 
-		// invoke cancel() again to ensure it fails
+		// invoke watcher control ops again to ensure they succeed
 		$loop->cancel($watcherId);
+		$loop->disable($watcherId);
+		$loop->enable($watcherId);
+		$info = $loop->info();
+		$expected = ["enabled" => 0, "disabled" => 0];
+		$this->assertSame($expected, $info[$type]);
 	}
 
 	/**
@@ -480,24 +481,15 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	/**
-	 * @expectedException InvalidWatcherException
-	 */
-	function testExceptionOnEnableNonexistentWatcher() {
+	function testSuccessOnEnableNonexistentWatcher() {
 		$this->loop->enable("nonexistentWatcher");
 	}
 
-	/**
-	 * @expectedException InvalidWatcherException
-	 */
-	function testExceptionOnDisableNonexistentWatcher() {
+	function testSuccessOnDisableNonexistentWatcher() {
 		$this->loop->disable("nonexistentWatcher");
 	}
 
-	/**
-	 * @expectedException InvalidWatcherException
-	 */
-	function testExceptionOnCancelNonexistentWatcher() {
+	function testSuccessOnCancelNonexistentWatcher() {
 		$this->loop->cancel("nonexistentWatcher");
 	}
 
