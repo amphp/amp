@@ -16,7 +16,7 @@ class Success implements Awaitable {
      *
      * @throws \InvalidArgumentException If an awaitable is given as the value.
      */
-    public function __construct($value)
+    public function __construct($value = null)
     {
         if ($value instanceof Awaitable) {
             throw new \InvalidArgumentException("Cannot use an awaitable as success value");
