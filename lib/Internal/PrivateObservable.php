@@ -29,26 +29,22 @@ final class PrivateObservable implements Observable {
          * Completes the observable with the given value.
          *
          * @param mixed $value
-         *
-         * @return \Interop\Async\Awaitable
          */
-        $complete = function ($value = null) {
-            return $this->complete($value);
+        $resolve = function ($value = null) {
+            $this->resolve($value);
         };
 
         /**
          * Fails the observable with the given exception.
          *
          * @param \Exception $reason
-         *
-         * @return \Interop\Async\Awaitable
          */
         $fail = function ($reason) {
-            return $this->fail($reason);
+            $this->fail($reason);
         };
 
         try {
-            $emitter($emit, $complete, $fail);
+            $emitter($emit, $resolve, $fail);
         } catch (\Throwable $exception) {
             $this->fail($exception);
         } catch (\Exception $exception) {

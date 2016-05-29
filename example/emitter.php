@@ -23,7 +23,7 @@ Loop::execute(function () {
             $postponed->emit(new Pause(2000, 8));
             $postponed->emit(9);
             $postponed->emit(10);
-            $postponed->complete(11);
+            $postponed->resolve(11);
         });
 
         $observable = $postponed->getObservable();

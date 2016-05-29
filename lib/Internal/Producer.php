@@ -2,60 +2,93 @@
 
 namespace Amp\Internal;
 
-use Amp\CompletedException;
 use Amp\Coroutine;
-use Amp\Failure;
+use Amp\DisposedException;
+use Amp\Future;
+use Amp\Observable;
 use Amp\Subscriber;
+use Amp\Success;
+use Interop\Async\Awaitable;
 
 trait Producer {
-    /**
-     * @var Subscription[]
-     */
-    private $subscriptions = [];
+    use Placeholder {
+        resolve as complete;
+    }
 
     /**
-     * @var bool
+     * @var callable[]
      */
-    private $complete = false;
+    private $subscribers = [];
 
     /**
-     * @var \Throwable|\Exception|null
+     * @var \Amp\Future[]
      */
-    private $exception;
+    private $futures = [];
+
+    /**
+     * @var string
+     */
+    private $nextId = "a";
 
     /**
      * @var callable
      */
-    private $unsubscribe;
+    private $dispose;
 
     /**
-     * 
+     * @param callable $onNext
+     *
+     * @return \Amp\Subscriber
      */
     public function subscribe(callable $onNext) {
-        if ($this->unsubscribe === null) {
-            $this->unsubscribe = function (Subscription $subscription) {
-                unset($this->subscriptions[\spl_object_hash($subscription)]);
+        if ($this->dispose === null) {
+            $this->dispose = function ($id, $exception = null) {
+                $this->dispose($id, $exception);
             };
         }
 
-        $subscription = new Subscription($this->unsubscribe);
-        $this->subscriptions[\spl_object_hash($subscription)] = $subscription;
+        if ($this->result !== null) {
+            return new Subscriber(
+                $this->nextId++,
+                $this->result instanceof Awaitable ? $this->result : new Success($this->result),
+                $this->dispose
+            );
+        }
 
-        return new Subscriber($onNext, $subscription);
+        $id = $this->nextId++;
+        $this->futures[$id] = new Future;
+        $this->subscribers[$id] = $onNext;
+
+        return new Subscriber($id, $this->futures[$id], $this->dispose);
     }
 
     /**
-     * Emits a value from the observable. If the value is an awaitable, the success value will be emitted. If the
-     * awaitable fails, the observable will fail with the same exception. The returned awaitable is resolved with the
-     * emitted value once all subscribers have been invoked.
+     * @param string $id
+     * @param \Throwable|\Exception|null $exception
+     */
+    protected function dispose($id, $exception = null) {
+        if (!isset($this->futures[$id])) {
+            throw new \LogicException("Disposable has already been disposed");
+        }
+
+        $future = $this->futures[$id];
+        unset($this->subscribers[$id], $this->futures[$id]);
+        $future->fail($exception ?: new DisposedException());
+    }
+
+    /**
+     * Emits a value from the observable. The returned awaitable is resolved with the emitted value once all subscribers
+     * have been invoked.
      *
      * @param mixed $value
      *
      * @return \Interop\Async\Awaitable
+     *
+     * @throws \LogicException If the observable has resolved.
      */
     protected function emit($value = null) {
-        if ($this->complete) {
-            throw new CompletedException("The observable has completed");
+        if ($this->resolved) {
+            throw new \LogicException("The observable has been resolved; cannot emit more values");
         }
 
         return new Coroutine($this->push($value));
@@ -65,67 +98,77 @@ trait Producer {
      * @coroutine
      *
      * @param mixed $value
-     * @param bool $complete
      *
      * @return \Generator
      *
      * @throws \InvalidArgumentException
      * @throws \Throwable|\Exception
      */
-    private function push($value, $complete = false) {
-        $emitted = new Emitted($value, \count($this->subscriptions), $complete);
-
-        foreach ($this->subscriptions as $subscription) {
-            $subscription->push($emitted);
-        }
-
+    private function push($value) {
         try {
-            $value = (yield $emitted->wait());
+            if ($value instanceof Awaitable) {
+                $value = (yield $value);
+            } elseif ($value instanceof Observable) {
+                $disposable = $value->subscribe(function ($value) {
+                    return $this->emit($value);
+                });
+                $value = (yield $disposable);
+            }
         } catch (\Throwable $exception) {
-            $this->complete = true;
+            if (!$this->resolved) {
+                $this->fail($exception);
+            }
             throw $exception;
         } catch (\Exception $exception) {
-            $this->complete = true;
+            if (!$this->resolved) {
+                $this->fail($exception);
+            }
             throw $exception;
+        }
+
+        $awaitables = [];
+
+        foreach ($this->subscribers as $id => $onNext) {
+            try {
+                $result = $onNext($value);
+                if ($result instanceof Awaitable) {
+                    $awaitables[$id] = $result;
+                }
+            } catch (\Throwable $exception) {
+                $this->dispose($id, $exception);
+            } catch (\Exception $exception) {
+                $this->dispose($id, $exception);
+            }
+        }
+
+        foreach ($awaitables as $id => $awaitable) {
+            try {
+                yield $awaitable;
+            } catch (\Throwable $exception) {
+                $this->dispose($id, $exception);
+            } catch (\Exception $exception) {
+                $this->dispose($id, $exception);
+            }
         }
 
         yield Coroutine::result($value);
     }
 
     /**
-     * Completes the observable with the given value. If the value is an awaitable, the success value will be emitted.
-     * If the awaitable fails, the observable will fail with the same exception. The returned awaitable is resolved
-     * with the completion value once all subscribers have received all prior emitted values.
+     * Resolves the observable with the given value.
      *
      * @param mixed $value
      *
-     * @return \Interop\Async\Awaitable
+     * @throws \LogicException If the observable has already been resolved.
      */
-    protected function complete($value = null) {
-        if ($this->complete) {
-            throw new CompletedException("The observable has completed");
+    protected function resolve($value = null) {
+        $futures = $this->futures;
+        $this->subscribers = $this->futures = [];
+
+        $this->complete($value);
+
+        foreach ($futures as $future) {
+            $future->resolve($value);
         }
-
-        $this->complete = true;
-
-        return new Coroutine($this->push($value, true));
-    }
-
-    /**
-     * Fails the observable with the given exception. The returned awaitable fails with the given exception once all
-     * subscribers have been received all prior emitted values.
-     *
-     * @param \Throwable|\Exception $exception
-     *
-     * @return \Interop\Async\Awaitable
-     */
-    protected function fail($exception) {
-        if ($this->complete) {
-            throw new CompletedException("The observable has completed");
-        }
-
-        $this->complete = true;
-
-        return new Coroutine($this->push(new Failure($exception), true));
     }
 }

@@ -6,78 +6,43 @@ use Interop\Async\Awaitable;
 
 final class Subscriber implements Disposable {
     /**
-     * @var \Amp\Coroutine
+     * @var string
      */
-    private $coroutine;
+    private $id;
 
     /**
-     * @var bool
+     * @var \Interop\Async\Awaitable
      */
-    private $subscribed = true;
+    private $awaitable;
 
     /**
-     * @param callable $onNext
-     * @param \Amp\Internal\Subscription $subscription
+     * @var callable
      */
-    public function __construct(callable $onNext, Internal\Subscription $subscription) {
-        $this->coroutine = new Coroutine($this->run($onNext, $subscription));
-    }
+    private $dispose;
 
     /**
-     * @coroutine
-     *
-     * @param callable $onNext
-     * @param \Amp\Internal\Subscription $subscription
-     *
-     * @return \Generator
-     *
-     * @throws \Throwable|\Exception
+     * @param string $id
+     * @param \Interop\Async\Awaitable $awaitable
+     * @param callable $dispose
      */
-    private function run(callable $onNext, Internal\Subscription $subscription) {
-        try {
-            while ($this->subscribed) {
-                /** @var \Amp\Internal\Emitted $emitted */
-                $emitted = (yield $subscription->pull());
-
-                try {
-                    $value = $emitted->getValue();
-
-                    if ($value instanceof Awaitable) {
-                        $value = (yield $value);
-                    }
-
-                    if ($emitted->isComplete()) {
-                        yield Coroutine::result($value);
-                        return;
-                    }
-
-                    $result = $onNext($value);
-
-                    if ($result instanceof Awaitable) {
-                        yield $result;
-                    }
-                } finally {
-                    $emitted->ready();
-                }
-            }
-        } finally {
-            $subscription->unsubscribe();
-        }
-
-        throw new DisposedException("The subscriber was disposed");
+    public function __construct($id, Awaitable $awaitable, callable $dispose) {
+        $this->id = $id;
+        $this->awaitable = $awaitable;
+        $this->dispose = $dispose;
     }
 
     /**
      * {@inheritdoc}
      */
     public function when(callable $onResolved) {
-        $this->coroutine->when($onResolved);
+        $this->awaitable->when($onResolved);
     }
 
     /**
      * {@inheritdoc}
      */
     public function dispose() {
-        $this->subscribed = false;
+        $dispose = $this->dispose;
+        $dispose($this->id);
     }
 }

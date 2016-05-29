@@ -34,7 +34,7 @@ function merge(array $observables) {
             return;
         }
 
-        $postponed->complete($value);
+        $postponed->resolve($value);
     });
 
     return $postponed->getObservable();
@@ -63,7 +63,7 @@ function interval($interval, $count = 0) {
 
         if ($i === $count) {
             Loop::cancel($watcher);
-            $postponed->complete();
+            $postponed->resolve();
         }
     });
 
@@ -105,7 +105,7 @@ function range($start, $end, $step = 1) {
             return;
         }
 
-        $postponed->complete();
+        $postponed->resolve();
     });
 
     return $postponed->getObservable();

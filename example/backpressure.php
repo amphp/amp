@@ -40,7 +40,7 @@ Loop::execute(Amp\coroutine(function () {
             yield $postponed->emit(new Pause(2000, 8));
             yield $postponed->emit(9);
             yield $postponed->emit(10);
-            $postponed->complete(11);
+            $postponed->resolve(11);
         };
 
         yield new Coroutine($generator($postponed));

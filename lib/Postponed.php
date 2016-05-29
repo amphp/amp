@@ -8,7 +8,7 @@ try {
         final class Postponed implements Observable {
             use Internal\Producer {
                 emit as public;
-                complete as public;
+                resolve as public;
                 fail as public;
             }
 
@@ -35,7 +35,7 @@ try {
             /**
              * @var callable
              */
-            private $complete;
+            private $resolve;
             
             /**
              * @var callable
@@ -44,9 +44,9 @@ try {
 
             public function __construct() {
                 $this->observable = new Internal\PrivateObservable(
-                    function (callable $emit, callable $complete, callable $fail) {
+                    function (callable $emit, callable $resolve, callable $fail) {
                         $this->emit = $emit;
-                        $this->complete = $complete;
+                        $this->resolve = $resolve;
                         $this->fail = $fail;
                     }
                 );
@@ -72,27 +72,23 @@ try {
             }
 
             /**
-             * Completes the observable with the given value.
+             * Resolves the observable with the given value.
              *
              * @param mixed $value
-             *
-             * @return \Interop\Async\Awaitable
              */
-            public function complete($value = null) {
-                $complete = $this->complete;
-                return $complete($value);
+            public function resolve($value = null) {
+                $resolve = $this->resolve;
+                $resolve($value);
             }
 
             /**
              * Fails the observable with the given reason.
              *
              * @param \Throwable|\Exception $reason
-             *
-             * @return \Interop\Async\Awaitable
              */
             public function fail($reason) {
                 $fail = $this->fail;
-                return $fail($reason);
+                $fail($reason);
             }
         }
     }

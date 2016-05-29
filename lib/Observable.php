@@ -2,7 +2,9 @@
 
 namespace Amp;
 
-interface Observable {
+use Interop\Async\Awaitable;
+
+interface Observable extends Awaitable {
     /**
      * Registers a callback to be invoked each time value is emitted from the observable. If the function returns an
      * awaitable, backpressure is applied to the awaitable until the returned awaitable is resolved.
