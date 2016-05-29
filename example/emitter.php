@@ -13,14 +13,14 @@ Loop::execute(function () {
         $postponed = new Postponed;
 
         Loop::defer(function () use ($postponed) {
-            $postponed->emit(new Pause(500, 1));
-            $postponed->emit(new Pause(1500, 2));
-            $postponed->emit(new Pause(1000, 3));
-            $postponed->emit(new Pause(2000, 4));
+            $postponed->emit(1);
+            $postponed->emit(2);
+            $postponed->emit(3);
+            $postponed->emit(4);
             $postponed->emit(5);
             $postponed->emit(6);
             $postponed->emit(7);
-            $postponed->emit(new Pause(2000, 8));
+            $postponed->emit(8);
             $postponed->emit(9);
             $postponed->emit(10);
             $postponed->resolve(11);
