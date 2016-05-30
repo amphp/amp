@@ -9,14 +9,24 @@ final class Observer {
     private $subscriber;
 
     /**
-     * @var \Amp\Deferred
+     * @var mixed[]
      */
-    private $deferred;
+    private $values = [];
 
     /**
-     * @var \Amp\Future
+     * @var \Amp\Future[]
      */
-    private $future;
+    private $futures = [];
+
+    /**
+     * @var int
+     */
+    private $position = -1;
+
+    /**
+     * @var \Amp\Deferred|null
+     */
+    private $deferred;
 
     /**
      * @var bool
@@ -26,10 +36,10 @@ final class Observer {
     /**
      * @var mixed
      */
-    private $current;
+    private $result;
 
     /**
-     * @var \Throwable|\Exception
+     * @var \Throwable|\Exception|null
      */
     private $exception;
 
@@ -37,40 +47,41 @@ final class Observer {
      * @param \Amp\Observable $observable
      */
     public function __construct(Observable $observable) {
-        $this->deferred = new Deferred;
-
         $deferred = &$this->deferred;
-        $future   = &$this->future;
-        $current  = &$this->current;
+        $values   = &$this->values;
+        $futures  = &$this->futures;
 
-        $this->subscriber = $observable->subscribe(static function ($value) use (&$deferred, &$future, &$current) {
-            $current = $value;
+        $this->subscriber = $observable->subscribe(static function ($value) use (&$deferred, &$values, &$futures) {
+            $values[] = $value;
+            $futures[] = $future = new Future;
 
-            $future = new Future;
-            $deferred->resolve(true);
+            if ($deferred !== null) {
+                $temp = $deferred;
+                $deferred = null;
+                $temp->resolve($value);
+            }
 
             return $future;
         });
 
         $complete = &$this->complete;
+        $result   = &$this->result;
         $error    = &$this->exception;
 
-        $this->subscriber->when(static function ($exception, $value) use (
-            &$deferred, &$future, &$current, &$error, &$complete
-        ) {
+        $this->subscriber->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$complete) {
             $complete = true;
 
             if ($exception) {
-                $current = null;
+                $result = null;
                 $error = $exception;
-                if ($future === null) {
+                if ($deferred !== null) {
                     $deferred->fail($exception);
                 }
                 return;
             }
 
-            $current = $value;
-            if ($future === null) {
+            $result = $value;
+            if ($deferred !== null) {
                 $deferred->resolve(false);
             }
         });
@@ -80,10 +91,12 @@ final class Observer {
      * Disposes of the subscriber.
      */
     public function __destruct() {
-        $this->subscriber->dispose();
+        if (!$this->complete) {
+            $this->subscriber->dispose();
+        }
 
-        if ($this->future !== null) {
-            $this->future->resolve();
+        foreach ($this->futures as $future) {
+            $future->resolve();
         }
     }
 
@@ -99,6 +112,18 @@ final class Observer {
      * @throws \Throwable|\Exception Exception used to fail the observable.
      */
     public function isValid() {
+        if (isset($this->futures[$this->position])) {
+            $future = $this->futures[$this->position];
+            unset($this->values[$this->position], $this->futures[$this->position]);
+            $future->resolve();
+        }
+
+        ++$this->position;
+
+        if (isset($this->values[$this->position])) {
+            return new Success(true);
+        }
+
         if ($this->complete) {
             if ($this->exception) {
                 return new Failure($this->exception);
@@ -107,13 +132,7 @@ final class Observer {
             return new Success(false);
         }
 
-        if ($this->future !== null) {
-            $future = $this->future;
-            $this->future = null;
-            $this->deferred = new Deferred;
-            $future->resolve();
-        }
-
+        $this->deferred = new Deferred;
         return $this->deferred->getAwaitable();
     }
 
@@ -125,15 +144,15 @@ final class Observer {
      * @throws \LogicException If the observable has resolved or isValid() was not called before calling this method.
      */
     public function getCurrent() {
-        if ($this->future === null) {
-            throw new \LogicException("Awaitable returned from isValid() must resolve before calling this method");
-        }
-
-        if ($this->complete) {
+        if (empty($this->values) && $this->complete) {
             throw new \LogicException("The observable has completed");
         }
 
-        return $this->current;
+        if (!isset($this->values[$this->position])) {
+            throw new \LogicException("Awaitable returned from isValid() must resolve before calling this method");
+        }
+
+        return $this->values[$this->position];
     }
 
     /**
@@ -154,6 +173,6 @@ final class Observer {
             throw $this->exception;
         }
 
-        return $this->current;
+        return $this->result;
     }
 }
