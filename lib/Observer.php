@@ -31,7 +31,7 @@ final class Observer {
     /**
      * @var bool
      */
-    private $complete = false;
+    private $resolved = false;
 
     /**
      * @var mixed
@@ -64,12 +64,12 @@ final class Observer {
             return $future;
         });
 
-        $complete = &$this->complete;
+        $resolved = &$this->resolved;
         $result   = &$this->result;
         $error    = &$this->exception;
 
-        $this->subscriber->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$complete) {
-            $complete = true;
+        $this->subscriber->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
+            $resolved = true;
 
             if ($exception) {
                 $result = null;
@@ -91,7 +91,7 @@ final class Observer {
      * Disposes of the subscriber.
      */
     public function __destruct() {
-        if (!$this->complete) {
+        if (!$this->resolved) {
             $this->subscriber->dispose();
         }
 
@@ -101,17 +101,12 @@ final class Observer {
     }
 
     /**
-     * Succeeds with true if a new value is available by calling getCurrent() or false if the observable has completed.
-     * Calling getCurrent() will throw an exception if the observable completed. If an error occurs with the observable,
-     * the returned awaitable will fail with the exception used to fail the observable.
+     * Succeeds with true if an emitted value is available by calling getCurrent() or false if the observable has
+     * resolved. If the observable fails, the returned awaitable will fail with the same exception.
      *
      * @return \Interop\Async\Awaitable
-     *
-     * @resolve bool
-     *
-     * @throws \Throwable|\Exception Exception used to fail the observable.
      */
-    public function isValid() {
+    public function next() {
         if (isset($this->futures[$this->position])) {
             $future = $this->futures[$this->position];
             unset($this->values[$this->position], $this->futures[$this->position]);
@@ -124,7 +119,7 @@ final class Observer {
             return new Success(true);
         }
 
-        if ($this->complete) {
+        if ($this->resolved) {
             if ($this->exception) {
                 return new Failure($this->exception);
             }
@@ -141,32 +136,32 @@ final class Observer {
      *
      * @return mixed Value emitted from observable.
      *
-     * @throws \LogicException If the observable has resolved or isValid() was not called before calling this method.
+     * @throws \LogicException If the observable has resolved or next() was not called before calling this method.
      */
     public function getCurrent() {
-        if (empty($this->values) && $this->complete) {
+        if (empty($this->values) && $this->resolved) {
             throw new \LogicException("The observable has completed");
         }
 
         if (!isset($this->values[$this->position])) {
-            throw new \LogicException("Awaitable returned from isValid() must resolve before calling this method");
+            throw new \LogicException("Awaitable returned from next() must resolve before calling this method");
         }
 
         return $this->values[$this->position];
     }
 
     /**
-     * Gets the return value of the observable or throws the failure reason. Also throws an exception if the
-     * observable has not completed.
+     * Gets the result of the observable or throws the failure reason. Also throws an exception if the observable has
+     * not completed.
      *
      * @return mixed Final return value of the observable.
      *
      * @throws \LogicException If the observable has not completed.
      * @throws \Throwable|\Exception The exception used to fail the observable.
      */
-    public function getReturn() {
-        if (!$this->complete) {
-            throw new \LogicException("The observable has not completed");
+    public function getResult() {
+        if (!$this->resolved) {
+            throw new \LogicException("The observable has not resolved");
         }
 
         if ($this->exception) {

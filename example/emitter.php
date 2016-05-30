@@ -15,6 +15,7 @@ Loop::execute(Amp\coroutine(function () {
         $postponed = new Postponed;
 
         Loop::defer(function () use ($postponed) {
+            // Observer emits all values at once.
             $postponed->emit(1);
             $postponed->emit(2);
             $postponed->emit(3);
@@ -33,12 +34,12 @@ Loop::execute(Amp\coroutine(function () {
         $generator = function (Observable $observable) {
             $observer = new Observer($observable);
 
-            while (yield $observer->isValid()) {
+            while (yield $observer->next()) {
                 printf("Observable emitted %d\n", $observer->getCurrent());
-                yield new Pause(100);
+                yield new Pause(100); // Observer consumption takes 100 ms.
             }
 
-            printf("Observable result %d\n", $observer->getReturn());
+            printf("Observable result %d\n", $observer->getResult());
         };
 
         yield new \Amp\Coroutine($generator($observable));
