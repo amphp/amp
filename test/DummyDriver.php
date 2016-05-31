@@ -4,6 +4,8 @@ namespace Interop\Async\Loop\Test;
 
 class DummyDriver implements \Interop\Async\Loop\Driver
 {
+    use \Interop\Async\Loop\Registry;
+
     public $defers;
     public $handler;
     public static $id = "a";
@@ -12,7 +14,7 @@ class DummyDriver implements \Interop\Async\Loop\Driver
         while (list($defer, $data) = array_shift($this->defers)) {
             try {
                 $defer(self::$id++, $data);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 if ($handler = $this->handler) {
                     $handler($e);
                 } else {
