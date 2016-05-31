@@ -7,8 +7,6 @@ use Interop\Async\Loop\DriverFactory;
 
 final class Loop
 {
-    use Loop\Registry;
-
     /**
      * @var DriverFactory
      */
@@ -45,10 +43,8 @@ final class Loop
 
         if ($factory === null) {
             self::$driver = null;
-            self::$registry = null;
         } else {
             self::$driver = self::createDriver();
-            self::$registry = [];
         }
     }
 
@@ -62,13 +58,11 @@ final class Loop
      */
     public static function execute(callable $callback, Driver $driver = null)
     {
-        $previousRegistry = self::$registry;
         $previousDriver = self::$driver;
 
         $driver = $driver ?: self::createDriver();
 
         self::$driver = $driver;
-        self::$registry = [];
         self::$level++;
 
         try {
@@ -77,7 +71,6 @@ final class Loop
             self::$driver->run();
         } finally {
             self::$driver = $previousDriver;
-            self::$registry = $previousRegistry;
             self::$level--;
         }
     }
@@ -279,6 +272,37 @@ final class Loop
     public static function unreference($watcherId)
     {
         self::get()->unreference($watcherId);
+    }
+
+    /**
+     * Stores information in the loop bound registry. This can be used to store loop bound information. Stored
+     * information is package private. Packages MUST NOT retrieve the stored state of other packages.
+     *
+     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     *
+     * @param string $key namespaced storage key
+     * @param mixed $value the value to be stored
+     *
+     * @return void
+     */
+    public static function storeState($key, $value)
+    {
+        self::get()->storeState($key, $value);
+    }
+
+    /**
+     * Fetches information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve
+     * the stored state of other packages.
+     *
+     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     *
+     * @param string $key namespaced storage key
+     *
+     * @return mixed previously stored value or null if it doesn't exist
+     */
+    public static function fetchState($key)
+    {
+        return self::get()->fetchState($key);
     }
 
     /**
