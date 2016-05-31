@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace Interop\Async\Loop\Test;
 
 use Interop\Async\Loop;
 
@@ -16,9 +16,9 @@ class LoopTest extends \PHPUnit_Framework_TestCase
      * @expectedExceptionMessage new factory while running isn't allowed
      */
     public function setFactoryFailsIfRunning() {
-        $driver = $this->getMockBuilder(Driver::class)->getMock();
+        $driver = new DummyDriver;
 
-        $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
+        $factory = $this->getMockBuilder(Loop\DriverFactory::class)->getMock();
         $factory->method("create")->willReturn($driver);
 
         Loop::setFactory($factory);
@@ -30,8 +30,8 @@ class LoopTest extends \PHPUnit_Framework_TestCase
 
     /** @test */
     public function executeStackReturnsScopedDriver() {
-        $driver1 = $this->getMockBuilder(Driver::class)->getMock();
-        $driver2 = $this->getMockBuilder(Driver::class)->getMock();
+        $driver1 = new DummyDriver;
+        $driver2 = new DummyDriver;
 
         Loop::execute(function () use ($driver1, $driver2) {
             $this->assertSame($driver1, Loop::get());
