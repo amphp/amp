@@ -106,13 +106,16 @@ trait Producer {
      */
     private function push($value) {
         try {
-            if ($value instanceof Awaitable) {
-                $value = (yield $value);
-            } elseif ($value instanceof Observable) {
+            if ($value instanceof Observable) {
                 $disposable = $value->subscribe(function ($value) {
                     return $this->emit($value);
                 });
-                $value = (yield $disposable);
+                yield Coroutine::result(yield $disposable);
+                return;
+            }
+
+            if ($value instanceof Awaitable) {
+                $value = (yield $value);
             }
         } catch (\Throwable $exception) {
             if (!$this->resolved) {
