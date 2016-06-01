@@ -2,6 +2,16 @@
 
 namespace Amp;
 
+/**
+ * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Observable.
+ *
+ * Example:
+ * $observer = new Observer($observable); // $observable is an instance of \Amp\Observable
+ * while (yield $observer->next()) {
+ *     $emitted = $observer->getCurrent();
+ * }
+ * $result = $observer->getResult();
+ */
 final class Observer {
     /**
      * @var \Amp\Disposable

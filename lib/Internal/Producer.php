@@ -11,6 +11,12 @@ use Amp\Success;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
+/**
+ * Trait used by Observable implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Amp\Observable.
+ *
+ * @internal
+ */
 trait Producer {
     use Placeholder {
         resolve as complete;

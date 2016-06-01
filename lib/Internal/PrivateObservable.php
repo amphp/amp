@@ -6,6 +6,8 @@ use Amp\Observable;
 
 /**
  * An observable that cannot externally emit values. Used by Postponed in development mode.
+ *
+ * @internal
  */
 final class PrivateObservable implements Observable {
     use Producer;
