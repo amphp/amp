@@ -13,7 +13,7 @@ class LazyAwaitable implements Awaitable {
     private $provider;
 
     /**
-     * @var \Interop\Async\Awaitable
+     * @var \Interop\Async\Awaitable|null
      */
     private $awaitable;
 
@@ -25,9 +25,9 @@ class LazyAwaitable implements Awaitable {
     }
 
     /**
-     * @return \Interop\Async\Awaitable
+     * {@inheritdoc}
      */
-    protected function getAwaitable() {
+    public function when(callable $onResolved) {
         if (null === $this->awaitable) {
             $provider = $this->provider;
             $this->provider = null;
@@ -45,13 +45,6 @@ class LazyAwaitable implements Awaitable {
             }
         }
 
-        return $this->awaitable;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function when(callable $onResolved) {
-        $this->getAwaitable()->when($onResolved);
+        $this->awaitable->when($onResolved);
     }
 }
