@@ -9,6 +9,7 @@ use Amp\Observable;
 use Amp\Subscriber;
 use Amp\Success;
 use Interop\Async\Awaitable;
+use Interop\Async\Loop;
 
 trait Producer {
     use Placeholder {
@@ -19,6 +20,11 @@ trait Producer {
      * @var callable[]
      */
     private $subscribers = [];
+
+    /**
+     * @var \Amp\Future|null
+     */
+    private $waiting;
 
     /**
      * @var \Amp\Future[]
@@ -36,17 +42,22 @@ trait Producer {
     private $dispose;
 
     /**
+     * Initializes the trait. Use as constructor or call within using class constructor.
+     */
+    public function init()
+    {
+        $this->waiting = new Future;
+        $this->dispose = function ($id, $exception = null) {
+            $this->dispose($id, $exception);
+        };
+    }
+
+    /**
      * @param callable $onNext
      *
      * @return \Amp\Subscriber
      */
     public function subscribe(callable $onNext) {
-        if ($this->dispose === null) {
-            $this->dispose = function ($id, $exception = null) {
-                $this->dispose($id, $exception);
-            };
-        }
-
         if ($this->result !== null) {
             return new Subscriber(
                 $this->nextId++,
@@ -58,6 +69,12 @@ trait Producer {
         $id = $this->nextId++;
         $this->futures[$id] = new Future;
         $this->subscribers[$id] = $onNext;
+
+        if ($this->waiting !== null) {
+            $waiting = $this->waiting;
+            $this->waiting = null;
+            $waiting->resolve();
+        }
 
         return new Subscriber($id, $this->futures[$id], $this->dispose);
     }
@@ -73,7 +90,12 @@ trait Producer {
 
         $future = $this->futures[$id];
         unset($this->subscribers[$id], $this->futures[$id]);
-        $future->fail($exception ?: new DisposedException());
+
+        if (empty($this->subscribers)) {
+            $this->waiting = new Future;
+        }
+
+        $future->fail($exception ?: new DisposedException);
     }
 
     /**
@@ -105,6 +127,10 @@ trait Producer {
      * @throws \Throwable|\Exception
      */
     private function push($value) {
+        while ($this->waiting !== null) {
+            yield $this->waiting;
+        }
+
         try {
             if ($value instanceof Observable) {
                 $disposable = $value->subscribe(function ($value) {
@@ -167,6 +193,12 @@ trait Producer {
     protected function resolve($value = null) {
         $futures = $this->futures;
         $this->subscribers = $this->futures = [];
+
+        if ($this->waiting !== null) {
+            $waiting = $this->waiting;
+            $this->waiting = null;
+            $waiting->resolve();
+        }
 
         $this->complete($value);
 

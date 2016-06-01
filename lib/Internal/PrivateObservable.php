@@ -14,6 +14,8 @@ final class PrivateObservable implements Observable {
      * @param callable(callable $emit, callable $complete, callable $fail): void $emitter
      */
     public function __construct(callable $emitter) {
+        $this->init();
+
         /**
          * Emits a value from the observable.
          *
