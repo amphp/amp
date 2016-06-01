@@ -9,7 +9,7 @@ final class Coroutine implements Awaitable {
     use Internal\Placeholder;
 
     // Maximum number of immediate coroutine continuations before deferring next continuation to the loop.
-    const MAX_RECURSION_DEPTH = 3;
+    const MAX_CONTINUATION_DEPTH = 3;
 
     /**
      * @var \Generator
@@ -37,7 +37,7 @@ final class Coroutine implements Awaitable {
          * @param mixed $value The value to send to the generator.
          */
         $this->when = function ($exception, $value) {
-            if (self::MAX_RECURSION_DEPTH < $this->depth) { // Defer continuation to avoid blowing up call stack.
+            if (self::MAX_CONTINUATION_DEPTH < $this->depth) { // Defer continuation to avoid blowing up call stack.
                 Loop::defer(function () use ($exception, $value) {
                     $when = $this->when;
                     $when($exception, $value);
@@ -102,7 +102,7 @@ final class Coroutine implements Awaitable {
                         $this->generator->throw($exception);
                     } while ($this->generator->valid());
 
-                    $this->fail($exception);
+                    throw $exception;
                 } else {
                     $this->resolve($yielded);
                 }
@@ -115,7 +115,7 @@ final class Coroutine implements Awaitable {
             throw new InvalidYieldException(
                 $this->generator,
                 $yielded,
-                "Unexpected yield (Awaitable expected)"
+                \sprintf("Unexpected yield (%s expected)", Awaitable::class)
             );
         }
 
