@@ -5,7 +5,11 @@ namespace Amp;
 use Interop\Async\Loop;
 use Interop\Async\Awaitable;
 
-class Success implements Awaitable {
+/**
+ * Creates a successful awaitable using the given value (which can be any value except another object implementing
+ * \Interop\Async\Awaitable).
+ */
+final class Success implements Awaitable {
     /**
      * @var mixed
      */

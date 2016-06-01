@@ -5,7 +5,10 @@ namespace Amp;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
-class Pause implements Awaitable {
+/**
+ * Creates an awaitable that resolves itself with a given value after a number of milliseconds.
+ */
+final class Pause implements Awaitable {
     use Internal\Placeholder;
 
     /**

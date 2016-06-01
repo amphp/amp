@@ -6,6 +6,11 @@ use Amp\Failure;
 use Amp\Success;
 use Interop\Async\Awaitable;
 
+/**
+ * Awaitable returned from Amp\lazy(). Use Amp\lazy() instead of instigating this object directly.
+ *
+ * @internal
+ */
 class LazyAwaitable implements Awaitable {
     /**
      * @var callable|null

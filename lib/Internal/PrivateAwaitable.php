@@ -6,6 +6,8 @@ use Interop\Async\Awaitable;
 
 /**
  * An awaitable that cannot be externally resolved. Used by Deferred in development mode.
+ *
+ * @internal
  */
 final class PrivateAwaitable implements Awaitable {
     use Placeholder;

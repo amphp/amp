@@ -5,6 +5,12 @@ namespace Amp;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
+/**
+ * Creates an awaitable from a generator function yielding awaitables. When an awaitable is yielded, execution of the
+ * generator is interrupted until the awaitable is resolved. The success value is sent to the generator, while the
+ * failure reason is thrown into the generator. Using a coroutine, asynchronous code can be written without callbacks
+ * and be structured like synchronous code.
+ */
 final class Coroutine implements Awaitable {
     use Internal\Placeholder;
 

@@ -6,6 +6,12 @@ use Amp\Failure;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
+/**
+ * Trait used by Awaitable implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Interop\Async\Awaitable.
+ *
+ * @internal
+ */
 trait Placeholder {
     /**
      * @var bool

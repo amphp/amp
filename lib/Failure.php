@@ -5,7 +5,10 @@ namespace Amp;
 use Interop\Async\Loop;
 use Interop\Async\Awaitable;
 
-class Failure implements Awaitable {
+/**
+ * Creates a failed awaitable using the given exception.
+ */
+final class Failure implements Awaitable {
     /**
      * @var \Exception|\Throwable $exception
      */
