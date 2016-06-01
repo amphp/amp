@@ -4,28 +4,33 @@
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\Coroutine;
-use Amp\Emitter;
 use Amp\Observable;
 use Amp\Observer;
 use Amp\Pause;
+use Amp\Postponed;
 use Amp\Loop\NativeLoop;
 use Interop\Async\Loop;
 
 Loop::execute(Amp\coroutine(function () {
     try {
-        $emitter = new Emitter(function (callable $emit) {
-            yield $emit(1);
-            yield $emit(new Pause(500, 2));
-            yield $emit(3);
-            yield $emit(new Pause(300, 4));
-            yield $emit(5);
-            yield $emit(6);
-            yield $emit(new Pause(1000, 7));
-            yield $emit(8);
-            yield $emit(9);
-            yield $emit(new Pause(600, 10));
-            yield Coroutine::result(11);
+        $postponed = new Postponed;
+
+        Loop::defer(function () use ($postponed) {
+            // Observer emits all values at once.
+            $postponed->emit(1);
+            $postponed->emit(2);
+            $postponed->emit(3);
+            $postponed->emit(4);
+            $postponed->emit(5);
+            $postponed->emit(6);
+            $postponed->emit(7);
+            $postponed->emit(8);
+            $postponed->emit(9);
+            $postponed->emit(10);
+            $postponed->resolve(11);
         });
+
+        $observable = $postponed->getObservable();
 
         $generator = function (Observable $observable) {
             $observer = new Observer($observable);
@@ -38,7 +43,7 @@ Loop::execute(Amp\coroutine(function () {
             printf("Observable result %d\n", $observer->getResult());
         };
 
-        yield new Coroutine($generator($emitter));
+        yield new Coroutine($generator($observable));
 
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
