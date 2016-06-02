@@ -14,7 +14,7 @@ namespace Amp;
  */
 final class Observer {
     /**
-     * @var \Amp\Disposable
+     * @var \Amp\Subscriber
      */
     private $subscriber;
 
@@ -102,7 +102,7 @@ final class Observer {
      */
     public function __destruct() {
         if (!$this->resolved) {
-            $this->subscriber->dispose();
+            $this->subscriber->unsubscribe();
         }
 
         foreach ($this->futures as $future) {

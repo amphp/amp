@@ -15,11 +15,11 @@ interface Observable extends Awaitable {
      * awaitable, back-pressure is applied to the awaitable until the returned awaitable is resolved.
      *
      * Exceptions thrown from $onNext (or failures of awaitables returned from $onNext) will fail the returned
-     * Disposable with the thrown exception.
+     * Subscriber with the thrown exception.
      *
      * @param callable $onNext Function invoked each time a value is emitted from the observable.
      *
-     * @return \Amp\Disposable
+     * @return \Amp\Subscriber
      */
     public function subscribe(callable $onNext);
 }

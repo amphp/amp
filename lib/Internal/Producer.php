@@ -3,11 +3,11 @@
 namespace Amp\Internal;
 
 use Amp\Coroutine;
-use Amp\DisposedException;
 use Amp\Future;
 use Amp\Observable;
 use Amp\Subscriber;
 use Amp\Success;
+use Amp\UnsubscribedException;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
@@ -45,7 +45,7 @@ trait Producer {
     /**
      * @var callable
      */
-    private $dispose;
+    private $unsubscribe;
 
     /**
      * Initializes the trait. Use as constructor or call within using class constructor.
@@ -53,8 +53,8 @@ trait Producer {
     public function init()
     {
         $this->waiting = new Future;
-        $this->dispose = function ($id, $exception = null) {
-            $this->dispose($id, $exception);
+        $this->unsubscribe = function ($id, $exception = null) {
+            $this->unsubscribe($id, $exception);
         };
     }
 
@@ -68,7 +68,7 @@ trait Producer {
             return new Subscriber(
                 $this->nextId++,
                 $this->result instanceof Awaitable ? $this->result : new Success($this->result),
-                $this->dispose
+                $this->unsubscribe
             );
         }
 
@@ -82,16 +82,16 @@ trait Producer {
             $waiting->resolve();
         }
 
-        return new Subscriber($id, $this->futures[$id], $this->dispose);
+        return new Subscriber($id, $this->futures[$id], $this->unsubscribe);
     }
 
     /**
      * @param string $id
      * @param \Throwable|\Exception|null $exception
      */
-    protected function dispose($id, $exception = null) {
+    protected function unsubscribe($id, $exception = null) {
         if (!isset($this->futures[$id])) {
-            throw new \LogicException("Disposable has already been disposed");
+            return;
         }
 
         $future = $this->futures[$id];
@@ -101,7 +101,7 @@ trait Producer {
             $this->waiting = new Future;
         }
 
-        $future->fail($exception ?: new DisposedException);
+        $future->fail($exception ?: new UnsubscribedException);
     }
 
     /**
@@ -139,10 +139,10 @@ trait Producer {
 
         try {
             if ($value instanceof Observable) {
-                $disposable = $value->subscribe(function ($value) {
+                $subscriber = $value->subscribe(function ($value) {
                     return $this->emit($value);
                 });
-                yield Coroutine::result(yield $disposable);
+                yield Coroutine::result(yield $subscriber);
                 return;
             }
 
@@ -170,9 +170,9 @@ trait Producer {
                     $awaitables[$id] = $result;
                 }
             } catch (\Throwable $exception) {
-                $this->dispose($id, $exception);
+                $this->unsubscribe($id, $exception);
             } catch (\Exception $exception) {
-                $this->dispose($id, $exception);
+                $this->unsubscribe($id, $exception);
             }
         }
 
@@ -180,9 +180,9 @@ trait Producer {
             try {
                 yield $awaitable;
             } catch (\Throwable $exception) {
-                $this->dispose($id, $exception);
+                $this->unsubscribe($id, $exception);
             } catch (\Exception $exception) {
-                $this->dispose($id, $exception);
+                $this->unsubscribe($id, $exception);
             }
         }
 
