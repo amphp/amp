@@ -73,7 +73,7 @@ trait Producer {
         }
 
         $id = $this->nextId++;
-        $this->futures[$id] = new Future;
+        $this->futures[$id] = $future = new Future;
         $this->subscribers[$id] = $onNext;
 
         if ($this->waiting !== null) {
@@ -82,7 +82,7 @@ trait Producer {
             $waiting->resolve();
         }
 
-        return new Subscriber($id, $this->futures[$id], $this->unsubscribe);
+        return new Subscriber($id, $future, $this->unsubscribe);
     }
 
     /**
