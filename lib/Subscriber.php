@@ -5,7 +5,7 @@ namespace Amp;
 use Interop\Async\Awaitable;
 
 /**
- * Disposable implementation returned from implementors of \Amp\Observable.
+ * Subscriber implementation returned from implementors of \Amp\Observable.
  */
 final class Subscriber implements Awaitable {
     /**

@@ -98,7 +98,7 @@ final class Observer {
     }
 
     /**
-     * Disposes of the subscriber.
+     * Unsubscribes the internal subscriber from the observable.
      */
     public function __destruct() {
         if (!$this->resolved) {
