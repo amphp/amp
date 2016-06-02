@@ -30,7 +30,7 @@ interface Driver
      *
      * The deferred callable MUST be executed in the next tick of the event loop.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
@@ -43,7 +43,7 @@ interface Driver
      * The delay is a minimum and approximate, accuracy is not guaranteed.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
