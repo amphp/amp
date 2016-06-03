@@ -17,28 +17,33 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/** @var Driver */
 	public $loop;
 	
-	function setUp() {
+	function setUp()
+	{
 		$this->loop = $this->getFactory()->create();
 		if (!$this->loop instanceof Driver) {
 			$this->fail("Factory did not return a loop Driver");
 		}
 	}
 	
-	function start($cb) {
+	function start($cb)
+	{
 		$cb($this->loop);
 		$this->loop->run();
 	}
-	
-	function testEmptyLoop() {
+
+	function testEmptyLoop()
+	{
 		$this->loop->run();
 	}
-	
-	function testStopWorksEvenIfNotCurrentlyRunning() {
+
+	function testStopWorksEvenIfNotCurrentlyRunning()
+	{
 		$this->loop->stop();
 	}
 
 	// Note: The running nesting is important for being able to continue actually still running loops (i.e. running flag set, if the driver has one) inside register_shutdown_function() for example
-	function testLoopRunsCanBeConsecutiveAndNested() {
+	function testLoopRunsCanBeConsecutiveAndNested()
+	{
 		$this->expectOutputString("123456");
 		$this->start(function (Driver $loop) {
 			$loop->defer(function() {
@@ -69,16 +74,18 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testSignalCapability() {
+	function testSignalCapability()
+	{
 		try {
 			$watcher = $this->loop->onSignal(SIGUSR1, function() {});
 			$this->loop->cancel($watcher);
-		} catch (\UnsupportedFeatureException $e) {
+		} catch (UnsupportedFeatureException $e) {
 			$this->markTestSkipped("The loop is not capable of handling signals properly. Skipping.");
 		}
 	}
 
-	function testWatcherUnrefRerefRunResult() {
+	function testWatcherUnrefRerefRunResult()
+	{
 		$invoked = false;
 		$this->start(function(Driver $loop) use (&$invoked) {
 			$watcher = $loop->defer(function() use (&$invoked) {
@@ -91,18 +98,18 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertTrue($invoked);
 	}
 
-	function testImmediatelyWatcherUnrefRunResult() {
-		$invoked = false;
-		$this->start(function(Driver $loop) use (&$invoked) {
-			$watcher = $loop->defer(function() use (&$invoked) {
-				$invoked = true;
+	function testDeferWatcherUnrefRunResult()
+	{
+		$this->start(function(Driver $loop)  {
+			$watcher = $loop->defer(function() {
+				$this->fail("Unreferenced defer watcher should not keep loop running");
 			});
 			$loop->unreference($watcher);
 		});
-		$this->assertFalse($invoked);
 	}
 
-	function testOnceWatcherUnrefRunResult() {
+	function testOnceWatcherUnrefRunResult()
+	{
 		$invoked = false;
 		$this->start(function(Driver $loop) use (&$invoked) {
 			$watcher = $loop->delay(2000, function() use (&$invoked) {
@@ -114,7 +121,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertFalse($invoked);
 	}
 
-	function testRepeatWatcherUnrefRunResult() {
+	function testRepeatWatcherUnrefRunResult()
+	{
 		$invoked = false;
 		$this->start(function(Driver $loop) use (&$invoked) {
 			$watcher = $loop->repeat(2000, function() use (&$invoked) {
@@ -125,7 +133,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertFalse($invoked);
 	}
 
-	function testOnReadableWatcherUnrefRunResult() {
+	function testOnReadableWatcherUnrefRunResult()
+	{
 		$this->start(function(Driver $loop) {
 			$watcher = $loop->onReadable(STDIN, function() {
 				// empty
@@ -134,7 +143,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testOnWritableWatcherKeepAliveRunResult() {
+	function testOnWritableWatcherKeepAliveRunResult()
+	{
 		$this->start(function(Driver $loop) {
 			$watcher = $loop->onWritable(STDOUT, function() {
 				// empty
@@ -144,7 +154,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	}
 
 	/** @depends testSignalCapability */
-	function testOnSignalWatcherKeepAliveRunResult() {
+	function testOnSignalWatcherKeepAliveRunResult()
+	{
 		$this->start(function(Driver $loop) {
 			$watcher = $loop->onSignal(SIGUSR1, function() {
 				// empty
@@ -153,55 +164,29 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testDisabledDeferReenableInSubsequentTick() {
-		$this->expectOutputString("12345");
+	function testDisabledDeferReenableInSubsequentTick()
+	{
+		$this->expectOutputString("123");
 		$this->start(function(Driver $loop) {
-			$loop->defer(function() use ($loop, &$watcherId) {
-				$loop->defer(function($watcherId) use ($loop) {
-					$loop->disable($watcherId);
-					echo 3;
-				});
-				$loop->enable($watcherId);
-				$loop->defer(function() {
-					echo 5;
-				});
-				$loop->disable($watcherId);
-				$loop->cancel($watcherId);
-				echo 1;
-			});
-			$watcherId = $loop->defer(function($watcherId) use ($loop) {
-				$loop->cancel($watcherId);
-				echo 4;
+			$watcherId = $loop->defer(function ($watcherId) {
+				echo 3;
 			});
 			$loop->disable($watcherId);
-			$loop->defer(function ($watcherId) use ($loop) {
-				$loop->disable($watcherId);
+			$loop->defer(function () use ($loop, $watcherId) {
 				$loop->enable($watcherId);
 				echo 2;
 			});
+			echo 1;
 		});
 	}
 
-	function testSuccessOnDeferWatcherIdReuse() {
-		$this->start(function(Driver $loop) {
-			$watcherId = $loop->defer(function($watcherId) use ($loop) {
-				$loop->disable($watcherId);
-				$loop->disable($watcherId);
-				$loop->enable($watcherId);
-				$loop->enable($watcherId);
-				$loop->enable($watcherId);
-			});
-			$loop->defer(function() use ($loop, $watcherId) {
-				$loop->cancel($watcherId);
-			});
-		});
-	}
-	
-	function provideRegistrationArgs() {
+
+	function provideRegistrationArgs()
+	{
 		$args = [
-			["defer",      [function() {}]],
-			["delay",      [5, function() {}]],
-			["repeat",     [5, function() {}]],
+			["defer",	  [function() {}]],
+			["delay",	  [5, function() {}]],
+			["repeat",	 [5, function() {}]],
 			["onWritable", [\STDOUT, function() {}]],
 			["onReadable", [\STDIN, function() {}]],
 			["onSignal",   [\SIGUSR1, function() {}]],
@@ -213,7 +198,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider provideRegistrationArgs
 	 */
-	function testDisableWithConsecutiveCancel($type, $args) {
+	function testDisableWithConsecutiveCancel($type, $args)
+	{
 		if ($type === "onSignal") {
 			$this->testSignalCapability();
 		}
@@ -221,7 +207,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->start(function(Driver $loop) use ($type, $args) {
 			$func = [$loop, $type];
 			$watcherId = \call_user_func_array($func, $args);
-			$watcherId->disable($func);
+			$loop->disable($watcherId);
 			$loop->defer(function() use ($loop, $watcherId) {
 				$loop->cancel($watcherId);
 			});
@@ -231,7 +217,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider provideRegistrationArgs
 	 */
-	function testWatcherReferenceInfo($type, $args) {
+	function testWatcherReferenceInfo($type, $args)
+	{
 		if ($type === "onSignal") {
 			$this->testSignalCapability();
 		}
@@ -301,7 +288,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider provideRegistrationArgs
 	 */
-	function testWatcherRegistrationAndCancellationInfo($type, $args) {
+	function testWatcherRegistrationAndCancellationInfo($type, $args)
+	{
 		if ($type === "onSignal") {
 			$this->testSignalCapability();
 		}
@@ -357,24 +345,17 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$info = $loop->info();
 		$expected = ["enabled" => 0, "disabled" => 0];
 		$this->assertSame($expected, $info[$type]);
-
-		// invoke watcher control ops again to ensure they succeed
-		$loop->cancel($watcherId);
-		$loop->disable($watcherId);
-		$loop->enable($watcherId);
-		$info = $loop->info();
-		$expected = ["enabled" => 0, "disabled" => 0];
-		$this->assertSame($expected, $info[$type]);
 	}
 
 	/**
 	 * @dataProvider provideRegistrationArgs
 	 */
-	function testNoMemoryLeak($type, $args) {
+	function testNoMemoryLeak($type, $args)
+	{
 		if ($type === "onSignal") {
 			$this->testSignalCapability();
 		}
-		
+
 		$this->start(function(Driver $loop) use ($type, $args) {
 			$initialMem = memory_get_usage();
 			$cb = function ($runs) use ($loop, $type, $args) {
@@ -395,13 +376,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 				for ($watchers = [], $i = 0; $i < $runs; $i++) {
 					$watchers[] = \call_user_func_array($func, $args);
 				}
-				if ($type == "repeat") {
+				if ($type === "repeat") {
 					$loop->delay($msInterval = 7, function () use ($loop, $watchers) {
 						foreach ($watchers as $watcher) {
 							$loop->cancel($watcher);
 						}
 					});
-				} elseif ($type != "defer" && $type != "delay") {
+				} elseif ($type !== "defer" && $type !== "delay") {
 					$loop->defer(function () use ($loop, $watchers) {
 						foreach ($watchers as $watcher) {
 							$loop->cancel($watcher);
@@ -409,7 +390,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 					});
 				}
 				$loop->run();
-				if ($type == "defer") {
+				if ($type === "defer") {
 					$loop->defer($fn = function ($watcherId, $i) use (&$fn, $loop) {
 						if ($i) {
 							$loop->defer($fn, --$i);
@@ -417,7 +398,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 					}, $runs);
 					$loop->run();
 				}
-				if ($type == "delay") {
+				if ($type === "delay") {
 					$loop->delay($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop) {
 						if ($i) {
 							$loop->delay($msDelay = 0, $fn, --$i);
@@ -425,7 +406,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 					}, $runs);
 					$loop->run();
 				}
-				if ($type == "repeat") {
+				if ($type === "repeat") {
 					$loop->repeat($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop) {
 						$loop->cancel($watcherId);
 						if ($i) {
@@ -434,7 +415,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 					}, $runs);
 					$loop->run();
 				}
-				if ($type == "onWritable") {
+				if ($type === "onWritable") {
 					$loop->defer(function($watcherId, $runs) use ($loop) {
 						$fn = function ($watcherId, $socket, $i) use (&$fn, $loop) {
 							$loop->cancel($watcherId);
@@ -454,7 +435,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 					}, $runs + 1);
 					$loop->run();
 				}
-				if ($type == "onSignal") {
+				if ($type === "onSignal") {
 					$watchers = [$loop->repeat(\SIGUSR1, $fn = function ($watcherId, $i) use (&$fn, $loop, &$watchers) {
 						if ($i) {
 							$watchers[] = $loop->onSignal(\SIGUSR1, $fn, --$i);
@@ -473,27 +454,35 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 			$initialMem = memory_get_usage() - $closureMem;
 			$cb(10000);
 			unset($cb);
+
 			gc_collect_cycles();
 			$endMem = memory_get_usage();
-			
+
 			/* this is allowing some memory usage due to runtime caches etc., but nothing actually leaking */
-			$this->assertTrue($endMem - $initialMem < 40000); // 4 * 10000, as 4 is minimal sizeof(void *)
+			$this->assertLessThan(40000, $endMem - $initialMem); // 4 * 10000, as 4 is minimal sizeof(void *)
 		});
 	}
 
-	function testSuccessOnEnableNonexistentWatcher() {
+	/**
+	 * @expectedException \LogicException
+	 */
+	function testSuccessOnEnableNonexistentWatcher()
+	{
 		$this->loop->enable("nonexistentWatcher");
 	}
 
-	function testSuccessOnDisableNonexistentWatcher() {
+	function testSuccessOnDisableNonexistentWatcher()
+	{
 		$this->loop->disable("nonexistentWatcher");
 	}
 
-	function testSuccessOnCancelNonexistentWatcher() {
+	function testSuccessOnCancelNonexistentWatcher()
+	{
 		$this->loop->cancel("nonexistentWatcher");
 	}
 
-	function testEnablingWatcherAllowsSubsequentInvocation() {
+	function testEnablingWatcherAllowsSubsequentInvocation()
+	{
 		$loop = $this->loop;
 		$increment = 0;
 		$watcherId = $loop->defer(function() use (&$increment) {
@@ -509,16 +498,19 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(1, $increment);
 	}
 
-	function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
+	function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop()
+	{
 		$increment = 0;
 		$this->start(function(Driver $loop) use (&$increment) {
-			$loop->delay($msDelay = 5, function () use ($loop, &$increment) {
-				$increment++;
-				$loop->stop();
-			});
-
 			$loop->defer([$loop, "stop"]);
 			$loop->run();
+
+			$loop->defer(function () use (&$increment, $loop) {
+				$loop->delay($msDelay = 100, function () use ($loop, &$increment) {
+					$increment++;
+					$loop->stop();
+				});
+			});
 
 			$this->assertEquals(0, $increment);
 			\usleep(5000);
@@ -526,7 +518,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(1, $increment);
 	}
 
-	function testTimerWatcherParameterOrder() {
+	function testTimerWatcherParameterOrder()
+	{
 		$this->start(function(Driver $loop) {
 			$counter = 0;
 			$loop->defer(function ($watcherId) use ($loop, &$counter) {
@@ -551,8 +544,9 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testStreamWatcherParameterOrder() {
-		$this->start(function(Driver $loop) {
+	function testStreamWatcherParameterOrder()
+	{
+		$this->start(function(Driver $loop) use (&$invoked) {
 			$invoked = 0;
 			$loop->onWritable(STDOUT, function ($watcherId, $stream) use ($loop, &$invoked) {
 				$this->assertInternalType("string", $watcherId);
@@ -560,11 +554,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 				$invoked++;
 				$loop->cancel($watcherId);
 			});
-			$this->assertSame(1, $invoked);
 		});
+		$this->assertSame(1, $invoked);
 	}
 
-	function testDisablingWatcherPreventsSubsequentInvocation() {
+	function testDisablingWatcherPreventsSubsequentInvocation()
+	{
 		$this->start(function(Driver $loop) {
 			$increment = 0;
 			$watcherId = $loop->defer(function () use (&$increment) {
@@ -578,7 +573,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testImmediateExecution() {
+	function testImmediateExecution()
+	{
 		$loop = $this->loop;
 		$increment = 0;
 		$this->start(function(Driver $loop) use (&$increment) {
@@ -590,7 +586,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(1, $increment);
 	}
 
-	function testImmediatelyCallbacksDoNotRecurseInSameTick() {
+	function testImmediatelyCallbacksDoNotRecurseInSameTick()
+	{
 		$increment = 0;
 		$this->start(function(Driver $loop) use (&$increment) {
 			$loop->defer(function () use ($loop, &$increment) {
@@ -604,7 +601,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(1, $increment);
 	}
 
-	function testRunExecutesEventsUntilExplicitlyStopped() {
+	function testRunExecutesEventsUntilExplicitlyStopped()
+	{
 		$increment = 0;
 		$this->start(function(Driver $loop) use (&$increment) {
 			$loop->repeat($msInterval = 5, function ($watcherId) use ($loop, &$increment) {
@@ -621,7 +619,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 * @expectedException \Exception
 	 * @expectedExceptionMessage loop error
 	 */
-	function testLoopAllowsExceptionToBubbleUpDuringStart() {
+	function testLoopAllowsExceptionToBubbleUpDuringStart()
+	{
 		$this->start(function(Driver $loop) {
 			$loop->defer(function() {
 				throw new \Exception("loop error");
@@ -633,15 +632,17 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 * @expectedException \RuntimeException
 	 * @expectedExceptionMessage test
 	 */
-	function testLoopAllowsExceptionToBubbleUpFromRepeatingAlarmDuringStart() {
+	function testLoopAllowsExceptionToBubbleUpFromRepeatingAlarmDuringStart()
+	{
 		$this->start(function(Driver $loop) {
-			$loop->repeat($msInterval = 0, function () {
+			$loop->repeat($msInterval = 1, function () {
 				throw new \RuntimeException("test");
 			});
 		});
 	}
 
-	function testErrorHandlerCapturesUncaughtException() {
+	function testErrorHandlerCapturesUncaughtException()
+	{
 		$msg = "";
 		$this->loop->setErrorHandler(function(\Exception $error) use (&$msg) {
 			$msg = $error->getMessage();
@@ -649,9 +650,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->start(function(Driver $loop) {
 			$loop->defer(function() {
 				throw new \Exception("loop error");
-			});
-			$loop->defer(function() {
-				$this->fail("No other handlers must be run after a loop error");
 			});
 		});
 		$this->assertSame("loop error", $msg);
@@ -661,7 +659,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 * @expectedException \Exception
 	 * @expectedExceptionMessage errorception
 	 */
-	function testOnErrorFailure() {
+	function testOnErrorFailure()
+	{
 		$this->loop->setErrorHandler(function() {
 			throw new \Exception("errorception");
 		});
@@ -676,7 +675,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	 * @expectedException \RuntimeException
 	 * @expectedExceptionMessage test
 	 */
-	function testLoopException() {
+	function testLoopException()
+	{
 		$this->start(function(Driver $loop) {
 			$loop->defer(function() use ($loop) {
 				// force next tick, outside of primary startup tick
@@ -690,7 +690,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @depends testSignalCapability
 	 */
-	function testOnSignalWatcher() {
+	function testOnSignalWatcher()
+	{
 		if (!\extension_loaded("posix")) {
 			$this->markTestSkipped("ext/posix required to test signal handlers");
 		}
@@ -711,7 +712,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testInitiallyDisabledOnSignalWatcher() {
+	function testInitiallyDisabledOnSignalWatcher()
+	{
 		if (!\extension_loaded("posix")) {
 			$this->markTestSkipped("ext/posix required to test signal handlers");
 		}
@@ -732,7 +734,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testCancelRemovesWatcher() {
+	function testCancelRemovesWatcher()
+	{
 		$this->start(function(Driver $loop) {
 			$watcherId = $loop->delay($msDelay = 10, function () {
 				$this->fail('Watcher was not cancelled as expected');
@@ -745,9 +748,10 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testOnWritableWatcher() {
+	function testOnWritableWatcher()
+	{
 		$flag = false;
-		$this->start(function(Driver $loop) use ($flag) {
+		$this->start(function(Driver $loop) use (&$flag) {
 			$loop->onWritable(STDOUT, function () use ($loop, &$flag) {
 				$flag = true;
 				$loop->stop();
@@ -757,7 +761,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertTrue($flag);
 	}
 
-	function testInitiallyDisabledWriteWatcher() {
+	function testInitiallyDisabledWriteWatcher()
+	{
 		$increment = 0;
 		$this->start(function(Driver $loop) {
 			$watcherId = $loop->onWritable(STDOUT, function () use (&$increment) {
@@ -769,7 +774,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertSame(0, $increment);
 	}
 
-	function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
+	function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled()
+	{
 		$this->expectOutputString("12");
 		$this->start(function (Driver $loop) {
 			$watcherId = $loop->onWritable(STDOUT, function () use ($loop) {
@@ -787,7 +793,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @expectedException \RuntimeException
 	 */
-	function testStreamWatcherDoesntSwallowExceptions() {
+	function testStreamWatcherDoesntSwallowExceptions()
+	{
 		$this->start(function(Driver $loop) {
 			$loop->onWritable(STDOUT, function () {
 				throw new \RuntimeException;
@@ -796,10 +803,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		});
 	}
 
-	function testReactorRunsUntilNoWatchersRemain() {
+	function testReactorRunsUntilNoWatchersRemain()
+	{
 		$var1 = $var2 = 0;
 		$this->start(function(Driver $loop) use (&$var1, &$var2) {
-			$loop->repeat($msDelay = 0, function ($watcherId) use ($loop, &$var1) {
+			$loop->repeat($msDelay = 1, function ($watcherId) use ($loop, &$var1) {
 				if (++$var1 === 3) {
 					$loop->cancel($watcherId);
 				}
@@ -815,11 +823,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertSame(4, $var2);
 	}
 
-	function testReactorRunsUntilNoWatchersRemainWhenStartedDeferred() {
+	function testReactorRunsUntilNoWatchersRemainWhenStartedDeferred()
+	{
 		$var1 = $var2 = 0;
 		$this->start(function(Driver $loop) use (&$var1, &$var2) {
 			$loop->defer(function() use ($loop, &$var1, &$var2) {
-				$loop->repeat($msDelay = 0, function ($watcherId) use ($loop, &$var1) {
+				$loop->repeat($msDelay = 1, function ($watcherId) use ($loop, &$var1) {
 					if (++$var1 === 3) {
 						$loop->cancel($watcherId);
 					}
@@ -836,7 +845,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 		$this->assertSame(4, $var2);
 	}
 
-	function testOptionalCallbackDataPassedOnInvocation() {
+	function testOptionalCallbackDataPassedOnInvocation()
+	{
 		$callbackData = new \StdClass;
 
 		$this->start(function(Driver $loop) use ($callbackData) {
