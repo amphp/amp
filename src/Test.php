@@ -436,7 +436,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                     $loop->run();
                 }
                 if ($type === "onSignal") {
-                    $watchers = [$loop->repeat(\SIGUSR1, $fn = function ($watcherId, $i) use (&$fn, $loop, &$watchers) {
+                    $watchers = [$loop->onSignal(\SIGUSR1, $fn = function ($watcherId, $i) use (&$fn, $loop, &$watchers) {
                         if ($i) {
                             $watchers[] = $loop->onSignal(\SIGUSR1, $fn, --$i);
                         } else {
@@ -449,7 +449,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 }
             };
             $closureMem = memory_get_usage() - $initialMem;
-            $cb(500); /* just to set up eventual structures inside loop without counting towards memory comparison */
+            $cb(10000); /* just to set up eventual structures inside loop without counting towards memory comparison */
             gc_collect_cycles();
             $initialMem = memory_get_usage() - $closureMem;
             $cb(10000);
@@ -712,6 +712,9 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
+    /**
+     * @depends testSignalCapability
+     */
     function testInitiallyDisabledOnSignalWatcher()
     {
         if (!\extension_loaded("posix")) {
