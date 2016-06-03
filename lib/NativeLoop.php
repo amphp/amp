@@ -314,7 +314,7 @@ class NativeLoop implements Driver {
     public function delay($delay, callable $callback, $data = null) {
         $delay = (int) $delay;
 
-        if ($delay <= 0) {
+        if ($delay < 0) {
             throw new \InvalidArgumentException("Delay must be greater than or equal to zero");
         }
 
@@ -341,7 +341,7 @@ class NativeLoop implements Driver {
     public function repeat($interval, callable $callback, $data = null) {
         $interval = (int) $interval;
 
-        if ($interval <= 0) {
+        if ($interval < 0) {
             throw new \InvalidArgumentException("Interval must be greater than or equal to zero");
         }
 
