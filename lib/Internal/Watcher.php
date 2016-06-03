@@ -18,6 +18,16 @@ class Watcher {
     public $type;
 
     /**
+     * @var bool
+     */
+    public $enabled = true;
+
+    /**
+     * @var bool
+     */
+    public $referenced = true;
+
+    /**
      * @var string
      */
     public $id;
