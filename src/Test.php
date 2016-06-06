@@ -46,10 +46,14 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     {
         $this->expectOutputString("123456");
         $this->start(function (Driver $loop) {
-            $loop->defer(function() {
-                echo 1;
+            $loop->stop();
+            $loop->defer(function() use (&$run) {
+                echo $run = 1;
             });
             $loop->run();
+            if (!$run) {
+                $this->fail("A loop stop before a run must not impact that run");
+            }
             $loop->defer(function() use ($loop) {
                 $loop->run();
                 echo 4;
@@ -57,12 +61,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                     echo 6;
                     $loop->stop();
                     $loop->defer(function() {
-                        $this->fail("A loop stopped at all levels must not execute further deferreds");
+                        $this->fail("A loop stopped at all levels must not execute further defers");
                     });
                 });
             });
             $loop->defer(function() use ($loop) {
                 echo 2;
+                $loop->stop();
                 $loop->stop();
                 $loop->defer(function() use ($loop) {
                     echo 5;
@@ -92,7 +97,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 $invoked = true;
             });
             $loop->unreference($watcher);
-            $loop->reference($watcher);
+            $loop->unreference($watcher);
             $loop->reference($watcher);
         });
         $this->assertTrue($invoked);
@@ -195,9 +200,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         return $args;
     }
 
-    /**
-     * @dataProvider provideRegistrationArgs
-     */
+    /** @dataProvider provideRegistrationArgs */
     function testDisableWithConsecutiveCancel($type, $args)
     {
         if ($type === "onSignal") {
@@ -214,9 +217,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /**
-     * @dataProvider provideRegistrationArgs
-     */
+    /** @dataProvider provideRegistrationArgs */
     function testWatcherReferenceInfo($type, $args)
     {
         if ($type === "onSignal") {
@@ -273,8 +274,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         // unreference() should just increment unreferenced count
         $watcherId2 = \call_user_func_array($func, $args);
         $loop->unreference($watcherId2);
-        $loop->unreference($watcherId2);
-        $loop->unreference($watcherId2);
         $info = $loop->info();
         $expected = ["enabled" => 2, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
@@ -285,9 +284,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $loop->cancel($watcherId2);
     }
 
-    /**
-     * @dataProvider provideRegistrationArgs
-     */
+    /** @dataProvider provideRegistrationArgs */
     function testWatcherRegistrationAndCancellationInfo($type, $args)
     {
         if ($type === "onSignal") {
@@ -347,9 +344,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertSame($expected, $info[$type]);
     }
 
-    /**
-     * @dataProvider provideRegistrationArgs
-     */
+    /** @dataProvider provideRegistrationArgs */
     function testNoMemoryLeak($type, $args)
     {
         if ($type === "onSignal") {
@@ -463,15 +458,144 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    function testSuccessOnEnableNonexistentWatcher()
+    function testExecutionOrderGuarantees()
+    {
+        $this->expectOutputString("01 02 03 04 05 05 10 11 12 13 13 20 21 22 23 ");
+        $this->start(function(Driver $loop) use (&$ticks) {
+            $f = function() use ($loop) {
+                $args = func_get_args();
+                return function($watcherId) use ($loop, &$args) {
+                    if (!$args) {
+                        $this->fail("Watcher callback called too often");
+                    }
+                    $loop->cancel($watcherId);
+                    echo array_shift($args) . array_shift($args), " ";
+                };
+            };
+            $dep = function($i, $fn) use ($loop, &$max, &$cur) {
+                $max || $max = new \SplObjectStorage;
+                $cur || $cur = new \SplObjectStorage;
+                $max[$fn] = max(isset($max[$fn]) ? $max[$fn] : 0, $i);
+                $cur[$fn] = 0;
+                return function($watcherId) use ($loop, $i, $fn, &$max, &$cur) {
+                    $this->assertSame($i, $cur[$fn]);
+                    if ($cur[$fn] == $max[$fn]) {
+                        $fn($watcherId);
+                    } else {
+                        $loop->cancel($watcherId);
+                    }
+                    $cur[$fn] = $cur[$fn] + 1;
+                };
+            };
+
+            $loop->onWritable(STDIN, $dep(0, $writ = $f(0, 5)));
+            $writ1 = $loop->onWritable(STDIN, $dep(1, $writ));
+            $writ2 = $loop->onWritable(STDIN, $dep(3, $writ));
+
+            $loop->delay($msDelay = 0, $dep(0, $del = $f(0, 5)));
+            $del1 = $loop->delay($msDelay = 0, $dep(1, $del));
+            $del2 = $loop->delay($msDelay = 0, $dep(3, $del));
+            $del3 = $loop->delay($msDelay = 0, $f());
+            $del4 = $loop->delay($msDelay = 0, $f(1, 3));
+            $loop->cancel($del3);
+            $loop->disable($del1);
+            $loop->disable($del2);
+
+            $writ3 = $loop->onWritable(STDIN, $f());
+            $loop->cancel($writ3);
+            $loop->disable($writ1);
+            $loop->disable($writ2);
+            $loop->enable($writ1);
+            $writ4 = $loop->onWritable(STDIN, $f(1, 3));
+            $loop->onWritable(STDIN, $dep(2, $writ));
+            $loop->enable($writ2);
+            $loop->disable($writ4);
+            $loop->defer(function() use ($loop, $writ4) {
+                $loop->enable($writ4);
+            });
+
+            $loop->enable($del1);
+            $loop->delay($msDelay = 0, $dep(2, $del));
+            $loop->enable($del2);
+            $loop->disable($del4);
+            $loop->defer(function() use ($loop, $del4) {
+                $loop->enable($del4);
+            });
+
+            $loop->delay($msDelay = 5, $f(2, 0));
+            $loop->repeat($msDelay = 5, $f(2, 1));
+            $rep1 = $loop->repeat($msDelay = 5, $f(2, 3));
+            $loop->disable($rep1);
+            $loop->delay($msDelay = 5, $f(2, 2));
+            $loop->enable($rep1);
+
+            $loop->defer($f(0, 1));
+            $def1 = $loop->defer($f(0, 3));
+            $def2 = $loop->defer($f(1, 1));
+            $def3 = $loop->defer($f());
+            $loop->defer($f(0, 2));
+            $loop->disable($def1);
+            $loop->cancel($def3);
+            $loop->enable($def1);
+            $loop->defer(function() use ($loop, $def2, $del4, $f) {
+                $tick = $f(0, 4);
+                $tick("invalid");
+                $loop->defer($f(1, 0));
+                $loop->enable($def2);
+                $loop->defer($f(1, 2));
+            });
+            $loop->disable($def2);
+        });
+    }
+
+    /** @depends testSignalCapability */
+    function testSignalExecutionOrder()
+    {
+        if (!\extension_loaded("posix")) {
+            $this->markTestSkipped("ext/posix required to test signal handlers");
+        }
+
+        $this->expectOutputString("123456");
+        $this->start(function(Driver $loop) {
+            $f = function($i) use ($loop) {
+                return function($watcherId) use ($loop, $i) {
+                    $loop->cancel($watcherId);
+                    echo $i;
+                };
+            };
+
+            $loop->defer($f(1));
+            $loop->onSignal(SIGUSR1, $f(2));
+            $sig1 = $loop->onSignal(SIGUSR1, $f(4));
+            $sig2 = $loop->onSignal(SIGUSR1, $f(6));
+            $sig3 = $loop->onSignal(SIGUSR1, $f(" FAIL - MUST NOT BE CALLED "));
+            $loop->disable($sig1);
+            $loop->onSignal(SIGUSR1, $f(3));
+            $loop->disable($sig2);
+            $loop->enable($sig1);
+            $loop->cancel($sig3);
+            $loop->onSignal(SIGUSR1, $f(5));
+            $loop->defer(function() use ($loop, $sig2) {
+                $loop->enable($sig2);
+            });
+
+            $loop->delay($msDelay = 1, function() use ($loop) {
+                \posix_kill(\getmypid(), \SIGUSR1);
+                $loop->delay($msDelay = 10, function() use ($loop) {
+                    $loop->stop();
+                });
+            });
+        });
+    }
+
+    /** @expectedException InvalidWatcherException */
+    function testExceptionOnEnableNonexistentWatcher()
     {
         $this->loop->enable("nonexistentWatcher");
     }
 
-    function testSuccessOnDisableNonexistentWatcher()
+    /** @expectedException InvalidWatcherException */
+    function testExceptionOnDisableNonexistentWatcher()
     {
         $this->loop->disable("nonexistentWatcher");
     }
@@ -479,6 +603,78 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     function testSuccessOnCancelNonexistentWatcher()
     {
         $this->loop->cancel("nonexistentWatcher");
+    }
+
+    /** @expectedException InvalidWatcherException */
+    function testExceptionOnReferenceNonexistentWatcher()
+    {
+        $this->loop->reference("nonexistentWatcher");
+    }
+
+    /** @expectedException InvalidWatcherException */
+    function testExceptionOnUnreferenceNonexistentWatcher()
+    {
+        $this->loop->unreference("nonexistentWatcher");
+    }
+
+    /** @expectedException InvalidWatcherException */
+    function testWatcherInvalidityOnDefer() {
+        $this->start(function(Driver $loop) {
+            $loop->defer(function($watcher) use ($loop) {
+                $loop->disable($watcher);
+            });
+        });
+    }
+
+    /** @expectedException InvalidWatcherException */
+    function testWatcherInvalidityOnDelay() {
+        $this->start(function(Driver $loop) {
+            $loop->delay($msDelay = 0, function($watcher) use ($loop) {
+                $loop->disable($watcher);
+            });
+        });
+    }
+
+    function testEventsNotExecutedInSameTickAsEnabled()
+    {
+        $this->start(function (Driver $loop) {
+            $loop->defer(function() use ($loop) {
+                $loop->defer(function() use ($loop, &$diswatchers, &$watchers) {
+                    foreach ($watchers as $watcher) {
+                        $loop->cancel($watcher);
+                    }
+                    foreach ($diswatchers as $watcher) {
+                        $loop->disable($watcher);
+                        $loop->enable($watcher);
+                    }
+                    $loop->defer(function() use ($loop, $diswatchers) {
+                        foreach ($diswatchers as $watcher) {
+                            $loop->disable($watcher);
+                        }
+                        $loop->defer(function() use ($loop, $diswatchers) {
+                            foreach ($diswatchers as $watcher) {
+                                $loop->enable($watcher);
+                            }
+                            $loop->defer(function() use ($loop, $diswatchers) {
+                                foreach ($diswatchers as $watcher) {
+                                    $loop->cancel($watcher);
+                                }
+                            });
+                        });
+                    });
+                });
+
+                $f = function() use ($loop) {
+                    $watchers[] = $loop->defer([$this, "fail"]);
+                    $watchers[] = $loop->delay($msDelay = 0, [$this, "fail"]);
+                    $watchers[] = $loop->repeat($msDelay = 0, [$this, "fail"]);
+                    $watchers[] = $loop->onWritable(STDIN, [$this, "fail"]);
+                    return $watchers;
+                };
+                $watchers = $f();
+                $diswatchers = $f();
+            });
+        });
     }
 
     function testEnablingWatcherAllowsSubsequentInvocation()
@@ -687,9 +883,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /**
-     * @depends testSignalCapability
-     */
+    /** @depends testSignalCapability */
     function testOnSignalWatcher()
     {
         if (!\extension_loaded("posix")) {
@@ -712,9 +906,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /**
-     * @depends testSignalCapability
-     */
+    /** @depends testSignalCapability */
     function testInitiallyDisabledOnSignalWatcher()
     {
         if (!\extension_loaded("posix")) {
@@ -793,9 +985,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
+    /** @expectedException \RuntimeException */
     function testStreamWatcherDoesntSwallowExceptions()
     {
         $this->start(function(Driver $loop) {
@@ -873,5 +1063,40 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($callbackData->delay);
         $this->assertTrue($callbackData->repeat);
         $this->assertTrue($callbackData->onWritable);
+    }
+
+    // implementations SHOULD use Interop\Async\Loop\Registry trait, but are not forced to, hence test it here again
+    function testRegistry() {
+        $this->assertNull($this->loop->fetchState("foo"));
+        $this->loop->storeState("foo", NAN);
+        $this->assertTrue(is_nan($this->loop->fetchState("foo")));
+        $this->loop->storeState("foo", "1");
+        $this->assertNull($this->loop->fetchState("bar"));
+        $this->loop->storeState("baz", -0.0);
+        // running must not affect state
+        $this->loop->defer([$this->loop, "stop"]);
+        $this->loop->run();
+        $this->assertSame(-INF, @1/$this->loop->fetchState("baz"));
+        $this->assertSame("1", $this->loop->fetchState("foo"));
+    }
+
+    /** @dataProvider provideRegistryValues */
+    function testRegistryValues($val) {
+        $this->loop->storeState("foo", $val);
+        $this->assertSame($val, $this->loop->fetchState("foo"));
+    }
+
+    function provideRegistryValues() {
+        return [
+            ["string"],
+            [0],
+            [PHP_INT_MIN],
+            [-1.0],
+            [true],
+            [false],
+            [[]],
+            [null],
+            [new \StdClass],
+        ];
     }
 }
