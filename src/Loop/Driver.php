@@ -28,7 +28,7 @@ interface Driver
     /**
      * Defer the execution of a callback.
      *
-     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher. Order of definition MUST be preserved when executing the callbacks.
+     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher. Order of enabling MUST be preserved when executing the callbacks.
      *
      * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
@@ -40,7 +40,7 @@ interface Driver
     /**
      * Delay the execution of a callback.
      *
-     * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of definition.
+     * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of enabling.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be invalidated before the callback call.
@@ -53,7 +53,7 @@ interface Driver
     /**
      * Repeatedly execute a callback.
      *
-     * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of definition.
+     * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of enabling.
      * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
@@ -67,7 +67,7 @@ interface Driver
     /**
      * Execute a callback when a stream resource becomes readable.
      *
-     * In case of multiple watchers on a same stream, order of definition MUST be preserved when executing the callbacks.
+     * In case of multiple watchers on a same stream, order of enabling MUST be preserved when executing the callbacks.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -80,7 +80,7 @@ interface Driver
     /**
      * Execute a callback when a stream resource becomes writable.
      *
-     * In case of multiple watchers on a same stream, order of definition MUST be preserved when executing the callbacks.
+     * In case of multiple watchers on a same stream, order of enabling MUST be preserved when executing the callbacks.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -93,7 +93,7 @@ interface Driver
     /**
      * Execute a callback when a signal is received.
      *
-     * In case of multiple watchers on a same signal, order of definition MUST be preserved when executing the callbacks.
+     * In case of multiple watchers on a same signal, order of enabling MUST be preserved when executing the callbacks.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
