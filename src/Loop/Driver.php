@@ -128,7 +128,9 @@ interface Driver
     public function disable($watcherId);
 
     /**
-     * Cancel a watcher. This marks the watcher as invalid. Calling this function MUST never fail, even when passed an invalid watcher.
+     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After this
+     * operation the watcher is permanently invalid. Calling this function MUST never fail, even when passed an invalid
+     * watcher.
      *
      * @param string $watcherId The watcher identifier.
      *

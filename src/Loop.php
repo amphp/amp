@@ -241,7 +241,8 @@ final class Loop
     }
 
     /**
-     * Cancel a watcher. This marks the watcher identifier as invalid.
+     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After this
+     * operation the watcher is permanently invalid.
      *
      * @param string $watcherId The watcher identifier.
      *
