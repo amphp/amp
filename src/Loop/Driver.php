@@ -33,7 +33,7 @@ interface Driver
      * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function defer(callable $callback, $data = null);
 
@@ -46,7 +46,7 @@ interface Driver
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function delay($delay, callable $callback, $data = null);
 
@@ -60,7 +60,7 @@ interface Driver
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function repeat($interval, callable $callback, $data = null);
 
@@ -71,7 +71,7 @@ interface Driver
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onReadable($stream, callable $callback, $data = null);
 
@@ -82,7 +82,7 @@ interface Driver
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function onWritable($stream, callable $callback, $data = null);
 
@@ -93,7 +93,7 @@ interface Driver
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      *
      * @throws UnsupportedFeatureException Thrown if signal handling is not supported.
      */
@@ -105,6 +105,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function enable($watcherId);
 
@@ -114,11 +116,13 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function disable($watcherId);
 
     /**
-     * Cancel a watcher.
+     * Cancel a watcher. This marks the watcher as invalid. Calling this function MUST never fail, even when passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -135,6 +139,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function reference($watcherId);
 
@@ -147,6 +153,8 @@ interface Driver
      * @param string $watcherId The watcher identifier.
      *
      * @return void
+     *
+     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
      */
     public function unreference($watcherId);
     
