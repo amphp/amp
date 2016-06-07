@@ -433,15 +433,17 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                     $loop->run();
                 }
                 if ($type === "onSignal") {
-                    $watchers = [$loop->onSignal(\SIGUSR1, $fn = function ($watcherId, $i) use (&$fn, $loop, &$watchers) {
+                    $sendSignal = function () {
+                        \posix_kill(\getmypid(), \SIGUSR1);
+                    };
+                    $loop->onSignal(\SIGUSR1, $fn = function ($watcherId, $signo, $i) use (&$fn, $loop, $sendSignal) {
                         if ($i) {
-                            $watchers[] = $loop->onSignal(\SIGUSR1, $fn, --$i);
-                        } else {
-                            foreach ($watchers as $watcher) {
-                                $loop->cancel($watcher);
-                            }
+                            $loop->onSignal(\SIGUSR1, $fn, --$i);
+                            $loop->defer($sendSignal);
                         }
-                    }, $runs)];
+                        $loop->cancel($watcherId);
+                    }, $runs);
+                    $loop->defer($sendSignal);
                     $loop->run();
                 }
             };
