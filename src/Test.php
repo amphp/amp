@@ -588,13 +588,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnEnableNonexistentWatcher()
     {
         $this->loop->enable("nonexistentWatcher");
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnDisableNonexistentWatcher()
     {
         $this->loop->disable("nonexistentWatcher");
@@ -605,19 +605,19 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->loop->cancel("nonexistentWatcher");
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnReferenceNonexistentWatcher()
     {
         $this->loop->reference("nonexistentWatcher");
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnUnreferenceNonexistentWatcher()
     {
         $this->loop->unreference("nonexistentWatcher");
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testWatcherInvalidityOnDefer() {
         $this->start(function(Driver $loop) {
             $loop->defer(function($watcher) use ($loop) {
@@ -626,7 +626,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /** @expectedException InvalidWatcherException */
+    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testWatcherInvalidityOnDelay() {
         $this->start(function(Driver $loop) {
             $loop->delay($msDelay = 0, function($watcher) use ($loop) {
@@ -1072,11 +1072,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue(is_nan($this->loop->fetchState("foo")));
         $this->loop->storeState("foo", "1");
         $this->assertNull($this->loop->fetchState("bar"));
-        $this->loop->storeState("baz", -0.0);
+        $this->loop->storeState("baz", -INF);
         // running must not affect state
         $this->loop->defer([$this->loop, "stop"]);
         $this->loop->run();
-        $this->assertSame(-INF, @1/$this->loop->fetchState("baz"));
+        $this->assertSame(-INF, $this->loop->fetchState("baz"));
         $this->assertSame("1", $this->loop->fetchState("foo"));
     }
 
