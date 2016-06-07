@@ -295,13 +295,14 @@ class NativeLoop implements Driver {
                 return;
             }
         
-            // Remove and execute timer. Replace timer if persistent.
             $this->timerQueue->extract();
+
+            unset($this->timerExpires[$id]);
         
             if ($watcher->type & Watcher::REPEAT) {
                 $this->enableQueue[$id] = $watcher;
             } else {
-                unset($this->watchers[$id], $this->timerExpires[$id]);
+                unset($this->watchers[$id]);
             }
         
             // Execute the timer.
