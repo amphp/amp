@@ -38,11 +38,15 @@ class Watcher {
     public $callback;
 
     /**
+     * Data provided to the watcher callback.
+     *
      * @var mixed
      */
     public $data;
 
     /**
+     * Watcher-dependent value storage. Stream for IO watchers, signo for signal watchers, interval for timers.
+     *
      * @var mixed
      */
     public $value;

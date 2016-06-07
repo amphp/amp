@@ -4,6 +4,7 @@ namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
 use Interop\Async\Loop\Driver;
+use Interop\Async\Loop\InvalidWatcherException;
 use Interop\Async\Loop\Registry;
 use Interop\Async\Loop\UnsupportedFeatureException;
 
@@ -474,10 +475,14 @@ class NativeLoop implements Driver {
      */
     public function enable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new \LogicException("Cannot enable invalid watcher");
+            throw new InvalidWatcherException("Cannot enable an invalid watcher identifier");
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
+
+        if ($watcher->enabled) {
+            return; // Watcher already enabled.
+        }
 
         switch ($watcher->type) {
             case Watcher::READABLE:
@@ -494,10 +499,6 @@ class NativeLoop implements Driver {
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
-                if (isset($this->timerExpires[$watcher->id])) {
-                    break;
-                }
-
                 $expiration = (int) (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->value;
                 $this->timerExpires[$watcher->id] = $expiration;
                 $this->timerQueue->insert([$watcher, $expiration], -$expiration);
@@ -522,10 +523,14 @@ class NativeLoop implements Driver {
      */
     public function disable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            return;
+            throw new InvalidWatcherException("Cannot disable an invalid watcher identifier");
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
+
+        if (!$watcher->enabled) {
+            return; // Watcher already disabled.
+        }
 
         switch ($watcher->type) {
             case Watcher::READABLE:
@@ -567,6 +572,10 @@ class NativeLoop implements Driver {
      * {@inheritdoc}
      */
     public function cancel($watcherIdentifier) {
+        if (!isset($this->watchers[$watcherIdentifier])) {
+            return; // Avoid throwing from disable() if the watcher is invalid.
+        }
+
         $this->disable($watcherIdentifier);
         unset($this->watchers[$watcherIdentifier]);
     }
@@ -576,7 +585,7 @@ class NativeLoop implements Driver {
      */
     public function reference($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            return;
+            throw new InvalidWatcherException("Cannot reference an invalid watcher identifier");
         }
 
         $this->watchers[$watcherIdentifier]->referenced = true;
@@ -587,7 +596,7 @@ class NativeLoop implements Driver {
      */
     public function unreference($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            return;
+            throw new InvalidWatcherException("Cannot unreference an invalid watcher identifier");
         }
 
         $this->watchers[$watcherIdentifier]->referenced = false;
