@@ -640,6 +640,21 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->start(function (Driver $loop) {
             $loop->defer(function() use ($loop) {
                 $loop->defer(function() use ($loop, &$diswatchers, &$watchers) {
+                    $loop->defer(function() use ($loop, $diswatchers) {
+                        foreach ($diswatchers as $watcher) {
+                            $loop->disable($watcher);
+                        }
+                        $loop->defer(function() use ($loop, $diswatchers) {
+                            $loop->defer(function() use ($loop, $diswatchers) {
+                                foreach ($diswatchers as $watcher) {
+                                    $loop->cancel($watcher);
+                                }
+                            });
+                            foreach ($diswatchers as $watcher) {
+                                $loop->enable($watcher);
+                            }
+                        });
+                    });
                     foreach ($watchers as $watcher) {
                         $loop->cancel($watcher);
                     }
@@ -647,21 +662,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                         $loop->disable($watcher);
                         $loop->enable($watcher);
                     }
-                    $loop->defer(function() use ($loop, $diswatchers) {
-                        foreach ($diswatchers as $watcher) {
-                            $loop->disable($watcher);
-                        }
-                        $loop->defer(function() use ($loop, $diswatchers) {
-                            foreach ($diswatchers as $watcher) {
-                                $loop->enable($watcher);
-                            }
-                            $loop->defer(function() use ($loop, $diswatchers) {
-                                foreach ($diswatchers as $watcher) {
-                                    $loop->cancel($watcher);
-                                }
-                            });
-                        });
-                    });
                 });
 
                 $f = function() use ($loop) {
