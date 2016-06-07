@@ -577,12 +577,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->onSignal(SIGUSR1, $f(5));
             $loop->defer(function() use ($loop, $sig2) {
                 $loop->enable($sig2);
-            });
-
-            $loop->delay($msDelay = 1, function() use ($loop) {
-                \posix_kill(\getmypid(), \SIGUSR1);
-                $loop->delay($msDelay = 10, function() use ($loop) {
-                    $loop->stop();
+                $loop->defer(function() use ($loop) {
+                    \posix_kill(\getmypid(), \SIGUSR1);
+                    $loop->delay($msDelay = 10, function() use ($loop) {
+                        $loop->stop();
+                    });
                 });
             });
         });
