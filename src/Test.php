@@ -347,11 +347,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     /** @dataProvider provideRegistrationArgs */
     function testNoMemoryLeak($type, $args)
     {
+        $runs = 2000;
+
         if ($type === "onSignal") {
             $this->testSignalCapability();
         }
 
-        $this->start(function(Driver $loop) use ($type, $args) {
+        $this->start(function(Driver $loop) use ($type, $args, $runs) {
             $initialMem = memory_get_usage();
             $cb = function ($runs) use ($loop, $type, $args) {
                 $func = [$loop, $type];
@@ -444,17 +446,17 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 }
             };
             $closureMem = memory_get_usage() - $initialMem;
-            $cb(10000); /* just to set up eventual structures inside loop without counting towards memory comparison */
+            $cb($runs); /* just to set up eventual structures inside loop without counting towards memory comparison */
             gc_collect_cycles();
             $initialMem = memory_get_usage() - $closureMem;
-            $cb(10000);
+            $cb($runs);
             unset($cb);
 
             gc_collect_cycles();
             $endMem = memory_get_usage();
 
             /* this is allowing some memory usage due to runtime caches etc., but nothing actually leaking */
-            $this->assertLessThan(40000, $endMem - $initialMem); // 4 * 10000, as 4 is minimal sizeof(void *)
+            $this->assertLessThan($runs * 4, $endMem - $initialMem); // * 4, as 4 is minimal sizeof(void *)
         });
     }
 
@@ -496,7 +498,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $del1 = $loop->delay($msDelay = 0, $dep(1, $del));
             $del2 = $loop->delay($msDelay = 0, $dep(3, $del));
             $del3 = $loop->delay($msDelay = 0, $f());
-            $del4 = $loop->delay($msDelay = 0, $f(1, 3));
+            $del4 = $loop->delay($msDelay = 0, $dep(1, $defdel = $f(1, 3)));
             $loop->cancel($del3);
             $loop->disable($del1);
             $loop->disable($del2);
@@ -506,11 +508,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->disable($writ1);
             $loop->disable($writ2);
             $loop->enable($writ1);
-            $writ4 = $loop->onWritable(STDIN, $f(1, 3));
+            $writ4 = $loop->onWritable(STDIN, $dep(1, $defwrit = $f(1, 3)));
             $loop->onWritable(STDIN, $dep(2, $writ));
             $loop->enable($writ2);
             $loop->disable($writ4);
-            $loop->defer(function() use ($loop, $writ4) {
+            $loop->defer(function() use ($loop, $writ4, $dep, $defwrit) {
+                $loop->onWritable(STDIN, $dep(0, $defwrit));
                 $loop->enable($writ4);
             });
 
@@ -518,7 +521,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->delay($msDelay = 0, $dep(2, $del));
             $loop->enable($del2);
             $loop->disable($del4);
-            $loop->defer(function() use ($loop, $del4) {
+            $loop->defer(function() use ($loop, $del4, $dep, $defdel) {
+                $loop->onWritable(STDIN, $dep(0, $defdel));
                 $loop->enable($del4);
             });
 
