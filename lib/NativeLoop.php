@@ -267,11 +267,10 @@ class NativeLoop implements Driver {
                 continue; // Watcher disabled by another defer watcher.
             }
 
-            $watcher = $this->watchers[$id];
             unset($this->watchers[$id], $this->deferQueue[$id]);
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->data);
+            $callback($id, $watcher->data);
         }
     }
 
@@ -307,7 +306,7 @@ class NativeLoop implements Driver {
         
             // Execute the timer.
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->data);
+            $callback($id, $watcher->data);
         }
     }
 
@@ -348,7 +347,7 @@ class NativeLoop implements Driver {
                     if (!isset($this->signalWatchers[$watcher->value])) {
                         if (!@\pcntl_signal($watcher->value, function ($signo) {
                             foreach ($this->signalWatchers[$signo] as $watcher) {
-                                if (!isset($this->watchers[$watcher->id])) {
+                                if (!isset($this->signalWatchers[$signo][$watcher->id])) {
                                     continue;
                                 }
 
@@ -528,16 +527,17 @@ class NativeLoop implements Driver {
         }
 
         $watcher->enabled = false;
+        $id = $watcher->id;
 
-        if (isset($this->enableQueue[$watcher->id])) {
-            unset($this->enableQueue[$watcher->id]);
+        if (isset($this->enableQueue[$id])) {
+            unset($this->enableQueue[$id]);
             return; // Watcher was only queued to be enabled.
         }
 
         switch ($watcher->type) {
             case Watcher::READABLE:
                 $streamId = (int) $watcher->value;
-                unset($this->readWatchers[$streamId][$watcher->id]);
+                unset($this->readWatchers[$streamId][$id]);
                 if (empty($this->readWatchers[$streamId])) {
                     unset($this->readWatchers[$streamId], $this->readStreams[$streamId]);
                 }
@@ -545,7 +545,7 @@ class NativeLoop implements Driver {
 
             case Watcher::WRITABLE:
                 $streamId = (int) $watcher->value;
-                unset($this->writeWatchers[$streamId][$watcher->id]);
+                unset($this->writeWatchers[$streamId][$id]);
                 if (empty($this->writeWatchers[$streamId])) {
                     unset($this->writeWatchers[$streamId], $this->writeStreams[$streamId]);
                 }
@@ -553,16 +553,16 @@ class NativeLoop implements Driver {
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
-                unset($this->timerExpires[$watcher->id]);
+                unset($this->timerExpires[$id]);
                 break;
 
             case Watcher::DEFER:
-                unset($this->deferQueue[$watcher->id]);
+                unset($this->deferQueue[$id]);
                 break;
 
             case Watcher::SIGNAL:
                 if (isset($this->signalWatchers[$watcher->value])) {
-                    unset($this->signalWatchers[$watcher->value][$watcher->id]);
+                    unset($this->signalWatchers[$watcher->value][$id]);
 
                     if (empty($this->signalWatchers[$watcher->value])) {
                         unset($this->signalWatchers[$watcher->value]);
