@@ -36,6 +36,7 @@ class EvLoop extends Loop {
 
     public function __construct() {
         $this->handle = new \EvLoop;
+
         $this->ioCallback = function (\EvIO $event) {
             /** @var \Amp\Loop\Internal\Watcher $watcher */
             $watcher = $event->data;
@@ -72,7 +73,10 @@ class EvLoop extends Loop {
         $this->handle->stop();
         parent::stop();
     }
-
+    
+    /**
+     * {@inheritdoc}
+     */
     protected function dispatch($blocking) {
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
@@ -97,7 +101,7 @@ class EvLoop extends Loop {
                         $interval = $watcher->value / self::MILLISEC_PER_SEC;
                         $this->events[$id] = $this->handle->timer(
                             $interval,
-                            Watcher::REPEAT ? $interval : 0,
+                            $watcher->type & Watcher::REPEAT ? $interval : 0,
                             $this->timerCallback,
                             $watcher
                         );
