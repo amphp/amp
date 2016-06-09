@@ -114,10 +114,6 @@ class EvLoop extends Loop {
                     default:
                         throw new \DomainException("Unknown watcher type");
                 }
-
-                if (!$watcher->referenced) {
-                    $this->events[$id]->keepalive(false);
-                }
             } else {
                 $this->events[$id]->start();
             }
@@ -140,29 +136,7 @@ class EvLoop extends Loop {
         parent::cancel($watcherIdentifier);
         unset($this->events[$watcherIdentifier]);
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function reference($watcherIdentifier) {
-        parent::reference($watcherIdentifier);
-
-        if (isset($this->events[$watcherIdentifier])) {
-            $this->events[$watcherIdentifier]->keepalive(true);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unreference($watcherIdentifier) {
-        parent::unreference($watcherIdentifier);
-
-        if (isset($this->events[$watcherIdentifier])) {
-            $this->events[$watcherIdentifier]->keepalive(false);
-        }
-    }
-
+    
     /**
      * {@inheritdoc}
      */
