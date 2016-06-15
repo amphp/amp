@@ -71,21 +71,12 @@ trait Placeholder {
         }
 
         $this->resolved = true;
+        $this->result = $value;
 
-        if ($value instanceof Awaitable) {
-            if ($this === $value) {
-                throw new \InvalidArgumentException("Cannot resolve an awaitable with itself");
-            }
-
-            $this->result = $value;
-
-            if ($this->onResolved !== null) {
+        if ($this->onResolved !== null) {
+            if ($this->result instanceof Awaitable) {
                 $this->result->when($this->onResolved);
-            }
-        } else {
-            $this->result = $value;
-
-            if ($this->onResolved !== null) {
+            } else {
                 try {
                     $onResolved = $this->onResolved;
                     $onResolved(null, $this->result);
@@ -99,9 +90,9 @@ trait Placeholder {
                     });
                 }
             }
-        }
 
-        $this->onResolved = null;
+            $this->onResolved = null;
+        }
     }
 
     /**
