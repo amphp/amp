@@ -54,12 +54,34 @@ final class Coroutine implements Awaitable {
             try {
                 if ($exception) {
                     // Throw exception at current execution point.
-                    $this->next($this->generator->throw($exception));
+                    $yielded = $this->generator->throw($exception);
+                } else {
+                    // Send the new value and execute to next yield statement.
+                    $yielded = $this->generator->send($value);
+                }
+
+                if ($yielded instanceof Awaitable) {
+                    ++$this->depth;
+                    $yielded->when($this->when);
+                    --$this->depth;
                     return;
                 }
 
-                // Send the new value and execute to next yield statement.
-                $this->next($this->generator->send($value));
+                // @todo Necessary for returning values in PHP 5.x. Remove once PHP 7 is required.
+                if ($yielded instanceof Internal\CoroutineResult) {
+                    $this->settle($yielded->getValue());
+                    return;
+                }
+
+                if ($this->generator->valid()) {
+                    throw new InvalidYieldException(
+                        $this->generator,
+                        $yielded,
+                        \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, self::class)
+                    );
+                }
+
+                $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
             } catch (\Throwable $exception) {
                 $this->fail($exception);
             } catch (\Exception $exception) {
@@ -68,7 +90,30 @@ final class Coroutine implements Awaitable {
         };
 
         try {
-            $this->next($this->generator->current());
+            $yielded = $this->generator->current();
+
+            if ($yielded instanceof Awaitable) {
+                ++$this->depth;
+                $yielded->when($this->when);
+                --$this->depth;
+                return;
+            }
+
+            // @todo Necessary for returning values in PHP 5.x. Remove once PHP 7 is required.
+            if ($yielded instanceof Internal\CoroutineResult) {
+                $this->settle($yielded->getValue());
+                return;
+            }
+
+            if ($this->generator->valid()) {
+                throw new InvalidYieldException(
+                    $this->generator,
+                    $yielded,
+                    \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, self::class)
+                );
+            }
+
+            $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
         } catch (\Throwable $exception) {
             $this->fail($exception);
         } catch (\Exception $exception) {
@@ -77,35 +122,16 @@ final class Coroutine implements Awaitable {
     }
 
     /**
-     * Examines the value yielded from the generator and prepares the next step in iteration.
+     * Attempts to resolves the coroutine with the given value, failing if the generator is still valid after sending
+     * the null back to the generator.
+     * Required only for PHP 5.x. Remove once PHP 7 is required.
      *
-     * @param mixed $yielded Value yielded from generator.
+     * @param mixed $result Coroutine return value.
      */
-    private function next($yielded) {
-        if (!$this->generator->valid()) {
-            $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
-            return;
-        }
+    private function settle($result) {
+        $value = $this->generator->send(null);
 
-        if (!$yielded instanceof Awaitable) {
-            // @todo Necessary for returning values in PHP 5.x. Remove and immediately throw once PHP 7 is required.
-            if (!$yielded instanceof Internal\CoroutineResult) {
-                throw new InvalidYieldException(
-                    $this->generator,
-                    $yielded,
-                    \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, self::class)
-                );
-            }
-
-            $yielded = $yielded->getValue();
-
-            $value = $this->generator->send($yielded);
-
-            if (!$this->generator->valid()) {
-                $this->resolve($yielded);
-                return;
-            }
-
+        if ($this->generator->valid()) {
             $exception = new InvalidYieldException(
                 $this->generator,
                 $value,
@@ -119,9 +145,7 @@ final class Coroutine implements Awaitable {
             throw $exception;
         }
 
-        ++$this->depth;
-        $yielded->when($this->when);
-        --$this->depth;
+        $this->resolve($result);
     }
     
     /**
