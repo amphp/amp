@@ -41,7 +41,6 @@ function rethrow(Awaitable $awaitable) {
  * Runs the event loop until the awaitable is resolved. Should not be called within a running event loop.
  *
  * @param \Interop\Async\Awaitable $awaitable
- * @param \Interop\Async\LoopDriver|null $driver
  *
  * @return mixed Awaitable success value.
  *
@@ -100,16 +99,23 @@ function pipe(Awaitable $awaitable, callable $functor) {
 
 /**
  * @param \Interop\Async\Awaitable $awaitable
+ * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
+ *     is an instance of the given exception class name.
  * @param callable(\Throwable|\Exception $exception): mixed $functor
  *
  * @return \Interop\Async\Awaitable
  */
-function capture(Awaitable $awaitable, callable $functor) {
+function capture(Awaitable $awaitable, $className, callable $functor) {
     $deferred = new Deferred;
 
-    $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
+    $awaitable->when(function ($exception, $value) use ($deferred, $className, $functor) {
         if (!$exception) {
             $deferred->resolve($value);
+            return;
+        }
+
+        if (!$exception instanceof $className) {
+            $deferred->fail($exception);
             return;
         }
 
@@ -143,12 +149,10 @@ function timeout(Awaitable $awaitable, $timeout) {
         $deferred->fail(new TimeoutException);
     });
 
-    $onResolved = function () use ($awaitable, $deferred, $watcher) {
+    $awaitable->when(function () use ($awaitable, $deferred, $watcher) {
         Loop::cancel($watcher);
         $deferred->resolve($awaitable);
-    };
-
-    $awaitable->when($onResolved);
+    });
 
     return $deferred->getAwaitable();
 }
@@ -298,7 +302,7 @@ function all(array $awaitables) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $onResolved = function ($exception, $value) use ($key, &$values, &$pending, &$resolved, $deferred) {
+        $awaitable->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
             if ($resolved) {
                 return;
             }
@@ -313,9 +317,7 @@ function all(array $awaitables) {
             if (0 === --$pending) {
                 $deferred->resolve($values);
             }
-        };
-
-        $awaitable->when($onResolved);
+        });
     }
 
     return $deferred->getAwaitable();
@@ -346,7 +348,7 @@ function first(array $awaitables) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $onResolved = function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+        $awaitable->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
             if ($resolved) {
                 return;
             }
@@ -361,9 +363,7 @@ function first(array $awaitables) {
             if (0 === --$pending) {
                 $deferred->fail(new MultiReasonException($exceptions));
             }
-        };
-
-        $awaitable->when($onResolved);
+        });
     }
 
     return $deferred->getAwaitable();
@@ -392,8 +392,6 @@ function some(array $awaitables, $required) {
     }
 
     $deferred = new Deferred;
-
-    $required = \min($pending, $required);
     $resolved = false;
     $values = [];
     $exceptions = [];
@@ -403,8 +401,8 @@ function some(array $awaitables, $required) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $onResolved = function ($exception, $value) use (
-            &$key, &$values, &$exceptions, &$pending, &$resolved, &$required, $deferred
+        $awaitable->when(function ($exception, $value) use (
+            &$values, &$exceptions, &$pending, &$resolved, &$required, $key, $deferred
         ) {
             if ($resolved) {
                 return;
@@ -425,9 +423,7 @@ function some(array $awaitables, $required) {
                 $resolved = true;
                 $deferred->resolve($values);
             }
-        };
-
-        $awaitable->when($onResolved);
+        });
     }
 
     return $deferred->getAwaitable();
@@ -488,9 +484,8 @@ function choose(array $awaitables) {
  */
 function map(callable $callback /* array ...$awaitables */) {
     $args = \func_get_args();
-    $args[0] = lift($args[0]);
-
-    $count = count($args);
+    $count = \count($args);
+    $args[0] = lift($callback);
 
     for ($i = 1; $i < $count; ++$i) {
         foreach ($args[$i] as $awaitable) {
