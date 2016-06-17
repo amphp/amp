@@ -74,18 +74,14 @@ final class Coroutine implements Awaitable {
                 }
 
                 if ($this->generator->valid()) {
-                    throw new InvalidYieldException(
-                        $this->generator,
-                        $yielded,
-                        \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, self::class)
-                    );
+                    throw new InvalidYieldException($this->generator);
                 }
 
                 $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
             } catch (\Throwable $exception) {
-                $this->fail($exception);
+                $this->dispose($exception);
             } catch (\Exception $exception) {
-                $this->fail($exception);
+                $this->dispose($exception);
             }
         };
 
@@ -106,50 +102,69 @@ final class Coroutine implements Awaitable {
             }
 
             if ($this->generator->valid()) {
-                throw new InvalidYieldException(
-                    $this->generator,
-                    $yielded,
-                    \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, self::class)
-                );
+                throw new InvalidYieldException($this->generator);
             }
 
             $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
         } catch (\Throwable $exception) {
-            $this->fail($exception);
+            $this->dispose($exception);
         } catch (\Exception $exception) {
-            $this->fail($exception);
+            $this->dispose($exception);
         }
+    }
+
+    /**
+     * Runs the generator to completion then fails the coroutine with the given exception.
+     *
+     * @param \Throwable|\Exception $exception
+     *
+     * @throws \Throwable|\Exception
+     */
+    private function dispose($exception) {
+        if ($this->generator->valid()) {
+            try {
+                try {
+                    // Ensure generator has run to completion to avoid throws from finally blocks on destruction.
+                    do {
+                        $this->generator->throw($exception);
+                    } while ($this->generator->valid());
+                } finally {
+                    // Throw from finally to attach any exception thrown from generator as previous exception.
+                    throw $exception;
+                }
+            } catch (\Throwable $exception) {
+                // $exception will be used to fail the coroutine.
+            } catch (\Exception $exception) {
+                // $exception will be used to fail the coroutine.
+            }
+        }
+
+        $this->fail($exception);
     }
 
     /**
      * Attempts to resolves the coroutine with the given value, failing if the generator is still valid after sending
      * the null back to the generator.
-     * Required only for PHP 5.x. Remove once PHP 7 is required.
+     * @todo Remove once PHP 7 is required.
      *
      * @param mixed $result Coroutine return value.
      */
     private function settle($result) {
-        $value = $this->generator->send(null);
+        $this->generator->send(null);
 
         if ($this->generator->valid()) {
-            $exception = new InvalidYieldException(
+            throw new InvalidYieldException(
                 $this->generator,
-                $value,
-                \sprintf("Unexpected yield after %s::result()", self::class)
+                \sprintf("Unexpected yield after %s::result() (use 'return;' to halt generator)", self::class)
             );
-
-            do {
-                $this->generator->throw($exception);
-            } while ($this->generator->valid());
-
-            throw $exception;
         }
 
         $this->resolve($result);
     }
-    
+
     /**
      * Return a value from a coroutine. Required for PHP 5.x only. Use the return keyword in PHP 7.
+     * @todo Remove once PHP 7 is required.
      *
      * @param mixed $value
      *

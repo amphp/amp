@@ -2,18 +2,21 @@
 
 namespace Amp;
 
+use Interop\Async\Awaitable;
+
 class InvalidYieldException extends \DomainException {
     /**
-     * InvalidYieldException constructor.
-     *
      * @param \Generator $generator
-     * @param mixed $yielded
-     * @param string $prefix
+     * @param string|null $prefix
      */
-    public function __construct(\Generator $generator, $yielded, $prefix) {
-        $prefix = \sprintf(
-            "%s; %s yielded at key %s",
-            $prefix,
+    public function __construct(\Generator $generator, $prefix = null) {
+        if ($prefix === null) {
+            $prefix = \sprintf("Unexpected yield (%s or %s::result() expected)", Awaitable::class, Coroutine::class);
+        }
+
+        $yielded = $generator->current();
+        $prefix .= \sprintf(
+            "; %s yielded at key %s",
             \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
             $generator->key()
         );
