@@ -54,12 +54,14 @@ trait Placeholder {
 
         if (null === $this->onResolved) {
             $this->onResolved = $onResolved;
-        } elseif (!$this->onResolved instanceof WhenQueue) {
-            $this->onResolved = new WhenQueue($this->onResolved);
-            $this->onResolved->push($onResolved);
-        } else {
-            $this->onResolved->push($onResolved);
+            return;
         }
+
+        if (!$this->onResolved instanceof WhenQueue) {
+            $this->onResolved = new WhenQueue($this->onResolved);
+        }
+
+        $this->onResolved->push($onResolved);
     }
 
     /**
@@ -73,25 +75,28 @@ trait Placeholder {
         $this->resolved = true;
         $this->result = $value;
 
-        if ($this->onResolved !== null) {
-            if ($this->result instanceof Awaitable) {
-                $this->result->when($this->onResolved);
-            } else {
-                try {
-                    $onResolved = $this->onResolved;
-                    $onResolved(null, $this->result);
-                } catch (\Throwable $exception) {
-                    Loop::defer(static function () use ($exception) {
-                        throw $exception;
-                    });
-                } catch (\Exception $exception) {
-                    Loop::defer(static function () use ($exception) {
-                        throw $exception;
-                    });
-                }
-            }
+        if ($this->onResolved === null) {
+            return;
+        }
 
-            $this->onResolved = null;
+        $onResolved = $this->onResolved;
+        $this->onResolved = null;
+
+        if ($this->result instanceof Awaitable) {
+            $this->result->when($onResolved);
+            return;
+        }
+        
+        try {
+            $onResolved(null, $this->result);
+        } catch (\Throwable $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
+        } catch (\Exception $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 
