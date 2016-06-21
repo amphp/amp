@@ -107,6 +107,8 @@ interface Driver
 
     /**
      * Enable a watcher.
+     * 
+     * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were enabled.
      *
      * @param string $watcherId The watcher identifier.
      *
