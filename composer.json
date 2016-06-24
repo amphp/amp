@@ -22,7 +22,10 @@
     "autoload": {
         "psr-4": {
             "Amp\\Loop\\": "lib"
-        }
+        },
+        "files": [
+            "lib/bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
