@@ -28,9 +28,11 @@ interface Driver
     /**
      * Defer the execution of a callback.
      *
-     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher. Order of enabling MUST be preserved when executing the callbacks.
+     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher.
+     * Order of enabling MUST be preserved when executing the callbacks.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be invalidated before the callback call.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be
+     *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -40,10 +42,12 @@ interface Driver
     /**
      * Delay the execution of a callback.
      *
-     * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of enabling.
+     * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which
+     * timers expire first, but timers with the same expiration time may be executed in any order.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be invalidated before the callback call.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be
+     *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -53,7 +57,8 @@ interface Driver
     /**
      * Repeatedly execute a callback.
      *
-     * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which timers expire first and secondarily the order of enabling.
+     * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be
+     * determined by which timers expire first, but timers with the same expiration time may be executed in any order.
      * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
@@ -67,7 +72,7 @@ interface Driver
     /**
      * Execute a callback when a stream resource becomes readable.
      *
-     * In case of multiple watchers on a same stream, order of enabling MUST be preserved when executing the callbacks.
+     * Multiple watchers on the same stream may be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -80,7 +85,7 @@ interface Driver
     /**
      * Execute a callback when a stream resource becomes writable.
      *
-     * In case of multiple watchers on a same stream, order of enabling MUST be preserved when executing the callbacks.
+     * Multiple watchers on the same stream may be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -93,7 +98,7 @@ interface Driver
     /**
      * Execute a callback when a signal is received.
      *
-     * In case of multiple watchers on a same signal, order of enabling MUST be preserved when executing the callbacks.
+     * Multiple watchers on the same signal may be executed in any order.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
@@ -108,7 +113,8 @@ interface Driver
     /**
      * Enable a watcher.
      * 
-     * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were enabled.
+     * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks
+     * can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were enabled.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -198,7 +204,8 @@ interface Driver
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current handler.
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current
+     *     handler.
      *
      * @return void
      */
