@@ -464,7 +464,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testExecutionOrderGuarantees()
     {
-        $this->expectOutputString("01 02 03 04 05 05 10 11 12 13 13 20 21 22 23 ");
+        $this->expectOutputString("01 02 03 04 ".str_repeat("05 ", 8)."10 11 12 ".str_repeat("13 ", 4)."20 21 22 23 24 25 30 31");
         $this->start(function(Driver $loop) use (&$ticks) {
             $f = function() use ($loop) {
                 $args = func_get_args();
@@ -476,31 +476,20 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                     echo array_shift($args) . array_shift($args), " ";
                 };
             };
-            $dep = function($i, $fn) use ($loop, &$max, &$cur) {
-                $max || $max = new \SplObjectStorage;
-                $cur || $cur = new \SplObjectStorage;
-                $max[$fn] = max(isset($max[$fn]) ? $max[$fn] : 0, $i);
-                $cur[$fn] = 0;
-                return function($watcherId) use ($loop, $i, $fn, &$max, &$cur) {
-                    $this->assertSame($i, $cur[$fn]);
-                    if ($cur[$fn] == $max[$fn]) {
-                        $fn($watcherId);
-                    } else {
-                        $loop->cancel($watcherId);
-                    }
-                    $cur[$fn] = $cur[$fn] + 1;
-                };
-            };
 
-            $loop->onWritable(STDIN, $dep(0, $writ = $f(0, 5)));
-            $writ1 = $loop->onWritable(STDIN, $dep(1, $writ));
-            $writ2 = $loop->onWritable(STDIN, $dep(3, $writ));
+            $loop->onWritable(STDIN, $f(0, 5));
+            $writ1 = $loop->onWritable(STDIN, $f(0, 5));
+            $writ2 = $loop->onWritable(STDIN, $f(0, 5));
 
-            $loop->delay($msDelay = 0, $dep(0, $del = $f(0, 5)));
-            $del1 = $loop->delay($msDelay = 0, $dep(1, $del));
-            $del2 = $loop->delay($msDelay = 0, $dep(3, $del));
+            $loop->delay($msDelay = 0, $f(0, 5));
+            $del1 = $loop->delay($msDelay = 0, $f(0, 5));
+            $del2 = $loop->delay($msDelay = 0, $f(0, 5));
             $del3 = $loop->delay($msDelay = 0, $f());
-            $del4 = $loop->delay($msDelay = 0, $dep(1, $defdel = $f(1, 3)));
+            $del4 = $loop->delay($msDelay = 0, $f(1, 3));
+            $del5 = $loop->delay($msDelay = 0, $f(2, 0));
+            $loop->defer(function() use ($loop, $del5) {
+                $loop->disable($del5);
+            });
             $loop->cancel($del3);
             $loop->disable($del1);
             $loop->disable($del2);
@@ -510,29 +499,31 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->disable($writ1);
             $loop->disable($writ2);
             $loop->enable($writ1);
-            $writ4 = $loop->onWritable(STDIN, $dep(1, $defwrit = $f(1, 3)));
-            $loop->onWritable(STDIN, $dep(2, $writ));
+            $writ4 = $loop->onWritable(STDIN, $f(1, 3));
+            $loop->onWritable(STDIN, $f(0, 5));
             $loop->enable($writ2);
             $loop->disable($writ4);
-            $loop->defer(function() use ($loop, $writ4, $dep, $defwrit) {
-                $loop->onWritable(STDIN, $dep(0, $defwrit));
+            $loop->defer(function() use ($loop, $writ4, $f) {
                 $loop->enable($writ4);
+                $loop->onWritable(STDIN, $f(1, 3));
             });
 
             $loop->enable($del1);
-            $loop->delay($msDelay = 0, $dep(2, $del));
+            $loop->delay($msDelay = 0, $f(0, 5));
             $loop->enable($del2);
             $loop->disable($del4);
-            $loop->defer(function() use ($loop, $del4, $dep, $defdel) {
-                $loop->onWritable(STDIN, $dep(0, $defdel));
+            $loop->defer(function() use ($loop, $del4, $f) {
                 $loop->enable($del4);
+                $loop->onWritable(STDIN, $f(1, 3));
             });
 
-            $loop->delay($msDelay = 5, $f(2, 0));
-            $loop->repeat($msDelay = 5, $f(2, 1));
-            $rep1 = $loop->repeat($msDelay = 5, $f(2, 3));
+            $loop->delay($msDelay = 15, $f(3, 1));
+            $loop->delay($msDelay = 6, $f(2, 5));
+            $loop->delay($msDelay = 5, $f(2, 1));
+            $loop->repeat($msDelay = 5, $f(2, 2));
+            $rep1 = $loop->repeat($msDelay = 5, $f(2, 4));
             $loop->disable($rep1);
-            $loop->delay($msDelay = 5, $f(2, 2));
+            $loop->delay($msDelay = 5, $f(2, 3));
             $loop->enable($rep1);
 
             $loop->defer($f(0, 1));
@@ -543,12 +534,21 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->disable($def1);
             $loop->cancel($def3);
             $loop->enable($def1);
-            $loop->defer(function() use ($loop, $def2, $del4, $f) {
+            $loop->defer(function() use ($loop, $def2, $del4, $del5, $f) {
                 $tick = $f(0, 4);
                 $tick("invalid");
                 $loop->defer($f(1, 0));
                 $loop->enable($def2);
                 $loop->defer($f(1, 2));
+                $loop->defer(function() use ($loop, $del5, $f) {
+                    $loop->enable($del5);
+                    $loop->defer(function() use ($loop, $f) {
+                        usleep(7000); // to have $msDelay == 5 and $msDelay == 6 run at the same tick (but not $msDelay == 15)
+                        $loop->defer(function () use ($loop, $f) {
+                            $loop->defer($f(3, 0));
+                        });
+                    });
+                });
             });
             $loop->disable($def2);
         });
@@ -920,16 +920,61 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         $this->expectOutputString("caught SIGUSR1");
         $this->start(function(Driver $loop) {
-            $sigWatcherId = $loop->onSignal(SIGUSR1, function() use ($loop) {
-                echo "caught SIGUSR1";
+            $stop = $loop->delay($msDelay = 10, function() use ($loop) {
+                echo "ERROR: manual stop";
                 $loop->stop();
-            }, $options = ["enable" => false]);
+            });
+            $watcherId = $loop->onSignal(SIGUSR1, function($watcherId) use ($loop, $stop) {
+                echo "caught SIGUSR1";
+                $loop->disable($stop);
+                $loop->disable($watcherId);
+            });
+            $loop->disable($watcherId);
 
-            $loop->delay($msDelay = 10, function() use ($loop, $sigWatcherId) {
-                $loop->enable($sigWatcherId);
-                $loop->delay($msDelay = 10, function() use ($sigWatcherId) {
+            $loop->delay($msDelay = 1, function() use ($loop, $watcherId) {
+                $loop->enable($watcherId);
+                $loop->delay($msDelay = 1, function() {
                     \posix_kill(\getmypid(), \SIGUSR1);
                 });
+            });
+        });
+    }
+
+    /** @depends testSignalCapability */
+    function testNestedLoopSignalDispatch()
+    {
+        if (!\extension_loaded("posix")) {
+            $this->markTestSkipped("ext/posix required to test signal handlers");
+        }
+
+        $this->expectOutputString("inner SIGUSR1\nouter SIGUSR1\n");
+        $this->start(function(Driver $loop) {
+            $loop->delay($msDelay = 30, function() use ($loop) {
+                $loop->stop();
+            });
+            $loop->onSignal(SIGUSR1, function () use ($loop) {
+                echo "outer SIGUSR1\n";
+                $loop->stop();
+            });
+
+            $loop->delay($msDelay = 1, function () {
+                $loop = $this->getFactory()->create();
+                $stop = $loop->delay($msDelay = 10, function() use ($loop) {
+                    echo "ERROR: manual stop";
+                    $loop->stop();
+                });
+                $loop->onSignal(SIGUSR1, function ($watcherId) use ($loop, $stop) {
+                    echo "inner SIGUSR1\n";
+                    $loop->cancel($stop);
+                    $loop->cancel($watcherId);
+                });
+                $loop->delay($msDelay = 1, function () {
+                    \posix_kill(\getmypid(), \SIGUSR1);
+                });
+                $loop->run();
+            });
+            $loop->delay($msDelay = 20, function () {
+                \posix_kill(\getmypid(), \SIGUSR1);
             });
         });
     }
