@@ -12,7 +12,7 @@ class LoopFactory implements DriverFactory {
      * {@inheritdoc}
      */
     public function create() {
-        if (EvLoop::enabled()) {
+        if (EvLoop::supported()) {
             return new EvLoop();
         }
 

@@ -8,6 +8,10 @@ use Interop\Async\Loop\Test;
 
 class EvLoopTest extends Test {
     public function getFactory() {
+        if (!EvLoop::supported()) {
+            $this->markTestSkipped("EvLoop is not available");
+        }
+
         $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
 
         $factory->method('create')

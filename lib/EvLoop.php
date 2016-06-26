@@ -30,7 +30,7 @@ class EvLoop extends Loop {
      */
     private $signalCallback;
 
-    public static function enabled() {
+    public static function supported() {
         return \extension_loaded("ev");
     }
 
