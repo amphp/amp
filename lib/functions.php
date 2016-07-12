@@ -144,13 +144,23 @@ function capture(Awaitable $awaitable, $className, callable $functor) {
  */
 function timeout(Awaitable $awaitable, $timeout) {
     $deferred = new Deferred;
+    $resolved = false;
 
-    $watcher = Loop::delay($timeout, function () use ($deferred) {
-        $deferred->fail(new TimeoutException);
+    $watcher = Loop::delay($timeout, function () use (&$resolved, $deferred) {
+        if (!$resolved) {
+            $resolved = true;
+            $deferred->fail(new TimeoutException);
+        }
     });
 
-    $awaitable->when(function () use ($awaitable, $deferred, $watcher) {
+    $awaitable->when(function () use (&$resolved, $awaitable, $deferred, $watcher) {
         Loop::cancel($watcher);
+
+        if ($resolved) {
+            return;
+        }
+
+        $resolved = true;
         $deferred->resolve($awaitable);
     });
 

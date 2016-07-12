@@ -18,7 +18,8 @@
         "async-interop/event-loop-implementation": "dev-master"
     },
     "require-dev": {
-        "amphp/loop": "dev-master"
+        "amphp/loop": "dev-master",
+        "phpunit/phpunit": "^4|^5"
     },
     "minimum-stability": "dev",
     "autoload": {

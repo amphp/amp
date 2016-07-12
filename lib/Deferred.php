@@ -4,6 +4,7 @@ namespace Amp;
 
 use Interop\Async\Awaitable;
 
+// @codeCoverageIgnoreStart
 try {
     if (@assert(false)) {
         production: // PHP 7 production environment (zend.assertions=0)
@@ -75,4 +76,4 @@ try {
     }
 } catch (\AssertionError $exception) {
     goto development; // zend.assertions=1 and assert.exception=1, use development definition.
-}
+} // @codeCoverageIgnoreEnd
