@@ -27,13 +27,13 @@ final class Loop
     /**
      * Set the factory to be used to create a default drivers.
      *
-     * Setting a factory is only allowed as long as no loop is currently running.
-     * Passing null will reset the default driver and remove the factory.
+     * Setting a factory is only allowed as long as no loop is currently running. Passing null will reset the default
+     * driver and remove the factory.
      *
      * The factory will be invoked if none is passed to Loop::execute. A default driver will be created to support
      * synchronous waits in traditional applications.
      *
-     * @param DriverFactory|null $factory
+     * @param DriverFactory|null $factory New factory to replace the previous one.
      */
     public static function setFactory(DriverFactory $factory = null)
     {
@@ -42,13 +42,15 @@ final class Loop
         }
 
         self::$factory = $factory;
-        self::$driver = null; // reset it here, it will be actually instantiated inside execute() or get()
+
+        // reset it here, it will be actually instantiated inside execute() or get()
+        self::$driver = null;
     }
 
     /**
      * Execute a callback within the scope of an event loop driver.
      *
-     * @param callable $callback The callback to execute
+     * @param callable $callback The callback to execute.
      * @param Driver $driver The event loop driver. If null a new one is created from the set factory.
      *
      * @return void
@@ -72,7 +74,7 @@ final class Loop
     /**
      * Create a new driver if a factory is present, otherwise throw.
      *
-     * @throws \LogicException if no factory is set or no driver returned from factory
+     * @throws \LogicException If no factory is set or no driver returned from factory.
      */
     private static function createDriver()
     {
@@ -100,6 +102,7 @@ final class Loop
         if (self::$driver) {
             return self::$driver;
         }
+
         return self::$driver = self::createDriver();
     }
 
@@ -232,7 +235,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     public static function disable($watcherId)
     {
@@ -241,8 +244,8 @@ final class Loop
     }
 
     /**
-     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After this
-     * operation the watcher is permanently invalid.
+     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
+     * this operation the watcher is permanently invalid.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -264,7 +267,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     public static function reference($watcherId)
     {
@@ -282,7 +285,7 @@ final class Loop
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     public static function unreference($watcherId)
     {
@@ -328,7 +331,8 @@ final class Loop
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current handler.
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current
+     *     handler.
      *
      * @return void
      */
@@ -341,8 +345,7 @@ final class Loop
     /**
      * Retrieve an associative array of information about the event loop driver.
      *
-     * The returned array MUST contain the following data describing the driver's
-     * currently registered watchers:
+     * The returned array MUST contain the following data describing the driver's currently registered watchers:
      *
      *  [
      *      "defer"         => ["enabled" => int, "disabled" => int],
@@ -354,8 +357,8 @@ final class Loop
      *      "watchers"      => ["referenced" => int, "unreferenced" => int],
      *  ];
      *
-     * Implementations MAY optionally add more information in the array but
-     * at minimum the above key => value format MUST always be provided.
+     * Implementations MAY optionally add more information in the array but at minimum the above key => value format
+     * MUST always be provided.
      *
      * @return array
      */
