@@ -2,7 +2,47 @@
 
 namespace Amp;
 
+use Interop\Async\Awaitable;
 use Interop\Async\Loop;
+
+/**
+ * @param \Amp\Observable $observable
+ * @param callable(mixed $value): mixed $onNext
+ * @param callable(mixed $value): mixed|null $onComplete
+ *
+ * @return \Amp\Observable
+ */
+function each(Observable $observable, callable $onNext, callable $onComplete = null) {
+    return new Emitter(function (callable $emit) use ($observable, $onNext, $onComplete) {
+        $result = (yield $observable->subscribe(function ($value) use ($emit, $onNext) {
+            return $emit($onNext($value));
+        }));
+
+        if ($onComplete === null) {
+            yield Coroutine::result($result);
+            return;
+        }
+
+        yield Coroutine::result($onComplete($result));
+    });
+}
+
+/**
+ * @param \Amp\Observable $observable
+ * @param callable(mixed $value): bool $filter
+ *
+ * @return \Amp\Observable
+ */
+function filter(Observable $observable, callable $filter) {
+    return new Emitter(function (callable $emit) use ($observable, $filter) {
+        yield Coroutine::result(yield $observable->subscribe(function ($value) use ($emit, $filter) {
+            if (!$filter($value)) {
+                return null;
+            }
+            return $emit($value);
+        }));
+    });
+}
 
 /**
  * Creates an observable that emits values emitted from any observable in the array of observables. Values in the
@@ -37,6 +77,53 @@ function merge(array $observables) {
 
         yield Coroutine::result($result);
     });
+}
+
+
+/**
+ * Creates an observable from the given array of observables, emitting the success value of each provided awaitable or
+ * failing if any awaitable fails.
+ *
+ * @param \Interop\Async\Awaitable[] $awaitables
+ *
+ * @return \Amp\Observable
+ */
+function stream(array $awaitables) {
+    $postponed = new Postponed;
+
+    if (empty($awaitables)) {
+        $postponed->complete();
+        return $postponed;
+    }
+
+    $pending = \count($awaitables);
+    $onResolved = function ($exception, $value) use (&$pending, $postponed) {
+        if ($pending <= 0) {
+            return;
+        }
+
+        if ($exception) {
+            $pending = 0;
+            $postponed->fail($exception);
+            return;
+        }
+
+        $postponed->emit($value);
+
+        if (--$pending === 0) {
+            $postponed->complete();
+        }
+    };
+
+    foreach ($awaitables as $awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when($onResolved);
+    }
+
+    return $postponed;
 }
 
 /**
