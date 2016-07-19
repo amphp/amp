@@ -2,21 +2,14 @@
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-
 /**
  * Subscriber implementation returned from implementors of \Amp\Observable.
  */
-class Subscriber implements Awaitable {
+class Subscriber {
     /**
      * @var string
      */
     private $id;
-
-    /**
-     * @var \Interop\Async\Awaitable
-     */
-    private $awaitable;
 
     /**
      * @var callable
@@ -25,24 +18,15 @@ class Subscriber implements Awaitable {
 
     /**
      * @param string $id
-     * @param \Interop\Async\Awaitable $awaitable
      * @param callable $unsubscribe
      */
-    public function __construct($id, Awaitable $awaitable, callable $unsubscribe) {
+    public function __construct($id, callable $unsubscribe) {
         $this->id = $id;
-        $this->awaitable = $awaitable;
         $this->unsubscribe = $unsubscribe;
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function when(callable $onResolved) {
-        $this->awaitable->when($onResolved);
-    }
-
-    /**
-     * {@inheritdoc}
+     * Unsubscribes from the Observable. No future values emitted by the Observable will be received.
      */
     public function unsubscribe() {
         $unsubscribe = $this->unsubscribe;

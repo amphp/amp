@@ -67,13 +67,11 @@ trait Producer {
         if ($this->result !== null) {
             return new Subscriber(
                 $this->nextId++,
-                $this->result instanceof Awaitable ? $this->result : new Success($this->result),
                 $this->unsubscribe
             );
         }
 
         $id = $this->nextId++;
-        $this->futures[$id] = $future = new Future;
         $this->subscribers[$id] = $onNext;
 
         if ($this->waiting !== null) {
@@ -82,26 +80,23 @@ trait Producer {
             $waiting->resolve();
         }
 
-        return new Subscriber($id, $future, $this->unsubscribe);
+        return new Subscriber($id, $this->unsubscribe);
     }
 
     /**
      * @param string $id
      * @param \Throwable|\Exception|null $exception
      */
-        if (!isset($this->futures[$id])) {
     private function unsubscribe($id, $exception = null) {
+        if (!isset($this->subscribers[$id])) {
             return;
         }
 
-        $future = $this->futures[$id];
-        unset($this->subscribers[$id], $this->futures[$id]);
+        unset($this->subscribers[$id]);
 
         if (empty($this->subscribers)) {
             $this->waiting = new Future;
         }
-
-        $future->fail($exception ?: new UnsubscribedException);
     }
 
     /**
@@ -196,9 +191,8 @@ trait Producer {
      *
      * @throws \LogicException If the observable has already been resolved.
      */
-        $futures = $this->futures;
-        $this->subscribers = $this->futures = [];
     private function resolve($value = null) {
+        $this->subscribers = [];
 
         if ($this->waiting !== null) {
             $waiting = $this->waiting;
@@ -207,9 +201,5 @@ trait Producer {
         }
 
         $this->complete($value);
-
-        foreach ($futures as $future) {
-            $future->resolve($value);
-        }
     }
 }

@@ -15,12 +15,12 @@ Loop::execute(Amp\coroutine(function () {
 
         $observable = $postponed->getObservable();
 
-        $subscriber = $observable->subscribe(function ($value) {
+        $observable->subscribe(function ($value) {
             printf("Observable emitted %d\n", $value);
             return new Pause(500); // Artificial back-pressure on observable.
         });
 
-        $subscriber->when(function ($exception, $value) {
+        $observable->when(function ($exception, $value) {
             if ($exception) {
                 printf("Observable failed: %s\n", $exception->getMessage());
                 return;

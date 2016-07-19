@@ -78,7 +78,7 @@ class Observer {
         $result   = &$this->result;
         $error    = &$this->exception;
 
-        $this->subscriber->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
+        $observable->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
             $resolved = true;
 
             if ($exception) {
