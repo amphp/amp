@@ -6,8 +6,6 @@ use Amp\Coroutine;
 use Amp\Future;
 use Amp\Observable;
 use Amp\Subscriber;
-use Amp\Success;
-use Amp\UnsubscribedException;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
@@ -63,7 +61,7 @@ trait Producer {
      * @return \Amp\Subscriber
      */
     public function subscribe(callable $onNext) {
-        if ($this->result !== null) {
+        if ($this->resolved) {
             return new Subscriber(
                 $this->nextId++,
                 $this->unsubscribe
@@ -84,9 +82,8 @@ trait Producer {
 
     /**
      * @param string $id
-     * @param \Throwable|\Exception|null $exception
      */
-    private function unsubscribe($id, $exception = null) {
+    private function unsubscribe($id) {
         if (!isset($this->subscribers[$id])) {
             return;
         }
