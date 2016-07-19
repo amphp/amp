@@ -2,37 +2,47 @@
 
 namespace Amp;
 
+use Interop\Async\Loop;
+use Interop\Async\Awaitable;
+
 /**
- * A successfully resolved promise
+ * Creates a successful awaitable using the given value (which can be any value except another object implementing
+ * \Interop\Async\Awaitable).
  */
-class Success implements Promise {
-    private $result;
-
+final class Success implements Awaitable {
     /**
-     * @param mixed $result
+     * @var mixed
      */
-    public function __construct($result = null) {
-        $this->result = $result;
-    }
+    private $value;
 
     /**
-     * {@inheritdoc}
+     * @param mixed $value Anything other than an Awaitable object.
      *
-     * NOTE: because this object represents a resolved Promise it will *always* invoke
-     * the specified $cb callback immediately.
+     * @throws \InvalidArgumentException If an awaitable is given as the value.
      */
-    public function when(callable $cb, $cbData = null) {
-        \call_user_func($cb, $error = null, $this->result, $cbData);
+    public function __construct($value = null)
+    {
+        if ($value instanceof Awaitable) {
+            throw new \InvalidArgumentException("Cannot use an awaitable as success value");
+        }
 
-        return $this;
+        $this->value = $value;
     }
 
     /**
      * {@inheritdoc}
-     * 
-     * Does nothing; a resolved promise has no progress updates
      */
-    public function watch(callable $cb, $cbData = null) {
-        return $this;
+    public function when(callable $onResolved) {
+        try {
+            $onResolved(null, $this->value);
+        } catch (\Throwable $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
+        } catch (\Exception $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
+        }
     }
 }

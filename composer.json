@@ -4,8 +4,11 @@
     "description": "A non-blocking concurrency framework for PHP applications",
     "keywords": [
         "async",
+        "asynchronous",
         "concurrency",
         "promise",
+        "awaitable",
+        "future",
         "non-blocking",
         "event"
     ],
@@ -15,12 +18,21 @@
             "name": "Daniel Lowrey",
             "email": "rdlowrey@php.net",
             "role": "Creator / Lead Developer"
+        },
+        {
+            "name": "Aaron Piotrowski",
+            "email": "aaron@trowski.com",
+            "role": "v2.0 Developer"
         }
     ],
     "require": {
-        "php": ">=5.5"
+        "php": ">=5.5",
+        "async-interop/awaitable": "dev-master",
+        "async-interop/event-loop": "dev-master",
+        "async-interop/event-loop-implementation": "dev-master"
     },
     "require-dev": {
+        "amphp/loop": "dev-master",
         "phpunit/phpunit": "~4.8",
         "fabpot/php-cs-fixer": "~1.9"
     },
@@ -28,7 +40,9 @@
         "psr-4": {
             "Amp\\": "lib/"
         },
-        "files": ["lib/functions.php"]
+        "files": [
+            "lib/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -2,25 +2,23 @@
 
 namespace Amp;
 
+use Interop\Async\Awaitable;
+use Interop\Async\Loop;
+
 /**
- * Coroutines can yield Pause objects to suspend execution until the specified timeout elapses
+ * Creates an awaitable that resolves itself with a given value after a number of milliseconds.
  */
-class Pause implements Promise {
-    use Placeholder;
+final class Pause implements Awaitable {
+    use Internal\Placeholder;
 
     /**
-     * @param int $timeout The timeout in milliseconds after which the promise will resolve
-     * @throws \DomainException On invalid timeout value
+     * @param int $time Milliseconds before succeeding the awaitable.
+     * @param mixed $value Succeed the awaitable with this value.
      */
-    public function __construct($timeout) {
-        $timeout = (int) $timeout;
-        if ($timeout < 1) {
-            throw new \DomainException(
-                "Pause timeout must be greater than or equal to 1 millisecond"
-            );
-        }
-        once(function () {
-            $this->resolve();
-        }, $timeout);
+    public function __construct($time, $value = null)
+    {
+        Loop::delay($time, function () use ($value) {
+            $this->resolve($value);
+        });
     }
 }

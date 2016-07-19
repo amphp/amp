@@ -3,51 +3,56 @@
 namespace Amp\Test;
 
 use Amp\Success;
+use Interop\Async\Awaitable;
+use Interop\Async\Loop;
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
+    /**
+     * @expectedException \LogicException
+     */
+    public function testConstructWithNonException() {
+        $failure = new Success($this->getMockBuilder(Awaitable::class)->getMock());
+    }
 
-    public function testDefaultNullResult() {
-        $wasInvoked = false;
-        $success = new Success;
-        $success->when(function ($error, $result) use (&$wasInvoked) {
-            $this->assertNull($error);
-            $this->assertNull($result);
-            $wasInvoked = true;
-        });
-        $this->assertTrue($wasInvoked);
+    public function testWhen() {
+        $value = "Resolution value";
+
+        $invoked = 0;
+        $callback = function ($exception, $value) use (&$invoked, &$result) {
+            ++$invoked;
+            $result = $value;
+        };
+
+        $success = new Success($value);
+
+        $success->when($callback);
+
+        $this->assertSame(1, $invoked);
+        $this->assertSame($value, $result);
     }
 
     /**
-     * @dataProvider provideInstantiationArgs
+     * @depends testWhen
      */
-    public function testWhenInvokedImmediately($arg) {
-        $wasInvoked = false;
-        $success = new Success($arg);
-        $success->when(function ($error, $result) use (&$wasInvoked, $arg) {
-            $this->assertNull($error);
-            $this->assertSame($arg, $result);
-            $wasInvoked = true;
+    public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
+        Loop::execute(function () use (&$invoked) {
+            $invoked = 0;
+            $expected = new \Exception;
+
+            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
+                ++$invoked;
+                $this->assertSame($expected, $exception);
+            });
+
+            $callback = function () use ($expected) {
+                throw $expected;
+            };
+
+            $success = new Success;
+
+            $success->when($callback);
         });
-        $this->assertTrue($wasInvoked);
-    }
 
-    public function provideInstantiationArgs() {
-        return [
-            [42],
-            ["string"],
-            [new \StdClass],
-        ];
-    }
-
-    public function testWhenReturnsSelf() {
-        $success = new Success;
-        $result = $success->when(function () {});
-        $this->assertSame($success, $result);
-    }
-
-    public function testWatchReturnsSelf() {
-        $success = new Success;
-        $result = $success->watch(function () {});
-        $this->assertSame($success, $result);
+        $this->assertSame(1, $invoked);
     }
 }

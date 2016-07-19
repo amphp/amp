@@ -2,922 +2,508 @@
 
 namespace Amp;
 
-/**
- * Retrieve the application-wide event reactor instance
- *
- * @param \Amp\Reactor $assign Optionally specify a new default event reactor instance
- * @return \Amp\Reactor Returns the application-wide reactor instance
- */
-function reactor(Reactor $assign = null) {
-    static $reactor;
-    if ($assign) {
-        return ($reactor = $assign);
-    } elseif ($reactor) {
-        return $reactor;
-    } else {
-        return ($reactor = driver());
-    }
-}
+use Interop\Async\Awaitable;
+use Interop\Async\Loop;
 
 /**
- * Create a new event reactor best-suited for the current environment
+ * Returns a new function that when invoked runs the Generator returned by $worker as a coroutine.
  *
- * @return \Amp\Reactor
+ * @param callable(mixed ...$args): \Generator $worker
+ *
+ * @return callable(mixed ...$args): \Amp\Coroutine
  */
-function driver() {
-    if (\extension_loaded("uv")) {
-        return new UvReactor;
-    } elseif (\extension_loaded("ev")) {
-        return new EvReactor;
-    } elseif (\extension_loaded("libevent")) {
-        return new LibeventReactor;
-    } else {
-        return new NativeReactor;
-    }
-}
+function coroutine(callable $worker) {
+    return function (/* ...$args */) use ($worker) {
+        $generator = \call_user_func_array($worker, \func_get_args());
 
-/**
- * Start the event reactor and assume program flow control
- *
- * @param callable $onStart An optional callback to invoke immediately when the Reactor starts
- * @return void
- */
-function run(callable $onStart = null) {
-    reactor()->run($onStart);
-}
-
-/**
- * Execute a single event loop iteration
- *
- * @param bool $noWait Should the function return immediately if no watchers are ready to trigger?
- * @return void
- */
-function tick($noWait = false) {
-    reactor()->tick($noWait);
-}
-
-/**
- * Stop the default event reactor and return program flow control
- *
- * @return void
- */
-function stop() {
-    reactor()->stop();
-}
-
-/**
- * Schedule a callback for immediate invocation in the next event loop iteration
- *
- * @param callable $callback A callback to invoke in the next iteration of the event loop
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function immediately(callable $callback, array $options = []) {
-    return reactor()->immediately($callback, $options);
-}
-
-/**
- * Schedule a callback to execute once
- *
- * @param callable $callback A callback to invoke after the specified millisecond delay
- * @param int $msDelay the number of milliseconds to wait before invoking $callback
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function once(callable $callback, $msDelay, array $options = []) {
-    return reactor()->once($callback, $msDelay, $options);
-}
-
-/**
- * Schedule a recurring callback to execute every $interval seconds until cancelled
- *
- * @param callable $callback A callback to invoke at the $msDelay interval until cancelled
- * @param int $msInterval The interval at which to repeat $callback invocations
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function repeat(callable $callback, $msInterval, array $options = []) {
-    return reactor()->repeat($callback, $msInterval, $options);
-}
-
-/**
- * Watch a stream resource for readable data and trigger the callback when actionable
- *
- * @param resource $stream The stream resource to watch for readability
- * @param callable $callback A callback to invoke when the stream reports as readable
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function onReadable($stream, callable $callback, array $options = []) {
-    return reactor()->onReadable($stream, $callback, $options);
-}
-
-/**
- * Watch a stream resource to become writable and trigger the callback when actionable
- *
- * @param resource $stream The stream resource to watch for writability
- * @param callable $callback A callback to invoke when the stream reports as writable
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function onWritable($stream, callable $callback, array $options = []) {
-    return reactor()->onWritable($stream, $callback, $options);
-}
-
-/**
- * React to process control signals
- *
- * @param int $signo The signal number for which to watch
- * @param callable $callback A callback to invoke when the specified signal is received
- * @param array $options Watcher options
- * @return string Returns unique (to the process) string watcher ID
- */
-function onSignal($signo, callable $callback, array $options = []) {
-    return reactor()->onSignal($signo, $callback, $options);
-}
-
-/**
- * An optional "last-chance" exception handler for errors resulting during callback invocation
- *
- * If an application throws inside the event loop and no onError callback is specified the
- * exception bubbles up and the event loop is stopped. This is undesirable in long-running
- * applications (like servers) where stopping the event loop for an application error is
- * problematic. Amp applications can instead specify the onError callback to handle uncaught
- * exceptions without stopping the event loop.
- *
- * Additionally, generator callbacks which are auto-resolved by the event reactor may fail.
- * Coroutine resolution failures are treated like uncaught exceptions and stop the event reactor
- * if no onError callback is specified to handle these situations.
- *
- * onError callback functions are passed a single parameter: the uncaught exception.
- *
- * @param callable $callback A callback to invoke when an exception occurs inside the event loop
- * @return void
- */
-function onError(callable $callback) {
-    reactor()->onError($callback);
-}
-
-/**
- * Cancel an existing timer/stream watcher
- *
- * @param string $watcherId The watcher ID to be canceled
- * @return void
- */
-function cancel($watcherId) {
-    reactor()->cancel($watcherId);
-}
-
-/**
- * Temporarily disable (but don't cancel) an existing timer/stream watcher
- *
- * @param string $watcherId The watcher ID to be disabled
- * @return void
- */
-function disable($watcherId) {
-    reactor()->disable($watcherId);
-}
-
-/**
- * Enable a disabled timer/stream watcher
- *
- * @param string $watcherId The watcher ID to be enabled
- * @return void
- */
-function enable($watcherId) {
-    reactor()->enable($watcherId);
-}
-
-/**
- * Retrieve an associative array of information about the event reactor
- *
- * The returned array matches the following data describing the reactor's
- * currently registered watchers:
- *
- *  [
- *      "immediately"   => ["enabled" => int, "disabled" => int],
- *      "once"          => ["enabled" => int, "disabled" => int],
- *      "repeat"        => ["enabled" => int, "disabled" => int],
- *      "on_readable"   => ["enabled" => int, "disabled" => int],
- *      "on_writable"   => ["enabled" => int, "disabled" => int],
- *      "on_signal"     => ["enabled" => int, "disabled" => int],
- *      "keep_alive"    => int,
- *      "state"         => int,
- *  ];
- *
- * Reactor implementations may optionally add more information in the return array but
- * at minimum the above key=>value format is always provided.
- *
- * @return array
- */
-function info() {
-    return reactor()->info();
-}
-
-/**
- * Flatten an array of promises into a single promise
- *
- * Upon resolution the returned promise's $result parameter is set to an array
- * whose keys match the original input array and whose values match the individual
- * resolution results of its component promises.
- *
- * If any one of the Promises fails the resulting Promise will immediately fail.
- *
- * @param array $promises An array of promises to flatten into a single promise
- * @return \Amp\Promise
- */
-function all(array $promises) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    $struct = new \StdClass;
-    $struct->remaining = \count($promises);
-    $struct->results = [];
-    $struct->promisor = new Deferred;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($struct->remaining <= 0) {
-            // If the promisor already resolved we don't need to bother
-            return;
-        }
-        if ($error) {
-            $struct->results = null;
-            $struct->remaining = 0;
-            $struct->promisor->fail($error);
-            return;
+        if (!$generator instanceof \Generator) {
+            throw new \LogicException("The callable did not return a Generator");
         }
 
-        $struct->results[$key] = $result;
-        if (--$struct->remaining === 0) {
-            $struct->promisor->succeed($struct->results);
-        }
+        return new Coroutine($generator);
     };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->results[$key] = $promise;
-            if (--$struct->remaining === 0) {
-                $struct->promisor->succeed($struct->results);
-            }
-        }
-    }
-
-    return $struct->promisor->promise();
 }
 
 /**
- * Resolves with a two-item array delineating successful and failed Promise results.
+ * Registers a callback that will forward the failure reason to the Loop error handler if the awaitable fails.
  *
- * The resulting Promise will only fail if ALL of the Promise values fail or if the
- * Promise array is empty.
- *
- * The resulting Promise is resolved with an indexed two-item array of the following form:
- *
- *     [$arrayOfFailures, $arrayOfSuccesses]
- *
- * The individual keys in the resulting arrays are preserved from the initial Promise array
- * passed to the function for evaluation.
- *
- * @param array $promises An array of promises to flatten into a single promise
- * @return \Amp\Promise
+ * @param \Interop\Async\Awaitable $awaitable
  */
-function some(array $promises) {
-    if (empty($promises)) {
-        return new Failure(new \LogicException(
-            "No promises or values provided for resolution"
-        ));
-    }
-
-    $struct = new \StdClass;
-    $struct->remaining = \count($promises);
-    $struct->errors = [];
-    $struct->results = [];
-    $struct->promisor = new Deferred;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($error) {
-            $struct->errors[$key] = $error;
-        } else {
-            $struct->results[$key] = $result;
+function rethrow(Awaitable $awaitable) {
+    $awaitable->when(function ($exception) {
+        if ($exception) {
+            throw $exception;
         }
-        if (--$struct->remaining === 0) {
-            if (empty($struct->results)) {
-                $struct->promisor->fail(new CombinatorException(
-                    "All promises passed to Amp\\some() failed", $struct->errors
-                ));
-            } else {
-                $struct->promisor->succeed([$struct->errors, $struct->results]);
-            }
-        }
-    };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->results[$key] = $promise;
-            if (--$struct->remaining === 0) {
-                $struct->promisor->succeed([$struct->errors, $struct->results]);
-            }
-        }
-    }
-
-    return $struct->promisor->promise();
+    });
 }
 
 /**
- * Resolves with a two-item array delineating successful and failed Promise results.
+ * Runs the event loop until the awaitable is resolved. Should not be called within a running event loop.
  *
- * This function is the same as some() with the notable exception that it will never fail even
- * if all promises in the array resolve unsuccessfully.
+ * @param \Interop\Async\Awaitable $awaitable
  *
- * @param array $promises An array of promises to flatten into a single promise
- * @return \Amp\Promise
+ * @return mixed Awaitable success value.
+ *
+ * @throws \Throwable|\Exception Awaitable failure reason.
  */
-function any(array $promises) {
-    if (empty($promises)) {
-        return new Success([[], []]);
+function wait(Awaitable $awaitable) {
+    $resolved = false;
+    Loop::execute(function () use (&$resolved, &$value, &$exception, $awaitable) {
+        $awaitable->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
+            Loop::stop();
+            $resolved = true;
+            $exception = $e;
+            $value = $v;
+        });
+    }, Loop::get());
+
+    if (!$resolved) {
+        throw new \LogicException("Loop emptied without resolving awaitable");
     }
 
-    $struct = new \StdClass;
-    $struct->remaining = \count($promises);
-    $struct->errors = [];
-    $struct->results = [];
-    $struct->promisor = new Deferred;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($error) {
-            $struct->errors[$key] = $error;
-        } else {
-            $struct->results[$key] = $result;
-        }
-        if (--$struct->remaining === 0) {
-            $struct->promisor->succeed([$struct->errors, $struct->results]);
-        }
-    };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->results[$key] = $promise;
-            if (--$struct->remaining === 0) {
-                $struct->promisor->succeed([$struct->errors, $struct->results]);
-            }
-        }
+    if ($exception) {
+        throw $exception;
     }
 
-    return $struct->promisor->promise();
-}
-
-/**
- * Resolves with the first successful Promise value. The resulting Promise will only fail if all
- * Promise values in the group fail or if the initial Promise array is empty.
- *
- * @param array $promises An array of promises to flatten into a single promise
- * @return \Amp\Promise
- */
-function first(array $promises) {
-    if (empty($promises)) {
-        return new Failure(new \LogicException(
-            "No promises or values provided"
-        ));
-    }
-
-    $struct = new \StdClass;
-    $struct->errors = [];
-    $struct->remaining = \count($promises);
-    $struct->promisor = new Deferred;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($struct->remaining === 0) {
-            return;
-        }
-        if ($error) {
-            $struct->errors[$key] = $error;
-        } else {
-            $struct->remaining = 0;
-            $struct->promisor->succeed($result);
-            return;
-        }
-        if (--$struct->remaining === 0) {
-            $struct->promisor->fail(new CombinatorException(
-                "All promises failed", $struct->errors
-            ));
-        }
-    };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->remaining = 0;
-            $struct->promisor->succeed($promise);
-            break;
-        }
-    }
-
-    return $struct->promisor->promise();
-}
-
-/**
- * Map promised deferred values using the specified functor.
- *
- * @param array $promises An array of promises whose values -- once resolved -- will be mapped by the functor
- * @param callable $functor The mapping function to apply to eventual promise results
- * @return \Amp\Promise
- */
-function map(array $promises, callable $functor) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    $struct = new \StdClass;
-    $struct->remaining = \count($promises);
-    $struct->results = [];
-    $struct->promisor = new Deferred;
-    $struct->functor = $functor;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($struct->remaining <= 0) {
-            // If the promisor already resolved we don't need to bother
-            return;
-        }
-        if ($error) {
-            $struct->results = null;
-            $struct->remaining = 0;
-            $struct->promisor->fail($error);
-            return;
-        }
-        $struct->remaining--;
-        try {
-            $struct->results[$key] = \call_user_func($struct->functor, $result);
-            if ($struct->remaining === 0) {
-                $struct->promisor->succeed($struct->results);
-            }
-        } catch (\Throwable $e) {
-            // @TODO Remove coverage ignore block once PHP5 support is no longer required
-            // @codeCoverageIgnoreStart
-            $struct->remaining = 0;
-            $struct->promisor->fail($e);
-            // @codeCoverageIgnoreEnd
-        } catch (\Exception $e) {
-            // @TODO Remove this catch block once PHP5 support is no longer required
-            $struct->remaining = 0;
-            $struct->promisor->fail($e);
-        }
-    };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->remaining--;
-            try {
-                $struct->results[$key] = \call_user_func($struct->functor, $promise);
-            } catch (\Throwable $e) {
-                // @TODO Remove coverage ignore block once PHP5 support is no longer required
-                // @codeCoverageIgnoreStart
-                $struct->remaining = 0;
-                $struct->promisor->fail($e);
-                break;
-                // @codeCoverageIgnoreEnd
-            } catch (\Exception $e) {
-                // @TODO Remove this catch block once PHP5 support is no longer required
-                $struct->remaining = 0;
-                $struct->promisor->fail($e);
-                break;
-            }
-        }
-    }
-
-    return $struct->promisor->promise();
-}
-
-/**
- * Filter deferred values using the specified functor.
- *
- * If the functor returns a truthy value the resolved promise result is retained, otherwise it is
- * discarded. Array keys are retained for any results not filtered out by the functor.
- *
- * @param array $promises An array of promises whose values -- once resolved -- will be filtered by the functor
- * @param callable $functor The filtering function to apply to eventual promise results
- * @return \Amp\Promise
- */
-function filter(array $promises, callable $functor = null) {
-    if (empty($promises)) {
-        return new Success([]);
-    }
-
-    if (empty($functor)) {
-        $functor = function ($r) {
-            return (bool) $r;
-        };
-    }
-
-    $struct = new \StdClass;
-    $struct->remaining = \count($promises);
-    $struct->results = [];
-    $struct->promisor = new Deferred;
-    $struct->functor = $functor;
-
-    $onResolve = function ($error, $result, $cbData) {
-        list($struct, $key) = $cbData;
-        if ($struct->remaining <= 0) {
-            // If the promisor already resolved we don't need to bother
-            return;
-        }
-        if ($error) {
-            $struct->results = null;
-            $struct->remaining = 0;
-            $struct->promisor->fail($error);
-            return;
-        }
-        $struct->remaining--;
-        try {
-            if (\call_user_func($struct->functor, $result)) {
-                $struct->results[$key] = $result;
-            }
-            if ($struct->remaining === 0) {
-                $struct->promisor->succeed($struct->results);
-            }
-        } catch (\Throwable $e) {
-            // @TODO Remove coverage ignore block once PHP5 support is no longer required
-            // @codeCoverageIgnoreStart
-            $struct->remaining = 0;
-            $struct->promisor->fail($e);
-            // @codeCoverageIgnoreEnd
-        } catch (\Exception $e) {
-            // @TODO Remove this catch block once PHP5 support is no longer required
-            $struct->remaining = 0;
-            $struct->promisor->fail($e);
-        }
-    };
-
-    foreach ($promises as $key => $promise) {
-        if ($promise instanceof Promise) {
-            $promise->when($onResolve, [$struct, $key]);
-        } else {
-            $struct->remaining--;
-            try {
-                if (\call_user_func($struct->functor, $promise)) {
-                    $struct->results[$key] = $promise;
-                }
-                if ($struct->remaining === 0) {
-                    $struct->promisor->succeed($struct->results);
-                    break;
-                }
-            } catch (\Throwable $e) {
-                // @TODO Remove coverage ignore block once PHP5 support is no longer required
-                // @codeCoverageIgnoreStart
-                $struct->remaining = 0;
-                $struct->promisor->fail($e);
-                break;
-                // @codeCoverageIgnoreEnd
-            } catch (\Exception $e) {
-                // @TODO Remove this catch block once PHP5 support is no longer required
-                $struct->remaining = 0;
-                $struct->promisor->fail($e);
-                break;
-            }
-        }
-    }
-
-    return $struct->promisor->promise();
+    return $value;
 }
 
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param mixed $promise Any value is acceptable -- non-promises are normalized to promise form
- * @param callable $functor The functor through which to pipe the resolved promise value
- * @return \Amp\Promise
+ * @param \Interop\Async\Awaitable $awaitable
+ * @param callable(mixed $value): mixed $functor
+ *
+ * @return \Interop\Async\Awaitable
  */
-function pipe($promise, callable $functor) {
-    if (!$promise instanceof Promise) {
-        try {
-            return new Success(\call_user_func($functor, $promise));
-        } catch (\Throwable $e) {
-            // @TODO Remove coverage ignore block once PHP5 support is no longer required
-            // @codeCoverageIgnoreStart
-            return new Failure($e);
-            // @codeCoverageIgnoreEnd
-        } catch (\Exception $e) {
-            // @TODO Remove this catch block once PHP5 support is no longer required
-            return new Failure($e);
-        }
-    }
+function pipe(Awaitable $awaitable, callable $functor) {
+    $deferred = new Deferred;
 
-    $promisor = new Deferred;
-    $promise->when(function ($error, $result) use ($promisor, $functor) {
-        if ($error) {
-            $promisor->fail($error);
+    $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
+        if ($exception) {
+            $deferred->fail($exception);
             return;
         }
+
         try {
-            $promisor->succeed(\call_user_func($functor, $result));
-        } catch (\Throwable $error) {
-            // @TODO Remove coverage ignore block once PHP5 support is no longer required
-            // @codeCoverageIgnoreStart
-            $promisor->fail($error);
-            // @codeCoverageIgnoreEnd
-        } catch (\Exception $error) {
-            // @TODO Remove this catch block once PHP5 support is no longer required
-            $promisor->fail($error);
+            $deferred->resolve($functor($value));
+        } catch (\Throwable $exception) {
+            $deferred->fail($exception);
+        } catch (\Exception $exception) {
+            $deferred->fail($exception);
         }
     });
 
-    return $promisor->promise();
+    return $deferred->getAwaitable();
 }
 
 /**
- * Normalize an array of mixed values/Promises/Promisors to array<Promise>
+ * @param \Interop\Async\Awaitable $awaitable
+ * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
+ *     is an instance of the given exception class name.
+ * @param callable(\Throwable|\Exception $exception): mixed $functor
  *
- * @param array $values
- * @return array Returns an array of Promise instances
+ * @return \Interop\Async\Awaitable
  */
-function promises(array $values) {
-    foreach ($values as $key => $value) {
-        if ($value instanceof Promise) {
-            continue;
-        } elseif ($value instanceof Promisor) {
-            $values[$key] = $value->promise();
-        } else {
-            $values[$key] = new Success($value);
+function capture(Awaitable $awaitable, $className, callable $functor) {
+    $deferred = new Deferred;
+
+    $awaitable->when(function ($exception, $value) use ($deferred, $className, $functor) {
+        if (!$exception) {
+            $deferred->resolve($value);
+            return;
         }
-    }
 
-    return $values;
+        if (!$exception instanceof $className) {
+            $deferred->fail($exception);
+            return;
+        }
+
+        try {
+            $deferred->resolve($functor($exception));
+        } catch (\Throwable $exception) {
+            $deferred->fail($exception);
+        } catch (\Exception $exception) {
+            $deferred->fail($exception);
+        }
+    });
+
+    return $deferred->getAwaitable();
 }
 
 /**
- * Create an artificial timeout for any Promise instance
+ * Create an artificial timeout for any Awaitable.
  *
- * If the timeout expires prior to promise resolution the returned
- * promise is failed.
+ * If the timeout expires before the awaitable is resolved, the returned awaitable fails with an instance of
+ * \Amp\Exception\TimeoutException.
  *
- * @param \Amp\Promise $promise The promise to which the timeout applies
- * @param int $msTimeout The timeout in milliseconds
- * @return \Amp\Promise
+ * @param \Interop\Async\Awaitable $awaitable
+ * @param int $timeout Timeout in milliseconds.
+ *
+ * @return \Interop\Async\Awaitable
  */
-function timeout(Promise $promise, $msTimeout) {
+function timeout(Awaitable $awaitable, $timeout) {
+    $deferred = new Deferred;
     $resolved = false;
-    $promisor = new Deferred;
-    $watcherId = once(function () use ($promisor, &$resolved) {
-        $resolved = true;
-        $promisor->fail(new TimeoutException(
-            "Promise resolution timed out"
-        ));
-    }, $msTimeout);
-    $promise->when(function ($error = null, $result = null) use ($promisor, $watcherId, &$resolved) {
+
+    $watcher = Loop::delay($timeout, function () use (&$resolved, $deferred) {
+        if (!$resolved) {
+            $resolved = true;
+            $deferred->fail(new TimeoutException);
+        }
+    });
+
+    $awaitable->when(function () use (&$resolved, $awaitable, $deferred, $watcher) {
+        Loop::cancel($watcher);
+
         if ($resolved) {
             return;
         }
+
         $resolved = true;
-        cancel($watcherId);
-        if ($error) {
-            $promisor->fail($error);
-        } else {
-            $promisor->succeed($result);
-        }
+        $deferred->resolve($awaitable);
     });
 
-    return $promisor->promise();
+    return $deferred->getAwaitable();
 }
 
 /**
- * Block script execution indefinitely until the specified Promise resolves
+ * Returns a awaitable that calls $promisor only when the result of the awaitable is requested (e.g., then() or
+ * done() is called on the returned awaitable). $promisor can return a awaitable or any value. If $promisor throws
+ * an exception, the returned awaitable is rejected with that exception.
  *
- * In the event of promise failure this method will throw the exception responsible for the failure.
- * Otherwise the promise's resolved value is returned.
+ * @param callable $promisor
+ * @param mixed ...$args
  *
- * @param \Amp\Promise $promise The promise on which to wait
- * @throws \Exception if the promise fails
- * @return mixed Returns the eventual resolution result for the specified promise
+ * @return \Interop\Async\Awaitable
  */
-function wait(Promise $promise) {
-    $isWaiting = true;
-    $resolvedError = null;
-    $resolvedResult = null;
+function lazy(callable $promisor /* ...$args */) {
+    $args = \array_slice(\func_get_args(), 1);
 
-    $promise->when(function ($error, $result) use (&$isWaiting, &$resolvedError, &$resolvedResult) {
-        $isWaiting = false;
-        $resolvedError = $error;
-        $resolvedResult = $result;
+    if (empty($args)) {
+        return new Internal\LazyAwaitable($promisor);
+    }
+
+    return new Internal\LazyAwaitable(function () use ($promisor, $args) {
+        return \call_user_func_array($promisor, $args);
     });
-
-    while ($isWaiting) {
-        tick();
-    }
-
-    if ($resolvedError) {
-        /** @var $resolvedError \Throwable|\Exception */
-        throw $resolvedError;
-    }
-
-    return $resolvedResult;
 }
 
 /**
- * Return a new function that will be resolved as a coroutine when invoked
+ * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a awaitable usable by
+ * components depending on placeholders implementing Awaitable.
  *
- * @param callable $func The callable to be wrapped for coroutine resolution
- * @return callable Returns a wrapped callable
- * @TODO Use variadic function instead of func_get_args() once PHP5.5 is no longer supported
+ * @param object $thenable Object with a then() method.
+ *
+ * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
+ *
+ * @throws \InvalidArgumentException If the provided object does not have a then() method.
  */
-function coroutine(callable $func) {
-    return function () use ($func) {
-        $out = \call_user_func_array($func, \func_get_args());
-        if ($out instanceof \Generator) {
-            return resolve($out);
-        } elseif ($out instanceof Promise) {
-            return $out;
-        } else {
-            return new Success($out);
+function adapt($thenable) {
+    if (!\is_object($thenable) || !\method_exists($thenable, "then")) {
+        throw new \InvalidArgumentException("Must provide an object with a then() method");
+    }
+
+    $deferred = new Deferred;
+
+    $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
+
+    return $deferred->getAwaitable();
+}
+
+/**
+ * Wraps the given callable $worker in a awaitable aware function that has the same number of arguments as $worker,
+ * but those arguments may be awaitables for the future argument value or just values. The returned function will
+ * return a awaitable for the return value of $worker and will never throw. The $worker function will not be called
+ * until each awaitable given as an argument is fulfilled. If any awaitable provided as an argument fails, the
+ * awaitable returned by the returned function will be failed for the same reason. The awaitable succeeds with
+ * the return value of $worker or failed if $worker throws.
+ *
+ * @param callable $worker
+ *
+ * @return callable
+ */
+function lift(callable $worker) {
+    /**
+     * @param mixed ...$args Awaitables or values.
+     *
+     * @return \Interop\Async\Awaitable
+     */
+    return function (/* ...$args */) use ($worker) {
+        $args = \func_get_args();
+
+        foreach ($args as $key => $arg) {
+            if (!$arg instanceof Awaitable) {
+                $args[$key] = new Success($arg);
+            }
         }
+
+        if (1 === \count($args)) {
+            return pipe($args[0], $worker);
+        }
+
+        return pipe(all($args), function (array $args) use ($worker) {
+            return \call_user_func_array($worker, $args);
+        });
     };
 }
 
 /**
- * Resolve a Generator coroutine function
+ * Returns a awaitable that is resolved when all awaitables are resolved. The returned awaitable will not fail.
+ * Returned awaitable succeeds with an array of resolved awaitables, with keys identical and corresponding to the
+ * original given array.
  *
- * Upon resolution the Generator return value is used to succeed the promised result. If an
- * error occurs during coroutine resolution the returned promise fails.
+ * @param Awaitable[] $awaitables
  *
- * @param \Generator|callable $generator A generator or callable that returns a generator to resolve as a coroutine
- * @return \Amp\Promise
+ * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If a non-Awaitable is in the array.
  */
-function resolve($generator) {
-    if (!$generator instanceof \Generator) {
-        if (!\is_callable($generator)) {
-            throw new \InvalidArgumentException("Coroutine to resolve must be callable or instance of Generator");
-        }
-
-        $generator = \call_user_func($generator);
-
-        if (!$generator instanceof \Generator) {
-            throw new \LogicException("Callable passed to resolve() did not return an instance of Generator");
-        }
+function settle(array $awaitables) {
+    if (empty($awaitables)) {
+        return new Success([]);
     }
 
-    $cs = new CoroutineState;
-    $cs->promisor = new Deferred;
-    $cs->generator = $generator;
-    $cs->returnValue = null;
-    $cs->currentPromise = null;
-    $cs->nestingLevel = 0;
-    $cs->reactor = reactor();
+    $deferred = new Deferred;
 
-    __coroutineAdvance($cs);
+    $pending = \count($awaitables);
 
-    return $cs->promisor->promise();
+    $onResolved = function () use (&$awaitables, &$pending, $deferred) {
+        if (0 === --$pending) {
+            $deferred->resolve($awaitables);
+        }
+    };
+
+    foreach ($awaitables as &$awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when($onResolved);
+    }
+
+    return $deferred->getAwaitable();
 }
 
 /**
- * This function is used internally when resolving coroutines.
- * It is not considered part of the public API and library users
- * should not rely upon it in applications.
+ * Returns a awaitable that succeeds when all awaitables succeed, and fails if any awaitable fails. Returned
+ * awaitable succeeds with an array of values used to succeed each contained awaitable, with keys corresponding to
+ * the array of awaitables.
+ *
+ * @param Awaitable[] $awaitables
+ *
+ * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If a non-Awaitable is in the array.
  */
-function __coroutineAdvance(CoroutineState $cs) {
-    try {
-        $yielded = $cs->generator->current();
-        if (!isset($yielded)) {
-            if ($cs->generator->valid()) {
-                $cs->reactor->immediately('Amp\__coroutineNextTick', ["cb_data" => $cs]);
-            } elseif (isset($cs->returnValue)) {
-                $cs->promisor->succeed($cs->returnValue);
-            } else {
-                $result = (PHP_MAJOR_VERSION >= 7) ? $cs->generator->getReturn() : null;
-                $cs->promisor->succeed($result);
+function all(array $awaitables) {
+    if (empty($awaitables)) {
+        return new Success([]);
+    }
+
+    $deferred = new Deferred;
+
+    $pending = \count($awaitables);
+    $resolved = false;
+    $values = [];
+
+    foreach ($awaitables as $key => $awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
+            if ($resolved) {
+                return;
             }
-        } elseif ($yielded instanceof Promise) {
-            if ($cs->nestingLevel < 3) {
-                $cs->nestingLevel++;
-                $yielded->when('Amp\__coroutineSend', $cs);
-                $cs->nestingLevel--;
-            } else {
-                $cs->currentPromise = $yielded;
-                $cs->reactor->immediately('Amp\__coroutineNextTick', ["cb_data" => $cs]);
+
+            if ($exception) {
+                $resolved = true;
+                $deferred->fail($exception);
+                return;
             }
-        } elseif ($yielded instanceof CoroutineResult) {
-            /**
-             * @TODO This block is necessary for PHP5; remove once PHP7 is required and
-             *       we have return expressions in generators
-             */
-            $cs->returnValue = $yielded->getReturn();
-            __coroutineSend(null, null, $cs);
-        } else {
-            /**
-             * @TODO Remove CoroutineResult from error message once PHP7 is required
-             */
-            $error = new \DomainException(makeGeneratorError($cs->generator, \sprintf(
-                "Unexpected yield (Promise|CoroutineResult|null expected); %s yielded at key %s",
-                \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
-                $cs->generator->key()
-            )));
-            $cs->reactor->immediately(function () use ($cs, $error) {
-                $cs->promisor->fail($error);
-            });
-        }
-    } catch (\Throwable $uncaught) {
-        /**
-         * @codeCoverageIgnoreStart
-         * @TODO Remove these coverage ignore lines once PHP7 is required
-         */
-        $cs->reactor->immediately(function () use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
-        });
-        /**
-         * @codeCoverageIgnoreEnd
-         */
-    } catch (\Exception $uncaught) {
-        /**
-         * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-         */
-        $cs->reactor->immediately(function () use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
+
+            $values[$key] = $value;
+            if (0 === --$pending) {
+                $deferred->resolve($values);
+            }
         });
     }
+
+    return $deferred->getAwaitable();
 }
 
 /**
- * This function is used internally when resolving coroutines.
- * It is not considered part of the public API and library users
- * should not rely upon it in applications.
- */
-function __coroutineNextTick($watcherId, CoroutineState $cs) {
-    if ($cs->currentPromise) {
-        $promise = $cs->currentPromise;
-        $cs->currentPromise = null;
-        $promise->when('Amp\__coroutineSend', $cs);
-    } else {
-        __coroutineSend(null, null, $cs);
-    }
-}
-
-/**
- * This function is used internally when resolving coroutines.
- * It is not considered part of the public API and library users
- * should not rely upon it in applications.
- */
-function __coroutineSend($error, $result, CoroutineState $cs) {
-    try {
-        if ($error) {
-            $cs->generator->throw($error);
-        } else {
-            $cs->generator->send($result);
-        }
-        __coroutineAdvance($cs);
-    } catch (\Throwable $uncaught) {
-        /**
-         * @codeCoverageIgnoreStart
-         * @TODO Remove these coverage ignore lines once PHP7 is required
-         */
-        $cs->reactor->immediately(function () use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
-        });
-        /**
-         * @codeCoverageIgnoreEnd
-         */
-    } catch (\Exception $uncaught) {
-        /**
-         * @TODO This extra catch block is necessary for PHP5; remove once PHP7 is required
-         */
-        $cs->reactor->immediately(function () use ($cs, $uncaught) {
-            $cs->promisor->fail($uncaught);
-        });
-    }
-}
-
-/**
- * A general purpose function for creating error messages from generator yields
+ * Returns a awaitable that succeeds when the first awaitable succeeds, and fails only if all awaitables fail.
  *
- * @param \Generator $generator
- * @param string $prefix
- * @return string
+ * @param Awaitable[] $awaitables
+ *
+ * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
  */
-function makeGeneratorError(\Generator $generator, $prefix = "Generator error") {
-    if (PHP_MAJOR_VERSION < 7 || !$generator->valid()) {
-        return $prefix;
+function first(array $awaitables) {
+    if (empty($awaitables)) {
+        throw new \InvalidArgumentException("No awaitables provided");
     }
 
-    $reflGen = new \ReflectionGenerator($generator);
-    $exeGen = $reflGen->getExecutingGenerator();
-    if ($isSubgenerator = ($exeGen !== $generator)) {
-        $reflGen = new \ReflectionGenerator($exeGen);
+    $deferred = new Deferred;
+
+    $pending = \count($awaitables);
+    $resolved = false;
+    $exceptions = [];
+
+    foreach ($awaitables as $key => $awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+            if ($resolved) {
+                return;
+            }
+
+            if (!$exception) {
+                $resolved = true;
+                $deferred->resolve($value);
+                return;
+            }
+
+            $exceptions[$key] = $exception;
+            if (0 === --$pending) {
+                $deferred->fail(new MultiReasonException($exceptions));
+            }
+        });
     }
 
-    return sprintf(
-        "{$prefix} on line %s in %s",
-        $reflGen->getExecutingLine(),
-        $reflGen->getExecutingFile()
-    );
+    return $deferred->getAwaitable();
+}
+
+/**
+ * Returns a awaitable that succeeds when $required number of awaitables succeed. The awaitable fails if $required
+ * number of awaitables can no longer succeed.
+ *
+ * @param Awaitable[] $awaitables
+ * @param int $required Number of awaitables that must succeed to succeed the returned awaitable.
+ *
+ * @return \Interop\Async\Awaitable
+ */
+function some(array $awaitables, $required) {
+    $required = (int) $required;
+
+    if (0 >= $required) {
+        return new Success([]);
+    }
+
+    $pending = \count($awaitables);
+
+    if ($required > $pending) {
+        throw new \InvalidArgumentException("Too few awaitables provided");
+    }
+
+    $deferred = new Deferred;
+    $resolved = false;
+    $values = [];
+    $exceptions = [];
+
+    foreach ($awaitables as $key => $awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when(function ($exception, $value) use (
+            &$values, &$exceptions, &$pending, &$resolved, &$required, $key, $deferred
+        ) {
+            if ($resolved) {
+                return;
+            }
+
+            if ($exception) {
+                $exceptions[$key] = $exception;
+                if ($required > --$pending) {
+                    $resolved = true;
+                    $deferred->fail(new MultiReasonException($exceptions));
+                }
+                return;
+            }
+
+            $values[$key] = $value;
+            --$pending;
+            if (0 === --$required) {
+                $resolved = true;
+                $deferred->resolve($values);
+            }
+        });
+    }
+
+    return $deferred->getAwaitable();
+}
+
+/**
+ * Returns a awaitable that succeeds or fails when the first awaitable succeeds or fails.
+ *
+ * @param Awaitable[] $awaitables
+ *
+ * @return \Interop\Async\Awaitable
+ *
+ * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
+ */
+function choose(array $awaitables) {
+    if (empty($awaitables)) {
+        throw new \InvalidArgumentException("No awaitables provided");
+    }
+
+    $deferred = new Deferred;
+    $resolved = false;
+
+    foreach ($awaitables as $awaitable) {
+        if (!$awaitable instanceof Awaitable) {
+            throw new \InvalidArgumentException("Non-awaitable provided");
+        }
+
+        $awaitable->when(function ($exception, $value) use (&$resolved, $deferred) {
+            if ($resolved) {
+                return;
+            }
+
+            $resolved = true;
+
+            if ($exception) {
+                $deferred->fail($exception);
+                return;
+            }
+
+            $deferred->resolve($value);
+        });
+    }
+
+    return $deferred->getAwaitable();
+}
+
+/**
+ * Maps the callback to each awaitable as it succeeds. Returns an array of awaitables resolved by the return
+ * callback value of the callback function. The callback may return awaitables or throw exceptions to fail
+ * awaitables in the array. If a awaitable in the passed array fails, the callback will not be called and the
+ * awaitable in the array fails for the same reason. Tip: Use all() or settle() to determine when all
+ * awaitables in the array have been resolved.
+ *
+ * @param callable(mixed $value): mixed $callback
+ * @param Awaitable[] ...$awaitables
+ *
+ * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
+ */
+function map(callable $callback /* array ...$awaitables */) {
+    $args = \func_get_args();
+    $count = \count($args);
+    $args[0] = lift($callback);
+
+    for ($i = 1; $i < $count; ++$i) {
+        foreach ($args[$i] as $awaitable) {
+            if (!$awaitable instanceof Awaitable) {
+                throw new \InvalidArgumentException('Non-awaitable provided');
+            }
+        }
+    }
+
+    return \call_user_func_array("array_map", $args);
 }

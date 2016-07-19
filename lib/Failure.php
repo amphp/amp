@@ -2,49 +2,45 @@
 
 namespace Amp;
 
+use Interop\Async\Loop;
+use Interop\Async\Awaitable;
+
 /**
- * A rejected (failed) promise
+ * Creates a failed awaitable using the given exception.
  */
-class Failure implements Promise {
-    private $error;
-
+final class Failure implements Awaitable {
     /**
-     * The error parameter used to fail a promisor must always be an exception
-     * instance. However, we cannot typehint this parameter in environments
-     * where PHP5.x compatibility is required because PHP7 Throwable
-     * instances will break the typehint.
-     * 
-     * @param \Exception|\Throwable $error
-     * @TODO Add Throwable typehint and remove conditional once PHP7 is required
+     * @var \Exception|\Throwable $exception
      */
-    public function __construct($error) {
-        if ($error instanceof \Throwable || $error instanceof \Exception) {
-            $this->error = $error;
-        } else {
-            throw new \InvalidArgumentException(
-                "Throwable Exception instance required"
-            );
-        }
-    }
+    private $exception;
 
     /**
-     * {@inheritdoc}
+     * @param \Throwable|\Exception $exception Rejection reason.
      *
-     * NOTE: because this object represents a resolved Promise it will *always* invoke
-     * the specified $cb callback immediately.
+     * @throws \InvalidArgumentException If a non-exception is given.
      */
-    public function when(callable $cb, $cbData = null) {
-        \call_user_func($cb, $this->error, $result = null, $cbData);
+    public function __construct($exception) {
+        if (!$exception instanceof \Throwable && !$exception instanceof \Exception) {
+            throw new \InvalidArgumentException("Failure reason must be an exception");
+        }
 
-        return $this;
+        $this->exception = $exception;
     }
 
     /**
      * {@inheritdoc}
-     * 
-     * Does nothing; a resolved promise has no progress updates
      */
-    public function watch(callable $cb, $cbData = null) {
-        return $this;
+    public function when(callable $onResolved) {
+        try {
+            $onResolved($this->exception, null);
+        } catch (\Throwable $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
+        } catch (\Exception $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
+        }
     }
 }
