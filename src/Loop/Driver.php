@@ -100,6 +100,10 @@ interface Driver
      *
      * Multiple watchers on the same signal may be executed in any order.
      *
+     * NOTE: Installing a same signal on different instances of this interface is deemed undefined behavior.
+     *       Implementations may try to detect this, if possible, but are not required to.
+     *       This is due to technical limitations of the signals being registered globally per process.
+     *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
