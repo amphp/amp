@@ -127,16 +127,16 @@ trait Producer {
      * @throws \Throwable|\Exception
      */
     private function push($value) {
-        while ($this->waiting !== null) {
+        if ($this->waiting !== null) {
             yield $this->waiting;
         }
 
         try {
             if ($value instanceof Observable) {
-                $subscriber = $value->subscribe(function ($value) {
+                $value->subscribe(function ($value) {
                     return $this->emit($value);
                 });
-                yield Coroutine::result(yield $subscriber);
+                yield Coroutine::result(yield $value);
                 return;
             }
 
@@ -191,14 +191,13 @@ trait Producer {
      * @throws \LogicException If the observable has already been resolved.
      */
     private function resolve($value = null) {
+        $this->complete($value);
+
         $this->subscribers = [];
 
         if ($this->waiting !== null) {
-            $waiting = $this->waiting;
+            $this->waiting->resolve();
             $this->waiting = null;
-            $waiting->resolve();
         }
-
-        $this->complete($value);
     }
 }
