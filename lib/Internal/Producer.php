@@ -50,8 +50,8 @@ trait Producer {
      */
     private function init() {
         $this->waiting = new Future;
-        $this->unsubscribe = function ($id, $exception = null) {
-            $this->unsubscribe($id, $exception);
+        $this->unsubscribe = function ($id) {
+            $this->unsubscribe($id);
         };
     }
 
@@ -161,9 +161,13 @@ trait Producer {
                     $awaitables[$id] = $result;
                 }
             } catch (\Throwable $exception) {
-                $this->unsubscribe($id, $exception);
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
             } catch (\Exception $exception) {
-                $this->unsubscribe($id, $exception);
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
             }
         }
 
@@ -171,9 +175,13 @@ trait Producer {
             try {
                 yield $awaitable;
             } catch (\Throwable $exception) {
-                $this->unsubscribe($id, $exception);
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
             } catch (\Exception $exception) {
-                $this->unsubscribe($id, $exception);
+                Loop::defer(static function () use ($exception) {
+                    throw $exception;
+                });
             }
         }
 
