@@ -67,7 +67,7 @@ trait Placeholder {
     /**
      * @param mixed $value
      */
-    protected function resolve($value = null) {
+    private function resolve($value = null) {
         if ($this->resolved) {
             throw new \LogicException("Awaitable has already been resolved");
         }
@@ -103,7 +103,7 @@ trait Placeholder {
     /**
      * @param \Throwable|\Exception $reason
      */
-    protected function fail($reason) {
+    private function fail($reason) {
         $this->resolve(new Failure($reason));
     }
 }

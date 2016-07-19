@@ -89,8 +89,8 @@ trait Producer {
      * @param string $id
      * @param \Throwable|\Exception|null $exception
      */
-    protected function unsubscribe($id, $exception = null) {
         if (!isset($this->futures[$id])) {
+    private function unsubscribe($id, $exception = null) {
             return;
         }
 
@@ -114,7 +114,7 @@ trait Producer {
      *
      * @throws \LogicException If the observable has resolved.
      */
-    protected function emit($value = null) {
+    private function emit($value = null) {
         if ($this->resolved) {
             throw new \LogicException("The observable has been resolved; cannot emit more values");
         }
@@ -196,9 +196,9 @@ trait Producer {
      *
      * @throws \LogicException If the observable has already been resolved.
      */
-    protected function resolve($value = null) {
         $futures = $this->futures;
         $this->subscribers = $this->futures = [];
+    private function resolve($value = null) {
 
         if ($this->waiting !== null) {
             $waiting = $this->waiting;
