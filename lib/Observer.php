@@ -12,7 +12,7 @@ namespace Amp;
  * }
  * $result = $observer->getResult();
  */
-final class Observer {
+class Observer {
     /**
      * @var \Amp\Subscriber
      */

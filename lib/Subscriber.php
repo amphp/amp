@@ -7,7 +7,7 @@ use Interop\Async\Awaitable;
 /**
  * Subscriber implementation returned from implementors of \Amp\Observable.
  */
-final class Subscriber implements Awaitable {
+class Subscriber implements Awaitable {
     /**
      * @var string
      */
