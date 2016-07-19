@@ -16,7 +16,7 @@ final class Emitter implements Observable {
          *
          * @return \Interop\Async\Awaitable
          */
-        $emit = function ($value = null) {
+        $emit = function ($value) {
             return $this->emit($value);
         };
         

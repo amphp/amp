@@ -108,7 +108,7 @@ trait Producer {
      *
      * @throws \LogicException If the observable has resolved.
      */
-    private function emit($value = null) {
+    private function emit($value) {
         if ($this->resolved) {
             throw new \LogicException("The observable has been resolved; cannot emit more values");
         }
