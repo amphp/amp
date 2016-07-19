@@ -7,7 +7,7 @@ namespace Amp;
  */
 final class Producer implements Observable {
     use Internal\Producer {
-        init as __construct;
+        init as public __construct;
         emit as public;
         resolve as public;
         fail as public;

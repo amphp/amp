@@ -7,7 +7,7 @@ try {
         production: // PHP 7 production environment (zend.assertions=0)
         final class Postponed implements Observable {
             use Internal\Producer {
-                init as __construct;
+                init as public __construct;
                 emit as public;
                 resolve as public;
                 fail as public;

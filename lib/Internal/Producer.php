@@ -50,8 +50,7 @@ trait Producer {
     /**
      * Initializes the trait. Use as constructor or call within using class constructor.
      */
-    public function init()
-    {
+    private function init() {
         $this->waiting = new Future;
         $this->unsubscribe = function ($id, $exception = null) {
             $this->unsubscribe($id, $exception);
