@@ -250,8 +250,11 @@ function lift(callable $worker) {
 
 /**
  * Returns a awaitable that is resolved when all awaitables are resolved. The returned awaitable will not fail.
- * Returned awaitable succeeds with an array of resolved awaitables, with keys identical and corresponding to the
- * original given array.
+ * Returned awaitable succeeds with a two-item array delineating successful and failed awaitable results,
+ * with keys identical and corresponding to the original given array.
+ *
+ * This function is the same as some() with the notable exception that it will never fail even
+ * if all awaitables in the array resolve unsuccessfully.
  *
  * @param Awaitable[] $awaitables
  *
@@ -259,29 +262,34 @@ function lift(callable $worker) {
  *
  * @throws \InvalidArgumentException If a non-Awaitable is in the array.
  */
-function settle(array $awaitables) {
+function any(array $awaitables) {
     if (empty($awaitables)) {
-        return new Success([]);
+        return new Success([[], []]);
     }
 
     $deferred = new Deferred;
 
     $pending = \count($awaitables);
+    $errors = [];
+    $values = [];
 
-    $onResolved = function () use (&$awaitables, &$pending, $deferred) {
-        if (0 === --$pending) {
-            $deferred->resolve($awaitables);
-        }
-    };
-
-    foreach ($awaitables as &$awaitable) {
+    foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $awaitable->when($onResolved);
-    }
+        $awaitable->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
+            if ($error) {
+                $errors[$key] = $error;
+            } else {
+                $values[$key] = $value;
+            }
 
+            if (--$pending === 0) {
+                $deferred->resolve([$errors, $values]);
+            }
+        });
+    }
     return $deferred->getAwaitable();
 }
 
@@ -484,7 +492,7 @@ function choose(array $awaitables) {
  * Maps the callback to each awaitable as it succeeds. Returns an array of awaitables resolved by the return
  * callback value of the callback function. The callback may return awaitables or throw exceptions to fail
  * awaitables in the array. If a awaitable in the passed array fails, the callback will not be called and the
- * awaitable in the array fails for the same reason. Tip: Use all() or settle() to determine when all
+ * awaitable in the array fails for the same reason. Tip: Use all() or any() to determine when all
  * awaitables in the array have been resolved.
  *
  * @param callable(mixed $value): mixed $callback
