@@ -592,7 +592,7 @@ function merge(array $observables) {
 
 
 /**
- * Creates an observable from the given array of observables, emitting the success value of each provided awaitable or
+ * Creates an observable from the given array of awaitables, emitting the success value of each provided awaitable or
  * failing if any awaitable fails.
  *
  * @param \Interop\Async\Awaitable[] $awaitables
@@ -603,8 +603,8 @@ function stream(array $awaitables) {
     $postponed = new Postponed;
 
     if (empty($awaitables)) {
-        $postponed->complete();
-        return $postponed;
+        $postponed->resolve();
+        return $postponed->getObservable();
     }
 
     $pending = \count($awaitables);
@@ -634,7 +634,7 @@ function stream(array $awaitables) {
         $awaitable->when($onResolved);
     }
 
-    return $postponed;
+    return $postponed->getObservable();
 }
 
 /**
