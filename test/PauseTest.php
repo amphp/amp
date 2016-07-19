@@ -2,39 +2,42 @@
 
 namespace Amp\Test;
 
+use Amp;
 use Amp\Pause;
-use Amp\NativeReactor;
+use Interop\Async\Loop;
 
 class PauseTest extends \PHPUnit_Framework_TestCase {
-    protected function setUp() {
-        \Amp\reactor($assign = new NativeReactor);
-    }
-
     /**
      * @dataProvider provideBadMillisecondArgs
-     * @expectedException \DomainException
-     * @expectedExceptionMessage Pause timeout must be greater than or equal to 1 millisecond
+     * @expectedException \InvalidArgumentException
      */
     public function testCtorThrowsOnBadMillisecondParam($arg) {
-        \Amp\run(function () use ($arg) {
-            new Pause($arg);
-        });
+        $pause = new Pause($arg);
     }
 
     public function provideBadMillisecondArgs() {
         return [
-            [0],
+            [-3.14],
             [-1],
         ];
     }
 
-    public function testPauseYield() {
-        $endReached = false;
-        \Amp\run(function () use (&$endReached) {
-            $result = (yield new Pause(1));
-            $this->assertNull($result);
-            $endReached = true;
+    public function testPause() {
+        $time = 100;
+        $value = "test";
+        $start = microtime(true);
+
+        Loop::execute(function () use (&$result, $time, $value) {
+            $awaitable = new Pause($time, $value);
+
+            $callback = function ($exception, $value) use (&$result) {
+                $result = $value;
+            };
+
+            $awaitable->when($callback);
         });
-        $this->assertTrue($endReached);
+
+        $this->assertLessThanOrEqual($time, microtime(true) - $start);
+        $this->assertSame($value, $result);
     }
 }

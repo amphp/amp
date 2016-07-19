@@ -2,6 +2,11 @@
 
 namespace Amp\Test;
 
+class StructTestFixture {
+    use \Amp\Struct;
+    public $callback;
+}
+
 class StructTest extends \PHPUnit_Framework_TestCase {
     /**
      * @expectedException \DomainException
