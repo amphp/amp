@@ -525,9 +525,11 @@ function map(callable $callback /* array ...$awaitables */) {
  */
 function each(Observable $observable, callable $onNext, callable $onComplete = null) {
     return new Emitter(function (callable $emit) use ($observable, $onNext, $onComplete) {
-        $result = (yield $observable->subscribe(function ($value) use ($emit, $onNext) {
+        $observable->subscribe(function ($value) use ($emit, $onNext) {
             return $emit($onNext($value));
-        }));
+        });
+
+        $result = (yield $observable);
 
         if ($onComplete === null) {
             yield Coroutine::result($result);
@@ -546,12 +548,14 @@ function each(Observable $observable, callable $onNext, callable $onComplete = n
  */
 function filter(Observable $observable, callable $filter) {
     return new Emitter(function (callable $emit) use ($observable, $filter) {
-        yield Coroutine::result(yield $observable->subscribe(function ($value) use ($emit, $filter) {
+        $observable->subscribe(function ($value) use ($emit, $filter) {
             if (!$filter($value)) {
                 return null;
             }
             return $emit($value);
-        }));
+        });
+
+        yield Coroutine::result(yield $observable);
     });
 }
 
@@ -579,7 +583,7 @@ function merge(array $observables) {
         }
 
         try {
-            $result = (yield all($subscriptions));
+            $result = (yield all($observables));
         } finally {
             foreach ($subscriptions as $subscription) {
                 $subscription->unsubscribe();
@@ -638,19 +642,18 @@ function stream(array $awaitables) {
 }
 
 /**
- * Returns an observable that emits a value every $interval milliseconds after the previous value has been consumed
- * (up to $count times (or indefinitely if $count is 0). The value emitted is an integer of the number of times the
- * observable emitted a value.
+ * Returns an observable that emits a value every $interval milliseconds after (up to $count times). The value emitted
+ * is an integer of the number of times the observable emitted a value.
  *
  * @param int $interval Time interval between emitted values in milliseconds.
- * @param int $count Use 0 to emit values indefinitely.
+ * @param int $count Number of values to emit. PHP_INT_MAX by default.
  *
  * @return \Amp\Observable
  */
-function interval($interval, $count = 0) {
+function interval($interval, $count = PHP_INT_MAX) {
     $count = (int) $count;
-    if (0 > $count) {
-        throw new \InvalidArgumentException("The number of times to emit must be a non-negative value");
+    if (0 >= $count) {
+        throw new \InvalidArgumentException("The number of times to emit must be a positive value");
     }
 
     $postponed = new Postponed;
