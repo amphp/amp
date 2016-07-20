@@ -67,7 +67,7 @@ try {
              *
              * @return \Interop\Async\Awaitable
              */
-            public function emit($value = null) {
+            public function emit($value) {
                 $emit = $this->emit;
                 return $emit($value);
             }
