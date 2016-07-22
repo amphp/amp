@@ -34,7 +34,7 @@
     "require-dev": {
         "amphp/loop": "dev-master",
         "phpunit/phpunit": "~4.8",
-        "fabpot/php-cs-fixer": "~1.9"
+        "friendsofphp/php-cs-fixer": "~1.9"
     },
     "autoload": {
         "psr-4": {
