@@ -199,6 +199,9 @@ final class Loop
     /**
      * Execute a callback when a signal is received.
      *
+     * WARNING: Installing a handler on the same signal on different scopes of event loop execution is
+     *          undefined behavior and may break things arbitrarily.
+     *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
