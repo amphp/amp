@@ -14,7 +14,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
      * @expectedException \InvalidArgumentException
      */
     public function testEmptyArray() {
-        Amp\some([], 1);
+        Amp\some([]);
     }
 
     public function testSuccessfulAwaitablesArray() {
@@ -24,39 +24,22 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
             $result = $value;
         };
 
-        Amp\some($awaitables, 2)->when($callback);
+        Amp\some($awaitables)->when($callback);
 
-        $this->assertSame([1, 2], $result);
+        $this->assertSame([[], [1, 2, 3]], $result);
     }
 
     public function testSuccessfulAndFailedAwaitablesArray() {
-        $awaitables = [new Failure(new \Exception), new Failure(new \Exception), new Success(3)];
+        $exception = new \Exception;
+        $awaitables = [new Failure($exception), new Failure($exception), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        Amp\some($awaitables, 1)->when($callback);
+        Amp\some($awaitables)->when($callback);
 
-        $this->assertSame([2 => 3], $result);
-    }
-
-    public function testTooManyFailedAwaitables() {
-        $awaitables = [new Failure(new \Exception), new Failure(new \Exception), new Success(3)];
-
-        $callback = function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        };
-
-        Amp\some($awaitables, 2)->when($callback);
-
-        $this->assertInstanceOf(MultiReasonException::class, $reason);
-
-        $reasons = $reason->getReasons();
-
-        foreach ($reasons as $reason) {
-            $this->assertInstanceOf(\Exception::class, $reason);
-        }
+        $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], $result);
     }
 
     public function testPendingAwatiablesArray() {
@@ -71,14 +54,14 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\some($awaitables, 2)->when($callback);
+            Amp\some($awaitables)->when($callback);
         });
 
-        $this->assertEquals([0 => 1, 2 => 3], $result);
+        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
     }
 
     public function testArrayKeysPreserved() {
-        $expected = ['one' => 1, 'two' => 2, 'three' => 3];
+        $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
         Loop::execute(function () use (&$result) {
             $awaitables = [
@@ -91,7 +74,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\some($awaitables, 3)->when($callback);
+            Amp\some($awaitables)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -101,6 +84,6 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
      * @expectedException \InvalidArgumentException
      */
     public function testNonAwaitable() {
-        Amp\some([1], 1);
+        Amp\some([1]);
     }
 }

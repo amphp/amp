@@ -388,29 +388,22 @@ function first(array $awaitables) {
 }
 
 /**
- * Returns a awaitable that succeeds when $required number of awaitables succeed. The awaitable fails if $required
- * number of awaitables can no longer succeed.
+ * Resolves with a two-item array delineating successful and failed Awaitable results.
  *
+ * The returned awaitable will only fail if ALL of the awaitables fail.
+
  * @param Awaitable[] $awaitables
- * @param int $required Number of awaitables that must succeed to succeed the returned awaitable.
  *
  * @return \Interop\Async\Awaitable
  */
-function some(array $awaitables, $required) {
-    $required = (int) $required;
-
-    if (0 >= $required) {
-        return new Success([]);
+function some(array $awaitables) {
+    if (empty($awaitables)) {
+        throw new \InvalidArgumentException("No awaitables provided");
     }
 
     $pending = \count($awaitables);
 
-    if ($required > $pending) {
-        throw new \InvalidArgumentException("Too few awaitables provided");
-    }
-
     $deferred = new Deferred;
-    $resolved = false;
     $values = [];
     $exceptions = [];
 
@@ -419,27 +412,20 @@ function some(array $awaitables, $required) {
             throw new \InvalidArgumentException("Non-awaitable provided");
         }
 
-        $awaitable->when(function ($exception, $value) use (
-            &$values, &$exceptions, &$pending, &$resolved, &$required, $key, $deferred
-        ) {
-            if ($resolved) {
-                return;
-            }
-
+        $awaitable->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
             if ($exception) {
                 $exceptions[$key] = $exception;
-                if ($required > --$pending) {
-                    $resolved = true;
-                    $deferred->fail(new MultiReasonException($exceptions));
-                }
-                return;
+            } else {
+                $values[$key] = $value;
             }
 
-            $values[$key] = $value;
-            --$pending;
-            if (0 === --$required) {
-                $resolved = true;
-                $deferred->resolve($values);
+            if (0 === --$pending) {
+                if (empty($values)) {
+                    $deferred->fail(new MultiReasonException($exceptions));
+                    return;
+                }
+
+                $deferred->resolve([$exceptions, $values]);
             }
         });
     }
