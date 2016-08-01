@@ -628,6 +628,55 @@ function stream(array $awaitables) {
 }
 
 /**
+ * Concatenates the given observables into a single observable, emitting values from a single observable at a time. The
+ * prior observable must complete before values are emitted from any subsequent observable. Observables are concatenated
+ * in the order given (iteration order of the array).
+ *
+ * @param array $observables
+ *
+ * @return \Amp\Observable
+ */
+function concat(array $observables) {
+    foreach ($observables as $observable) {
+        if (!$observable instanceof Observable) {
+            throw new \InvalidArgumentException("Non-observable provided");
+        }
+    }
+
+    return new Emitter(function (callable $emit) use ($observables) {
+        $subscriptions = [];
+        $previous = [];
+        $awaitable = all($previous);
+
+        foreach ($observables as $observable) {
+            $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($emit, $awaitable) {
+                try {
+                    yield $awaitable;
+                } catch (\Throwable $exception) {
+                    // Ignore exception in this context.
+                } catch (\Exception $exception) {
+                    // Ignore exception in this context.
+                }
+
+                yield Coroutine::result(yield $emit($value));
+            }));
+            $previous[] = $observable;
+            $awaitable = all($previous);
+        }
+
+        try {
+            $result = (yield $awaitable);
+        } finally {
+            foreach ($subscriptions as $subscription) {
+                $subscription->unsubscribe();
+            }
+        }
+
+        yield Coroutine::result($result);
+    });
+}
+
+/**
  * Returns an observable that emits a value every $interval milliseconds after (up to $count times). The value emitted
  * is an integer of the number of times the observable emitted a value.
  *
