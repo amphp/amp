@@ -9,9 +9,8 @@ use Amp\Observable;
 use Amp\Observer;
 use Amp\Pause;
 use Amp\Loop\NativeLoop;
-use Interop\Async\Loop;
 
-Loop::execute(Amp\coroutine(function () {
+Amp\execute(function () {
     try {
         $emitter = new Emitter(function (callable $emit) {
             yield $emit(1);
@@ -43,4 +42,4 @@ Loop::execute(Amp\coroutine(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}), $loop = new NativeLoop());
+}, $loop = new NativeLoop());

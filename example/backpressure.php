@@ -7,9 +7,8 @@ use Amp\Coroutine;
 use Amp\Pause;
 use Amp\Postponed;
 use Amp\Loop\NativeLoop;
-use Interop\Async\Loop;
 
-Loop::execute(Amp\coroutine(function () {
+Amp\execute(function () {
     try {
         $postponed = new Postponed;
 
@@ -48,4 +47,4 @@ Loop::execute(Amp\coroutine(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}), $loop = new NativeLoop());
+}, $loop = new NativeLoop());

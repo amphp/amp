@@ -9,13 +9,12 @@ use Amp\Observer;
 use Amp\Pause;
 use Amp\Postponed;
 use Amp\Loop\NativeLoop;
-use Interop\Async\Loop;
 
-Loop::execute(Amp\coroutine(function () {
+Amp\execute(function () {
     try {
         $postponed = new Postponed;
 
-        Loop::defer(function () use ($postponed) {
+        Amp\defer(function () use ($postponed) {
             // Observer emits all values at once.
             $postponed->emit(1);
             $postponed->emit(2);
@@ -48,4 +47,4 @@ Loop::execute(Amp\coroutine(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}), $loop = new NativeLoop());
+}, $loop = new NativeLoop());
