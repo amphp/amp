@@ -2,8 +2,13 @@
 
 namespace Interop\Async\Loop;
 
-interface Driver
+abstract class Driver
 {
+    /**
+     * @var array
+     */
+    private $registry = [];
+
     /**
      * Start the event loop.
      *
@@ -13,7 +18,7 @@ interface Driver
      *
      * @return void
      */
-    public function run();
+    public abstract function run();
 
     /**
      * Stop the event loop.
@@ -23,7 +28,7 @@ interface Driver
      *
      * @return void
      */
-    public function stop();
+    public abstract function stop();
 
     /**
      * Defer the execution of a callback.
@@ -37,7 +42,7 @@ interface Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function defer(callable $callback, $data = null);
+    public abstract function defer(callable $callback, $data = null);
 
     /**
      * Delay the execution of a callback.
@@ -52,7 +57,7 @@ interface Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function delay($delay, callable $callback, $data = null);
+    public abstract function delay($delay, callable $callback, $data = null);
 
     /**
      * Repeatedly execute a callback.
@@ -67,7 +72,7 @@ interface Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function repeat($interval, callable $callback, $data = null);
+    public abstract function repeat($interval, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes readable.
@@ -80,7 +85,7 @@ interface Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onReadable($stream, callable $callback, $data = null);
+    public abstract function onReadable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes writable.
@@ -93,7 +98,7 @@ interface Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onWritable($stream, callable $callback, $data = null);
+    public abstract function onWritable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a signal is received.
@@ -112,7 +117,7 @@ interface Driver
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public function onSignal($signo, callable $callback, $data = null);
+    public abstract function onSignal($signo, callable $callback, $data = null);
 
     /**
      * Enable a watcher.
@@ -126,7 +131,7 @@ interface Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public function enable($watcherId);
+    public abstract function enable($watcherId);
 
     /**
      * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher.
@@ -137,7 +142,7 @@ interface Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public function disable($watcherId);
+    public abstract function disable($watcherId);
 
     /**
      * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
@@ -148,7 +153,7 @@ interface Driver
      *
      * @return void
      */
-    public function cancel($watcherId);
+    public abstract function cancel($watcherId);
 
     /**
      * Reference a watcher.
@@ -162,7 +167,7 @@ interface Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public function reference($watcherId);
+    public abstract function reference($watcherId);
 
     /**
      * Unreference a watcher.
@@ -176,7 +181,7 @@ interface Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public function unreference($watcherId);
+    public abstract function unreference($watcherId);
 
     /**
      * Stores information in the loop bound registry. This can be used to store loop bound information. Stored
@@ -189,7 +194,14 @@ interface Driver
      *
      * @return void
      */
-    public function storeState($key, $value);
+    public final function storeState($key, $value)
+    {
+        if ($value === null) {
+            unset($this->registry[$key]);
+        } else {
+            $this->registry[$key] = $value;
+        }
+    }
 
     /**
      * Fetches information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve
@@ -197,11 +209,14 @@ interface Driver
      *
      * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
      *
-     * @param string $key Namespaced storage key.
+     * @param string $key namespaced storage key
      *
      * @return mixed previously stored value or null if it doesn't exist
      */
-    public function fetchState($key);
+    public final function fetchState($key)
+    {
+        return isset($this->registry[$key]) ? $this->registry[$key] : null;
+    }
 
     /**
      * Set a callback to be executed when an error occurs.
@@ -213,7 +228,7 @@ interface Driver
      *
      * @return void
      */
-    public function setErrorHandler(callable $callback = null);
+    public abstract function setErrorHandler(callable $callback = null);
 
     /**
      * Retrieve an associative array of information about the event loop driver.
@@ -235,7 +250,7 @@ interface Driver
      *
      * @return array
      */
-    public function info();
+    public abstract function info();
 
     /**
      * Get the underlying loop handle.
@@ -247,5 +262,5 @@ interface Driver
      *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
      */
-    public function getHandle();
+    public abstract function getHandle();
 }

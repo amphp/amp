@@ -8,7 +8,7 @@ class RegistryTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->registry = $this->getMockForTrait(Registry::class);
+        $this->registry = $this->getMockForAbstractClass(Driver::class);
     }
 
     /** @test */
