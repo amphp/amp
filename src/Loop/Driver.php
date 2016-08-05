@@ -18,7 +18,7 @@ abstract class Driver
      *
      * @return void
      */
-    public abstract function run();
+    abstract public function run();
 
     /**
      * Stop the event loop.
@@ -28,7 +28,7 @@ abstract class Driver
      *
      * @return void
      */
-    public abstract function stop();
+    abstract public function stop();
 
     /**
      * Defer the execution of a callback.
@@ -42,7 +42,7 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public abstract function defer(callable $callback, $data = null);
+    abstract public function defer(callable $callback, $data = null);
 
     /**
      * Delay the execution of a callback.
@@ -57,7 +57,7 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public abstract function delay($delay, callable $callback, $data = null);
+    abstract public function delay($delay, callable $callback, $data = null);
 
     /**
      * Repeatedly execute a callback.
@@ -72,7 +72,7 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public abstract function repeat($interval, callable $callback, $data = null);
+    abstract public function repeat($interval, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes readable.
@@ -85,7 +85,7 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public abstract function onReadable($stream, callable $callback, $data = null);
+    abstract public function onReadable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a stream resource becomes writable.
@@ -98,7 +98,7 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public abstract function onWritable($stream, callable $callback, $data = null);
+    abstract public function onWritable($stream, callable $callback, $data = null);
 
     /**
      * Execute a callback when a signal is received.
@@ -117,7 +117,7 @@ abstract class Driver
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public abstract function onSignal($signo, callable $callback, $data = null);
+    abstract public function onSignal($signo, callable $callback, $data = null);
 
     /**
      * Enable a watcher.
@@ -131,7 +131,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public abstract function enable($watcherId);
+    abstract public function enable($watcherId);
 
     /**
      * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher.
@@ -142,7 +142,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public abstract function disable($watcherId);
+    abstract public function disable($watcherId);
 
     /**
      * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
@@ -153,7 +153,7 @@ abstract class Driver
      *
      * @return void
      */
-    public abstract function cancel($watcherId);
+    abstract public function cancel($watcherId);
 
     /**
      * Reference a watcher.
@@ -167,7 +167,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public abstract function reference($watcherId);
+    abstract public function reference($watcherId);
 
     /**
      * Unreference a watcher.
@@ -181,7 +181,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public abstract function unreference($watcherId);
+    abstract public function unreference($watcherId);
 
     /**
      * Stores information in the loop bound registry. This can be used to store loop bound information. Stored
@@ -228,7 +228,7 @@ abstract class Driver
      *
      * @return void
      */
-    public abstract function setErrorHandler(callable $callback = null);
+    abstract public function setErrorHandler(callable $callback = null);
 
     /**
      * Retrieve an associative array of information about the event loop driver.
@@ -250,7 +250,7 @@ abstract class Driver
      *
      * @return array
      */
-    public abstract function info();
+    abstract public function info();
 
     /**
      * Get the underlying loop handle.
@@ -262,5 +262,5 @@ abstract class Driver
      *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
      */
-    public abstract function getHandle();
+    abstract public function getHandle();
 }
