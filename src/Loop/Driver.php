@@ -194,7 +194,7 @@ abstract class Driver
      *
      * @return void
      */
-    public final function storeState($key, $value)
+    final public function storeState($key, $value)
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -213,7 +213,7 @@ abstract class Driver
      *
      * @return mixed previously stored value or null if it doesn't exist
      */
-    public final function fetchState($key)
+    final public function fetchState($key)
     {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
