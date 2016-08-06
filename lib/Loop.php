@@ -5,11 +5,8 @@ namespace Amp\Loop;
 use Amp\Loop\Internal\Watcher;
 use Interop\Async\Loop\Driver;
 use Interop\Async\Loop\InvalidWatcherException;
-use Interop\Async\Loop\Registry;
 
-abstract class Loop implements Driver {
-    use Registry;
-
+abstract class Loop extends Driver {
     const MILLISEC_PER_SEC = 1e3;
     const MICROSEC_PER_SEC = 1e6;
 
