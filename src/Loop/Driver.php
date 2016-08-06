@@ -194,7 +194,7 @@ abstract class Driver
      *
      * @return void
      */
-    final public function storeState($key, $value)
+    final public function setState($key, $value)
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -204,8 +204,8 @@ abstract class Driver
     }
 
     /**
-     * Fetches information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve
-     * the stored state of other packages.
+     * Gets information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve the
+     * stored state of other packages.
      *
      * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
      *
@@ -213,7 +213,7 @@ abstract class Driver
      *
      * @return mixed previously stored value or null if it doesn't exist
      */
-    final public function fetchState($key)
+    final public function getState($key)
     {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
