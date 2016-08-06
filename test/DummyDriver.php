@@ -2,10 +2,10 @@
 
 namespace Interop\Async\Loop\Test;
 
-class DummyDriver implements \Interop\Async\Loop\Driver
-{
-    use \Interop\Async\Loop\Registry;
+use Interop\Async\Loop\Driver;
 
+class DummyDriver extends Driver
+{
     public $defers;
     public $handler;
     public static $id = "a";
