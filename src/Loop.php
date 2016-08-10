@@ -307,15 +307,15 @@ final class Loop
      *
      * @return void
      */
-    public static function storeState($key, $value)
+    public static function setState($key, $value)
     {
         $driver = self::$driver ?: self::get();
-        $driver->storeState($key, $value);
+        $driver->setState($key, $value);
     }
 
     /**
-     * Fetches information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve
-     * the stored state of other packages.
+     * Gets information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve the
+     * stored state of other packages.
      *
      * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
      *
@@ -323,10 +323,10 @@ final class Loop
      *
      * @return mixed previously stored value or null if it doesn't exist
      */
-    public static function fetchState($key)
+    public static function getState($key)
     {
         $driver = self::$driver ?: self::get();
-        return $driver->fetchState($key);
+        return $driver->getState($key);
     }
 
     /**

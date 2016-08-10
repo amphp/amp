@@ -2,31 +2,29 @@
 
 namespace Interop\Async\Loop;
 
-class RegistryTest extends \PHPUnit_Framework_TestCase
+class LoopStateTest extends \PHPUnit_Framework_TestCase
 {
-    private $registry;
+    private $loop;
 
     protected function setUp()
     {
-        $this->registry = $this->getMockForAbstractClass(Driver::class);
+        $this->loop = $this->getMockForAbstractClass(Driver::class);
     }
 
     /** @test */
     public function defaultsToNull()
     {
-        $this->assertNull($this->registry->fetchState("foobar"));
+        $this->assertNull($this->loop->getState("foobar"));
     }
 
     /**
      * @test
      * @dataProvider provideValues
      */
-    public function fetchesStoredValue($value)
+    public function getsPreviouslySetValue($value)
     {
-        $this->assertNull($this->registry->fetchState("foobar"));
-        $this->registry->storeState("foobar", $value);
-
-        $this->assertSame($value, $this->registry->fetchState("foobar"));
+        $this->loop->setState("foobar", $value);
+        $this->assertSame($value, $this->loop->getState("foobar"));
     }
 
     public function provideValues()
