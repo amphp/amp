@@ -50,9 +50,14 @@ trait Producer {
      */
     private function init() {
         $this->waiting = new Future;
-        $this->unsubscribe = function ($id) {
-            $this->unsubscribe($id);
-        };
+
+        if (PHP_VERSION_ID >= 70100) {
+            $this->unsubscribe = \Closure::fromCallable([$this, 'unsubscribe']);
+        } else {
+            $this->unsubscribe = function ($id) {
+                $this->unsubscribe($id);
+            };
+        }
     }
 
     /**

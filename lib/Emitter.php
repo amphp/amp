@@ -11,14 +11,13 @@ final class Emitter implements Observable {
     public function __construct(callable $emitter) {
         $this->init();
     
-        /**
-         * @param mixed $value
-         *
-         * @return \Interop\Async\Awaitable
-         */
-        $emit = function ($value) {
-            return $this->emit($value);
-        };
+        if (PHP_VERSION_ID >= 70100) {
+            $emit = \Closure::fromCallable([$this, 'emit']);
+        } else {
+            $emit = function ($value) {
+                return $this->emit($value);
+            };
+        }
         
         $result = $emitter($emit);
 
