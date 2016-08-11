@@ -90,14 +90,14 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \Error
      */
     public function testScalarValue() {
         Amp\adapt(1);
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \Error
      */
     public function testNonThenableObject() {
         Amp\adapt(new \stdClass);

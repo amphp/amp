@@ -54,7 +54,7 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \LogicException
+     * @expectedException \Error
      */
     public function testAwaitableWithNoResolutionPathThrowsException()
     {

@@ -44,10 +44,6 @@ trait Placeholder {
                 Loop::defer(static function () use ($exception) {
                     throw $exception;
                 });
-            } catch (\Exception $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
             }
             return;
         }
@@ -66,10 +62,12 @@ trait Placeholder {
 
     /**
      * @param mixed $value
+     *
+     * @throws \Error Thrown if the awaitable has already been resolved.
      */
     private function resolve($value = null) {
         if ($this->resolved) {
-            throw new \LogicException("Awaitable has already been resolved");
+            throw new \Error("Awaitable has already been resolved");
         }
 
         $this->resolved = true;
@@ -93,17 +91,13 @@ trait Placeholder {
             Loop::defer(static function () use ($exception) {
                 throw $exception;
             });
-        } catch (\Exception $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
         }
     }
 
     /**
-     * @param \Throwable|\Exception $reason
+     * @param \Throwable $reason Failure reason.
      */
-    private function fail($reason) {
+    private function fail(\Throwable $reason) {
         $this->resolve(new Failure($reason));
     }
 }

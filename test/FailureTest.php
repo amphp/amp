@@ -7,7 +7,7 @@ use Interop\Async\Loop;
 
 class FailureTest extends \PHPUnit_Framework_TestCase {
     /**
-     * @expectedException \LogicException
+     * @expectedException \TypeError
      */
     public function testConstructWithNonException() {
         $failure = new Failure(1);

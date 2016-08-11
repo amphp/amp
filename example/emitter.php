@@ -23,7 +23,7 @@ Amp\execute(function () {
             yield $emit(8);
             yield $emit(9);
             yield $emit(new Pause(600, 10));
-            yield Coroutine::result(11);
+            return 11;
         });
 
         $generator = function (Observable $observable) {

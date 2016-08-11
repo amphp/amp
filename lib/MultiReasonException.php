@@ -4,26 +4,24 @@ namespace Amp;
 
 class MultiReasonException extends \Exception {
     /**
-     * @var \Throwable[]|\Exception[]
+     * @var \Throwable[]
      */
     private $reasons;
 
     /**
-     * @param \Exception[] $reasons Array of exceptions rejecting the awaitable.
+     * @param \Throwable[] $reasons Array of exceptions rejecting the awaitable.
      * @param string|null $message
      */
-    public function __construct(array $reasons, $message = null)
-    {
+    public function __construct(array $reasons, string $message = null) {
         parent::__construct($message ?: "Too many awaitables were rejected");
 
         $this->reasons = $reasons;
     }
 
     /**
-     * @return \Throwable[]|\Exception[]
+     * @return \Throwable[]
      */
-    public function getReasons()
-    {
+    public function getReasons(): array {
         return $this->reasons;
     }
 }

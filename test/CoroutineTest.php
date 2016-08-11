@@ -5,7 +5,7 @@ namespace Icicle\Tests\Coroutine;
 use Amp;
 use Amp\Coroutine;
 use Amp\Failure;
-use Amp\InvalidYieldException;
+use Amp\InvalidYieldError;
 use Amp\Pause;
 use Amp\Success;
 use Interop\Async\Loop;
@@ -85,70 +85,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         }
 
     }
-
-    /**
-     * @todo Remove once PHP 7 is required.
-     */
-    public function testSucceedsWithCoroutineResult() {
-        $value = 1;
-
-        $generator = function () use ($value) {
-            yield Coroutine::result($value);
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertSame($value, $result);
-    }
-
-    /**
-     * @depends testSucceedsWithCoroutineResult
-     * @todo Remove once PHP 7 is required.
-     */
-    public function testSucceedsWithCoroutineAfterSuccessfulAwaitable() {
-        $value = 1;
-
-        $generator = function () use ($value) {
-            yield Coroutine::result(yield new Success($value));
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertSame($value, $result);
-    }
-
-    /**
-     * @depends testSucceedsWithCoroutineResult
-     * @todo Remove once PHP 7 is required.
-     */
-    public function testSucceedsWithCoroutineAfterFailedAwaitable() {
-        $value = 1;
-
-        $generator = function () use ($value) {
-            try {
-                yield new Failure(new \Exception);
-            } catch (\Exception $exception) {
-                yield Coroutine::result($value);
-            }
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertSame($value, $result);
-    }
-
+    
     public function testInvalidYield() {
         $generator = function () {
             yield 1;
@@ -160,7 +97,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             $reason = $exception;
         });
 
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
 
     /**
@@ -178,7 +115,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             $reason = $exception;
         });
 
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
 
     /**
@@ -189,7 +126,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             try {
                 yield 1;
             } catch (\Exception $exception) {
-                yield Coroutine::result(1);
+                return 1;
             }
         };
 
@@ -199,52 +136,9 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             $reason = $exception;
         });
 
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
-
-    /**
-     * @depends testSucceedsWithCoroutineResult
-     * @todo Remove once PHP 7 is required.
-     */
-    public function testYieldsAfterCoroutineResult() {
-        $generator = function () {
-            yield Coroutine::result(1);
-            yield new Success;
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
-    }
-
-    /**
-     * @depends testYieldsAfterCoroutineResult
-     * @todo Remove once PHP 7 is required.
-     */
-    public function testCatchesExceptionAfterInvalidResult() {
-        $generator = function () {
-            yield Coroutine::result(1);
-
-            try {
-                yield new Success;
-            } catch (\Exception $exception) {
-                yield Coroutine::result(2);
-            }
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
-    }
-
+    
     /**
      * @depends testInvalidYield
      */
@@ -254,7 +148,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $generator = function () use ($exception) {
             try {
                 yield 1;
-            } catch (\Exception $reason) {
+            } catch (\Throwable $reason) {
                 throw $exception;
             }
         };
@@ -265,7 +159,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             $reason = $exception;
         });
 
-        $this->assertInstanceOf(InvalidYieldException::class, $reason);
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
         $this->assertSame($exception, $reason->getPrevious());
     }
 
@@ -535,5 +429,73 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $callable = Amp\coroutine(function () {});
 
         $this->assertInstanceOf(Coroutine::class, $callable());
+    }
+    
+    public function testCoroutineResolvedWithReturn() {
+        $value = 1;
+        
+        $generator = function () use ($value) {
+            return $value;
+            yield; // Unreachable, but makes function a coroutine.
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+        
+        
+        $this->assertSame($value, $result);
+    }
+    
+    /**
+     * @depends testCoroutineResolvedWithReturn
+     */
+    public function testYieldFromGenerator() {
+        $value = 1;
+        
+        $generator = function () use ($value) {
+            $generator = function () use ($value) {
+                return yield new Success($value);
+            };
+            
+            return yield from $generator();
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+        
+        
+        $this->assertSame($value, $result);
+    }
+    
+    /**
+     * @depends testCoroutineResolvedWithReturn
+     */
+    public function testFastReturningGenerator()
+    {
+        $value = 1;
+        
+        $generator = function () use ($value) {
+            if (true) {
+                return $value;
+            }
+            
+            yield;
+            
+            return -$value;
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+        
+        $this->assertSame($value, $result);
     }
 }

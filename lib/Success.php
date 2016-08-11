@@ -2,8 +2,8 @@
 
 namespace Amp;
 
-use Interop\Async\Loop;
 use Interop\Async\Awaitable;
+use Interop\Async\Loop;
 
 /**
  * Creates a successful awaitable using the given value (which can be any value except another object implementing
@@ -36,10 +36,6 @@ final class Success implements Awaitable {
         try {
             $onResolved(null, $this->value);
         } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        } catch (\Exception $exception) {
             Loop::defer(static function () use ($exception) {
                 throw $exception;
             });

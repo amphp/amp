@@ -52,7 +52,7 @@ function stop() {
  *
  * @return string Watcher identifier.
  */
-function onReadable($stream, callable $callback, $data = null) {
+function onReadable($stream, callable $callback, $data = null): string {
     return Loop::onReadable($stream, function ($watcherId, $stream, $data) use ($callback) {
         $result = $callback($watcherId, $stream, $data);
 
@@ -79,7 +79,7 @@ function onReadable($stream, callable $callback, $data = null) {
  *
  * @return string Watcher identifier.
  */
-function onWritable($stream, callable $callback, $data = null) {
+function onWritable($stream, callable $callback, $data = null): string {
     return Loop::onWritable($stream, function ($watcherId, $stream, $data) use ($callback) {
         $result = $callback($watcherId, $stream, $data);
 
@@ -104,7 +104,7 @@ function onWritable($stream, callable $callback, $data = null) {
  *
  * @return string Watcher identifier.
  */
-function onSignal($signo, callable $callback, $data = null) {
+function onSignal(int $signo, callable $callback, $data = null): string {
     return Loop::onSignal($signo, function ($watcherId, $signo, $data) use ($callback) {
         $result = $callback($watcherId, $signo, $data);
 
@@ -130,7 +130,7 @@ function onSignal($signo, callable $callback, $data = null) {
  *
  * @return string Watcher identifier.
  */
-function defer(callable $callback, $data = null) {
+function defer(callable $callback, $data = null): string {
     return Loop::defer(function ($watcherId, $data) use ($callback) {
         $result = $callback($watcherId, $data);
 
@@ -157,7 +157,7 @@ function defer(callable $callback, $data = null) {
  *
  * @return string Watcher identifier.
  */
-function delay($time, callable $callback, $data = null) {
+function delay(int $time, callable $callback, $data = null): string {
     return Loop::delay($time, function ($watcherId, $data) use ($callback) {
         $result = $callback($watcherId, $data);
 
@@ -184,7 +184,7 @@ function delay($time, callable $callback, $data = null) {
  *
  * @return string Watcher identifier.
  */
-function repeat($time, callable $callback, $data = null) {
+function repeat(int $time, callable $callback, $data = null): string {
     return Loop::repeat($time, function ($watcherId, $data) use ($callback) {
         $result = $callback($watcherId, $data);
 
@@ -205,7 +205,7 @@ function repeat($time, callable $callback, $data = null) {
  *
  * @param string $watcherId
  */
-function enable($watcherId) {
+function enable(string $watcherId) {
     Loop::enable($watcherId);
 }
 
@@ -216,7 +216,7 @@ function enable($watcherId) {
  *
  * @param string $watcherId
  */
-function disable($watcherId) {
+function disable(string $watcherId) {
     Loop::disable($watcherId);
 }
 
@@ -227,7 +227,7 @@ function disable($watcherId) {
  *
  * @param string $watcherId
  */
-function cancel($watcherId) {
+function cancel(string $watcherId) {
     Loop::cancel($watcherId);
 }
 
@@ -238,7 +238,7 @@ function cancel($watcherId) {
  *
  * @param string $watcherId
  */
-function reference($watcherId) {
+function reference(string $watcherId) {
     Loop::reference($watcherId);
 }
 
@@ -249,7 +249,7 @@ function reference($watcherId) {
  *
  * @param string $watcherId
  */
-function unreference($watcherId) {
+function unreference(string $watcherId) {
     Loop::unreference($watcherId);
 }
 
@@ -280,9 +280,9 @@ function setErrorHandler(callable $callback) {
  *
  * @return callable(...$args): void
  */
-function wrap(callable $callback) {
-    return function (/* ...$args */) use ($callback) {
-        $result = \call_user_func_array($callback, \func_get_args());
+function wrap(callable $callback): callable {
+    return function (...$args) use ($callback) {
+        $result = $callback(...$args);
 
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
@@ -301,9 +301,9 @@ function wrap(callable $callback) {
  *
  * @return callable(mixed ...$args): \Amp\Coroutine
  */
-function coroutine(callable $worker) {
-    return function (/* ...$args */) use ($worker) {
-        $generator = \call_user_func_array($worker, \func_get_args());
+function coroutine(callable $worker): callable {
+    return function (...$args) use ($worker): Coroutine {
+        $generator = $worker(...$args);
 
         if (!$generator instanceof \Generator) {
             throw new \LogicException("The callable did not return a Generator");
@@ -333,7 +333,7 @@ function rethrow(Awaitable $awaitable) {
  *
  * @return mixed Awaitable success value.
  *
- * @throws \Throwable|\Exception Awaitable failure reason.
+ * @throws \Throwable Awaitable failure reason.
  */
 function wait(Awaitable $awaitable) {
     $resolved = false;
@@ -347,7 +347,7 @@ function wait(Awaitable $awaitable) {
     }, Loop::get());
 
     if (!$resolved) {
-        throw new \LogicException("Loop emptied without resolving awaitable");
+        throw new \Error("Loop emptied without resolving awaitable");
     }
 
     if ($exception) {
@@ -365,7 +365,7 @@ function wait(Awaitable $awaitable) {
  *
  * @return \Interop\Async\Awaitable
  */
-function pipe(Awaitable $awaitable, callable $functor) {
+function pipe(Awaitable $awaitable, callable $functor): Awaitable {
     $deferred = new Deferred;
 
     $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
@@ -378,8 +378,6 @@ function pipe(Awaitable $awaitable, callable $functor) {
             $deferred->resolve($functor($value));
         } catch (\Throwable $exception) {
             $deferred->fail($exception);
-        } catch (\Exception $exception) {
-            $deferred->fail($exception);
         }
     });
 
@@ -390,11 +388,11 @@ function pipe(Awaitable $awaitable, callable $functor) {
  * @param \Interop\Async\Awaitable $awaitable
  * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
- * @param callable(\Throwable|\Exception $exception): mixed $functor
+ * @param callable(\Throwable $exception): mixed $functor
  *
  * @return \Interop\Async\Awaitable
  */
-function capture(Awaitable $awaitable, $className, callable $functor) {
+function capture(Awaitable $awaitable, string $className, callable $functor): Awaitable {
     $deferred = new Deferred;
 
     $awaitable->when(function ($exception, $value) use ($deferred, $className, $functor) {
@@ -412,8 +410,6 @@ function capture(Awaitable $awaitable, $className, callable $functor) {
             $deferred->resolve($functor($exception));
         } catch (\Throwable $exception) {
             $deferred->fail($exception);
-        } catch (\Exception $exception) {
-            $deferred->fail($exception);
         }
     });
 
@@ -424,14 +420,14 @@ function capture(Awaitable $awaitable, $className, callable $functor) {
  * Create an artificial timeout for any Awaitable.
  *
  * If the timeout expires before the awaitable is resolved, the returned awaitable fails with an instance of
- * \Amp\Exception\TimeoutException.
+ * \Amp\TimeoutException.
  *
  * @param \Interop\Async\Awaitable $awaitable
  * @param int $timeout Timeout in milliseconds.
  *
  * @return \Interop\Async\Awaitable
  */
-function timeout(Awaitable $awaitable, $timeout) {
+function timeout(Awaitable $awaitable, int $timeout): Awaitable {
     $deferred = new Deferred;
     $resolved = false;
 
@@ -466,15 +462,13 @@ function timeout(Awaitable $awaitable, $timeout) {
  *
  * @return \Interop\Async\Awaitable
  */
-function lazy(callable $promisor /* ...$args */) {
-    $args = \array_slice(\func_get_args(), 1);
-
+function lazy(callable $promisor, ...$args): Awaitable {
     if (empty($args)) {
         return new Internal\LazyAwaitable($promisor);
     }
 
     return new Internal\LazyAwaitable(function () use ($promisor, $args) {
-        return \call_user_func_array($promisor, $args);
+        return $promisor(...$args);
     });
 }
 
@@ -486,13 +480,9 @@ function lazy(callable $promisor /* ...$args */) {
  *
  * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
  *
- * @throws \InvalidArgumentException If the provided object does not have a then() method.
+ * @throws \Error If the provided object does not have a then() method.
  */
-function adapt($thenable) {
-    if (!\is_object($thenable) || !\method_exists($thenable, "then")) {
-        throw new \InvalidArgumentException("Must provide an object with a then() method");
-    }
-
+function adapt($thenable): Awaitable {
     $deferred = new Deferred;
 
     $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
@@ -512,15 +502,13 @@ function adapt($thenable) {
  *
  * @return callable
  */
-function lift(callable $worker) {
+function lift(callable $worker): callable {
     /**
      * @param mixed ...$args Awaitables or values.
      *
      * @return \Interop\Async\Awaitable
      */
-    return function (/* ...$args */) use ($worker) {
-        $args = \func_get_args();
-
+    return function (...$args) use ($worker): Awaitable {
         foreach ($args as $key => $arg) {
             if (!$arg instanceof Awaitable) {
                 $args[$key] = new Success($arg);
@@ -532,7 +520,7 @@ function lift(callable $worker) {
         }
 
         return pipe(all($args), function (array $args) use ($worker) {
-            return \call_user_func_array($worker, $args);
+            return $worker(...$args);
         });
     };
 }
@@ -549,9 +537,9 @@ function lift(callable $worker) {
  *
  * @return \Interop\Async\Awaitable
  *
- * @throws \InvalidArgumentException If a non-Awaitable is in the array.
+ * @throws \Error If a non-Awaitable is in the array.
  */
-function any(array $awaitables) {
+function any(array $awaitables): Awaitable {
     if (empty($awaitables)) {
         return new Success([[], []]);
     }
@@ -564,7 +552,7 @@ function any(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
@@ -591,9 +579,9 @@ function any(array $awaitables) {
  *
  * @return \Interop\Async\Awaitable
  *
- * @throws \InvalidArgumentException If a non-Awaitable is in the array.
+ * @throws \Error If a non-Awaitable is in the array.
  */
-function all(array $awaitables) {
+function all(array $awaitables): Awaitable {
     if (empty($awaitables)) {
         return new Success([]);
     }
@@ -606,7 +594,7 @@ function all(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
@@ -637,11 +625,11 @@ function all(array $awaitables) {
  *
  * @return \Interop\Async\Awaitable
  *
- * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
+ * @throws \Error If the array is empty or a non-Awaitable is in the array.
  */
-function first(array $awaitables) {
+function first(array $awaitables): Awaitable {
     if (empty($awaitables)) {
-        throw new \InvalidArgumentException("No awaitables provided");
+        throw new \Error("No awaitables provided");
     }
 
     $deferred = new Deferred;
@@ -652,7 +640,7 @@ function first(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
@@ -685,9 +673,9 @@ function first(array $awaitables) {
  *
  * @return \Interop\Async\Awaitable
  */
-function some(array $awaitables) {
+function some(array $awaitables): Awaitable {
     if (empty($awaitables)) {
-        throw new \InvalidArgumentException("No awaitables provided");
+        throw new \Error("No awaitables provided");
     }
 
     $pending = \count($awaitables);
@@ -698,7 +686,7 @@ function some(array $awaitables) {
 
     foreach ($awaitables as $key => $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
@@ -731,9 +719,9 @@ function some(array $awaitables) {
  *
  * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
  */
-function choose(array $awaitables) {
+function choose(array $awaitables): Awaitable {
     if (empty($awaitables)) {
-        throw new \InvalidArgumentException("No awaitables provided");
+        throw new \Error("No awaitables provided");
     }
 
     $deferred = new Deferred;
@@ -741,7 +729,7 @@ function choose(array $awaitables) {
 
     foreach ($awaitables as $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when(function ($exception, $value) use (&$resolved, $deferred) {
@@ -775,20 +763,18 @@ function choose(array $awaitables) {
  *
  * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
  */
-function map(callable $callback /* array ...$awaitables */) {
-    $args = \func_get_args();
-    $count = \count($args);
-    $args[0] = lift($callback);
+function map(callable $callback, array ...$awaitables): Awaitable {
+    $callback = lift($callback);
 
-    for ($i = 1; $i < $count; ++$i) {
-        foreach ($args[$i] as $awaitable) {
+    foreach ($awaitables as $awaitableSet) {
+        foreach ($awaitableSet as $awaitable) {
             if (!$awaitable instanceof Awaitable) {
-                throw new \InvalidArgumentException('Non-awaitable provided');
+                throw new \Error("Non-awaitable provided");
             }
         }
     }
 
-    return \call_user_func_array("array_map", $args);
+    return array_map($callback, ...$awaitables);
 }
 
 /**
@@ -798,20 +784,19 @@ function map(callable $callback /* array ...$awaitables */) {
  *
  * @return \Amp\Observable
  */
-function each(Observable $observable, callable $onNext, callable $onComplete = null) {
+function each(Observable $observable, callable $onNext, callable $onComplete = null): Observable {
     return new Emitter(function (callable $emit) use ($observable, $onNext, $onComplete) {
         $observable->subscribe(function ($value) use ($emit, $onNext) {
             return $emit($onNext($value));
         });
 
-        $result = (yield $observable);
+        $result = yield $observable;
 
         if ($onComplete === null) {
-            yield Coroutine::result($result);
-            return;
+            return $result;
         }
 
-        yield Coroutine::result($onComplete($result));
+        return $onComplete($result);
     });
 }
 
@@ -821,7 +806,7 @@ function each(Observable $observable, callable $onNext, callable $onComplete = n
  *
  * @return \Amp\Observable
  */
-function filter(Observable $observable, callable $filter) {
+function filter(Observable $observable, callable $filter): Observable {
     return new Emitter(function (callable $emit) use ($observable, $filter) {
         $observable->subscribe(function ($value) use ($emit, $filter) {
             if (!$filter($value)) {
@@ -830,7 +815,7 @@ function filter(Observable $observable, callable $filter) {
             return $emit($value);
         });
 
-        yield Coroutine::result(yield $observable);
+        return yield $observable;
     });
 }
 
@@ -843,10 +828,10 @@ function filter(Observable $observable, callable $filter) {
  *
  * @return \Amp\Observable
  */
-function merge(array $observables) {
+function merge(array $observables): Observable {
     foreach ($observables as $observable) {
         if (!$observable instanceof Observable) {
-            throw new \InvalidArgumentException("Non-observable provided");
+            throw new \Error("Non-observable provided");
         }
     }
 
@@ -858,14 +843,14 @@ function merge(array $observables) {
         }
 
         try {
-            $result = (yield all($observables));
+            $result = yield all($observables);
         } finally {
             foreach ($subscriptions as $subscription) {
                 $subscription->unsubscribe();
             }
         }
 
-        yield Coroutine::result($result);
+        return $result;
     });
 }
 
@@ -878,7 +863,7 @@ function merge(array $observables) {
  *
  * @return \Amp\Observable
  */
-function stream(array $awaitables) {
+function stream(array $awaitables): Observable {
     $postponed = new Postponed;
 
     if (empty($awaitables)) {
@@ -907,7 +892,7 @@ function stream(array $awaitables) {
 
     foreach ($awaitables as $awaitable) {
         if (!$awaitable instanceof Awaitable) {
-            throw new \InvalidArgumentException("Non-awaitable provided");
+            throw new \Error("Non-awaitable provided");
         }
 
         $awaitable->when($onResolved);
@@ -925,10 +910,10 @@ function stream(array $awaitables) {
  *
  * @return \Amp\Observable
  */
-function concat(array $observables) {
+function concat(array $observables): Observable {
     foreach ($observables as $observable) {
         if (!$observable instanceof Observable) {
-            throw new \InvalidArgumentException("Non-observable provided");
+            throw new \Error("Non-observable provided");
         }
     }
 
@@ -943,25 +928,23 @@ function concat(array $observables) {
                     yield $awaitable;
                 } catch (\Throwable $exception) {
                     // Ignore exception in this context.
-                } catch (\Exception $exception) {
-                    // Ignore exception in this context.
                 }
 
-                yield Coroutine::result(yield $emit($value));
+                return yield $emit($value);
             }));
             $previous[] = $observable;
             $awaitable = all($previous);
         }
 
         try {
-            $result = (yield $awaitable);
+            $result = yield $awaitable;
         } finally {
             foreach ($subscriptions as $subscription) {
                 $subscription->unsubscribe();
             }
         }
 
-        yield Coroutine::result($result);
+        return $result;
     });
 }
 
@@ -974,8 +957,7 @@ function concat(array $observables) {
  *
  * @return \Amp\Observable
  */
-function interval($interval, $count = PHP_INT_MAX) {
-    $count = (int) $count;
+function interval(int $interval, int $count = PHP_INT_MAX): Observable {
     if (0 >= $count) {
         throw new \InvalidArgumentException("The number of times to emit must be a positive value");
     }
@@ -1001,11 +983,7 @@ function interval($interval, $count = PHP_INT_MAX) {
  *
  * @return \Amp\Observable
  */
-function range($start, $end, $step = 1) {
-    $start = (int) $start;
-    $end = (int) $end;
-    $step = (int) $step;
-
+function range(int $start, int $end, int $step = 1): Observable {
     if (0 === $step) {
         throw new \InvalidArgumentException("Step must be a non-zero integer");
     }

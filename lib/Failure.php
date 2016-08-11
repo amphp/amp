@@ -2,28 +2,22 @@
 
 namespace Amp;
 
-use Interop\Async\Loop;
 use Interop\Async\Awaitable;
+use Interop\Async\Loop;
 
 /**
  * Creates a failed awaitable using the given exception.
  */
 final class Failure implements Awaitable {
     /**
-     * @var \Exception|\Throwable $exception
+     * @var \Throwable $exception
      */
     private $exception;
 
     /**
-     * @param \Throwable|\Exception $exception Rejection reason.
-     *
-     * @throws \InvalidArgumentException If a non-exception is given.
+     * @param \Throwable $exception Rejection reason.
      */
-    public function __construct($exception) {
-        if (!$exception instanceof \Throwable && !$exception instanceof \Exception) {
-            throw new \InvalidArgumentException("Failure reason must be an exception");
-        }
-
+    public function __construct(\Throwable $exception) {
         $this->exception = $exception;
     }
 
@@ -34,10 +28,6 @@ final class Failure implements Awaitable {
         try {
             $onResolved($this->exception, null);
         } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        } catch (\Exception $exception) {
             Loop::defer(static function () use ($exception) {
                 throw $exception;
             });

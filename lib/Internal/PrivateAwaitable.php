@@ -28,17 +28,15 @@ final class PrivateAwaitable implements Awaitable {
         /**
          * Fails the awaitable with the given exception.
          *
-         * @param \Exception $reason
+         * @param \Throwable $reason
          */
-        $fail = function ($reason) {
+        $fail = function (\Throwable $reason) {
             $this->fail($reason);
         };
 
         try {
             $resolver($resolve, $fail);
         } catch (\Throwable $exception) {
-            $this->fail($exception);
-        } catch (\Exception $exception) {
             $this->fail($exception);
         }
     }

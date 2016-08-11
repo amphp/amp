@@ -69,7 +69,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \Error
      */
     public function testNonAwaitable() {
         Amp\all([1]);

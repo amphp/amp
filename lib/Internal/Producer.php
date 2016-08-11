@@ -65,7 +65,7 @@ trait Producer {
      *
      * @return \Amp\Subscriber
      */
-    public function subscribe(callable $onNext) {
+    public function subscribe(callable $onNext): Subscriber {
         if ($this->resolved) {
             return new Subscriber(
                 $this->nextId++,
@@ -88,7 +88,7 @@ trait Producer {
     /**
      * @param string $id
      */
-    private function unsubscribe($id) {
+    private function unsubscribe(string $id) {
         if (!isset($this->subscribers[$id])) {
             return;
         }
@@ -108,11 +108,11 @@ trait Producer {
      *
      * @return \Interop\Async\Awaitable
      *
-     * @throws \LogicException If the observable has resolved.
+     * @throws \Error If the observable has resolved.
      */
-    private function emit($value) {
+    private function emit($value): Awaitable {
         if ($this->resolved) {
-            throw new \LogicException("The observable has been resolved; cannot emit more values");
+            throw new \Error("The observable has been resolved; cannot emit more values");
         }
 
         return new Coroutine($this->push($value));
@@ -125,10 +125,10 @@ trait Producer {
      *
      * @return \Generator
      *
-     * @throws \InvalidArgumentException
-     * @throws \Throwable|\Exception
+     * @throws \Error
+     * @throws \Throwable
      */
-    private function push($value) {
+    private function push($value): \Generator {
         if ($this->waiting !== null) {
             yield $this->waiting;
         }
@@ -138,19 +138,13 @@ trait Producer {
                 $value->subscribe(function ($value) {
                     return $this->emit($value);
                 });
-                yield Coroutine::result(yield $value);
-                return;
+                return yield $value;
             }
 
             if ($value instanceof Awaitable) {
-                $value = (yield $value);
+                $value = yield $value;
             }
         } catch (\Throwable $exception) {
-            if (!$this->resolved) {
-                $this->fail($exception);
-            }
-            throw $exception;
-        } catch (\Exception $exception) {
             if (!$this->resolved) {
                 $this->fail($exception);
             }
@@ -169,10 +163,6 @@ trait Producer {
                 Loop::defer(static function () use ($exception) {
                     throw $exception;
                 });
-            } catch (\Exception $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
             }
         }
 
@@ -183,14 +173,10 @@ trait Producer {
                 Loop::defer(static function () use ($exception) {
                     throw $exception;
                 });
-            } catch (\Exception $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
             }
         }
 
-        yield Coroutine::result($value);
+        return $value;
     }
 
     /**
@@ -198,7 +184,7 @@ trait Producer {
      *
      * @param mixed $value
      *
-     * @throws \LogicException If the observable has already been resolved.
+     * @throws \Error If the observable has already been resolved.
      */
     private function resolve($value = null) {
         $this->complete($value);

@@ -303,7 +303,7 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \LogicException
+     * @expectedException \Error
      */
     public function testDoubleResolve() {
         $this->future->resolve();

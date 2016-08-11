@@ -20,7 +20,7 @@ class Subscriber {
      * @param string $id
      * @param callable $unsubscribe
      */
-    public function __construct($id, callable $unsubscribe) {
+    public function __construct(string $id, callable $unsubscribe) {
         $this->id = $id;
         $this->unsubscribe = $unsubscribe;
     }

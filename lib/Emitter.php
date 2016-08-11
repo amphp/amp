@@ -22,7 +22,7 @@ final class Emitter implements Observable {
         $result = $emitter($emit);
 
         if (!$result instanceof \Generator) {
-            throw new \LogicException("The callable did not return a Generator");
+            throw new \Error("The callable did not return a Generator");
         }
 
         $coroutine = new Coroutine($result);

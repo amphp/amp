@@ -45,8 +45,6 @@ class LazyAwaitable implements Awaitable {
                 }
             } catch (\Throwable $exception) {
                 $this->awaitable = new Failure($exception);
-            } catch (\Exception $exception) {
-                $this->awaitable = new Failure($exception);
             }
         }
 

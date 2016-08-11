@@ -27,7 +27,7 @@ class WhenQueue {
     /**
      * Calls each callback in the queue, passing the provided values to the function.
      *
-     * @param \Throwable|\Exception|null $exception
+     * @param \Throwable|null $exception
      * @param mixed $value
      */
     public function __invoke($exception = null, $value = null) {
@@ -35,10 +35,6 @@ class WhenQueue {
             try {
                 $callback($exception, $value);
             } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
-            } catch (\Exception $exception) {
                 Loop::defer(static function () use ($exception) {
                     throw $exception;
                 });

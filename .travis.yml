@@ -3,25 +3,19 @@ sudo: false
 language: php
 
 php:
-  - 5.5
-  - 5.6
   - 7.0
   - nightly
 
 install:
-  - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0")
-  - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install ev)
-  - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (mkdir libuv && (curl -L https://github.com/libuv/libuv/archive/v1.6.1.tar.gz | tar xzf -) && cd libuv-1.6.1 && ./autogen.sh && ./configure --prefix=$(readlink -f `pwd`/../libuv) && make && make install && cd ..)
-  - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (git clone https://github.com/bwoebi/php-uv && cd php-uv && phpize && ./configure --with-uv=$(readlink -f `pwd`/../libuv) && make install && (echo "extension = uv.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini) && cd ..)
   - composer self-update
-  - composer require satooshi/php-coveralls:dev-master
-  - composer install
+  - composer install --no-interaction --prefer-source
 
 script:
-  - $(php -r 'if (PHP_MAJOR_VERSION >= 7) echo "phpdbg -qrr"; else echo "php";') vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+  - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
   - php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
+  - composer require satooshi/php-coveralls dev-master
   - php vendor/bin/coveralls -v
   
 cache:

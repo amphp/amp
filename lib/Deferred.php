@@ -17,7 +17,7 @@ try {
             /**
              * @return \Interop\Async\Awaitable
              */
-            public function getAwaitable() {
+            public function getAwaitable(): Awaitable {
                 return $this;
             }
         }
@@ -49,7 +49,7 @@ try {
             /**
              * @return \Interop\Async\Awaitable
              */
-            public function getAwaitable() {
+            public function getAwaitable(): Awaitable {
                 return $this->awaitable;
             }
 
@@ -59,18 +59,16 @@ try {
              * @param mixed $value
              */
             public function resolve($value = null) {
-                $resolve = $this->resolve;
-                $resolve($value);
+                ($this->resolve)($value);
             }
 
             /**
              * Fails the awaitable the the given reason.
              *
-             * @param \Throwable|\Exception $reason
+             * @param \Throwable $reason
              */
-            public function fail($reason) {
-                $fail = $this->fail;
-                $fail($reason);
+            public function fail(\Throwable $reason) {
+                ($this->fail)($reason);
             }
         }
     }

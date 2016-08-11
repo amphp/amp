@@ -23,7 +23,7 @@ final class Coroutine implements Awaitable {
     private $generator;
 
     /**
-     * @var callable(\Throwable|\Exception|null $exception, mixed $value): void
+     * @var callable(\Throwable|null $exception, mixed $value): void
      */
     private $when;
 
@@ -39,14 +39,13 @@ final class Coroutine implements Awaitable {
         $this->generator = $generator;
 
         /**
-         * @param \Throwable|\Exception|null $exception Exception to be thrown into the generator.
+         * @param \Throwable|null $exception Exception to be thrown into the generator.
          * @param mixed $value The value to send to the generator.
          */
         $this->when = function ($exception, $value) {
             if (self::MAX_CONTINUATION_DEPTH < $this->depth) { // Defer continuation to avoid blowing up call stack.
                 Loop::defer(function () use ($exception, $value) {
-                    $when = $this->when;
-                    $when($exception, $value);
+                    ($this->when)($exception, $value);
                 });
                 return;
             }
@@ -66,21 +65,16 @@ final class Coroutine implements Awaitable {
                     --$this->depth;
                     return;
                 }
-
-                // @todo Necessary for returning values in PHP 5.x. Remove once PHP 7 is required.
-                if ($yielded instanceof Internal\CoroutineResult) {
-                    $this->settle($yielded->getValue());
-                    return;
-                }
-
+                
                 if ($this->generator->valid()) {
-                    throw new InvalidYieldException($this->generator);
+                    throw new InvalidYieldError(
+                        $this->generator,
+                        \sprintf("Unexpected yield (%s expected)", Awaitable::class)
+                    );
                 }
 
-                $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
+                $this->resolve($this->generator->getReturn());
             } catch (\Throwable $exception) {
-                $this->dispose($exception);
-            } catch (\Exception $exception) {
                 $this->dispose($exception);
             }
         };
@@ -95,20 +89,15 @@ final class Coroutine implements Awaitable {
                 return;
             }
 
-            // @todo Necessary for returning values in PHP 5.x. Remove once PHP 7 is required.
-            if ($yielded instanceof Internal\CoroutineResult) {
-                $this->settle($yielded->getValue());
-                return;
-            }
-
             if ($this->generator->valid()) {
-                throw new InvalidYieldException($this->generator);
+                throw new InvalidYieldError(
+                    $this->generator,
+                    \sprintf("Unexpected yield (%s expected)", Awaitable::class)
+                );
             }
 
-            $this->resolve(PHP_MAJOR_VERSION >= 7 ? $this->generator->getReturn() : null);
+            $this->resolve($this->generator->getReturn());
         } catch (\Throwable $exception) {
-            $this->dispose($exception);
-        } catch (\Exception $exception) {
             $this->dispose($exception);
         }
     }
@@ -116,11 +105,9 @@ final class Coroutine implements Awaitable {
     /**
      * Runs the generator to completion then fails the coroutine with the given exception.
      *
-     * @param \Throwable|\Exception $exception
-     *
-     * @throws \Throwable|\Exception
+     * @param \Throwable $exception
      */
-    private function dispose($exception) {
+    private function dispose(\Throwable $exception) {
         if ($this->generator->valid()) {
             try {
                 try {
@@ -134,43 +121,9 @@ final class Coroutine implements Awaitable {
                 }
             } catch (\Throwable $exception) {
                 // $exception will be used to fail the coroutine.
-            } catch (\Exception $exception) {
-                // $exception will be used to fail the coroutine.
             }
         }
 
         $this->fail($exception);
-    }
-
-    /**
-     * Attempts to resolves the coroutine with the given value, failing if the generator is still valid after sending
-     * the null back to the generator.
-     * @todo Remove once PHP 7 is required.
-     *
-     * @param mixed $result Coroutine return value.
-     */
-    private function settle($result) {
-        $this->generator->send(null);
-
-        if ($this->generator->valid()) {
-            throw new InvalidYieldException(
-                $this->generator,
-                \sprintf("Unexpected yield after %s::result() (use 'return;' to halt generator)", self::class)
-            );
-        }
-
-        $this->resolve($result);
-    }
-
-    /**
-     * Return a value from a coroutine. Required for PHP 5.x only. Use the return keyword in PHP 7.
-     * @todo Remove once PHP 7 is required.
-     *
-     * @param mixed $value
-     *
-     * @return \Amp\Internal\CoroutineResult
-     */
-    public static function result($value) {
-        return new Internal\CoroutineResult($value);
     }
 }

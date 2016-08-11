@@ -11,7 +11,7 @@ use Interop\Async\Loop;
 
 class SomeTest extends \PHPUnit_Framework_TestCase {
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \Error
      */
     public function testEmptyArray() {
         Amp\some([]);
@@ -81,7 +81,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \Error
      */
     public function testNonAwaitable() {
         Amp\some([1]);

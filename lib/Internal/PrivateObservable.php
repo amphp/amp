@@ -3,6 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\Observable;
+use Interop\Async\Awaitable;
 
 /**
  * An observable that cannot externally emit values. Used by Postponed in development mode.
@@ -25,7 +26,7 @@ final class PrivateObservable implements Observable {
          *
          * @return \Interop\Async\Awaitable
          */
-        $emit = function ($value = null) {
+        $emit = function ($value = null): Awaitable {
             return $this->emit($value);
         };
 
@@ -41,17 +42,15 @@ final class PrivateObservable implements Observable {
         /**
          * Fails the observable with the given exception.
          *
-         * @param \Exception $reason
+         * @param \Throwable $reason
          */
-        $fail = function ($reason) {
+        $fail = function (\Throwable $reason) {
             $this->fail($reason);
         };
 
         try {
             $emitter($emit, $resolve, $fail);
         } catch (\Throwable $exception) {
-            $this->fail($exception);
-        } catch (\Exception $exception) {
             $this->fail($exception);
         }
     }

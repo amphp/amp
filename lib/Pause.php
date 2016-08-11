@@ -15,8 +15,7 @@ final class Pause implements Awaitable {
      * @param int $time Milliseconds before succeeding the awaitable.
      * @param mixed $value Succeed the awaitable with this value.
      */
-    public function __construct($time, $value = null)
-    {
+    public function __construct(int $time, $value = null) {
         Loop::delay($time, function () use ($value) {
             $this->resolve($value);
         });

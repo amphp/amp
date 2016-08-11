@@ -21,5 +21,5 @@ interface Observable extends Awaitable {
      *
      * @return \Amp\Subscriber
      */
-    public function subscribe(callable $onNext);
+    public function subscribe(callable $onNext): Subscriber;
 }

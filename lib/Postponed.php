@@ -2,6 +2,9 @@
 
 namespace Amp;
 
+use Interop\Async\Awaitable;
+
+// @codeCoverageIgnoreStart
 try {
     if (@assert(false)) {
         production: // PHP 7 production environment (zend.assertions=0)
@@ -16,7 +19,7 @@ try {
             /**
              * @return \Amp\Observable
              */
-            public function getObservable() {
+            public function getObservable(): Observable {
                 return $this;
             }
         }
@@ -56,7 +59,7 @@ try {
             /**
              * @return \Amp\Observable
              */
-            public function getObservable() {
+            public function getObservable(): Observable {
                 return $this->observable;
             }
 
@@ -67,9 +70,8 @@ try {
              *
              * @return \Interop\Async\Awaitable
              */
-            public function emit($value) {
-                $emit = $this->emit;
-                return $emit($value);
+            public function emit($value): Awaitable {
+                return ($this->emit)($value);
             }
 
             /**
@@ -78,21 +80,19 @@ try {
              * @param mixed $value
              */
             public function resolve($value = null) {
-                $resolve = $this->resolve;
-                $resolve($value);
+                ($this->resolve)($value);
             }
 
             /**
              * Fails the observable with the given reason.
              *
-             * @param \Throwable|\Exception $reason
+             * @param \Throwable $reason
              */
-            public function fail($reason) {
-                $fail = $this->fail;
-                $fail($reason);
+            public function fail(\Throwable $reason) {
+                ($this->fail)($reason);
             }
         }
     }
 } catch (\AssertionError $exception) {
     goto development; // zend.assertions=1 and assert.exception=1, use development definition.
-}
+} // @codeCoverageIgnoreEnd

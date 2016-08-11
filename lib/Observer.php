@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use Interop\Async\Awaitable;
+
 /**
  * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Observable.
  *
@@ -49,7 +51,7 @@ class Observer {
     private $result;
 
     /**
-     * @var \Throwable|\Exception|null
+     * @var \Throwable|null
      */
     private $exception;
 
@@ -116,7 +118,7 @@ class Observer {
      *
      * @return \Interop\Async\Awaitable
      */
-    public function next() {
+    public function next(): Awaitable {
         if (isset($this->futures[$this->position])) {
             $future = $this->futures[$this->position];
             unset($this->values[$this->position], $this->futures[$this->position]);
@@ -167,7 +169,7 @@ class Observer {
      * @return mixed Final return value of the observable.
      *
      * @throws \LogicException If the observable has not completed.
-     * @throws \Throwable|\Exception The exception used to fail the observable.
+     * @throws \Throwable The exception used to fail the observable.
      */
     public function getResult() {
         if (!$this->resolved) {
