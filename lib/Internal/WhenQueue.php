@@ -30,7 +30,7 @@ class WhenQueue {
      * @param \Throwable|null $exception
      * @param mixed $value
      */
-    public function __invoke($exception = null, $value = null) {
+    public function __invoke($exception, $value) {
         foreach ($this->queue as $callback) {
             try {
                 $callback($exception, $value);
