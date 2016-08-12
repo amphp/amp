@@ -9,7 +9,7 @@ class StructTestFixture {
 
 class StructTest extends \PHPUnit_Framework_TestCase {
     /**
-     * @expectedException \DomainException
+     * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean "callback?"
      */
     public function testSetErrorWithSuggestion() {
@@ -18,7 +18,7 @@ class StructTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \DomainException
+     * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean "callback?"
      */
     public function testGetErrorWithSuggestion() {
@@ -27,7 +27,7 @@ class StructTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \DomainException
+     * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
      */
     public function testSetErrorWithoutSuggestion() {
@@ -36,7 +36,7 @@ class StructTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \DomainException
+     * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
      */
     public function testGetErrorWithoutSuggestion() {
@@ -45,7 +45,7 @@ class StructTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @expectedException \DomainException
+     * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "__propertySuggestThreshold" does not exist
      */
     public function testSuggestionIgnoresPropertyStartingWithUnderscore() {

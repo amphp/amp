@@ -16,13 +16,13 @@ trait Struct {
     private $__propertySuggestThreshold = 70;
 
     final public function __get($property) {
-        throw new \DomainException(
+        throw new \Error(
             $this->generateStructPropertyError($property)
         );
     }
 
     final public function __set($property, $value) {
-        throw new \DomainException(
+        throw new \Error(
             $this->generateStructPropertyError($property)
         );
     }

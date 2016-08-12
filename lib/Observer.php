@@ -148,15 +148,15 @@ class Observer {
      *
      * @return mixed Value emitted from observable.
      *
-     * @throws \LogicException If the observable has resolved or next() was not called before calling this method.
+     * @throws \Error If the observable has resolved or next() was not called before calling this method.
      */
     public function getCurrent() {
         if (empty($this->values) && $this->resolved) {
-            throw new \LogicException("The observable has completed");
+            throw new \Error("The observable has completed");
         }
 
         if (!isset($this->values[$this->position])) {
-            throw new \LogicException("Awaitable returned from next() must resolve before calling this method");
+            throw new \Error("Awaitable returned from next() must resolve before calling this method");
         }
 
         return $this->values[$this->position];
@@ -168,12 +168,12 @@ class Observer {
      *
      * @return mixed Final return value of the observable.
      *
-     * @throws \LogicException If the observable has not completed.
+     * @throws \Error If the observable has not completed.
      * @throws \Throwable The exception used to fail the observable.
      */
     public function getResult() {
         if (!$this->resolved) {
-            throw new \LogicException("The observable has not resolved");
+            throw new \Error("The observable has not resolved");
         }
 
         if ($this->exception) {

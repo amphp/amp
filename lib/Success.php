@@ -18,12 +18,12 @@ final class Success implements Awaitable {
     /**
      * @param mixed $value Anything other than an Awaitable object.
      *
-     * @throws \InvalidArgumentException If an awaitable is given as the value.
+     * @throws \Error If an awaitable is given as the value.
      */
     public function __construct($value = null)
     {
         if ($value instanceof Awaitable) {
-            throw new \InvalidArgumentException("Cannot use an awaitable as success value");
+            throw new \Error("Cannot use an awaitable as success value");
         }
 
         $this->value = $value;

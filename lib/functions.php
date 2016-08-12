@@ -727,7 +727,7 @@ function some(array $awaitables): Awaitable {
  *
  * @return \Interop\Async\Awaitable
  *
- * @throws \InvalidArgumentException If the array is empty or a non-Awaitable is in the array.
+ * @throws \Error If the array is empty or a non-Awaitable is in the array.
  */
 function choose(array $awaitables): Awaitable {
     if (empty($awaitables)) {
@@ -966,10 +966,12 @@ function concat(array $observables): Observable {
  * @param int $count Number of values to emit. PHP_INT_MAX by default.
  *
  * @return \Amp\Observable
+ *
+ * @throws \Error If the number of times to emit is not a positive value.
  */
 function interval(int $interval, int $count = PHP_INT_MAX): Observable {
     if (0 >= $count) {
-        throw new \InvalidArgumentException("The number of times to emit must be a positive value");
+        throw new \Error("The number of times to emit must be a positive value");
     }
 
     $postponed = new Postponed;
@@ -992,14 +994,16 @@ function interval(int $interval, int $count = PHP_INT_MAX): Observable {
  * @param int $step
  *
  * @return \Amp\Observable
+ *
+ * @throws \Error If the step is 0 or not of the correct sign.
  */
 function range(int $start, int $end, int $step = 1): Observable {
     if (0 === $step) {
-        throw new \InvalidArgumentException("Step must be a non-zero integer");
+        throw new \Error("Step must be a non-zero integer");
     }
 
     if ((($end - $start) ^ $step) < 0) {
-        throw new \InvalidArgumentException("Step is not of the correct sign");
+        throw new \Error("Step is not of the correct sign");
     }
 
     return new Emitter(function (callable $emit) use ($start, $end, $step) {

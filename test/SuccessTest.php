@@ -8,7 +8,7 @@ use Interop\Async\Loop;
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
     /**
-     * @expectedException \LogicException
+     * @expectedException \Error
      */
     public function testConstructWithNonException() {
         $failure = new Success($this->getMockBuilder(Awaitable::class)->getMock());
