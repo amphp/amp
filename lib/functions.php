@@ -273,7 +273,7 @@ function setErrorHandler(callable $callback) {
 }
 
 /**
- * Wraps the callback in an awaiatable/coroutine-aware function that automatically upgrades Generators to coroutines and
+ * Wraps the callback in an awaitable/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on returned awaitables (including coroutines created from returned Generators).
  *
  * @param callable(...$args): \Generator|\Interop\Async\Awaitable|mixed $callback
@@ -295,21 +295,31 @@ function wrap(callable $callback): callable {
 }
 
 /**
- * Returns a new function that when invoked runs the Generator returned by $worker as a coroutine.
+ * Returns a new function that wraps $worker in a awaitable/coroutine-aware function that automatically upgrades
+ * Generators to coroutines. The returned function always returns an awaitable when invoked. If $worker throws, a failed
+ * awaitable is returned.
  *
- * @param callable(mixed ...$args): \Generator $worker
+ * @param callable(mixed ...$args): mixed $worker
  *
- * @return callable(mixed ...$args): \Amp\Coroutine
+ * @return callable(mixed ...$args): \Interop\Async\Awaitable
  */
 function coroutine(callable $worker): callable {
-    return function (...$args) use ($worker): Coroutine {
-        $generator = $worker(...$args);
-
-        if (!$generator instanceof \Generator) {
-            throw new \LogicException("The callable did not return a Generator");
+    return function (...$args) use ($worker): Awaitable {
+        try {
+            $result = $worker(...$args);
+        } catch (\Throwable $exception) {
+            return new Failure($exception);
         }
 
-        return new Coroutine($generator);
+        if ($result instanceof \Generator) {
+            return new Coroutine($result);
+        }
+        
+        if (!$result instanceof Awaitable) {
+            return new Success($result);
+        }
+
+        return $result;
     };
 }
 
