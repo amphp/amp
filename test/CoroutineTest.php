@@ -8,6 +8,7 @@ use Amp\Failure;
 use Amp\InvalidYieldError;
 use Amp\Pause;
 use Amp\Success;
+use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
@@ -420,15 +421,66 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertInstanceOf(Coroutine::class, $callable());
     }
-
+    
     /**
      * @depends testCoroutineFunction
-     * @expectedException \LogicException
+     */
+    public function testCoroutineFunctionWithCallbackReturningAwaitable() {
+        $value = 1;
+        $awaitable = new Success($value);
+        $callable = Amp\coroutine(function ($value) {
+            return $value;
+        });
+        
+        $awaitable = $callable($awaitable);
+        
+        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        
+        $awaitable->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+        
+        $this->assertSame($value, $result);
+    }
+    
+    /**
+     * @depends testCoroutineFunction
      */
     public function testCoroutineFunctionWithNonGeneratorCallback() {
-        $callable = Amp\coroutine(function () {});
-
-        $this->assertInstanceOf(Coroutine::class, $callable());
+        $value = 1;
+        $callable = Amp\coroutine(function ($value) {
+            return $value;
+        });
+        
+        $awaitable = $callable($value);
+        
+        $this->assertInstanceOf(Awaitable::class, $awaitable);
+    
+        $awaitable->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+    
+        $this->assertSame($value, $result);
+    }
+    
+    /**
+     * @depends testCoroutineFunction
+     */
+    public function testCoroutineFunctionWithThrowingCallback() {
+        $exception = new \Exception;
+        $callable = Amp\coroutine(function () use ($exception) {
+            throw $exception;
+        });
+        
+        $awaitable = $callable();
+        
+        $this->assertInstanceOf(Awaitable::class, $awaitable);
+    
+        $awaitable->when(function ($exception, $value) use (&$reason) {
+            $reason = $exception;
+        });
+    
+        $this->assertSame($exception, $reason);
     }
     
     public function testCoroutineResolvedWithReturn() {
@@ -444,7 +496,6 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $coroutine->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
         
         $this->assertSame($value, $result);
     }
