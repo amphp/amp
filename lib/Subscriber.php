@@ -29,7 +29,6 @@ class Subscriber {
      * Unsubscribes from the Observable. No future values emitted by the Observable will be received.
      */
     public function unsubscribe() {
-        $unsubscribe = $this->unsubscribe;
-        $unsubscribe($this->id);
+        ($this->unsubscribe)($this->id);
     }
 }
