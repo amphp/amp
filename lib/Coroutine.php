@@ -6,15 +6,20 @@ use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
 /**
- * Creates an awaitable from a generator function yielding awaitables. When an awaitable is yielded, execution of the
- * generator is interrupted until the awaitable is resolved. The success value is sent to the generator, while the
- * failure reason is thrown into the generator. Using a coroutine, asynchronous code can be written without callbacks
- * and be structured like synchronous code.
+ * Creates an awaitable from a generator function yielding awaitables.
+ *
+ * When an awaitable is yielded, execution of the generator is interrupted until the awaitable is resolved. A success
+ * value is sent into the generator, while a failure reason is thrown into the generator. Using a coroutine,
+ * asynchronous code can be written without callbacks and be structured like synchronous code.
  */
 final class Coroutine implements Awaitable {
     use Internal\Placeholder;
 
-    // Maximum number of immediate coroutine continuations before deferring next continuation to the loop.
+    /**
+     * Maximum number of immediate coroutine continuations before deferring next continuation to the loop.
+     *
+     * @internal
+     */
     const MAX_CONTINUATION_DEPTH = 3;
 
     /**
@@ -40,10 +45,10 @@ final class Coroutine implements Awaitable {
 
         /**
          * @param \Throwable|null $exception Exception to be thrown into the generator.
-         * @param mixed $value The value to send to the generator.
+         * @param mixed $value Value to be sent into the generator.
          */
         $this->when = function ($exception, $value) {
-            if (self::MAX_CONTINUATION_DEPTH < $this->depth) { // Defer continuation to avoid blowing up call stack.
+            if ($this->depth > self::MAX_CONTINUATION_DEPTH) { // Defer continuation to avoid blowing up call stack.
                 Loop::defer(function () use ($exception, $value) {
                     ($this->when)($exception, $value);
                 });
@@ -60,16 +65,17 @@ final class Coroutine implements Awaitable {
                 }
 
                 if ($yielded instanceof Awaitable) {
-                    ++$this->depth;
+                    $this->depth++;
                     $yielded->when($this->when);
-                    --$this->depth;
+                    $this->depth--;
                     return;
                 }
-                
+
                 if ($this->generator->valid()) {
+                    $got = is_object($yielded) ? get_class($yielded) : gettype($yielded);
                     throw new InvalidYieldError(
                         $this->generator,
-                        \sprintf("Unexpected yield (%s expected)", Awaitable::class)
+                        \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)
                     );
                 }
 
@@ -90,9 +96,10 @@ final class Coroutine implements Awaitable {
             }
 
             if ($this->generator->valid()) {
+                $got = is_object($yielded) ? get_class($yielded) : gettype($yielded);
                 throw new InvalidYieldError(
                     $this->generator,
-                    \sprintf("Unexpected yield (%s expected)", Awaitable::class)
+                    \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)
                 );
             }
 
