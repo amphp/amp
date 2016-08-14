@@ -72,7 +72,7 @@ class NativeLoop extends Loop {
                 }
 
                 if ($this->timerExpires[$id] > $time) { // Timer at top of queue has not expired.
-                    return;
+                    break;
                 }
 
                 $this->timerQueue->extract();
