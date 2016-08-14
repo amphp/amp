@@ -9,6 +9,10 @@ if (!defined("SIGUSR2")) {
 	define("SIGUSR2", 31);
 }
 
+if (!defined("PHP_INT_MIN")) {
+	define("PHP_INT_MIN", ~PHP_INT_MAX);
+}
+
 abstract class Test extends \PHPUnit_Framework_TestCase {
     /**
      * The DriverFactory to run this test on
