@@ -132,6 +132,8 @@ class Observer {
         }
 
         if ($this->resolved) {
+        	--$this->position;
+
             if ($this->exception) {
                 return new Failure($this->exception);
             }
