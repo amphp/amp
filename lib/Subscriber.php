@@ -6,21 +6,15 @@ namespace Amp;
  * Subscriber implementation returned from implementors of \Amp\Observable.
  */
 class Subscriber {
-    /**
-     * @var string
-     */
     private $id;
-
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $unsubscribe;
 
     /**
-     * @param string $id
+     * @param mixed $id
      * @param callable $unsubscribe
      */
-    public function __construct(string $id, callable $unsubscribe) {
+    public function __construct($id, callable $unsubscribe) {
         $this->id = $id;
         $this->unsubscribe = $unsubscribe;
     }
