@@ -2,16 +2,14 @@
 
 namespace Amp\Internal;
 
-use Amp\Coroutine;
-use Amp\Future;
-use Amp\Observable;
-use Amp\Subscriber;
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Amp\{ Deferred, Observable, Subscriber, Success};
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Trait used by Observable implementations. Do not use this trait in your code, instead compose your class from one of
  * the available classes implementing \Amp\Observable.
+ * Note that it is the responsibility of the user of this trait to ensure that subscribers have a chance to subscribe first
+ * before emitting values.
  *
  * @internal
  */
@@ -24,11 +22,6 @@ trait Producer {
      * @var callable[]
      */
     private $subscribers = [];
-
-    /**
-     * @var \Amp\Future|null
-     */
-    private $waiting;
 
     /**
      * @var \Amp\Future[]
@@ -49,15 +42,9 @@ trait Producer {
      * Initializes the trait. Use as constructor or call within using class constructor.
      */
     private function init() {
-        $this->waiting = new Future;
-
-        if (PHP_VERSION_ID >= 70100) {
-            $this->unsubscribe = \Closure::fromCallable([$this, 'unsubscribe']);
-        } else {
-            $this->unsubscribe = function ($id) {
-                $this->unsubscribe($id);
-            };
-        }
+		$this->unsubscribe = function ($id) {
+			$this->unsubscribe($id);
+		};
     }
 
     /**
@@ -67,20 +54,11 @@ trait Producer {
      */
     public function subscribe(callable $onNext): Subscriber {
         if ($this->resolved) {
-            return new Subscriber(
-                $this->nextId++,
-                $this->unsubscribe
-            );
+            return new Subscriber($this->nextId++, function() {});
         }
 
         $id = $this->nextId++;
         $this->subscribers[$id] = $onNext;
-
-        if ($this->waiting !== null) {
-            $waiting = $this->waiting;
-            $this->waiting = null;
-            $waiting->resolve();
-        }
 
         return new Subscriber($id, $this->unsubscribe);
     }
@@ -94,10 +72,6 @@ trait Producer {
         }
 
         unset($this->subscribers[$id]);
-
-        if (empty($this->subscribers)) {
-            $this->waiting = new Future;
-        }
     }
 
     /**
@@ -115,69 +89,63 @@ trait Producer {
             throw new \Error("The observable has been resolved; cannot emit more values");
         }
 
-        return new Coroutine($this->push($value));
+		if ($value instanceof Awaitable) {
+			if ($value instanceof Observable) {
+				$value->subscribe(function ($value) {
+					return $this->emit($value);
+				});
+				return $value;
+			}
+
+			$value->when(function($e, $val) {
+				if (!$e) {
+					$this->emit($val);
+				} elseif (!$this->resolved) {
+					$this->fail($e);
+				}
+			});
+			return $value;
+		}
+
+		$awaitables = [];
+
+		foreach ($this->subscribers as $onNext) {
+			try {
+				$result = $onNext($value);
+				if ($result instanceof Awaitable) {
+					$awaitables[] = $result;
+				}
+			} catch (\Throwable $e) {
+				Loop::defer(static function () use ($e) {
+					throw $e;
+				});
+			}
+		}
+
+		if (!$awaitables) {
+			return new Success($value);
+		}
+
+		$deferred = new Deferred;
+		$count = count($awaitables);
+		$f = function ($e) use ($deferred, $value, &$count) {
+			if ($e) {
+				Loop::defer(static function () use ($e) {
+					throw $e;
+				});
+			}
+			if (!--$count) {
+				$deferred->resolve($value);
+			}
+		};
+
+		foreach ($awaitables as $awaitable) {
+			$awaitable->when($f);
+		}
+
+		return $deferred;
     }
 
-    /**
-     * @coroutine
-     *
-     * @param mixed $value
-     *
-     * @return \Generator
-     *
-     * @throws \Error
-     * @throws \Throwable
-     */
-    private function push($value): \Generator {
-        if ($this->waiting !== null) {
-            yield $this->waiting;
-        }
-
-        try {
-            if ($value instanceof Observable) {
-                $value->subscribe(function ($value) {
-                    return $this->emit($value);
-                });
-                return yield $value;
-            }
-
-            if ($value instanceof Awaitable) {
-                $value = yield $value;
-            }
-        } catch (\Throwable $exception) {
-            if (!$this->resolved) {
-                $this->fail($exception);
-            }
-            throw $exception;
-        }
-
-        $awaitables = [];
-
-        foreach ($this->subscribers as $id => $onNext) {
-            try {
-                $result = $onNext($value);
-                if ($result instanceof Awaitable) {
-                    $awaitables[$id] = $result;
-                }
-            } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
-            }
-        }
-
-        foreach ($awaitables as $id => $awaitable) {
-            try {
-                yield $awaitable;
-            } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
-            }
-        }
-
-        return $value;
-    }
 
     /**
      * Resolves the observable with the given value.
@@ -190,10 +158,6 @@ trait Producer {
         $this->complete($value);
 
         $this->subscribers = [];
-
-        if ($this->waiting !== null) {
-            $this->waiting->resolve();
-            $this->waiting = null;
-        }
+		$this->unsubscribe = null;
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use Interop\Async\Loop;
+
 final class Emitter implements Observable {
     use Internal\Producer;
 
@@ -10,15 +12,29 @@ final class Emitter implements Observable {
      */
     public function __construct(callable $emitter) {
         $this->init();
-    
-        if (PHP_VERSION_ID >= 70100) {
-            $emit = \Closure::fromCallable([$this, 'emit']);
-        } else {
-            $emit = function ($value) {
-                return $this->emit($value);
-            };
-        }
-        
+
+		// defer first emit until next tick in order to give *all* subscribers a chance to subscribe first
+		$pending = true;
+		Loop::defer(static function() use (&$pending) {
+			if ($pending instanceof Deferred) {
+				$pending->resolve();
+			}
+			$pending = false;
+		});
+		$emit = function ($value) use (&$pending) {
+			if ($pending) {
+				if ($pending === true) {
+					$pending = new Deferred;
+				}
+				$pending->when(function() use ($value) {
+					$this->emit($value);
+				});
+				return $pending->getAwaitable();
+			}
+
+			return $this->emit($value);
+		};
+
         $result = $emitter($emit);
 
         if (!$result instanceof \Generator) {
