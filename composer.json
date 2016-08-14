@@ -11,13 +11,13 @@
     "homepage": "http://amphp.org",
     "license": "MIT",
     "require": {
-        "async-interop/event-loop": "dev-master"
+        "async-interop/event-loop": "^0.2"
     },
     "require-dev": {
         "async-interop/event-loop-test": "dev-master"
     },
     "provide": {
-        "async-interop/event-loop-implementation": "dev-master"
+        "async-interop/event-loop-implementation": "^0.2"
     },
     "autoload": {
         "psr-4": {
