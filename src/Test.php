@@ -3,7 +3,10 @@
 namespace Interop\Async\Loop;
 
 if (!defined("SIGUSR1")) {
-    define("SIGUSR1", 10);
+	define("SIGUSR1", 30);
+}
+if (!defined("SIGUSR2")) {
+	define("SIGUSR2", 31);
 }
 
 abstract class Test extends \PHPUnit_Framework_TestCase {
@@ -464,7 +467,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testExecutionOrderGuarantees()
     {
-        $this->expectOutputString("01 02 03 04 ".str_repeat("05 ", 8)."10 11 12 ".str_repeat("13 ", 4)."20 21 22 23 24 25 30 31");
+        $this->expectOutputString("01 02 03 04 ".str_repeat("05 ", 8)."10 11 12 ".str_repeat("13 ", 4)."20 21 21 21 21 22 30 31 ");
         $this->start(function(Driver $loop) use (&$ticks) {
             $f = function() use ($loop) {
                 $args = func_get_args();
@@ -517,13 +520,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 $loop->onWritable(STDIN, $f(1, 3));
             });
 
-            $loop->delay($msDelay = 15, $f(3, 1));
-            $loop->delay($msDelay = 6, $f(2, 5));
+            $loop->delay($msDelay = 25, $f(3, 1));
+            $loop->delay($msDelay = 6, $f(2, 2));
             $loop->delay($msDelay = 5, $f(2, 1));
-            $loop->repeat($msDelay = 5, $f(2, 2));
-            $rep1 = $loop->repeat($msDelay = 5, $f(2, 4));
+            $loop->repeat($msDelay = 5, $f(2, 1));
+            $rep1 = $loop->repeat($msDelay = 5, $f(2, 1));
             $loop->disable($rep1);
-            $loop->delay($msDelay = 5, $f(2, 3));
+            $loop->delay($msDelay = 5, $f(2, 1));
             $loop->enable($rep1);
 
             $loop->defer($f(0, 1));
@@ -934,7 +937,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->delay($msDelay = 1, function() use ($loop, $watcherId) {
                 $loop->enable($watcherId);
                 $loop->delay($msDelay = 1, function() {
-                    \posix_kill(\getmypid(), \SIGUSR1);
+                    \posix_kill(\getmypid(), SIGUSR1);
                 });
             });
         });
@@ -947,7 +950,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $this->markTestSkipped("ext/posix required to test signal handlers");
         }
 
-        $this->expectOutputString("inner SIGUSR1\nouter SIGUSR1\n");
+        $this->expectOutputString("inner SIGUSR2\nouter SIGUSR1\n");
         $this->start(function(Driver $loop) {
             $loop->delay($msDelay = 30, function() use ($loop) {
                 $loop->stop();
@@ -963,13 +966,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                     echo "ERROR: manual stop";
                     $loop->stop();
                 });
-                $loop->onSignal(SIGUSR1, function ($watcherId) use ($loop, $stop) {
-                    echo "inner SIGUSR1\n";
+                $loop->onSignal(SIGUSR2, function ($watcherId) use ($loop, $stop) {
+                    echo "inner SIGUSR2\n";
                     $loop->cancel($stop);
                     $loop->cancel($watcherId);
                 });
                 $loop->delay($msDelay = 1, function () {
-                    \posix_kill(\getmypid(), \SIGUSR1);
+                    \posix_kill(\getmypid(), SIGUSR2);
                 });
                 $loop->run();
             });
@@ -1115,25 +1118,25 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($callbackData->onWritable);
     }
 
-    // implementations SHOULD use Interop\Async\Loop\Registry trait, but are not forced to, hence test it here again
+    // getState and setState are final, but test it here again to be sure
     function testRegistry() {
-        $this->assertNull($this->loop->fetchState("foo"));
-        $this->loop->storeState("foo", NAN);
-        $this->assertTrue(is_nan($this->loop->fetchState("foo")));
-        $this->loop->storeState("foo", "1");
-        $this->assertNull($this->loop->fetchState("bar"));
-        $this->loop->storeState("baz", -INF);
+        $this->assertNull($this->loop->getState("foo"));
+        $this->loop->setState("foo", NAN);
+        $this->assertTrue(is_nan($this->loop->getState("foo")));
+        $this->loop->setState("foo", "1");
+        $this->assertNull($this->loop->getState("bar"));
+        $this->loop->setState("baz", -INF);
         // running must not affect state
         $this->loop->defer([$this->loop, "stop"]);
         $this->loop->run();
-        $this->assertSame(-INF, $this->loop->fetchState("baz"));
-        $this->assertSame("1", $this->loop->fetchState("foo"));
+        $this->assertSame(-INF, $this->loop->getState("baz"));
+        $this->assertSame("1", $this->loop->getState("foo"));
     }
 
     /** @dataProvider provideRegistryValues */
     function testRegistryValues($val) {
-        $this->loop->storeState("foo", $val);
-        $this->assertSame($val, $this->loop->fetchState("foo"));
+        $this->loop->setState("foo", $val);
+        $this->assertSame($val, $this->loop->getState("foo"));
     }
 
     function provideRegistryValues() {

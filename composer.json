@@ -5,7 +5,7 @@
   "license": "MIT",
   "require": {
     "php": ">=5.5.0",
-    "async-interop/event-loop": "dev-master",
+    "async-interop/event-loop": "^0.2",
     "phpunit/phpunit": "^4|^5"
   },
   "autoload": {
