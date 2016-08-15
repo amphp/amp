@@ -65,9 +65,9 @@ final class Coroutine implements Awaitable {
                 }
 
                 if ($yielded instanceof Awaitable) {
-                    $this->depth++;
+                    ++$this->depth;
                     $yielded->when($this->when);
-                    $this->depth--;
+                    --$this->depth;
                     return;
                 }
 
