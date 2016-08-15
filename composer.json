@@ -14,7 +14,8 @@
         "async-interop/event-loop": "^0.2"
     },
     "require-dev": {
-        "async-interop/event-loop-test": "dev-master"
+        "async-interop/event-loop-test": "dev-master",
+        "friendsofphp/php-cs-fixer": "~1.9"
     },
     "provide": {
         "async-interop/event-loop-implementation": "^0.2"
