@@ -354,6 +354,10 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     /** @dataProvider provideRegistrationArgs */
     function testNoMemoryLeak($type, $args)
     {
+    	if ($this->getTestResultObject()->getCollectCodeCoverageInformation()) {
+    		$this->markTestSkipped("Cannot run this test with code coverage active [code coverage consumes memory which makes it impossible to rely on memory_get_usage()]");
+		}
+
         $runs = 2000;
 
         if ($type === "onSignal") {
