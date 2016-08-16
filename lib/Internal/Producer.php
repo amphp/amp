@@ -81,7 +81,13 @@ trait Producer {
 
         if ($value instanceof Awaitable) {
             if ($value instanceof Observable) {
-                $value->subscribe(function ($value) {
+                $subscriber = $value->subscribe(function ($value) use (&$subscriber) {
+                    /** @var \Amp\Subscriber $subscriber */
+                    if ($this->resolved) {
+                        $subscriber->unsubscribe();
+                        return;
+                    }
+                    
                     return $this->emit($value);
                 });
                 
