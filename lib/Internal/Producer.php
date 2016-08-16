@@ -91,12 +91,28 @@ trait Producer {
                 $value->subscribe(function ($value) {
                     return $this->emit($value);
                 });
-                return $value;
+                
+                $value->when(function ($e) {
+                    if ($e) {
+                        $this->fail($e);
+                    }
+                });
+                
+                return $value; // Do not emit observable result.
             }
             
-            return pipe($value, function ($value) {
-                return $this->emit($value);
+            $deferred = new Deferred;
+            $value->when(function ($e, $v) use ($deferred) {
+                if ($e) {
+                    $this->fail($e);
+                    $deferred->fail($e);
+                    return;
+                }
+                
+                $deferred->resolve($this->emit($v));
             });
+            
+            return $deferred->getAwaitable();
         }
 
         $awaitables = [];
@@ -120,7 +136,7 @@ trait Producer {
 
         $deferred = new Deferred;
         $count = \count($awaitables);
-        $f = function ($e) use ($deferred, $value, &$count) {
+        $f = static function ($e) use ($deferred, $value, &$count) {
             if ($e) {
                 Loop::defer(static function () use ($e) {
                     throw $e;

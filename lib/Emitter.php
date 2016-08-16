@@ -11,42 +11,40 @@ final class Emitter implements Observable {
 
     /**
      * @param callable(callable(mixed $value): Awaitable $emit): \Generator $emitter
+     *
+     * @throws \Error Thrown if the callable does not return a Generator.
      */
     public function __construct(callable $emitter) {
         $this->init();
         
-        // Defer first emit until next tick in order to give *all* subscribers a chance to subscribe first
-        $pending = new Deferred;
-        Loop::defer(static function () use (&$pending) {
-            $temp = $pending;
-            $pending = null;
-            $temp->resolve();
-        });
-        
-        $emit = function ($value) use (&$pending): Awaitable {
-            if ($pending !== null) {
-                return pipe($pending->getAwaitable(), function () use ($value): Awaitable {
-                    return $this->emit($value);
-                });
-            }
-            
-            return $this->emit($value);
-        };
+        if (PHP_VERSION_ID >= 70100) {
+            $emit = \Closure::fromCallable([$this, 'emit']);
+        } else {
+            $emit = function ($value): Awaitable {
+                return $this->emit($value);
+            };
+        }
 
         $result = $emitter($emit);
 
         if (!$result instanceof \Generator) {
             throw new \Error("The callable did not return a Generator");
         }
-
-        $coroutine = new Coroutine($result);
-        $coroutine->when(function ($exception, $value): void {
-            if ($exception) {
-                $this->fail($exception);
-                return;
-            }
-
-            $this->resolve($value);
+        
+        Loop::defer(function () use ($result) {
+            $coroutine = new Coroutine($result);
+            $coroutine->when(function ($exception, $value) {
+                if ($this->resolved) {
+                    return;
+                }
+        
+                if ($exception) {
+                    $this->fail($exception);
+                    return;
+                }
+        
+                $this->resolve($value);
+            });
         });
     }
 }
