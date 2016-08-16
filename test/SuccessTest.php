@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Amp\Test;
 
 use Amp\Success;

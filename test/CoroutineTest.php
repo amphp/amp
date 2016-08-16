@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Icicle\Tests\Coroutine;
 
 use Amp;
@@ -12,7 +14,7 @@ use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
-    const TIMEOUT = 0.1;
+    const TIMEOUT = 100;
 
     public function testYieldSuccessfulAwaitable() {
         $value = 1;

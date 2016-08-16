@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Amp\Test;
 
 use Amp;
@@ -45,9 +47,9 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
     public function testPendingAwatiablesArray() {
         Loop::execute(function () use (&$result) {
             $awaitables = [
-                new Pause(0.2, 1),
-                new Pause(0.3, 2),
-                new Pause(0.1, 3),
+                new Pause(20, 1),
+                new Pause(30, 2),
+                new Pause(10, 3),
             ];
 
             $callback = function ($exception, $value) use (&$result) {
@@ -65,9 +67,9 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
 
         Loop::execute(function () use (&$result) {
             $awaitables = [
-                'one'   => new Pause(0.2, 1),
-                'two'   => new Pause(0.3, 2),
-                'three' => new Pause(0.1, 3),
+                'one'   => new Pause(20, 1),
+                'two'   => new Pause(30, 2),
+                'three' => new Pause(10, 3),
             ];
 
             $callback = function ($exception, $value) use (&$result) {

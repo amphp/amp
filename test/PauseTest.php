@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Amp\Test;
 
 use Amp;
@@ -7,21 +9,6 @@ use Amp\Pause;
 use Interop\Async\Loop;
 
 class PauseTest extends \PHPUnit_Framework_TestCase {
-    /**
-     * @dataProvider provideBadMillisecondArgs
-     * @expectedException \InvalidArgumentException
-     */
-    public function testCtorThrowsOnBadMillisecondParam($arg) {
-        $pause = new Pause($arg);
-    }
-
-    public function provideBadMillisecondArgs() {
-        return [
-            [-3.14],
-            [-1],
-        ];
-    }
-
     public function testPause() {
         $time = 100;
         $value = "test";
