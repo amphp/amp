@@ -4,38 +4,34 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 final class Emitter implements Observable {
     use Internal\Producer;
 
     /**
-     * @param callable(callable $emit): \Generator $emitter
+     * @param callable(callable(mixed $value): Awaitable $emit): \Generator $emitter
      */
     public function __construct(callable $emitter) {
         $this->init();
-
-		// defer first emit until next tick in order to give *all* subscribers a chance to subscribe first
-		$pending = true;
-		Loop::defer(static function() use (&$pending) {
-			if ($pending instanceof Deferred) {
-				$pending->resolve();
-			}
-			$pending = false;
-		});
-		$emit = function ($value) use (&$pending) {
-			if ($pending) {
-				if ($pending === true) {
-					$pending = new Deferred;
-				}
-				$pending->when(function() use ($value) {
-					$this->emit($value);
-				});
-				return $pending->getAwaitable();
-			}
-
-			return $this->emit($value);
-		};
+        
+        // Defer first emit until next tick in order to give *all* subscribers a chance to subscribe first
+        $pending = new Deferred;
+        Loop::defer(static function () use (&$pending) {
+            $temp = $pending;
+            $pending = null;
+            $temp->resolve();
+        });
+        
+        $emit = function ($value) use (&$pending): Awaitable {
+            if ($pending !== null) {
+                return pipe($pending->getAwaitable(), function () use ($value): Awaitable {
+                    return $this->emit($value);
+                });
+            }
+            
+            return $this->emit($value);
+        };
 
         $result = $emitter($emit);
 
@@ -44,7 +40,7 @@ final class Emitter implements Observable {
         }
 
         $coroutine = new Coroutine($result);
-        $coroutine->when(function ($exception, $value) {
+        $coroutine->when(function ($exception, $value): void {
             if ($exception) {
                 $this->fail($exception);
                 return;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Observable, Subscriber, Success};
+use Amp\{ Deferred, Observable, Subscriber, Success, function pipe };
 use Interop\Async\{ Awaitable, Loop };
 
 /**
@@ -26,11 +26,6 @@ trait Producer {
     private $subscribers = [];
 
     /**
-     * @var \Amp\Future[]
-     */
-    private $futures = [];
-
-    /**
      * @var string
      */
     private $nextId = "a";
@@ -44,9 +39,9 @@ trait Producer {
      * Initializes the trait. Use as constructor or call within using class constructor.
      */
     private function init() {
-		$this->unsubscribe = function ($id) {
-			$this->unsubscribe($id);
-		};
+        $this->unsubscribe = function ($id) {
+            $this->unsubscribe($id);
+        };
     }
 
     /**
@@ -91,61 +86,56 @@ trait Producer {
             throw new \Error("The observable has been resolved; cannot emit more values");
         }
 
-		if ($value instanceof Awaitable) {
-			if ($value instanceof Observable) {
-				$value->subscribe(function ($value) {
-					return $this->emit($value);
-				});
-				return $value;
-			}
+        if ($value instanceof Awaitable) {
+            if ($value instanceof Observable) {
+                $value->subscribe(function ($value) {
+                    return $this->emit($value);
+                });
+                return $value;
+            }
+            
+            return pipe($value, function ($value) {
+                return $this->emit($value);
+            });
+        }
 
-			$value->when(function($e, $val) {
-				if (!$e) {
-					$this->emit($val);
-				} elseif (!$this->resolved) {
-					$this->fail($e);
-				}
-			});
-			return $value;
-		}
+        $awaitables = [];
 
-		$awaitables = [];
+        foreach ($this->subscribers as $onNext) {
+            try {
+                $result = $onNext($value);
+                if ($result instanceof Awaitable) {
+                    $awaitables[] = $result;
+                }
+            } catch (\Throwable $e) {
+                Loop::defer(static function () use ($e) {
+                    throw $e;
+                });
+            }
+        }
 
-		foreach ($this->subscribers as $onNext) {
-			try {
-				$result = $onNext($value);
-				if ($result instanceof Awaitable) {
-					$awaitables[] = $result;
-				}
-			} catch (\Throwable $e) {
-				Loop::defer(static function () use ($e) {
-					throw $e;
-				});
-			}
-		}
+        if (!$awaitables) {
+            return new Success($value);
+        }
 
-		if (!$awaitables) {
-			return new Success($value);
-		}
+        $deferred = new Deferred;
+        $count = \count($awaitables);
+        $f = function ($e) use ($deferred, $value, &$count) {
+            if ($e) {
+                Loop::defer(static function () use ($e) {
+                    throw $e;
+                });
+            }
+            if (!--$count) {
+                $deferred->resolve($value);
+            }
+        };
 
-		$deferred = new Deferred;
-		$count = count($awaitables);
-		$f = function ($e) use ($deferred, $value, &$count) {
-			if ($e) {
-				Loop::defer(static function () use ($e) {
-					throw $e;
-				});
-			}
-			if (!--$count) {
-				$deferred->resolve($value);
-			}
-		};
+        foreach ($awaitables as $awaitable) {
+            $awaitable->when($f);
+        }
 
-		foreach ($awaitables as $awaitable) {
-			$awaitable->when($f);
-		}
-
-		return $deferred;
+        return $deferred->getAwaitable();
     }
 
 
@@ -160,6 +150,6 @@ trait Producer {
         $this->complete($value);
 
         $this->subscribers = [];
-		$this->unsubscribe = null;
+        $this->unsubscribe = null;
     }
 }
