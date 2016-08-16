@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Observable, Subscriber, Success, function pipe };
+use Amp\{ Deferred, Observable, Subscriber, Success };
 use Interop\Async\{ Awaitable, Loop };
 
 /**
@@ -31,7 +31,7 @@ trait Producer {
     private $nextId = "a";
 
     /**
-     * @var callable
+     * @var callable(string $id): void
      */
     private $unsubscribe;
 
@@ -40,7 +40,11 @@ trait Producer {
      */
     private function init() {
         $this->unsubscribe = function ($id) {
-            $this->unsubscribe($id);
+            if (!isset($this->subscribers[$id])) {
+                return;
+            }
+    
+            unset($this->subscribers[$id]);
         };
     }
 
@@ -51,24 +55,13 @@ trait Producer {
      */
     public function subscribe(callable $onNext): Subscriber {
         if ($this->resolved) {
-            return new Subscriber($this->nextId++, function() {});
+            return new Subscriber($this->nextId++);
         }
 
         $id = $this->nextId++;
         $this->subscribers[$id] = $onNext;
 
         return new Subscriber($id, $this->unsubscribe);
-    }
-
-    /**
-     * @param string $id
-     */
-    private function unsubscribe(string $id) {
-        if (!isset($this->subscribers[$id])) {
-            return;
-        }
-
-        unset($this->subscribers[$id]);
     }
 
     /**
@@ -93,7 +86,7 @@ trait Producer {
                 });
                 
                 $value->when(function ($e) {
-                    if ($e) {
+                    if ($e && !$this->resolved) {
                         $this->fail($e);
                     }
                 });
@@ -104,7 +97,9 @@ trait Producer {
             $deferred = new Deferred;
             $value->when(function ($e, $v) use ($deferred) {
                 if ($e) {
-                    $this->fail($e);
+                    if (!$this->resolved) {
+                        $this->fail($e);
+                    }
                     $deferred->fail($e);
                     return;
                 }

@@ -9,14 +9,15 @@ namespace Amp;
  */
 class Subscriber {
     private $id;
-    /** @var callable */
+    
+    /** @var callable|null */
     private $unsubscribe;
 
     /**
      * @param mixed $id
      * @param callable $unsubscribe
      */
-    public function __construct($id, callable $unsubscribe) {
+    public function __construct($id, callable $unsubscribe = null) {
         $this->id = $id;
         $this->unsubscribe = $unsubscribe;
     }
@@ -25,6 +26,8 @@ class Subscriber {
      * Unsubscribes from the Observable. No future values emitted by the Observable will be received.
      */
     public function unsubscribe() {
-        ($this->unsubscribe)($this->id);
+        if ($this->unsubscribe) {
+            ($this->unsubscribe)($this->id);
+        }
     }
 }
