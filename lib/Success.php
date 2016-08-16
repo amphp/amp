@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Creates a successful awaitable using the given value (which can be any value except another object implementing

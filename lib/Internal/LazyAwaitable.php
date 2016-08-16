@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Amp\Internal;
 
-use Amp\Failure;
-use Amp\Success;
+use Amp\{ Failure, Success };
 use Interop\Async\Awaitable;
 
 /**

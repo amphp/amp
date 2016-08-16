@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Creates an awaitable from a generator function yielding awaitables.

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
-use Interop\Async\Loop\Driver;
+use Interop\Async\{ Awaitable, Loop, Loop\Driver };
 
 /**
  * Execute a callback within the event loop scope.

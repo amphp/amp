@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Creates an awaitable that resolves itself with a given value after a number of milliseconds.

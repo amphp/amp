@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Creates a failed awaitable using the given exception.

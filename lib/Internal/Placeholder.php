@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Awaitable, Loop };
 
 /**
  * Trait used by Awaitable implementations. Do not use this trait in your code, instead compose your class from one of
