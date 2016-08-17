@@ -23,6 +23,6 @@
         </whitelist>
     </filter>
     <logging>
-        <log type="coverage-html" target="build/coverage" title="Icicle" highlight="true"/>
+        <log type="coverage-html" target="build/coverage" title="Amp" highlight="true"/>
     </logging>
 </phpunit>

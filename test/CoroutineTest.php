@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Icicle\Tests\Coroutine;
+namespace Amp\Test;
 
 use Amp;
 use Amp\Coroutine;
