@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Observable, Subscriber, Success };
+use Amp\{ Deferred, Observable, Success };
 use Interop\Async\{ Awaitable, Loop };
 
 /**
@@ -24,44 +24,16 @@ trait Producer {
      * @var callable[]
      */
     private $subscribers = [];
-
-    /**
-     * @var string
-     */
-    private $nextId = "a";
-
-    /**
-     * @var callable(string $id): void
-     */
-    private $unsubscribe;
-
-    /**
-     * Initializes the trait. Use as constructor or call within using class constructor.
-     */
-    private function init() {
-        $this->unsubscribe = function ($id) {
-            if (!isset($this->subscribers[$id])) {
-                return;
-            }
     
-            unset($this->subscribers[$id]);
-        };
-    }
-
     /**
      * @param callable $onNext
-     *
-     * @return \Amp\Subscriber
      */
-    public function subscribe(callable $onNext): Subscriber {
+    public function subscribe(callable $onNext) {
         if ($this->resolved) {
-            return new Subscriber($this->nextId++);
+            return;
         }
 
-        $id = $this->nextId++;
-        $this->subscribers[$id] = $onNext;
-
-        return new Subscriber($id, $this->unsubscribe);
+        $this->subscribers[] = $onNext;
     }
 
     /**
@@ -81,11 +53,9 @@ trait Producer {
 
         if ($value instanceof Awaitable) {
             if ($value instanceof Observable) {
-                $subscriber = $value->subscribe(function ($value) use (&$subscriber) {
-                    /** @var \Amp\Subscriber $subscriber */
+                $value->subscribe(function ($value) {
                     if ($this->resolved) {
-                        $subscriber->unsubscribe();
-                        return;
+                        return null;
                     }
                     
                     return $this->emit($value);
@@ -165,8 +135,6 @@ trait Producer {
      */
     private function resolve($value = null) {
         $this->complete($value);
-
         $this->subscribers = [];
-        $this->unsubscribe = null;
     }
 }

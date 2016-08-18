@@ -18,17 +18,12 @@ use Interop\Async\Awaitable;
  */
 class Observer {
     /**
-     * @var \Amp\Subscriber
-     */
-    private $subscriber;
-
-    /**
      * @var mixed[]
      */
     private $values = [];
 
     /**
-     * @var \Amp\Future[]
+     * @var \Amp\Deferred[]
      */
     private $futures = [];
 
@@ -64,10 +59,15 @@ class Observer {
         $deferred = &$this->deferred;
         $values   = &$this->values;
         $futures  = &$this->futures;
+        $resolved = &$this->resolved;
 
-        $this->subscriber = $observable->subscribe(static function ($value) use (&$deferred, &$values, &$futures) {
+        $observable->subscribe(static function ($value) use (&$deferred, &$values, &$futures, &$resolved) {
+            if ($resolved) {
+                return null;
+            }
+            
             $values[] = $value;
-            $futures[] = $future = new Future;
+            $futures[] = $future = new Deferred;
 
             if ($deferred !== null) {
                 $temp = $deferred;
@@ -75,10 +75,9 @@ class Observer {
                 $temp->resolve($value);
             }
 
-            return $future;
+            return $future->getAwaitable();
         });
 
-        $resolved = &$this->resolved;
         $result   = &$this->result;
         $error    = &$this->exception;
 
@@ -105,10 +104,8 @@ class Observer {
      * Unsubscribes the internal subscriber from the observable.
      */
     public function __destruct() {
-        if (!$this->resolved) {
-            $this->subscriber->unsubscribe();
-        }
-
+        $this->resolved = true;
+        
         foreach ($this->futures as $future) {
             $future->resolve();
         }
@@ -156,7 +153,7 @@ class Observer {
      */
     public function getCurrent() {
         if (empty($this->values) && $this->resolved) {
-            throw new \Error("The observable has completed");
+            throw new \Error("The observable has resolved");
         }
 
         if (!isset($this->values[$this->position])) {

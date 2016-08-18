@@ -20,8 +20,6 @@ interface Observable extends Awaitable {
      * Subscriber with the thrown exception.
      *
      * @param callable $onNext Function invoked each time a value is emitted from the observable.
-     *
-     * @return \Amp\Subscriber
      */
-    public function subscribe(callable $onNext): Subscriber;
+    public function subscribe(callable $onNext);
 }

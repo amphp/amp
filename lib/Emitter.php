@@ -15,8 +15,6 @@ final class Emitter implements Observable {
      * @throws \Error Thrown if the callable does not return a Generator.
      */
     public function __construct(callable $emitter) {
-        $this->init();
-        
         if (PHP_VERSION_ID >= 70100) {
             $emit = \Closure::fromCallable([$this, 'emit']);
         } else {
