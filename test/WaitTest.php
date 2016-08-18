@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Amp\Test;
 
 use Amp;
+use Amp\Deferred;
 use Amp\Failure;
-use Amp\Future;
 use Amp\Pause;
 use Amp\Success;
 use Interop\Async\Loop;
@@ -60,8 +60,8 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
      */
     public function testAwaitableWithNoResolutionPathThrowsException()
     {
-        $awaitable = new Future;
+        $awaitable = new Deferred;
 
-        $result = Amp\wait($awaitable);
+        $result = Amp\wait($awaitable->getAwaitable());
     }
 }

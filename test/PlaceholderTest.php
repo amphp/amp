@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace Amp\Test;
 
-use Amp\Future;
 use Interop\Async\Awaitable;
 use Interop\Async\Loop;
 
-class FutureTest extends \PHPUnit_Framework_TestCase {
+class Placeholder {
+    use \Amp\Internal\Placeholder {
+        resolve as public;
+        fail as public;
+    }
+}
+
+class PlaceholderTest extends \PHPUnit_Framework_TestCase {
     /**
-     * @var \Amp\Future
+     * @var \Amp\Test\Placeholder
      */
-    private $future;
+    private $placeholder;
 
     public function setUp() {
-        $this->future = new Future;
+        $this->placeholder = new Placeholder;
     }
 
     public function testWhenOnSuccess() {
@@ -27,9 +33,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $value;
         };
 
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
 
-        $this->future->resolve($value);
+        $this->placeholder->resolve($value);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -47,11 +53,11 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $value;
         };
 
-        $this->future->when($callback);
-        $this->future->when($callback);
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
 
-        $this->future->resolve($value);
+        $this->placeholder->resolve($value);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($value, $result);
@@ -69,9 +75,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $value;
         };
 
-        $this->future->resolve($value);
+        $this->placeholder->resolve($value);
 
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -89,11 +95,11 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $value;
         };
 
-        $this->future->resolve($value);
+        $this->placeholder->resolve($value);
 
-        $this->future->when($callback);
-        $this->future->when($callback);
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($value, $result);
@@ -116,9 +122,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
                 throw $expected;
             };
 
-            $this->future->when($callback);
+            $this->placeholder->when($callback);
 
-            $this->future->resolve($expected);
+            $this->placeholder->resolve($expected);
         });
 
         $this->assertSame(1, $invoked);
@@ -141,9 +147,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
                 throw $expected;
             };
 
-            $this->future->resolve($expected);
+            $this->placeholder->resolve($expected);
 
-            $this->future->when($callback);
+            $this->placeholder->when($callback);
         });
 
         $this->assertSame(1, $invoked);
@@ -158,9 +164,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $exception;
         };
 
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
 
-        $this->future->fail($exception);
+        $this->placeholder->fail($exception);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $result);
@@ -178,11 +184,11 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $exception;
         };
 
-        $this->future->when($callback);
-        $this->future->when($callback);
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
 
-        $this->future->fail($exception);
+        $this->placeholder->fail($exception);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($exception, $result);
@@ -200,9 +206,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $exception;
         };
 
-        $this->future->fail($exception);
+        $this->placeholder->fail($exception);
 
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $result);
@@ -220,11 +226,11 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             $result = $exception;
         };
 
-        $this->future->fail($exception);
+        $this->placeholder->fail($exception);
 
-        $this->future->when($callback);
-        $this->future->when($callback);
-        $this->future->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
+        $this->placeholder->when($callback);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($exception, $result);
@@ -247,9 +253,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
                 throw $expected;
             };
 
-            $this->future->when($callback);
+            $this->placeholder->when($callback);
 
-            $this->future->fail(new \Exception);
+            $this->placeholder->fail(new \Exception);
         });
 
         $this->assertSame(1, $invoked);
@@ -272,9 +278,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
                 throw $expected;
             };
 
-            $this->future->fail(new \Exception);
+            $this->placeholder->fail(new \Exception);
 
-            $this->future->when($callback);
+            $this->placeholder->when($callback);
         });
 
         $this->assertSame(1, $invoked);
@@ -287,9 +293,9 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             ->method("when")
             ->with($this->callback("is_callable"));
 
-        $this->future->resolve($awaitable);
+        $this->placeholder->resolve($awaitable);
 
-        $this->future->when(function () {});
+        $this->placeholder->when(function () {});
     }
 
     public function testResolveWithAwaitableAfterWhen() {
@@ -299,16 +305,16 @@ class FutureTest extends \PHPUnit_Framework_TestCase {
             ->method("when")
             ->with($this->callback("is_callable"));
 
-        $this->future->when(function () {});
+        $this->placeholder->when(function () {});
 
-        $this->future->resolve($awaitable);
+        $this->placeholder->resolve($awaitable);
     }
 
     /**
      * @expectedException \Error
      */
     public function testDoubleResolve() {
-        $this->future->resolve();
-        $this->future->resolve();
+        $this->placeholder->resolve();
+        $this->placeholder->resolve();
     }
 }
