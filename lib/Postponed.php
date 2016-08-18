@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
@@ -8,7 +6,7 @@ use Interop\Async\Awaitable;
 
 // @codeCoverageIgnoreStart
 try {
-    if (@assert(false)) {
+    if (@\assert(false)) {
         production: // PHP 7 production environment (zend.assertions=0)
         final class Postponed implements Observable {
             use Internal\Producer {

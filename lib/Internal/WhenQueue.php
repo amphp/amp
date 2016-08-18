@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Internal;
 
@@ -12,9 +10,7 @@ use Interop\Async\Loop;
  * @internal
  */
 class WhenQueue {
-    /**
-     * @var callable[]
-     */
+    /** @var callable[] */
     private $queue = [];
 
     /**

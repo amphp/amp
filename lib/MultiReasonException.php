@@ -1,13 +1,9 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
 class MultiReasonException extends \Exception {
-    /**
-     * @var \Throwable[]
-     */
+    /** @var \Throwable[] */
     private $reasons;
 
     /**

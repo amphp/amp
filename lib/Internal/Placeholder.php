@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Internal;
 
@@ -14,23 +12,17 @@ use Interop\Async\{ Awaitable, Loop };
  * @internal
  */
 trait Placeholder {
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $resolved = false;
 
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $result;
     
-    /**
-     * @var callable|\Amp\Internal\WhenQueue|null
-     */
+    /** @var callable|\Amp\Internal\WhenQueue|null */
     private $onResolved;
     
     /**
-     * {@inheritdoc}
+     * @see \Interop\Async\Awaitable::when()
      */
     public function when(callable $onResolved) {
         if ($this->resolved) {

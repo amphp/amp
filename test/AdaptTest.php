@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Test;
 
@@ -10,9 +8,7 @@ use Amp\Success;
 use Interop\Async\Awaitable;
 
 class PromiseMock {
-    /**
-     * @var \Interop\Async\Awaitable
-     */
+    /** @var \Interop\Async\Awaitable */
     private $awaitable;
 
     public function __construct(Awaitable $awaitable) {

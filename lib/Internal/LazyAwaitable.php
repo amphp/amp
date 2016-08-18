@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Internal;
 
@@ -13,14 +11,10 @@ use Interop\Async\Awaitable;
  * @internal
  */
 class LazyAwaitable implements Awaitable {
-    /**
-     * @var callable|null
-     */
+    /** @var callable|null */
     private $provider;
 
-    /**
-     * @var \Interop\Async\Awaitable|null
-     */
+    /** @var \Interop\Async\Awaitable|null */
     private $awaitable;
 
     /**

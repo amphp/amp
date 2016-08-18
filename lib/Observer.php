@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
@@ -17,39 +15,25 @@ use Interop\Async\Awaitable;
  * $result = $observer->getResult();
  */
 class Observer {
-    /**
-     * @var mixed[]
-     */
+    /** @var mixed[] */
     private $values = [];
 
-    /**
-     * @var \Amp\Deferred[]
-     */
-    private $futures = [];
+    /** @var \Amp\Deferred[] */
+    private $deferreds = [];
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $position = -1;
 
-    /**
-     * @var \Amp\Deferred|null
-     */
+    /** @var \Amp\Deferred|null */
     private $deferred;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $resolved = false;
 
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $result;
 
-    /**
-     * @var \Throwable|null
-     */
+    /** @var \Throwable|null */
     private $exception;
 
     /**
@@ -58,16 +42,16 @@ class Observer {
     public function __construct(Observable $observable) {
         $deferred = &$this->deferred;
         $values   = &$this->values;
-        $futures  = &$this->futures;
+        $deferreds  = &$this->deferreds;
         $resolved = &$this->resolved;
 
-        $observable->subscribe(static function ($value) use (&$deferred, &$values, &$futures, &$resolved) {
+        $observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
             if ($resolved) {
                 return null;
             }
             
             $values[] = $value;
-            $futures[] = $future = new Deferred;
+            $deferreds[] = $pressure = new Deferred;
 
             if ($deferred !== null) {
                 $temp = $deferred;
@@ -75,11 +59,11 @@ class Observer {
                 $temp->resolve($value);
             }
 
-            return $future->getAwaitable();
+            return $pressure->getAwaitable();
         });
 
-        $result   = &$this->result;
-        $error    = &$this->exception;
+        $result = &$this->result;
+        $error  = &$this->exception;
 
         $observable->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
             $resolved = true;
@@ -101,13 +85,13 @@ class Observer {
     }
 
     /**
-     * Unsubscribes the internal subscriber from the observable.
+     * Marks the observer as resolved to relieve back-pressure on the observable.
      */
     public function __destruct() {
         $this->resolved = true;
         
-        foreach ($this->futures as $future) {
-            $future->resolve();
+        foreach ($this->deferreds as $deferred) {
+            $deferred->resolve();
         }
     }
 
@@ -115,12 +99,12 @@ class Observer {
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the observable has
      * resolved. If the observable fails, the returned awaitable will fail with the same exception.
      *
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Awaitable<bool>
      */
     public function next(): Awaitable {
-        if (isset($this->futures[$this->position])) {
-            $future = $this->futures[$this->position];
-            unset($this->values[$this->position], $this->futures[$this->position]);
+        if (isset($this->deferreds[$this->position])) {
+            $future = $this->deferreds[$this->position];
+            unset($this->values[$this->position], $this->deferreds[$this->position]);
             $future->resolve();
         }
 

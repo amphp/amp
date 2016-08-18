@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Internal;
 
@@ -20,9 +18,7 @@ trait Producer {
         resolve as complete;
     }
 
-    /**
-     * @var callable[]
-     */
+    /** @var callable[] */
     private $subscribers = [];
     
     /**

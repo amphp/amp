@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
@@ -23,19 +21,13 @@ final class Coroutine implements Awaitable {
      */
     const MAX_CONTINUATION_DEPTH = 3;
 
-    /**
-     * @var \Generator
-     */
+    /** @var \Generator */
     private $generator;
 
-    /**
-     * @var callable(\Throwable|null $exception, mixed $value): void
-     */
+    /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $when;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $depth = 0;
 
     /**
@@ -73,7 +65,7 @@ final class Coroutine implements Awaitable {
                 }
 
                 if ($this->generator->valid()) {
-                    $got = is_object($yielded) ? get_class($yielded) : gettype($yielded);
+                    $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                     throw new InvalidYieldError(
                         $this->generator,
                         \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)
@@ -97,7 +89,7 @@ final class Coroutine implements Awaitable {
             }
 
             if ($this->generator->valid()) {
-                $got = is_object($yielded) ? get_class($yielded) : gettype($yielded);
+                $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                 throw new InvalidYieldError(
                     $this->generator,
                     \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)

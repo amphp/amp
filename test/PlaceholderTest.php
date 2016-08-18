@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Test;
 
@@ -15,9 +13,7 @@ class Placeholder {
 }
 
 class PlaceholderTest extends \PHPUnit_Framework_TestCase {
-    /**
-     * @var \Amp\Test\Placeholder
-     */
+    /** @var \Amp\Test\Placeholder */
     private $placeholder;
 
     public function setUp() {

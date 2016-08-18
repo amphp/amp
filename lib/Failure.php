@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
@@ -10,9 +8,7 @@ use Interop\Async\{ Awaitable, Loop };
  * Creates a failed awaitable using the given exception.
  */
 final class Failure implements Awaitable {
-    /**
-     * @var \Throwable $exception
-     */
+    /** @var \Throwable $exception */
     private $exception;
 
     /**

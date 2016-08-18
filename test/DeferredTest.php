@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp\Test;
 
@@ -8,9 +6,7 @@ use Amp\Deferred;
 use Interop\Async\Awaitable;
 
 class DeferredTest extends \PHPUnit_Framework_TestCase {
-    /**
-     * @var \Amp\Deferred
-     */
+    /** @var \Amp\Deferred */
     private $deferred;
 
     public function setUp() {

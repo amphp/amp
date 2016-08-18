@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
@@ -11,9 +9,7 @@ use Interop\Async\{ Awaitable, Loop };
  * \Interop\Async\Awaitable).
  */
 final class Success implements Awaitable {
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $value;
 
     /**
