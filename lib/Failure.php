@@ -2,12 +2,12 @@
 
 namespace Amp;
 
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\Loop;
 
 /**
- * Creates a failed awaitable using the given exception.
+ * Creates a failed observable using the given exception.
  */
-final class Failure implements Awaitable {
+final class Failure implements Observable {
     /** @var \Throwable $exception */
     private $exception;
 
@@ -30,4 +30,9 @@ final class Failure implements Awaitable {
             });
         }
     }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function subscribe(callable $onNext) {}
 }

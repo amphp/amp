@@ -5,10 +5,10 @@ namespace Amp;
 use Interop\Async\{ Awaitable, Loop };
 
 /**
- * Creates a successful awaitable using the given value (which can be any value except another object implementing
+ * Creates a successful observable using the given value (which can be any value except another object implementing
  * \Interop\Async\Awaitable).
  */
-final class Success implements Awaitable {
+final class Success implements Observable {
     /** @var mixed */
     private $value;
 
@@ -38,4 +38,9 @@ final class Success implements Awaitable {
             });
         }
     }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function subscribe(callable $onNext) {}
 }
