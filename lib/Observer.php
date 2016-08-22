@@ -46,10 +46,6 @@ class Observer {
         $resolved = &$this->resolved;
 
         $observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
-            if ($resolved) {
-                return null;
-            }
-            
             $values[] = $value;
             $deferreds[] = $pressure = new Deferred;
 
@@ -57,6 +53,10 @@ class Observer {
                 $temp = $deferred;
                 $deferred = null;
                 $temp->resolve($value);
+            }
+
+            if ($resolved) {
+                return null;
             }
 
             return $pressure->getAwaitable();
