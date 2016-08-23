@@ -48,30 +48,17 @@ trait Producer {
         }
 
         if ($value instanceof Awaitable) {
-            if ($value instanceof Observable) {
-                $value->subscribe(function ($value) {
-                    if ($this->resolved) {
-                        return null;
-                    }
-                    
-                    return $this->emit($value);
-                });
-                
-                $value->when(function ($e) {
-                    if ($e && !$this->resolved) {
-                        $this->fail($e);
-                    }
-                });
-                
-                return $value; // Do not emit observable result.
-            }
-            
             $deferred = new Deferred;
             $value->when(function ($e, $v) use ($deferred) {
+                if ($this->resolved) {
+                    $deferred->fail(
+                        new \Error("The observable was resolved before the awaitable result could be emitted")
+                    );
+                    return;
+                }
+                
                 if ($e) {
-                    if (!$this->resolved) {
-                        $this->fail($e);
-                    }
+                    $this->fail($e);
                     $deferred->fail($e);
                     return;
                 }
