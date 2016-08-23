@@ -115,7 +115,7 @@ class Observer {
         }
 
         if ($this->resolved) {
-        	--$this->position;
+            --$this->position;
 
             if ($this->exception) {
                 return new Failure($this->exception);
@@ -175,7 +175,7 @@ class Observer {
      *
      * @throws \Error If the observable has not completed.
      */
-    protected function drain(): array {
+    public function drain(): array {
         if (!$this->resolved) {
             throw new \Error("The observable has not resolved");
         }
