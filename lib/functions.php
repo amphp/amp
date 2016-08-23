@@ -793,19 +793,45 @@ function map(callable $callback, array ...$awaitables): Awaitable {
  * @return \Amp\Observable
  */
 function each(Observable $observable, callable $onNext, callable $onComplete = null): Observable {
-    return new Emitter(function (callable $emit) use ($observable, $onNext, $onComplete) {
-        $observable->subscribe(function ($value) use ($emit, $onNext) {
-            return $emit($onNext($value));
-        });
-
-        $result = yield $observable;
-
-        if ($onComplete === null) {
-            return $result;
+    $postponed = new Postponed;
+    $pending = true;
+    
+    $observable->subscribe(function ($value) use (&$pending, $postponed, $onNext) {
+        if ($pending) {
+            try {
+                return $postponed->emit($onNext($value));
+            } catch (\Throwable $exception) {
+                $pending = false;
+                $postponed->fail($exception);
+            }
         }
-
-        return $onComplete($result);
+        return null;
     });
+    
+    $observable->when(function ($exception, $value) use (&$pending, $postponed, $onComplete) {
+        if (!$pending) {
+            return;
+        }
+        $pending = false;
+        
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
+        }
+        
+        if ($onComplete === null) {
+            $postponed->resolve($value);
+            return;
+        }
+        
+        try {
+            $postponed->resolve($onComplete($value));
+        } catch (\Throwable $exception) {
+            $postponed->fail($exception);
+        }
+    });
+    
+    return $postponed->getObservable();
 }
 
 /**
@@ -815,51 +841,68 @@ function each(Observable $observable, callable $onNext, callable $onComplete = n
  * @return \Amp\Observable
  */
 function filter(Observable $observable, callable $filter): Observable {
-    return new Emitter(function (callable $emit) use ($observable, $filter) {
-        $observable->subscribe(function ($value) use ($emit, $filter) {
-            if (!$filter($value)) {
-                return null;
+    $postponed = new Postponed;
+    $pending = true;
+    
+    $observable->subscribe(function ($value) use (&$pending, $postponed, $filter) {
+        if ($pending) {
+            try {
+                if (!$filter($value)) {
+                    return null;
+                }
+                return $postponed->emit($value);
+            } catch (\Throwable $exception) {
+                $pending = false;
+                $postponed->fail($exception);
             }
-            return $emit($value);
-        });
-
-        return yield $observable;
+        }
+        return null;
     });
+    
+    $observable->when(function ($exception, $value) use (&$pending, $postponed) {
+        if (!$pending) {
+            return;
+        }
+        $pending = false;
+        
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
+        }
+        
+        $postponed->resolve($value);
+    });
+    
+    return $postponed->getObservable();
 }
 
 /**
- * Creates an observable that emits values emitted from any observable in the array of observables. Values in the
- * array are passed through the from() function, so they may be observables, arrays of values to emit, awaitables,
- * or any other value.
+ * Creates an observable that emits values emitted from any observable in the array of observables.
  *
  * @param \Amp\Observable[] $observables
  *
  * @return \Amp\Observable
  */
 function merge(array $observables): Observable {
+    $postponed = new Postponed;
+    
     foreach ($observables as $observable) {
         if (!$observable instanceof Observable) {
             throw new \Error("Non-observable provided");
         }
+        $observable->subscribe([$postponed, 'emit']);
     }
-
-    return new Emitter(function (callable $emit) use ($observables) {
-        $subscriptions = [];
-
-        foreach ($observables as $observable) {
-            $subscriptions[] = $observable->subscribe($emit);
+    
+    all($observables)->when(function ($exception, array $values) use ($postponed) {
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
         }
-
-        try {
-            $result = yield all($observables);
-        } finally {
-            foreach ($subscriptions as $subscription) {
-                $subscription->unsubscribe();
-            }
-        }
-
-        return $result;
+    
+        $postponed->resolve($values);
     });
+    
+    return $postponed->getObservable();
 }
 
 
@@ -870,43 +913,23 @@ function merge(array $observables): Observable {
  * @param \Interop\Async\Awaitable[] $awaitables
  *
  * @return \Amp\Observable
+ *
+ * @throws \Error If a non-awaitable is provided.
  */
 function stream(array $awaitables): Observable {
-    $postponed = new Postponed;
-
-    if (empty($awaitables)) {
-        $postponed->resolve();
-        return $postponed->getObservable();
-    }
-
-    $pending = \count($awaitables);
-    $onResolved = function ($exception, $value) use (&$pending, $postponed) {
-        if ($pending <= 0) {
-            return;
-        }
-
-        if ($exception) {
-            $pending = 0;
-            $postponed->fail($exception);
-            return;
-        }
-
-        $postponed->emit($value);
-
-        if (--$pending === 0) {
-            $postponed->complete();
-        }
-    };
-
     foreach ($awaitables as $awaitable) {
         if (!$awaitable instanceof Awaitable) {
             throw new \Error("Non-awaitable provided");
         }
-
-        $awaitable->when($onResolved);
     }
-
-    return $postponed->getObservable();
+    
+    return new Emitter(function (callable $emit) use ($awaitables) {
+        $emits = [];
+        foreach ($awaitables as $awaitable) {
+            $emits[] = $emit($awaitable);
+        }
+        yield all($emits);
+    });
 }
 
 /**
@@ -924,36 +947,36 @@ function concat(array $observables): Observable {
             throw new \Error("Non-observable provided");
         }
     }
-
-    return new Emitter(function (callable $emit) use ($observables) {
-        $subscriptions = [];
-        $previous = [];
-        $awaitable = all($previous);
-
-        foreach ($observables as $observable) {
-            $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($emit, $awaitable) {
-                try {
-                    yield $awaitable;
-                } catch (\Throwable $exception) {
-                    // Ignore exception in this context.
-                }
-
-                return yield $emit($value);
-            }));
-            $previous[] = $observable;
-            $awaitable = all($previous);
-        }
-
-        try {
-            $result = yield $awaitable;
-        } finally {
-            foreach ($subscriptions as $subscription) {
-                $subscription->unsubscribe();
+    
+    $postponed = new Postponed;
+    $subscriptions = [];
+    $previous = [];
+    $awaitable = all($previous);
+    
+    foreach ($observables as $observable) {
+        $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($postponed, $awaitable) {
+            try {
+                yield $awaitable;
+            } catch (\Throwable $exception) {
+                // Ignore exception in this context.
             }
+            
+            return yield $postponed->emit($value);
+        }));
+        $previous[] = $observable;
+        $awaitable = all($previous);
+    }
+    
+    $awaitable->when(function ($exception, array $values) use ($postponed) {
+        if ($exception) {
+            $postponed->fail($exception);
+            return;
         }
-
-        return $result;
+        
+        $postponed->resolve($values);
     });
+    
+    return $postponed->getObservable();
 }
 
 /**
