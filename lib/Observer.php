@@ -40,10 +40,10 @@ class Observer {
      * @param \Amp\Observable $observable
      */
     public function __construct(Observable $observable) {
-        $deferred = &$this->deferred;
-        $values   = &$this->values;
-        $deferreds  = &$this->deferreds;
-        $resolved = &$this->resolved;
+        $deferred  = &$this->deferred;
+        $values    = &$this->values;
+        $deferreds = &$this->deferreds;
+        $resolved  = &$this->resolved;
 
         $observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
             $values[] = $value;
@@ -52,7 +52,7 @@ class Observer {
             if ($deferred !== null) {
                 $temp = $deferred;
                 $deferred = null;
-                $temp->resolve($value);
+                $temp->resolve(true);
             }
 
             if ($resolved) {
