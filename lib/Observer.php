@@ -110,7 +110,7 @@ class Observer {
 
         ++$this->position;
 
-        if (isset($this->values[$this->position])) {
+        if (\array_key_exists($this->position, $this->values)) {
             return new Success(true);
         }
 
@@ -140,7 +140,7 @@ class Observer {
             throw new \Error("The observable has resolved");
         }
 
-        if (!isset($this->values[$this->position])) {
+        if (!\array_key_exists($this->position, $this->values)) {
             throw new \Error("Awaitable returned from next() must resolve before calling this method");
         }
 
