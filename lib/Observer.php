@@ -167,4 +167,29 @@ class Observer {
 
         return $this->result;
     }
+    
+    /**
+     * Returns an array of values that were not consumed by the Observer before the Observable completed.
+     *
+     * @return array Unconsumed emitted values.
+     *
+     * @throws \Error If the observable has not completed.
+     */
+    protected function drain(): array {
+        if (!$this->resolved) {
+            throw new \Error("The observable has not resolved");
+        }
+    
+        $values = $this->values;
+        $this->values = [];
+        $this->position = -1;
+        
+        $deferreds = $this->deferreds;
+        $this->deferreds = [];
+        foreach ($deferreds as $deferred) {
+            $deferred->resolve();
+        }
+    
+        return $values;
+    }
 }
