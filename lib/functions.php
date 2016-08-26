@@ -19,11 +19,14 @@ function execute(callable $callback, Driver $driver = null) {
         $result = $callback();
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\execute() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $driver);
 }
@@ -55,11 +58,14 @@ function onReadable($stream, callable $callback, $data = null): string {
         $result = $callback($watcherId, $stream, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\onReadable() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -82,11 +88,14 @@ function onWritable($stream, callable $callback, $data = null): string {
         $result = $callback($watcherId, $stream, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\onWritable() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -107,11 +116,14 @@ function onSignal(int $signo, callable $callback, $data = null): string {
         $result = $callback($watcherId, $signo, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\onSignal() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -133,11 +145,14 @@ function defer(callable $callback, $data = null): string {
         $result = $callback($watcherId, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\defer() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -160,11 +175,14 @@ function delay(int $time, callable $callback, $data = null): string {
         $result = $callback($watcherId, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\delay() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -187,11 +205,14 @@ function repeat(int $time, callable $callback, $data = null): string {
         $result = $callback($watcherId, $data);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\repeat() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     }, $data);
 }
@@ -259,13 +280,16 @@ function unreference(string $watcherId) {
 function setErrorHandler(callable $callback) {
     Loop::setErrorHandler(function ($exception) use ($callback) {
         $result = $callback($exception);
-
+    
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\setErrorHandler() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     });
 }
@@ -283,11 +307,14 @@ function wrap(callable $callback): callable {
         $result = $callback(...$args);
 
         if ($result instanceof \Generator) {
-            $result = new Coroutine($result);
+            rethrow(new Coroutine($result));
+            return;
         }
 
-        if ($result instanceof Awaitable) {
-            rethrow($result);
+        if ($result !== null) {
+            throw new \Error(
+                "Amp\\wrap() callbacks MUST be void or return Generator instances to be run as coroutines"
+            );
         }
     };
 }
