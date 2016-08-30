@@ -134,19 +134,18 @@ abstract class Driver
     abstract public function enable($watcherId);
 
     /**
-     * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher.
+     * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher. Calling this function MUST NOT fail,
+     * even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     abstract public function disable($watcherId);
 
     /**
      * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
-     * this operation the watcher is permanently invalid. Calling this function MUST never fail, even when passed an
+     * this operation the watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an
      * invalid watcher.
      *
      * @param string $watcherId The watcher identifier.

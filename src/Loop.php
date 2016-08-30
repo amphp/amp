@@ -237,8 +237,6 @@ final class Loop
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     public static function disable($watcherId)
     {
