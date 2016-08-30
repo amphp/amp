@@ -349,6 +349,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $info = $loop->info();
         $expected = ["enabled" => 0, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
+
+        $loop->disable($watcherId);
+        $info = $loop->info();
+        $expected = ["enabled" => 0, "disabled" => 0];
+        $this->assertSame($expected, $info[$type]);
     }
 
     /** @dataProvider provideRegistrationArgs */
@@ -610,8 +615,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->loop->enable("nonexistentWatcher");
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
-    function testExceptionOnDisableNonexistentWatcher()
+    function testSuccessOnDisableNonexistentWatcher()
     {
         $this->loop->disable("nonexistentWatcher");
     }
@@ -637,7 +641,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     function testWatcherInvalidityOnDefer() {
         $this->start(function(Driver $loop) {
             $loop->defer(function($watcher) use ($loop) {
-                $loop->disable($watcher);
+                $loop->enable($watcher);
             });
         });
     }
@@ -646,7 +650,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     function testWatcherInvalidityOnDelay() {
         $this->start(function(Driver $loop) {
             $loop->delay($msDelay = 0, function($watcher) use ($loop) {
-                $loop->disable($watcher);
+                $loop->enable($watcher);
             });
         });
     }
