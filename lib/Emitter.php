@@ -5,7 +5,7 @@ namespace Amp;
 use Interop\Async\Loop;
 
 final class Emitter implements Observable {
-    use CallableFromMethod, Internal\Producer;
+    use CallableMaker, Internal\Producer;
 
     /**
      * @param callable(callable(mixed $value): Awaitable $emit): \Generator $emitter
@@ -13,7 +13,7 @@ final class Emitter implements Observable {
      * @throws \Error Thrown if the callable does not return a Generator.
      */
     public function __construct(callable $emitter) {
-        $result = $emitter($this->callableFromInstanceMethod('emit'));
+        $result = $emitter($this->callableFromInstanceMethod("emit"));
 
         if (!$result instanceof \Generator) {
             throw new \Error("The callable did not return a Generator");

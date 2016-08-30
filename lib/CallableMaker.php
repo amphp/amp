@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Amp;
 
 if (\PHP_VERSION_ID < 70100) {
-    trait CallableFromMethod {
+    trait CallableMaker {
         /** @var \ReflectionClass */
         private static $__reflectionClass;
         
@@ -53,16 +53,16 @@ if (\PHP_VERSION_ID < 70100) {
         }
     }
 } else {
-    trait CallableFromMethod {
+    trait CallableMaker {
         /**
-         * @deprecated Use \Closure::fromCallable() directly instead of this method.
+         * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
         private function callableFromInstanceMethod(string $method): callable {
             return \Closure::fromCallable([$this, $method]);
         }
     
         /**
-         * @deprecated Use \Closure::fromCallable() directly instead of this method.
+         * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
         private function callableFromStaticMethod(string $method): callable {
             return \Closure::fromCallable([self::class, $method]);
