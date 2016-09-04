@@ -2,6 +2,9 @@
 
 namespace Interop\Async\Loop;
 
+/**
+ * Event loop driver which implements all basic operations to allow interoperability.
+ */
 abstract class Driver
 {
     /**
@@ -106,8 +109,8 @@ abstract class Driver
      * Multiple watchers on the same signal may be executed in any order.
      *
      * NOTE: Installing a same signal on different instances of this interface is deemed undefined behavior.
-     *       Implementations may try to detect this, if possible, but are not required to.
-     *       This is due to technical limitations of the signals being registered globally per process.
+     * Implementations may try to detect this, if possible, but are not required to. This is due to technical
+     * limitations of the signals being registered globally per process.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
@@ -188,8 +191,8 @@ abstract class Driver
      *
      * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
      *
-     * @param string $key namespaced storage key
-     * @param mixed $value the value to be stored
+     * @param string $key The namespaced storage key.
+     * @param mixed $value The value to be stored.
      *
      * @return void
      */
@@ -208,9 +211,9 @@ abstract class Driver
      *
      * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
      *
-     * @param string $key namespaced storage key
+     * @param string $key The namespaced storage key.
      *
-     * @return mixed previously stored value or null if it doesn't exist
+     * @return mixed The previously stored value or null if it doesn't exist.
      */
     final public function getState($key)
     {
@@ -234,15 +237,15 @@ abstract class Driver
      *
      * The returned array MUST contain the following data describing the driver's currently registered watchers:
      *
-     *  [
-     *      "defer"         => ["enabled" => int, "disabled" => int],
-     *      "delay"         => ["enabled" => int, "disabled" => int],
-     *      "repeat"        => ["enabled" => int, "disabled" => int],
-     *      "on_readable"   => ["enabled" => int, "disabled" => int],
-     *      "on_writable"   => ["enabled" => int, "disabled" => int],
-     *      "on_signal"     => ["enabled" => int, "disabled" => int],
-     *      "watchers"      => ["referenced" => int, "unreferenced" => int],
-     *  ];
+     *      [
+     *          "defer"         => ["enabled" => int, "disabled" => int],
+     *          "delay"         => ["enabled" => int, "disabled" => int],
+     *          "repeat"        => ["enabled" => int, "disabled" => int],
+     *          "on_readable"   => ["enabled" => int, "disabled" => int],
+     *          "on_writable"   => ["enabled" => int, "disabled" => int],
+     *          "on_signal"     => ["enabled" => int, "disabled" => int],
+     *          "watchers"      => ["referenced" => int, "unreferenced" => int],
+     *      ];
      *
      * Implementations MAY optionally add more information in the array but at minimum the above key => value format
      * MUST always be provided.
@@ -254,9 +257,9 @@ abstract class Driver
     /**
      * Get the underlying loop handle.
      *
-     * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver
+     * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver.
      *
-     * Note: This function is *not* exposed in the Loop class; users shall access it directly on the respective loop
+     * NOTE: This function is *not* exposed in the Loop class. Users shall access it directly on the respective loop
      * instance.
      *
      * @return null|object|resource The loop handle the event loop operates on. Null if there is none.

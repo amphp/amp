@@ -7,6 +7,11 @@ use Interop\Async\Loop\DriverFactory;
 use Interop\Async\Loop\InvalidWatcherException;
 use Interop\Async\Loop\UnsupportedFeatureException;
 
+/**
+ * Accessor to allow global access to the event loop.
+ *
+ * @see \Interop\Async\Loop\Driver
+ */
 final class Loop
 {
     /**

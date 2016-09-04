@@ -2,6 +2,11 @@
 
 namespace Interop\Async\Loop;
 
+/**
+ * Allows creating new driver instances.
+ *
+ * @see \Interop\Async\Loop::setFactory()
+ */
 interface DriverFactory
 {
 	/**
