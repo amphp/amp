@@ -7,6 +7,8 @@ namespace Amp;
  * it as part of the public API.
  *
  * @TODO Remove in favor of an anonymous class once PHP 5 is no longer supported
+ *
+ * @internal
  */
 class CoroutineState {
     use Struct;

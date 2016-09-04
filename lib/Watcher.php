@@ -1,9 +1,13 @@
 <?php
 
 namespace Amp;
+
 /**
- * This class exists to provide faux enum values in internal Reactor code.
- * Applications should not rely upon these values as part of the public API.
+ * This class exists to provide faux enum values in internal code.
+ *
+ * Warning: Applications should not rely upon these values as part of the public API.
+ *
+ * @internal
  */
 final class Watcher {
     const IMMEDIATE    = 0b00000001;
