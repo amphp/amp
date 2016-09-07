@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Observable, Success };
+use Amp\{ Deferred, Success };
 use Interop\Async\{ Awaitable, Loop };
 
 /**

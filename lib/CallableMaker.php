@@ -64,7 +64,7 @@ if (\PHP_VERSION_ID < 70100) {
         /**
          * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
-        private function callableFromStaticMethod(string $method): callable {
+        private static function callableFromStaticMethod(string $method): callable {
             return \Closure::fromCallable([self::class, $method]);
         }
     }
