@@ -724,7 +724,7 @@ function choose(array $awaitables): Awaitable {
  *
  * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
  */
-function map(callable $callback, array ...$awaitables): Awaitable {
+function map(callable $callback, array ...$awaitables): array {
     $callback = lift($callback);
 
     foreach ($awaitables as $awaitableSet) {
