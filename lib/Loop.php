@@ -294,10 +294,9 @@ abstract class Loop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function disable($watcherIdentifier)
-    {
+    public function disable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new InvalidWatcherException("Cannot disable an invalid watcher identifier");
+            return;
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
@@ -334,10 +333,6 @@ abstract class Loop extends Driver {
      * {@inheritdoc}
      */
     public function cancel($watcherIdentifier) {
-        if (!isset($this->watchers[$watcherIdentifier])) {
-            return; // Avoid throwing from disable() if the watcher is invalid.
-        }
-
         $this->disable($watcherIdentifier);
         unset($this->watchers[$watcherIdentifier]);
     }
