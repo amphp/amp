@@ -28,8 +28,8 @@
     "require": {
         "php": ">=7",
         "async-interop/awaitable": "dev-master",
-        "async-interop/event-loop": "^0.2",
-        "async-interop/event-loop-implementation": "^0.2"
+        "async-interop/event-loop": "^0.3",
+        "async-interop/event-loop-implementation": "^0.3"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
