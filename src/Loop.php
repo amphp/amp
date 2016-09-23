@@ -172,7 +172,7 @@ final class Loop
     }
 
     /**
-     * Execute a callback when a stream resource becomes readable.
+     * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -187,7 +187,7 @@ final class Loop
     }
 
     /**
-     * Execute a callback when a stream resource becomes writable.
+     * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
