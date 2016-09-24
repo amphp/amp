@@ -78,7 +78,7 @@ abstract class Driver
     abstract public function repeat($interval, callable $callback, $data = null);
 
     /**
-     * Execute a callback when a stream resource becomes readable.
+     * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
      * Multiple watchers on the same stream may be executed in any order.
      *
@@ -91,7 +91,7 @@ abstract class Driver
     abstract public function onReadable($stream, callable $callback, $data = null);
 
     /**
-     * Execute a callback when a stream resource becomes writable.
+     * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
      * Multiple watchers on the same stream may be executed in any order.
      *
