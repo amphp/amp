@@ -32,11 +32,11 @@ final class Loop
     /**
      * Set the factory to be used to create a default drivers.
      *
-     * Setting a factory is only allowed as long as no loop is currently running. Passing null will reset the default
-     * driver and remove the factory.
+     * Setting a factory is only allowed as long as no loop is currently running. Passing null will reset the
+     * default driver and remove the factory.
      *
-     * The factory will be invoked if none is passed to Loop::execute. A default driver will be created to support
-     * synchronous waits in traditional applications.
+     * The factory will be invoked if none is passed to `Loop::execute`. A default driver will be created to
+     * support synchronous waits in traditional applications.
      *
      * @param DriverFactory|null $factory New factory to replace the previous one.
      */
@@ -56,9 +56,11 @@ final class Loop
      * Execute a callback within the scope of an event loop driver.
      *
      * @param callable $callback The callback to execute.
-     * @param Driver $driver The event loop driver. If null a new one is created from the set factory.
+     * @param Driver $driver The event loop driver. If `null`, a new one is created from the set factory.
      *
      * @return void
+     *
+     * @see \Interop\Async\Loop::setFactory()
      */
     public static function execute(callable $callback, Driver $driver = null)
     {
@@ -79,19 +81,19 @@ final class Loop
     /**
      * Create a new driver if a factory is present, otherwise throw.
      *
-     * @throws \LogicException If no factory is set or no driver returned from factory.
+     * @throws \Exception If no factory is set or no driver returned from factory.
      */
     private static function createDriver()
     {
         if (self::$factory === null) {
-            throw new \LogicException("No loop driver factory set; Either pass a driver to Loop::execute or set a factory.");
+            throw new \Exception("No loop driver factory set; Either pass a driver to Loop::execute or set a factory.");
         }
 
         $driver = self::$factory->create();
 
         if (!$driver instanceof Driver) {
             $type = is_object($driver) ? "an instance of " . get_class($driver) : gettype($driver);
-            throw new \LogicException("Loop driver factory returned {$type}, but must return an instance of Driver.");
+            throw new \Exception("Loop driver factory returned {$type}, but must return an instance of Driver.");
         }
 
         return $driver;
@@ -126,7 +128,7 @@ final class Loop
      * Defer the execution of a callback.
      *
      * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -143,7 +145,7 @@ final class Loop
      *
      * @param int $time The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -161,7 +163,7 @@ final class Loop
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -176,7 +178,7 @@ final class Loop
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -191,7 +193,7 @@ final class Loop
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -205,11 +207,11 @@ final class Loop
      * Execute a callback when a signal is received.
      *
      * WARNING: Installing a handler on the same signal on different scopes of event loop execution is
-     *          undefined behavior and may break things arbitrarily.
+     * undefined behavior and may break things arbitrarily.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An identifier that can be used to cancel, enable or disable the watcher.
      *
@@ -250,8 +252,10 @@ final class Loop
     }
 
     /**
-     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
-     * this operation the watcher is permanently invalid.
+     * Cancel a watcher.
+     *
+     * This will detatch the event loop from all resources that are associated to the watcher. After this
+     * operation the watcher is permanently invalid.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -266,8 +270,8 @@ final class Loop
     /**
      * Reference a watcher.
      *
-     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
-     * default.
+     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state
+     * by default.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -284,8 +288,8 @@ final class Loop
     /**
      * Unreference a watcher.
      *
-     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Watchers
-     * are all referenced by default.
+     * The event loop should exit the run method when only unreferenced watchers are still being monitored.
+     * Watchers are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -300,13 +304,14 @@ final class Loop
     }
 
     /**
-     * Stores information in the loop bound registry. This can be used to store loop bound information. Stored
-     * information is package private. Packages MUST NOT retrieve the stored state of other packages.
+     * Stores information in the loop bound registry.
      *
-     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     * This can be used to store loop bound information. Stored information is package private. Packages MUST NOT
+     * retrieve the stored state of other packages. Packages MUST use the following prefix to keys:
+     * `vendor.package.`
      *
-     * @param string $key namespaced storage key
-     * @param mixed $value the value to be stored
+     * @param string $key The namespaced storage key.
+     * @param mixed $value The value to be stored.
      *
      * @return void
      */
@@ -317,12 +322,12 @@ final class Loop
     }
 
     /**
-     * Gets information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve the
-     * stored state of other packages.
+     * Gets information stored bound to the loop.
      *
-     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages.
+     * Packages MUST use the following prefix to keys: `vendor.package.`
      *
-     * @param string $key namespaced storage key
+     * @param string $key The namespaced storage key.
      *
      * @return mixed previously stored value or null if it doesn't exist
      */
@@ -363,7 +368,7 @@ final class Loop
      *         "watchers"      => ["referenced" => int, "unreferenced" => int],
      *     ];
      *
-     * Implementations MAY optionally add more information in the array but at minimum the above key => value format
+     * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
      * MUST always be provided.
      *
      * @return array

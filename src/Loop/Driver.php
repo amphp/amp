@@ -39,9 +39,9 @@ abstract class Driver
      * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher.
      * Order of enabling MUST be preserved when executing the callbacks.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The $watcherId will be
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
      *     invalidated before the callback call.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -51,12 +51,12 @@ abstract class Driver
      * Delay the execution of a callback.
      *
      * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which
-     * timers expire first, but timers with the same expiration time may be executed in any order.
+     * timers expire first, but timers with the same expiration time MAY be executed in any order.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The $watcherId will be
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -71,7 +71,7 @@ abstract class Driver
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -84,7 +84,7 @@ abstract class Driver
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -97,7 +97,7 @@ abstract class Driver
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -108,7 +108,7 @@ abstract class Driver
      *
      * Multiple watchers on the same signal may be executed in any order.
      *
-     * NOTE: Installing a same signal on different instances of this interface is deemed undefined behavior.
+     * NOTE: Installing the same signal on different instances of this interface is deemed undefined behavior.
      * Implementations may try to detect this, if possible, but are not required to. This is due to technical
      * limitations of the signals being registered globally per process.
      *
@@ -126,7 +126,8 @@ abstract class Driver
      * Enable a watcher.
      *
      * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks
-     * can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were enabled.
+     * can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were
+     * enabled.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -137,8 +138,10 @@ abstract class Driver
     abstract public function enable($watcherId);
 
     /**
-     * Disable a watcher. Disabling a watcher MUST NOT invalidate the watcher. Calling this function MUST NOT fail,
-     * even if passed an invalid watcher.
+     * Disable a watcher.
+     *
+     * Disabling a watcher MUST NOT invalidate the watcher. Calling this function MUST NOT fail, even if passed an
+     * invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -147,9 +150,10 @@ abstract class Driver
     abstract public function disable($watcherId);
 
     /**
-     * Cancel a watcher. This will detatch the event loop from all resources that are associated to the watcher. After
-     * this operation the watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an
-     * invalid watcher.
+     * Cancel a watcher.
+     *
+     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
+     * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -186,10 +190,10 @@ abstract class Driver
     abstract public function unreference($watcherId);
 
     /**
-     * Stores information in the loop bound registry. This can be used to store loop bound information. Stored
-     * information is package private. Packages MUST NOT retrieve the stored state of other packages.
+     * Stores information in the loop bound registry.
      *
-     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     * This can be used to store loop bound information. Stored information is package private. Packages MUST NOT
+     * retrieve the stored state of other packages. Packages MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
      * @param mixed $value The value to be stored.
@@ -206,14 +210,14 @@ abstract class Driver
     }
 
     /**
-     * Gets information stored bound to the loop. Stored information is package private. Packages MUST NOT retrieve the
-     * stored state of other packages.
+     * Gets information stored bound to the loop.
      *
-     * Therefore packages SHOULD use the following prefix to keys: `vendor.package.`
+     * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages. Packages
+     * MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
      *
-     * @return mixed The previously stored value or null if it doesn't exist.
+     * @return mixed The previously stored value or `null` if it doesn't exist.
      */
     final public function getState($key)
     {
@@ -225,8 +229,8 @@ abstract class Driver
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current
-     *     handler.
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     *     current handler.
      *
      * @return void
      */
@@ -237,17 +241,17 @@ abstract class Driver
      *
      * The returned array MUST contain the following data describing the driver's currently registered watchers:
      *
-     *      [
-     *          "defer"         => ["enabled" => int, "disabled" => int],
-     *          "delay"         => ["enabled" => int, "disabled" => int],
-     *          "repeat"        => ["enabled" => int, "disabled" => int],
-     *          "on_readable"   => ["enabled" => int, "disabled" => int],
-     *          "on_writable"   => ["enabled" => int, "disabled" => int],
-     *          "on_signal"     => ["enabled" => int, "disabled" => int],
-     *          "watchers"      => ["referenced" => int, "unreferenced" => int],
-     *      ];
+     *     [
+     *         "defer"         => ["enabled" => int, "disabled" => int],
+     *         "delay"         => ["enabled" => int, "disabled" => int],
+     *         "repeat"        => ["enabled" => int, "disabled" => int],
+     *         "on_readable"   => ["enabled" => int, "disabled" => int],
+     *         "on_writable"   => ["enabled" => int, "disabled" => int],
+     *         "on_signal"     => ["enabled" => int, "disabled" => int],
+     *         "watchers"      => ["referenced" => int, "unreferenced" => int],
+     *     ];
      *
-     * Implementations MAY optionally add more information in the array but at minimum the above key => value format
+     * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
      * MUST always be provided.
      *
      * @return array
@@ -257,12 +261,12 @@ abstract class Driver
     /**
      * Get the underlying loop handle.
      *
-     * Example: the uv_loop resource for libuv or the EvLoop object for libev or null for a native driver.
+     * Example: the `uv_loop` resource for `libuv` or the `EvLoop` object for `libev` or `null` for a native driver.
      *
-     * NOTE: This function is *not* exposed in the Loop class. Users shall access it directly on the respective loop
+     * NOTE: This function is *not* exposed in the `Loop` class. Users shall access it directly on the respective loop
      * instance.
      *
-     * @return null|object|resource The loop handle the event loop operates on. Null if there is none.
+     * @return null|object|resource The loop handle the event loop operates on. `null` if there is none.
      */
     abstract public function getHandle();
 }
