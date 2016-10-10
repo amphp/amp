@@ -81,6 +81,8 @@ final class Loop
     /**
      * Create a new driver if a factory is present, otherwise throw.
      *
+     * @return Driver
+     *
      * @throws \Exception If no factory is set or no driver returned from factory.
      */
     private static function createDriver()
