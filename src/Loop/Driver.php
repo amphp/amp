@@ -81,9 +81,9 @@ abstract class Driver
      * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
-     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
-     * resources are therefore undefined behavior.
+     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
+     * therefore undefined behavior.
      *
      * Multiple watchers on the same stream may be executed in any order.
      *
@@ -99,9 +99,9 @@ abstract class Driver
      * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
-     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
-     * resources are therefore undefined behavior.
+     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
+     * therefore undefined behavior.
      *
      * Multiple watchers on the same stream may be executed in any order.
      *
