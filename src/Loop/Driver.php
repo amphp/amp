@@ -80,6 +80,11 @@ abstract class Driver
     /**
      * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
+     * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
+     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
+     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
+     * resources are therefore undefined behavior.
+     *
      * Multiple watchers on the same stream may be executed in any order.
      *
      * @param resource $stream The stream to monitor.
@@ -92,6 +97,11 @@ abstract class Driver
 
     /**
      * Execute a callback when a stream resource becomes writable or is closed for writing.
+     *
+     * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
+     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
+     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
+     * resources are therefore undefined behavior.
      *
      * Multiple watchers on the same stream may be executed in any order.
      *
@@ -106,11 +116,11 @@ abstract class Driver
     /**
      * Execute a callback when a signal is received.
      *
-     * Multiple watchers on the same signal may be executed in any order.
-     *
-     * NOTE: Installing the same signal on different instances of this interface is deemed undefined behavior.
+     * Warning: Installing the same signal on different instances of this interface is deemed undefined behavior.
      * Implementations may try to detect this, if possible, but are not required to. This is due to technical
      * limitations of the signals being registered globally per process.
+     *
+     * Multiple watchers on the same signal may be executed in any order.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
@@ -267,7 +277,7 @@ abstract class Driver
      *
      * Example: the `uv_loop` resource for `libuv` or the `EvLoop` object for `libev` or `null` for a native driver.
      *
-     * NOTE: This function is *not* exposed in the `Loop` class. Users shall access it directly on the respective loop
+     * Note: This function is *not* exposed in the `Loop` class. Users shall access it directly on the respective loop
      * instance.
      *
      * @return null|object|resource The loop handle the event loop operates on. `null` if there is none.

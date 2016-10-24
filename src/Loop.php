@@ -178,11 +178,18 @@ final class Loop
     /**
      * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
+     * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
+     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
+     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
+     * resources are therefore undefined behavior.
+     *
+     * Multiple watchers on the same stream may be executed in any order.
+     *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function onReadable($stream, callable $callback, $data = null)
     {
@@ -193,11 +200,18 @@ final class Loop
     /**
      * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
+     * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
+     * watcher when closing the resource locally. Drivers might choose to notify the user in a debug mode if there are
+     * watchers on invalid resources, but are not required to, due to the high performance impact. Watchers on closed
+     * resources are therefore undefined behavior.
+     *
+     * Multiple watchers on the same stream may be executed in any order.
+     *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function onWritable($stream, callable $callback, $data = null)
     {
@@ -208,16 +222,19 @@ final class Loop
     /**
      * Execute a callback when a signal is received.
      *
-     * WARNING: Installing a handler on the same signal on different scopes of event loop execution is
-     * undefined behavior and may break things arbitrarily.
+     * Warning: Installing the same signal on different instances of this interface is deemed undefined behavior.
+     * Implementations may try to detect this, if possible, but are not required to. This is due to technical
+     * limitations of the signals being registered globally per process.
+     *
+     * Multiple watchers on the same signal may be executed in any order.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      *
-     * @throws UnsupportedFeatureException Thrown if signal handling is not supported.
+     * @throws UnsupportedFeatureException If signal handling is not supported.
      */
     public static function onSignal($signo, callable $callback, $data = null)
     {
@@ -228,11 +245,15 @@ final class Loop
     /**
      * Enable a watcher.
      *
+     * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks
+     * can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were
+     * enabled.
+     *
      * @param string $watcherId The watcher identifier.
      *
      * @return void
      *
-     * @throws InvalidWatcherException Thrown if the watcher identifier is invalid.
+     * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
     public static function enable($watcherId)
     {
@@ -242,6 +263,9 @@ final class Loop
 
     /**
      * Disable a watcher.
+     *
+     * Disabling a watcher MUST NOT invalidate the watcher. Calling this function MUST NOT fail, even if passed an
+     * invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -256,8 +280,8 @@ final class Loop
     /**
      * Cancel a watcher.
      *
-     * This will detatch the event loop from all resources that are associated to the watcher. After this
-     * operation the watcher is permanently invalid.
+     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
+     * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -272,8 +296,8 @@ final class Loop
     /**
      * Reference a watcher.
      *
-     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state
-     * by default.
+     * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
+     * default.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -290,8 +314,8 @@ final class Loop
     /**
      * Unreference a watcher.
      *
-     * The event loop should exit the run method when only unreferenced watchers are still being monitored.
-     * Watchers are all referenced by default.
+     * The event loop should exit the run method when only unreferenced watchers are still being monitored. Watchers
+     * are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
      *
@@ -309,8 +333,7 @@ final class Loop
      * Stores information in the loop bound registry.
      *
      * This can be used to store loop bound information. Stored information is package private. Packages MUST NOT
-     * retrieve the stored state of other packages. Packages MUST use the following prefix to keys:
-     * `vendor.package.`
+     * retrieve the stored state of other packages. Packages MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
      * @param mixed $value The value to be stored.
@@ -326,12 +349,12 @@ final class Loop
     /**
      * Gets information stored bound to the loop.
      *
-     * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages.
-     * Packages MUST use the following prefix to keys: `vendor.package.`
+     * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages. Packages
+     * MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
      *
-     * @return mixed previously stored value or null if it doesn't exist
+     * @return mixed The previously stored value or `null` if it doesn't exist.
      */
     public static function getState($key)
     {
