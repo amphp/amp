@@ -129,10 +129,14 @@ final class Loop
     /**
      * Defer the execution of a callback.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer.
+     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher.
+     * Order of enabling MUST be preserved when executing the callbacks.
+     *
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
+     *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function defer(callable $callback, $data = null)
     {
@@ -143,13 +147,15 @@ final class Loop
     /**
      * Delay the execution of a callback.
      *
-     * The delay is a minimum and approximate, accuracy is not guaranteed.
+     * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which
+     * timers expire first, but timers with the same expiration time MAY be executed in any order.
      *
-     * @param int $time The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
+     * @param int $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
+     *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function delay($time, callable $callback, $data = null)
     {
@@ -160,14 +166,15 @@ final class Loop
     /**
      * Repeatedly execute a callback.
      *
-     * The interval between executions is a minimum and approximate, accuracy is not guaranteed.
+     * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be
+     * determined by which timers expire first, but timers with the same expiration time MAY be executed in any order.
      * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
-     * @return string An identifier that can be used to cancel, enable or disable the watcher.
+     * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function repeat($interval, callable $callback, $data = null)
     {
@@ -179,11 +186,11 @@ final class Loop
      * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * watcher when closing the resource locally. Drivers MAY choose to notify the user if there are watchers on invalid
      * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
      * therefore undefined behavior.
      *
-     * Multiple watchers on the same stream may be executed in any order.
+     * Multiple watchers on the same stream MAY be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -201,11 +208,11 @@ final class Loop
      * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * watcher when closing the resource locally. Drivers MAY choose to notify the user if there are watchers on invalid
      * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
      * therefore undefined behavior.
      *
-     * Multiple watchers on the same stream may be executed in any order.
+     * Multiple watchers on the same stream MAY be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -223,10 +230,10 @@ final class Loop
      * Execute a callback when a signal is received.
      *
      * Warning: Installing the same signal on different instances of this interface is deemed undefined behavior.
-     * Implementations may try to detect this, if possible, but are not required to. This is due to technical
+     * Implementations MAY try to detect this, if possible, but are not required to. This is due to technical
      * limitations of the signals being registered globally per process.
      *
-     * Multiple watchers on the same signal may be executed in any order.
+     * Multiple watchers on the same signal MAY be executed in any order.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.

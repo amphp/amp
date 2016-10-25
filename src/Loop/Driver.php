@@ -66,7 +66,7 @@ abstract class Driver
      * Repeatedly execute a callback.
      *
      * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be
-     * determined by which timers expire first, but timers with the same expiration time may be executed in any order.
+     * determined by which timers expire first, but timers with the same expiration time MAY be executed in any order.
      * The first execution is scheduled after the first interval period.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
@@ -81,11 +81,11 @@ abstract class Driver
      * Execute a callback when a stream resource becomes readable or is closed for reading.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * watcher when closing the resource locally. Drivers MAY choose to notify the user if there are watchers on invalid
      * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
      * therefore undefined behavior.
      *
-     * Multiple watchers on the same stream may be executed in any order.
+     * Multiple watchers on the same stream MAY be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -99,11 +99,11 @@ abstract class Driver
      * Execute a callback when a stream resource becomes writable or is closed for writing.
      *
      * Warning: Closing resources locally, e.g. with `fclose`, might not invoke the callback. Be sure to `cancel` the
-     * watcher when closing the resource locally. Drivers may choose to notify the user if there are watchers on invalid
+     * watcher when closing the resource locally. Drivers MAY choose to notify the user if there are watchers on invalid
      * resources, but are not required to, due to the high performance impact. Watchers on closed resources are
      * therefore undefined behavior.
      *
-     * Multiple watchers on the same stream may be executed in any order.
+     * Multiple watchers on the same stream MAY be executed in any order.
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
@@ -117,10 +117,10 @@ abstract class Driver
      * Execute a callback when a signal is received.
      *
      * Warning: Installing the same signal on different instances of this interface is deemed undefined behavior.
-     * Implementations may try to detect this, if possible, but are not required to. This is due to technical
+     * Implementations MAY try to detect this, if possible, but are not required to. This is due to technical
      * limitations of the signals being registered globally per process.
      *
-     * Multiple watchers on the same signal may be executed in any order.
+     * Multiple watchers on the same signal MAY be executed in any order.
      *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
