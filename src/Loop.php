@@ -342,10 +342,14 @@ final class Loop
     /**
      * Set a callback to be executed when an error occurs.
      *
+     * The callback receives the error as the first and only parameter. The return value of the callback gets ignored.
+     * If it can't handle the error, it MUST throw the error. Errors thrown by the callback or during its invocation
+     * MUST be thrown into the `run` loop and stop the driver.
+     *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute; null will clear the current
-     *     handler.
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     *     current handler.
      *
      * @return void
      */
