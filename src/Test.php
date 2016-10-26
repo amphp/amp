@@ -577,7 +577,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $this->markTestSkipped("ext/posix required to test signal handlers");
         }
 
-        $this->expectOutputString("123456");
+        $this->expectOutputString("122222");
         $this->start(function(Driver $loop) {
             $f = function($i) use ($loop) {
                 return function($watcherId) use ($loop, $i) {
@@ -588,15 +588,15 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
             $loop->defer($f(1));
             $loop->onSignal(SIGUSR1, $f(2));
-            $sig1 = $loop->onSignal(SIGUSR1, $f(4));
-            $sig2 = $loop->onSignal(SIGUSR1, $f(6));
+            $sig1 = $loop->onSignal(SIGUSR1, $f(2));
+            $sig2 = $loop->onSignal(SIGUSR1, $f(2));
             $sig3 = $loop->onSignal(SIGUSR1, $f(" FAIL - MUST NOT BE CALLED "));
             $loop->disable($sig1);
-            $loop->onSignal(SIGUSR1, $f(3));
+            $loop->onSignal(SIGUSR1, $f(2));
             $loop->disable($sig2);
             $loop->enable($sig1);
             $loop->cancel($sig3);
-            $loop->onSignal(SIGUSR1, $f(5));
+            $loop->onSignal(SIGUSR1, $f(2));
             $loop->defer(function() use ($loop, $sig2) {
                 $loop->enable($sig2);
                 $loop->defer(function() use ($loop) {
