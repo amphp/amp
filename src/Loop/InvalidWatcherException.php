@@ -9,5 +9,29 @@ namespace Interop\Async\Loop;
  */
 class InvalidWatcherException extends \Exception
 {
+    /** @var string */
+    private $watcherId;
 
+    /**
+     * @param string $watcherId The watcher identifier.
+     * @param string|null $message The exception message.
+     */
+    public function __construct($watcherId, $message = null)
+    {
+        $this->watcherId = $watcherId;
+
+        if ($message === null) {
+            $message = "An invalid watcher idenfier has been used: '{$watcherId}'";
+        }
+
+        parent::__construct($message);
+    }
+
+    /**
+     * @return string The watcher identifier.
+     */
+    public function getWatcherId()
+    {
+        return $this->watcherId;
+    }
 }
