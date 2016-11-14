@@ -35,7 +35,7 @@ class LazyPromise implements Promise {
             try {
                 $this->promise = $provider();
 
-                if ($this->promise instanceof Promise) {
+                if (!$this->promise instanceof Promise) {
                     $this->promise = new Success($this->promise);
                 }
             } catch (\Throwable $exception) {
