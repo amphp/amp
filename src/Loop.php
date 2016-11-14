@@ -55,6 +55,10 @@ final class Loop
     /**
      * Execute a callback within the scope of an event loop driver.
      *
+     * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
+     * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
+     * error handler or exceptions that would be passed to an error handler but none exists to handle them.
+     *
      * @param callable $callback The callback to execute.
      * @param Driver $driver The event loop driver. If `null`, a new one is created from the set factory.
      *
@@ -117,6 +121,9 @@ final class Loop
 
     /**
      * Stop the event loop.
+     *
+     * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
+     * to stop MUST be ignored and MUST NOT raise an exception.
      *
      * @return void
      */
