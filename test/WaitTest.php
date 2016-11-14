@@ -52,11 +52,12 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \Error
+     * @expectedExceptionMessage Loop emptied without resolving promise
      */
     public function testPromiseWithNoResolutionPathThrowsException()
     {
         $promise = new Deferred;
 
-        $result = Amp\wait($promise->getPromise());
+        $result = Amp\wait($promise->promise());
     }
 }
