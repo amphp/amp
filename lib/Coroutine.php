@@ -2,16 +2,16 @@
 
 namespace Amp;
 
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 /**
- * Creates an awaitable from a generator function yielding awaitables.
+ * Creates a promise from a generator function yielding promises.
  *
- * When an awaitable is yielded, execution of the generator is interrupted until the awaitable is resolved. A success
+ * When a promise is yielded, execution of the generator is interrupted until the promise is resolved. A success
  * value is sent into the generator, while a failure reason is thrown into the generator. Using a coroutine,
  * asynchronous code can be written without callbacks and be structured like synchronous code.
  */
-final class Coroutine implements Awaitable {
+final class Coroutine implements Promise {
     use Internal\Placeholder;
 
     /**
@@ -57,7 +57,7 @@ final class Coroutine implements Awaitable {
                     $yielded = $this->generator->send($value);
                 }
 
-                if ($yielded instanceof Awaitable) {
+                if ($yielded instanceof Promise) {
                     ++$this->depth;
                     $yielded->when($this->when);
                     --$this->depth;
@@ -68,7 +68,7 @@ final class Coroutine implements Awaitable {
                     $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                     throw new InvalidYieldError(
                         $this->generator,
-                        \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)
+                        \sprintf("Unexpected yield (%s expected, got %s)", Promise::class, $got)
                     );
                 }
 
@@ -81,7 +81,7 @@ final class Coroutine implements Awaitable {
         try {
             $yielded = $this->generator->current();
 
-            if ($yielded instanceof Awaitable) {
+            if ($yielded instanceof Promise) {
                 ++$this->depth;
                 $yielded->when($this->when);
                 --$this->depth;
@@ -92,7 +92,7 @@ final class Coroutine implements Awaitable {
                 $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                 throw new InvalidYieldError(
                     $this->generator,
-                    \sprintf("Unexpected yield (%s expected, got %s)", Awaitable::class, $got)
+                    \sprintf("Unexpected yield (%s expected, got %s)", Promise::class, $got)
                 );
             }
 

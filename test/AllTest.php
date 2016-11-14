@@ -3,8 +3,7 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Pause;
-use Amp\Success;
+use Amp\{ Pause, Success };
 use Interop\Async\Loop;
 
 class AllTest extends \PHPUnit_Framework_TestCase {
@@ -18,21 +17,21 @@ class AllTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame([], $result);
     }
 
-    public function testSuccessfulAwaitablesArray() {
-        $awaitables = [new Success(1), new Success(2), new Success(3)];
+    public function testSuccessfulPromisesArray() {
+        $promises = [new Success(1), new Success(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        Amp\all($awaitables)->when($callback);
+        Amp\all($promises)->when($callback);
 
         $this->assertSame([1, 2, 3], $result);
     }
 
     public function testPendingAwatiablesArray() {
         Loop::execute(function () use (&$result) {
-            $awaitables = [
+            $promises = [
                 new Pause(20, 1),
                 new Pause(30, 2),
                 new Pause(10, 3),
@@ -42,7 +41,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\all($awaitables)->when($callback);
+            Amp\all($promises)->when($callback);
         });
 
         $this->assertEquals([1, 2, 3], $result);
@@ -52,7 +51,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
         Loop::execute(function () use (&$result) {
-            $awaitables = [
+            $promises = [
                 'one'   => new Pause(20, 1),
                 'two'   => new Pause(30, 2),
                 'three' => new Pause(10, 3),
@@ -62,7 +61,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\all($awaitables)->when($callback);
+            Amp\all($promises)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -71,7 +70,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
     /**
      * @expectedException \Error
      */
-    public function testNonAwaitable() {
+    public function testNonPromise() {
         Amp\all([1]);
     }
 }

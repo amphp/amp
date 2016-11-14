@@ -2,8 +2,7 @@
 
 namespace Amp\Test;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Loop, Promise };
 
 class Placeholder {
     use \Amp\Internal\Placeholder {
@@ -282,28 +281,28 @@ class PlaceholderTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testResolveWithAwaitableBeforeWhen() {
-        $awaitable = $this->getMockBuilder(Awaitable::class)->getMock();
+    public function testResolveWithPromiseBeforeWhen() {
+        $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $awaitable->expects($this->once())
+        $promise->expects($this->once())
             ->method("when")
             ->with($this->callback("is_callable"));
 
-        $this->placeholder->resolve($awaitable);
+        $this->placeholder->resolve($promise);
 
         $this->placeholder->when(function () {});
     }
 
-    public function testResolveWithAwaitableAfterWhen() {
-        $awaitable = $this->getMockBuilder(Awaitable::class)->getMock();
+    public function testResolveWithPromiseAfterWhen() {
+        $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $awaitable->expects($this->once())
+        $promise->expects($this->once())
             ->method("when")
             ->with($this->callback("is_callable"));
 
         $this->placeholder->when(function () {});
 
-        $this->placeholder->resolve($awaitable);
+        $this->placeholder->resolve($promise);
     }
 
     /**

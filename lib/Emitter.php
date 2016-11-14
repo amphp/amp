@@ -8,7 +8,7 @@ final class Emitter implements Observable {
     use CallableMaker, Internal\Producer;
 
     /**
-     * @param callable(callable(mixed $value): Awaitable $emit): \Generator $emitter
+     * @param callable(callable(mixed $value): Promise $emit): \Generator $emitter
      *
      * @throws \Error Thrown if the callable does not return a Generator.
      */

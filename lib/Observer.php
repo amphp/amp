@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Observable.
@@ -15,6 +15,9 @@ use Interop\Async\Awaitable;
  * $result = $observer->getResult();
  */
 class Observer {
+    /** @var \Amp\Observable */
+    private $observable;
+    
     /** @var mixed[] */
     private $values = [];
 
@@ -40,12 +43,14 @@ class Observer {
      * @param \Amp\Observable $observable
      */
     public function __construct(Observable $observable) {
-        $deferred  = &$this->deferred;
-        $values    = &$this->values;
+        $this->observable = $observable;
+        
+        $deferred = &$this->deferred;
+        $values = &$this->values;
         $deferreds = &$this->deferreds;
-        $resolved  = &$this->resolved;
+        $resolved = &$this->resolved;
 
-        $observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
+        $this->observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
             $values[] = $value;
             $deferreds[] = $pressure = new Deferred;
 
@@ -59,13 +64,13 @@ class Observer {
                 return null;
             }
 
-            return $pressure->getAwaitable();
+            return $pressure->promise();
         });
 
         $result = &$this->result;
-        $error  = &$this->exception;
+        $error = &$this->exception;
 
-        $observable->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
+        $this->observable->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
             $resolved = true;
 
             if ($exception) {
@@ -94,14 +99,21 @@ class Observer {
             $deferred->resolve();
         }
     }
+    
+    /**
+     * @return \Amp\Observable The observable being observed.
+     */
+    public function observe(): Observable {
+        return $this->observable;
+    }
 
     /**
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the observable has
-     * resolved. If the observable fails, the returned awaitable will fail with the same exception.
+     * resolved. If the observable fails, the returned promise will fail with the same exception.
      *
-     * @return \Interop\Async\Awaitable<bool>
+     * @return \Interop\Async\Promise<bool>
      */
-    public function next(): Awaitable {
+    public function next(): Promise {
         if (isset($this->deferreds[$this->position])) {
             $future = $this->deferreds[$this->position];
             unset($this->values[$this->position], $this->deferreds[$this->position]);
@@ -125,7 +137,7 @@ class Observer {
         }
 
         $this->deferred = new Deferred;
-        return $this->deferred->getAwaitable();
+        return $this->deferred->promise();
     }
 
     /**
@@ -141,7 +153,7 @@ class Observer {
         }
 
         if (!\array_key_exists($this->position, $this->values)) {
-            throw new \Error("Awaitable returned from next() must resolve before calling this method");
+            throw new \Error("Promise returned from next() must resolve before calling this method");
         }
 
         return $this->values[$this->position];

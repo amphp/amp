@@ -2,14 +2,14 @@
 
 namespace Amp\Internal;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
- * An awaitable that cannot be externally resolved. Used by Deferred in development mode.
+ * An promise that cannot be externally resolved. Used by Deferred in development mode.
  *
  * @internal
  */
-final class PrivateAwaitable implements Awaitable {
+final class PrivatePromise implements Promise {
     use Placeholder;
 
     /**
@@ -17,7 +17,7 @@ final class PrivateAwaitable implements Awaitable {
      */
     public function __construct(callable $resolver) {
         /**
-         * Resolves the awaitable with the given awaitable or value.
+         * Resolves the promise with the given promise or value.
          *
          * @param mixed $value
          */
@@ -26,7 +26,7 @@ final class PrivateAwaitable implements Awaitable {
         };
         
         /**
-         * Fails the awaitable with the given exception.
+         * Fails the promise with the given exception.
          *
          * @param \Throwable $reason
          */

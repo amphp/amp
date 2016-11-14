@@ -8,7 +8,6 @@ use Amp\Emitter;
 use Amp\Observable;
 use Amp\Observer;
 use Amp\Pause;
-use Amp\Loop\NativeLoop;
 
 Amp\execute(function () {
     try {
@@ -42,4 +41,4 @@ Amp\execute(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}, $loop = new NativeLoop());
+});

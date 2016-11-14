@@ -3,10 +3,7 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Failure;
-use Amp\MultiReasonException;
-use Amp\Pause;
-use Amp\Success;
+use Amp\{ Failure, Pause, Success };
 use Interop\Async\Loop;
 
 class SomeTest extends \PHPUnit_Framework_TestCase {
@@ -17,34 +14,34 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
         Amp\some([]);
     }
 
-    public function testSuccessfulAwaitablesArray() {
-        $awaitables = [new Success(1), new Success(2), new Success(3)];
+    public function testSuccessfulPromisesArray() {
+        $promises = [new Success(1), new Success(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        Amp\some($awaitables)->when($callback);
+        Amp\some($promises)->when($callback);
 
         $this->assertSame([[], [1, 2, 3]], $result);
     }
 
-    public function testSuccessfulAndFailedAwaitablesArray() {
+    public function testSuccessfulAndFailedPromisesArray() {
         $exception = new \Exception;
-        $awaitables = [new Failure($exception), new Failure($exception), new Success(3)];
+        $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        Amp\some($awaitables)->when($callback);
+        Amp\some($promises)->when($callback);
 
         $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], $result);
     }
 
     public function testPendingAwatiablesArray() {
         Loop::execute(function () use (&$result) {
-            $awaitables = [
+            $promises = [
                 new Pause(20, 1),
                 new Pause(30, 2),
                 new Pause(10, 3),
@@ -54,7 +51,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\some($awaitables)->when($callback);
+            Amp\some($promises)->when($callback);
         });
 
         $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
@@ -64,7 +61,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
         $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
         Loop::execute(function () use (&$result) {
-            $awaitables = [
+            $promises = [
                 'one'   => new Pause(20, 1),
                 'two'   => new Pause(30, 2),
                 'three' => new Pause(10, 3),
@@ -74,7 +71,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
                 $result = $value;
             };
 
-            Amp\some($awaitables)->when($callback);
+            Amp\some($promises)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -83,7 +80,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
     /**
      * @expectedException \Error
      */
-    public function testNonAwaitable() {
+    public function testNonPromise() {
         Amp\some([1]);
     }
 }

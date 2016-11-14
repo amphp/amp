@@ -3,32 +3,29 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Deferred;
-use Amp\Failure;
-use Amp\Pause;
-use Amp\Success;
+use Amp\{ Deferred, Failure, Pause, Success };
 use Interop\Async\Loop;
 
 class WaitTest extends \PHPUnit_Framework_TestCase {
-    public function testWaitOnSuccessfulAwaitable()
+    public function testWaitOnSuccessfulPromise()
     {
         $value = 1;
 
-        $awaitable = new Success($value);
+        $promise = new Success($value);
 
-        $result = Amp\wait($awaitable);
+        $result = Amp\wait($promise);
 
         $this->assertSame($value, $result);
     }
 
-    public function testWaitOnFailedAwaitable()
+    public function testWaitOnFailedPromise()
     {
         $exception = new \Exception();
 
-        $awaitable = new Failure($exception);
+        $promise = new Failure($exception);
 
         try {
-            $result = Amp\wait($awaitable);
+            $result = Amp\wait($promise);
         } catch (\Exception $e) {
             $this->assertSame($exception, $e);
             return;
@@ -38,16 +35,16 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testWaitOnSuccessfulAwaitable
+     * @depends testWaitOnSuccessfulPromise
      */
-    public function testWaitOnPendingAwaitable()
+    public function testWaitOnPendingPromise()
     {
         Loop::execute(function () {
             $value = 1;
 
-            $awaitable = new Pause(100, $value);
+            $promise = new Pause(100, $value);
 
-            $result = Amp\wait($awaitable);
+            $result = Amp\wait($promise);
 
             $this->assertSame($value, $result);
         });
@@ -56,10 +53,10 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
     /**
      * @expectedException \Error
      */
-    public function testAwaitableWithNoResolutionPathThrowsException()
+    public function testPromiseWithNoResolutionPathThrowsException()
     {
-        $awaitable = new Deferred;
+        $promise = new Deferred;
 
-        $result = Amp\wait($awaitable->getAwaitable());
+        $result = Amp\wait($promise->getPromise());
     }
 }

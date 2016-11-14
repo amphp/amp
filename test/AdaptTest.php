@@ -3,20 +3,19 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Failure;
-use Amp\Success;
-use Interop\Async\Awaitable;
+use Amp\{ Failure, Success };
+use Interop\Async\Promise;
 
 class PromiseMock {
-    /** @var \Interop\Async\Awaitable */
-    private $awaitable;
+    /** @var \Interop\Async\Promise */
+    private $promise;
 
-    public function __construct(Awaitable $awaitable) {
-        $this->awaitable = $awaitable;
+    public function __construct(Promise $promise) {
+        $this->promise = $promise;
     }
 
     public function then(callable $onFulfilled = null, callable $onRejected = null) {
-        $this->awaitable->when(function ($exception, $value) use ($onFulfilled, $onRejected) {
+        $this->promise->when(function ($exception, $value) use ($onFulfilled, $onRejected) {
             if ($exception) {
                 if ($onRejected) {
                     $onRejected($exception);
@@ -48,22 +47,22 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
                 })
             );
         
-        $awaitable = Amp\adapt($mock);
+        $promise = Amp\adapt($mock);
         
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $this->assertInstanceOf(Promise::class, $promise);
     }
     
     /**
      * @depends testThenCalled
      */
-    public function testAwaitableFulfilled() {
+    public function testPromiseFulfilled() {
         $value = 1;
 
         $promise = new PromiseMock(new Success($value));
 
-        $awaitable = Amp\adapt($promise);
+        $promise = Amp\adapt($promise);
 
-        $awaitable->when(function ($exception, $value) use (&$result) {
+        $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
 
@@ -73,14 +72,14 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testThenCalled
      */
-    public function testAwaitableRejected() {
+    public function testPromiseRejected() {
         $exception = new \Exception;
 
         $promise = new PromiseMock(new Failure($exception));
 
-        $awaitable = Amp\adapt($promise);
+        $promise = Amp\adapt($promise);
 
-        $awaitable->when(function ($exception, $value) use (&$reason) {
+        $promise->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
 

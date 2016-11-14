@@ -3,12 +3,11 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Failure;
-use Amp\Success;
-use Interop\Async\Awaitable;
+use Amp\{ Failure, Success };
+use Interop\Async\Promise;
 
 class CaptureTest extends \PHPUnit_Framework_TestCase {
-    public function testSuccessfulAwaitable() {
+    public function testSuccessfulPromise() {
         $invoked = false;
         $callback = function ($exception) use (&$invoked) {
             $invoked = true;
@@ -17,22 +16,22 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
 
         $value = 1;
 
-        $awaitable = new Success($value);
+        $promise = new Success($value);
 
-        $awaitable = Amp\capture($awaitable, \Exception::class, $callback);
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertFalse($invoked);
         $this->assertSame($value, $result);
     }
 
-    public function testFailedAwaitable() {
+    public function testFailedPromise() {
         $invoked = false;
         $callback = function ($exception) use (&$invoked, &$reason) {
             $invoked = true;
@@ -42,16 +41,16 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
 
         $exception = new \Exception;
 
-        $awaitable = new Failure($exception);
+        $promise = new Failure($exception);
 
-        $awaitable = Amp\capture($awaitable, \Exception::class, $callback);
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
@@ -59,7 +58,7 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
     }
     
     /**
-     * @depends testFailedAwaitable
+     * @depends testFailedPromise
      */
     public function testCallbackThrowing() {
         $invoked = false;
@@ -70,22 +69,22 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
 
         $exception = new \Exception;
 
-        $awaitable = new Failure($exception);
+        $promise = new Failure($exception);
 
-        $awaitable = Amp\capture($awaitable, \Exception::class, $callback);
+        $promise = Amp\capture($promise, \Exception::class, $callback);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertTrue($invoked);
         $this->assertNotSame($exception, $reason);
     }
 
     /**
-     * @depends testFailedAwaitable
+     * @depends testFailedPromise
      */
     public function testUnmatchedExceptionClass() {
         $invoked = false;
@@ -97,15 +96,15 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
 
         $exception = new \LogicException;
 
-        $awaitable = new Failure($exception);
+        $promise = new Failure($exception);
 
-        $awaitable = Amp\capture($awaitable, \RuntimeException::class, $callback);
+        $promise = Amp\capture($promise, \RuntimeException::class, $callback);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertFalse($invoked);
         $this->assertSame($exception, $reason);

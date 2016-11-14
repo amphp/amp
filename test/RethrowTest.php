@@ -7,20 +7,20 @@ use Amp\Failure;
 use Interop\Async\Loop;
 
 class RethrowTest extends \PHPUnit_Framework_TestCase {
-    public function testWaitOnPendingAwaitable() {
+    public function testWaitOnPendingPromise() {
         $exception = new \Exception;
 
         try {
             Loop::execute(function () use ($exception) {
-                $awaitable = new Failure($exception);
+                $promise = new Failure($exception);
 
-                Amp\rethrow($awaitable);
+                Amp\rethrow($promise);
             });
         } catch (\Exception $reason) {
             $this->assertSame($exception, $reason);
             return;
         }
 
-        $this->fail('Failed awaitable reason should be thrown from loop');
+        $this->fail('Failed promise reason should be thrown from loop');
     }
 }

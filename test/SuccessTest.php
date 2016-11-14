@@ -3,15 +3,14 @@
 namespace Amp\Test;
 
 use Amp\Success;
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\{ Loop, Promise };
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
     /**
      * @expectedException \Error
      */
     public function testConstructWithNonException() {
-        $failure = new Success($this->getMockBuilder(Awaitable::class)->getMock());
+        $failure = new Success($this->getMockBuilder(Promise::class)->getMock());
     }
 
     public function testWhen() {

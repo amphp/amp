@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\{ Deferred, Success };
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 /**
  * Trait used by Observable implementations. Do not use this trait in your code, instead compose your class from one of
@@ -33,26 +33,26 @@ trait Producer {
     }
 
     /**
-     * Emits a value from the observable. The returned awaitable is resolved with the emitted value once all subscribers
+     * Emits a value from the observable. The returned promise is resolved with the emitted value once all subscribers
      * have been invoked.
      *
      * @param mixed $value
      *
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Promise
      *
      * @throws \Error If the observable has resolved.
      */
-    private function emit($value): Awaitable {
+    private function emit($value): Promise {
         if ($this->resolved) {
             throw new \Error("The observable has been resolved; cannot emit more values");
         }
 
-        if ($value instanceof Awaitable) {
+        if ($value instanceof Promise) {
             $deferred = new Deferred;
             $value->when(function ($e, $v) use ($deferred) {
                 if ($this->resolved) {
                     $deferred->fail(
-                        new \Error("The observable was resolved before the awaitable result could be emitted")
+                        new \Error("The observable was resolved before the promise result could be emitted")
                     );
                     return;
                 }
@@ -66,16 +66,16 @@ trait Producer {
                 $deferred->resolve($this->emit($v));
             });
             
-            return $deferred->getAwaitable();
+            return $deferred->promise();
         }
 
-        $awaitables = [];
+        $promises = [];
 
         foreach ($this->subscribers as $onNext) {
             try {
                 $result = $onNext($value);
-                if ($result instanceof Awaitable) {
-                    $awaitables[] = $result;
+                if ($result instanceof Promise) {
+                    $promises[] = $result;
                 }
             } catch (\Throwable $e) {
                 Loop::defer(static function () use ($e) {
@@ -84,12 +84,12 @@ trait Producer {
             }
         }
 
-        if (!$awaitables) {
+        if (!$promises) {
             return new Success($value);
         }
 
         $deferred = new Deferred;
-        $count = \count($awaitables);
+        $count = \count($promises);
         $f = static function ($e) use ($deferred, $value, &$count) {
             if ($e) {
                 Loop::defer(static function () use ($e) {
@@ -101,11 +101,11 @@ trait Producer {
             }
         };
 
-        foreach ($awaitables as $awaitable) {
-            $awaitable->when($f);
+        foreach ($promises as $promise) {
+            $promise->when($f);
         }
 
-        return $deferred->getAwaitable();
+        return $deferred->promise();
     }
 
 

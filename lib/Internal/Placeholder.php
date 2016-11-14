@@ -3,11 +3,11 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 /**
- * Trait used by Awaitable implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \Interop\Async\Awaitable.
+ * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Interop\Async\Promise.
  *
  * @internal
  */
@@ -22,11 +22,11 @@ trait Placeholder {
     private $onResolved;
     
     /**
-     * @see \Interop\Async\Awaitable::when()
+     * @see \Interop\Async\Promise::when()
      */
     public function when(callable $onResolved) {
         if ($this->resolved) {
-            if ($this->result instanceof Awaitable) {
+            if ($this->result instanceof Promise) {
                 $this->result->when($onResolved);
                 return;
             }
@@ -56,11 +56,11 @@ trait Placeholder {
     /**
      * @param mixed $value
      *
-     * @throws \Error Thrown if the awaitable has already been resolved.
+     * @throws \Error Thrown if the promise has already been resolved.
      */
     private function resolve($value = null) {
         if ($this->resolved) {
-            throw new \Error("Awaitable has already been resolved");
+            throw new \Error("Promise has already been resolved");
         }
 
         $this->resolved = true;
@@ -73,7 +73,7 @@ trait Placeholder {
         $onResolved = $this->onResolved;
         $this->onResolved = null;
 
-        if ($this->result instanceof Awaitable) {
+        if ($this->result instanceof Promise) {
             $this->result->when($onResolved);
             return;
         }

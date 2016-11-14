@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 class DeferredTest extends \PHPUnit_Framework_TestCase {
     /** @var \Amp\Deferred */
@@ -13,20 +13,20 @@ class DeferredTest extends \PHPUnit_Framework_TestCase {
         $this->deferred = new Deferred;
     }
 
-    public function testGetAwaitable() {
-        $awaitable = $this->deferred->getAwaitable();
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+    public function testGetPromise() {
+        $promise = $this->deferred->promise();
+        $this->assertInstanceOf(Promise::class, $promise);
     }
     
     /**
-     * @depends testGetAwaitable
+     * @depends testGetPromise
      */
     public function testResolve() {
         $value = "Resolution value";
-        $awaitable = $this->deferred->getAwaitable();
+        $promise = $this->deferred->promise();
 
         $invoked = false;
-        $awaitable->when(function ($exception, $value) use (&$invoked, &$result) {
+        $promise->when(function ($exception, $value) use (&$invoked, &$result) {
             $invoked = true;
             $result = $value;
         });
@@ -38,14 +38,14 @@ class DeferredTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testGetAwaitable
+     * @depends testGetPromise
      */
     public function testFail() {
         $exception = new \Exception;
-        $awaitable = $this->deferred->getAwaitable();
+        $promise = $this->deferred->promise();
 
         $invoked = false;
-        $awaitable->when(function ($exception, $value) use (&$invoked, &$result) {
+        $promise->when(function ($exception, $value) use (&$invoked, &$result) {
             $invoked = true;
             $result = $exception;
         });

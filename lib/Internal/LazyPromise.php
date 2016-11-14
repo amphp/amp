@@ -3,19 +3,19 @@
 namespace Amp\Internal;
 
 use Amp\{ Failure, Success };
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
- * Awaitable returned from Amp\lazy(). Use Amp\lazy() instead of instigating this object directly.
+ * Promise returned from Amp\lazy(). Use Amp\lazy() instead of instigating this object directly.
  *
  * @internal
  */
-class LazyAwaitable implements Awaitable {
+class LazyPromise implements Promise {
     /** @var callable|null */
     private $provider;
 
-    /** @var \Interop\Async\Awaitable|null */
-    private $awaitable;
+    /** @var \Interop\Async\Promise|null */
+    private $promise;
 
     /**
      * @param callable $provider
@@ -28,21 +28,21 @@ class LazyAwaitable implements Awaitable {
      * {@inheritdoc}
      */
     public function when(callable $onResolved) {
-        if (null === $this->awaitable) {
+        if (null === $this->promise) {
             $provider = $this->provider;
             $this->provider = null;
 
             try {
-                $this->awaitable = $provider();
+                $this->promise = $provider();
 
-                if ($this->awaitable instanceof Awaitable) {
-                    $this->awaitable = new Success($this->awaitable);
+                if ($this->promise instanceof Promise) {
+                    $this->promise = new Success($this->promise);
                 }
             } catch (\Throwable $exception) {
-                $this->awaitable = new Failure($exception);
+                $this->promise = new Failure($exception);
             }
         }
 
-        $this->awaitable->when($onResolved);
+        $this->promise->when($onResolved);
     }
 }

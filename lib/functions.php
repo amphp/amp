@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\{ Awaitable, Loop, Loop\Driver };
+use Interop\Async\{ Promise, Loop, Loop\Driver };
 
 /**
  * Execute a callback within the event loop scope.
@@ -229,10 +229,10 @@ function setErrorHandler(callable $callback) {
 }
 
 /**
- * Wraps the callback in an awaitable/coroutine-aware function that automatically upgrades Generators to coroutines and
+ * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the created coroutine.
  *
- * @param callable(...$args): \Generator|\Interop\Async\Awaitable|mixed $callback
+ * @param callable(...$args): \Generator|\Interop\Async\Promise|mixed $callback
  *
  * @return callable(...$args): void
  */
@@ -246,16 +246,16 @@ function wrap(callable $callback): callable {
 }
 
 /**
- * Returns a new function that wraps $worker in a awaitable/coroutine-aware function that automatically upgrades
- * Generators to coroutines. The returned function always returns an awaitable when invoked. If $worker throws, a failed
- * awaitable is returned.
+ * Returns a new function that wraps $worker in a promise/coroutine-aware function that automatically upgrades
+ * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws, a failed
+ * promise is returned.
  *
  * @param callable(mixed ...$args): mixed $worker
  *
- * @return callable(mixed ...$args): \Interop\Async\Awaitable
+ * @return callable(mixed ...$args): \Interop\Async\Promise
  */
 function coroutine(callable $worker): callable {
-    return function (...$args) use ($worker): Awaitable {
+    return function (...$args) use ($worker): Promise {
         try {
             $result = $worker(...$args);
         } catch (\Throwable $exception) {
@@ -266,7 +266,7 @@ function coroutine(callable $worker): callable {
             return new Coroutine($result);
         }
         
-        if (!$result instanceof Awaitable) {
+        if (!$result instanceof Promise) {
             return new Success($result);
         }
 
@@ -275,12 +275,12 @@ function coroutine(callable $worker): callable {
 }
 
 /**
- * Registers a callback that will forward the failure reason to the Loop error handler if the awaitable fails.
+ * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
- * @param \Interop\Async\Awaitable $awaitable
+ * @param \Interop\Async\Promise $promise
  */
-function rethrow(Awaitable $awaitable) {
-    $awaitable->when(function ($exception) {
+function rethrow(Promise $promise) {
+    $promise->when(function ($exception) {
         if ($exception) {
             throw $exception;
         }
@@ -288,18 +288,18 @@ function rethrow(Awaitable $awaitable) {
 }
 
 /**
- * Runs the event loop until the awaitable is resolved. Should not be called within a running event loop.
+ * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
  *
- * @param \Interop\Async\Awaitable $awaitable
+ * @param \Interop\Async\Promise $promise
  *
- * @return mixed Awaitable success value.
+ * @return mixed Promise success value.
  *
- * @throws \Throwable Awaitable failure reason.
+ * @throws \Throwable Promise failure reason.
  */
-function wait(Awaitable $awaitable) {
+function wait(Promise $promise) {
     $resolved = false;
-    Loop::execute(function () use (&$resolved, &$value, &$exception, $awaitable) {
-        $awaitable->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
+    Loop::execute(function () use (&$resolved, &$value, &$exception, $promise) {
+        $promise->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
             Loop::stop();
             $resolved = true;
             $exception = $e;
@@ -308,7 +308,7 @@ function wait(Awaitable $awaitable) {
     }, Loop::get());
 
     if (!$resolved) {
-        throw new \Error("Loop emptied without resolving awaitable");
+        throw new \Error("Loop emptied without resolving promise");
     }
 
     if ($exception) {
@@ -321,15 +321,15 @@ function wait(Awaitable $awaitable) {
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param \Interop\Async\Awaitable $awaitable
+ * @param \Interop\Async\Promise $promise
  * @param callable(mixed $value): mixed $functor
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  */
-function pipe(Awaitable $awaitable, callable $functor): Awaitable {
+function pipe(Promise $promise, callable $functor): Promise {
     $deferred = new Deferred;
 
-    $awaitable->when(function ($exception, $value) use ($deferred, $functor) {
+    $promise->when(function ($exception, $value) use ($deferred, $functor) {
         if ($exception) {
             $deferred->fail($exception);
             return;
@@ -342,21 +342,21 @@ function pipe(Awaitable $awaitable, callable $functor): Awaitable {
         }
     });
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * @param \Interop\Async\Awaitable $awaitable
+ * @param \Interop\Async\Promise $promise
  * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
  * @param callable(\Throwable $exception): mixed $functor
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  */
-function capture(Awaitable $awaitable, string $className, callable $functor): Awaitable {
+function capture(Promise $promise, string $className, callable $functor): Promise {
     $deferred = new Deferred;
 
-    $awaitable->when(function ($exception, $value) use ($deferred, $className, $functor) {
+    $promise->when(function ($exception, $value) use ($deferred, $className, $functor) {
         if (!$exception) {
             $deferred->resolve($value);
             return;
@@ -374,21 +374,21 @@ function capture(Awaitable $awaitable, string $className, callable $functor): Aw
         }
     });
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Create an artificial timeout for any Awaitable.
+ * Create an artificial timeout for any Promise.
  *
- * If the timeout expires before the awaitable is resolved, the returned awaitable fails with an instance of
+ * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
  * \Amp\TimeoutException.
  *
- * @param \Interop\Async\Awaitable $awaitable
+ * @param \Interop\Async\Promise $promise
  * @param int $timeout Timeout in milliseconds.
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  */
-function timeout(Awaitable $awaitable, int $timeout): Awaitable {
+function timeout(Promise $promise, int $timeout): Promise {
     $deferred = new Deferred;
     $resolved = false;
 
@@ -399,7 +399,7 @@ function timeout(Awaitable $awaitable, int $timeout): Awaitable {
         }
     });
 
-    $awaitable->when(function () use (&$resolved, $awaitable, $deferred, $watcher) {
+    $promise->when(function () use (&$resolved, $promise, $deferred, $watcher) {
         Loop::cancel($watcher);
 
         if ($resolved) {
@@ -407,56 +407,56 @@ function timeout(Awaitable $awaitable, int $timeout): Awaitable {
         }
 
         $resolved = true;
-        $deferred->resolve($awaitable);
+        $deferred->resolve($promise);
     });
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Returns a awaitable that calls $promisor only when the result of the awaitable is requested (e.g., then() or
- * done() is called on the returned awaitable). $promisor can return a awaitable or any value. If $promisor throws
- * an exception, the returned awaitable is rejected with that exception.
+ * Returns a promise that calls $promisor only when the result of the promise is requested (e.g., then() or
+ * done() is called on the returned promise). $promisor can return a promise or any value. If $promisor throws
+ * an exception, the returned promise is rejected with that exception.
  *
  * @param callable $promisor
  * @param mixed ...$args
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  */
-function lazy(callable $promisor, ...$args): Awaitable {
+function lazy(callable $promisor, ...$args): Promise {
     if (empty($args)) {
-        return new Internal\LazyAwaitable($promisor);
+        return new Internal\LazyPromise($promisor);
     }
 
-    return new Internal\LazyAwaitable(function () use ($promisor, $args) {
+    return new Internal\LazyPromise(function () use ($promisor, $args) {
         return $promisor(...$args);
     });
 }
 
 /**
- * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a awaitable usable by
- * components depending on placeholders implementing Awaitable.
+ * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a promise usable by
+ * components depending on placeholders implementing Promise.
  *
  * @param object $thenable Object with a then() method.
  *
- * @return \Interop\Async\Awaitable Awaitable resolved by the $thenable object.
+ * @return \Interop\Async\Promise Promise resolved by the $thenable object.
  *
  * @throws \Error If the provided object does not have a then() method.
  */
-function adapt($thenable): Awaitable {
+function adapt($thenable): Promise {
     $deferred = new Deferred;
 
     $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Wraps the given callable $worker in a awaitable aware function that has the same number of arguments as $worker,
- * but those arguments may be awaitables for the future argument value or just values. The returned function will
- * return a awaitable for the return value of $worker and will never throw. The $worker function will not be called
- * until each awaitable given as an argument is fulfilled. If any awaitable provided as an argument fails, the
- * awaitable returned by the returned function will be failed for the same reason. The awaitable succeeds with
+ * Wraps the given callable $worker in a promise aware function that has the same number of arguments as $worker,
+ * but those arguments may be promises for the future argument value or just values. The returned function will
+ * return a promise for the return value of $worker and will never throw. The $worker function will not be called
+ * until each promise given as an argument is fulfilled. If any promise provided as an argument fails, the
+ * promise returned by the returned function will be failed for the same reason. The promise succeeds with
  * the return value of $worker or failed if $worker throws.
  *
  * @param callable $worker
@@ -465,13 +465,13 @@ function adapt($thenable): Awaitable {
  */
 function lift(callable $worker): callable {
     /**
-     * @param mixed ...$args Awaitables or values.
+     * @param mixed ...$args Promises or values.
      *
-     * @return \Interop\Async\Awaitable
+     * @return \Interop\Async\Promise
      */
-    return function (...$args) use ($worker): Awaitable {
+    return function (...$args) use ($worker): Promise {
         foreach ($args as $key => $arg) {
-            if (!$arg instanceof Awaitable) {
+            if (!$arg instanceof Promise) {
                 $args[$key] = new Success($arg);
             }
         }
@@ -487,36 +487,36 @@ function lift(callable $worker): callable {
 }
 
 /**
- * Returns a awaitable that is resolved when all awaitables are resolved. The returned awaitable will not fail.
- * Returned awaitable succeeds with a two-item array delineating successful and failed awaitable results,
+ * Returns a promise that is resolved when all promises are resolved. The returned promise will not fail.
+ * Returned promise succeeds with a two-item array delineating successful and failed promise results,
  * with keys identical and corresponding to the original given array.
  *
  * This function is the same as some() with the notable exception that it will never fail even
- * if all awaitables in the array resolve unsuccessfully.
+ * if all promises in the array resolve unsuccessfully.
  *
- * @param Awaitable[] $awaitables
+ * @param Promise[] $promises
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  *
- * @throws \Error If a non-Awaitable is in the array.
+ * @throws \Error If a non-Promise is in the array.
  */
-function any(array $awaitables): Awaitable {
-    if (empty($awaitables)) {
+function any(array $promises): Promise {
+    if (empty($promises)) {
         return new Success([[], []]);
     }
 
     $deferred = new Deferred;
 
-    $pending = \count($awaitables);
+    $pending = \count($promises);
     $errors = [];
     $values = [];
 
-    foreach ($awaitables as $key => $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+    foreach ($promises as $key => $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
 
-        $awaitable->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
+        $promise->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
             if ($error) {
                 $errors[$key] = $error;
             } else {
@@ -528,37 +528,37 @@ function any(array $awaitables): Awaitable {
             }
         });
     }
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Returns a awaitable that succeeds when all awaitables succeed, and fails if any awaitable fails. Returned
- * awaitable succeeds with an array of values used to succeed each contained awaitable, with keys corresponding to
- * the array of awaitables.
+ * Returns a promise that succeeds when all promises succeed, and fails if any promise fails. Returned
+ * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
+ * the array of promises.
  *
- * @param Awaitable[] $awaitables
+ * @param Promise[] $promises
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  *
- * @throws \Error If a non-Awaitable is in the array.
+ * @throws \Error If a non-Promise is in the array.
  */
-function all(array $awaitables): Awaitable {
-    if (empty($awaitables)) {
+function all(array $promises): Promise {
+    if (empty($promises)) {
         return new Success([]);
     }
 
     $deferred = new Deferred;
 
-    $pending = \count($awaitables);
+    $pending = \count($promises);
     $resolved = false;
     $values = [];
 
-    foreach ($awaitables as $key => $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+    foreach ($promises as $key => $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
 
-        $awaitable->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
+        $promise->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
             if ($resolved) {
                 return;
             }
@@ -576,35 +576,35 @@ function all(array $awaitables): Awaitable {
         });
     }
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Returns a awaitable that succeeds when the first awaitable succeeds, and fails only if all awaitables fail.
+ * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
  *
- * @param Awaitable[] $awaitables
+ * @param Promise[] $promises
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  *
- * @throws \Error If the array is empty or a non-Awaitable is in the array.
+ * @throws \Error If the array is empty or a non-Promise is in the array.
  */
-function first(array $awaitables): Awaitable {
-    if (empty($awaitables)) {
-        throw new \Error("No awaitables provided");
+function first(array $promises): Promise {
+    if (empty($promises)) {
+        throw new \Error("No promises provided");
     }
 
     $deferred = new Deferred;
 
-    $pending = \count($awaitables);
+    $pending = \count($promises);
     $resolved = false;
     $exceptions = [];
 
-    foreach ($awaitables as $key => $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+    foreach ($promises as $key => $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
 
-        $awaitable->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+        $promise->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
             if ($resolved) {
                 return;
             }
@@ -622,35 +622,35 @@ function first(array $awaitables): Awaitable {
         });
     }
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Resolves with a two-item array delineating successful and failed Awaitable results.
+ * Resolves with a two-item array delineating successful and failed Promise results.
  *
- * The returned awaitable will only fail if ALL of the awaitables fail.
+ * The returned promise will only fail if ALL of the promises fail.
 
- * @param Awaitable[] $awaitables
+ * @param Promise[] $promises
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  */
-function some(array $awaitables): Awaitable {
-    if (empty($awaitables)) {
-        throw new \Error("No awaitables provided");
+function some(array $promises): Promise {
+    if (empty($promises)) {
+        throw new \Error("No promises provided");
     }
 
-    $pending = \count($awaitables);
+    $pending = \count($promises);
 
     $deferred = new Deferred;
     $values = [];
     $exceptions = [];
 
-    foreach ($awaitables as $key => $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+    foreach ($promises as $key => $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
 
-        $awaitable->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
+        $promise->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
             if ($exception) {
                 $exceptions[$key] = $exception;
             } else {
@@ -668,32 +668,32 @@ function some(array $awaitables): Awaitable {
         });
     }
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Returns a awaitable that succeeds or fails when the first awaitable succeeds or fails.
+ * Returns a promise that succeeds or fails when the first promise succeeds or fails.
  *
- * @param Awaitable[] $awaitables
+ * @param Promise[] $promises
  *
- * @return \Interop\Async\Awaitable
+ * @return \Interop\Async\Promise
  *
- * @throws \Error If the array is empty or a non-Awaitable is in the array.
+ * @throws \Error If the array is empty or a non-Promise is in the array.
  */
-function choose(array $awaitables): Awaitable {
-    if (empty($awaitables)) {
-        throw new \Error("No awaitables provided");
+function choose(array $promises): Promise {
+    if (empty($promises)) {
+        throw new \Error("No promises provided");
     }
 
     $deferred = new Deferred;
     $resolved = false;
 
-    foreach ($awaitables as $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+    foreach ($promises as $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
 
-        $awaitable->when(function ($exception, $value) use (&$resolved, $deferred) {
+        $promise->when(function ($exception, $value) use (&$resolved, $deferred) {
             if ($resolved) {
                 return;
             }
@@ -709,33 +709,33 @@ function choose(array $awaitables): Awaitable {
         });
     }
 
-    return $deferred->getAwaitable();
+    return $deferred->promise();
 }
 
 /**
- * Maps the callback to each awaitable as it succeeds. Returns an array of awaitables resolved by the return
- * callback value of the callback function. The callback may return awaitables or throw exceptions to fail
- * awaitables in the array. If a awaitable in the passed array fails, the callback will not be called and the
- * awaitable in the array fails for the same reason. Tip: Use all() or any() to determine when all
- * awaitables in the array have been resolved.
+ * Maps the callback to each promise as it succeeds. Returns an array of promises resolved by the return
+ * callback value of the callback function. The callback may return promises or throw exceptions to fail
+ * promises in the array. If a promise in the passed array fails, the callback will not be called and the
+ * promise in the array fails for the same reason. Tip: Use all() or any() to determine when all
+ * promises in the array have been resolved.
  *
  * @param callable(mixed $value): mixed $callback
- * @param Awaitable[] ...$awaitables
+ * @param Promise[] ...$promises
  *
- * @return \Interop\Async\Awaitable[] Array of awaitables resolved with the result of the mapped function.
+ * @return \Interop\Async\Promise[] Array of promises resolved with the result of the mapped function.
  */
-function map(callable $callback, array ...$awaitables): array {
+function map(callable $callback, array ...$promises): array {
     $callback = lift($callback);
 
-    foreach ($awaitables as $awaitableSet) {
-        foreach ($awaitableSet as $awaitable) {
-            if (!$awaitable instanceof Awaitable) {
-                throw new \Error("Non-awaitable provided");
+    foreach ($promises as $promiseSet) {
+        foreach ($promiseSet as $promise) {
+            if (!$promise instanceof Promise) {
+                throw new \Error("Non-promise provided");
             }
         }
     }
 
-    return array_map($callback, ...$awaitables);
+    return array_map($callback, ...$promises);
 }
 
 /**
@@ -784,7 +784,7 @@ function each(Observable $observable, callable $onNext, callable $onComplete = n
         }
     });
     
-    return $postponed->getObservable();
+    return $postponed->observe();
 }
 
 /**
@@ -826,7 +826,7 @@ function filter(Observable $observable, callable $filter): Observable {
         $postponed->resolve($value);
     });
     
-    return $postponed->getObservable();
+    return $postponed->observe();
 }
 
 /**
@@ -855,31 +855,31 @@ function merge(array $observables): Observable {
         $postponed->resolve($values);
     });
     
-    return $postponed->getObservable();
+    return $postponed->observe();
 }
 
 
 /**
- * Creates an observable from the given array of awaitables, emitting the success value of each provided awaitable or
- * failing if any awaitable fails.
+ * Creates an observable from the given array of promises, emitting the success value of each provided promise or
+ * failing if any promise fails.
  *
- * @param \Interop\Async\Awaitable[] $awaitables
+ * @param \Interop\Async\Promise[] $promises
  *
  * @return \Amp\Observable
  *
- * @throws \Error If a non-awaitable is provided.
+ * @throws \Error If a non-promise is provided.
  */
-function stream(array $awaitables): Observable {
-    foreach ($awaitables as $awaitable) {
-        if (!$awaitable instanceof Awaitable) {
-            throw new \Error("Non-awaitable provided");
+function stream(array $promises): Observable {
+    foreach ($promises as $promise) {
+        if (!$promise instanceof Promise) {
+            throw new \Error("Non-promise provided");
         }
     }
     
-    return new Emitter(function (callable $emit) use ($awaitables) {
+    return new Emitter(function (callable $emit) use ($promises) {
         $emits = [];
-        foreach ($awaitables as $awaitable) {
-            $emits[] = $emit($awaitable);
+        foreach ($promises as $promise) {
+            $emits[] = $emit($promise);
         }
         yield all($emits);
     });
@@ -904,12 +904,12 @@ function concat(array $observables): Observable {
     $postponed = new Postponed;
     $subscriptions = [];
     $previous = [];
-    $awaitable = all($previous);
+    $promise = all($previous);
     
     foreach ($observables as $observable) {
-        $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($postponed, $awaitable) {
+        $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($postponed, $promise) {
             try {
-                yield $awaitable;
+                yield $promise;
             } catch (\Throwable $exception) {
                 // Ignore exception in this context.
             }
@@ -917,10 +917,10 @@ function concat(array $observables): Observable {
             return yield $postponed->emit($value);
         }));
         $previous[] = $observable;
-        $awaitable = all($previous);
+        $promise = all($previous);
     }
     
-    $awaitable->when(function ($exception, array $values) use ($postponed) {
+    $promise->when(function ($exception, array $values) use ($postponed) {
         if ($exception) {
             $postponed->fail($exception);
             return;
@@ -929,7 +929,7 @@ function concat(array $observables): Observable {
         $postponed->resolve($values);
     });
     
-    return $postponed->getObservable();
+    return $postponed->observe();
 }
 
 /**
@@ -959,7 +959,7 @@ function interval(int $interval, int $count = PHP_INT_MAX): Observable {
         }
     });
 
-    return $postponed->getObservable();
+    return $postponed->observe();
 }
 
 /**

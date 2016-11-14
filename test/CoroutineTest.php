@@ -3,18 +3,13 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Coroutine;
-use Amp\Failure;
-use Amp\InvalidYieldError;
-use Amp\Pause;
-use Amp\Success;
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Amp\{ Coroutine, Failure, InvalidYieldError, Pause, Success };
+use Interop\Async\{ Loop, Promise };
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 100;
 
-    public function testYieldSuccessfulAwaitable() {
+    public function testYieldSuccessfulPromise() {
         $value = 1;
 
         $generator = function () use (&$yielded, $value) {
@@ -26,7 +21,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame($value, $yielded);
     }
 
-    public function testYieldFailedAwaitable() {
+    public function testYieldFailedPromise() {
         $exception = new \Exception;
 
         $generator = function () use (&$yielded, $exception) {
@@ -45,9 +40,9 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldSuccessfulAwaitable
+     * @depends testYieldSuccessfulPromise
      */
-    public function testYieldPendingAwaitable() {
+    public function testYieldPendingPromise() {
         $value = 1;
 
         Loop::execute(function () use (&$yielded, $value) {
@@ -62,9 +57,9 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldFailedAwaitable
+     * @depends testYieldFailedPromise
      */
-    public function testCatchingFailedAwaitableException() {
+    public function testCatchingFailedPromiseException() {
         $exception = new \Exception;
 
         $fail = false;
@@ -82,7 +77,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $coroutine = new Coroutine($generator());
 
         if ($fail) {
-            $this->fail("Failed awaitable reason not thrown into generator");
+            $this->fail("Failed promise reason not thrown into generator");
         }
 
     }
@@ -104,7 +99,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testInvalidYield
      */
-    public function testInvalidYieldAfterYieldAwaitable() {
+    public function testInvalidYieldAfterYieldPromise() {
         $generator = function () {
             yield new Success;
             yield 1;
@@ -165,9 +160,9 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldFailedAwaitable
+     * @depends testYieldFailedPromise
      */
-    public function testCatchingFailedAwaitableExceptionWithNoFurtherYields() {
+    public function testCatchingFailedPromiseExceptionWithNoFurtherYields() {
         $exception = new \Exception;
 
         $generator = function () use ($exception) {
@@ -231,10 +226,10 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldFailedAwaitable
+     * @depends testYieldFailedPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
-    public function testGeneratorYieldingFailedAwaitableWithFinallyFailsCoroutine() {
+    public function testGeneratorYieldingFailedPromiseWithFinallyFailsCoroutine() {
         $exception = new \Exception;
 
         $invoked = false;
@@ -259,7 +254,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testGeneratorThrowingExceptionFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionAfterPendingAwaitableWithFinallyFailsCoroutine() {
+    public function testGeneratorThrowingExceptionAfterPendingPromiseWithFinallyFailsCoroutine() {
         $exception = new \Exception;
         $value = 1;
 
@@ -289,10 +284,10 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     /**
      * Note that yielding in a finally block is not recommended.
      *
-     * @depends testYieldPendingAwaitable
+     * @depends testYieldPendingPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionWithFinallyYieldingPendingAwaitable() {
+    public function testGeneratorThrowingExceptionWithFinallyYieldingPendingPromise() {
         $exception = new \Exception;
         $value = 1;
 
@@ -317,7 +312,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldPendingAwaitable
+     * @depends testYieldPendingPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
     public function testGeneratorThrowingExceptionWithFinallyBlockThrowing() {
@@ -343,17 +338,17 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldSuccessfulAwaitable
+     * @depends testYieldSuccessfulPromise
      */
     public function testYieldConsecutiveSucceeded() {
         $invoked = false;
         Loop::execute(function () use (&$invoked) {
             $count = 1000;
-            $awaitable = new Success;
+            $promise = new Success;
 
-            $generator = function () use ($count, $awaitable) {
+            $generator = function () use ($count, $promise) {
                 for ($i = 0; $i < $count; ++$i) {
-                    yield $awaitable;
+                    yield $promise;
                 }
             };
 
@@ -368,18 +363,18 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldFailedAwaitable
+     * @depends testYieldFailedPromise
      */
     public function testYieldConsecutiveFailed() {
         $invoked = false;
         Loop::execute(function () use (&$invoked) {
             $count = 1000;
-            $awaitable = new Failure(new \Exception);
+            $promise = new Failure(new \Exception);
 
-            $generator = function () use ($count, $awaitable) {
+            $generator = function () use ($count, $promise) {
                 for ($i = 0; $i < $count; ++$i) {
                     try {
-                        yield $awaitable;
+                        yield $promise;
                     } catch (\Exception $exception) {
                         // Ignore and continue.
                     }
@@ -395,7 +390,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testYieldSuccessfulAwaitable
+     * @depends testYieldSuccessfulPromise
      */
     public function testFastInvalidGenerator() {
         $generator = function () {
@@ -425,18 +420,18 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testCoroutineFunction
      */
-    public function testCoroutineFunctionWithCallbackReturningAwaitable() {
+    public function testCoroutineFunctionWithCallbackReturningPromise() {
         $value = 1;
-        $awaitable = new Success($value);
+        $promise = new Success($value);
         $callable = Amp\coroutine(function ($value) {
             return $value;
         });
         
-        $awaitable = $callable($awaitable);
+        $promise = $callable($promise);
         
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $this->assertInstanceOf(Promise::class, $promise);
         
-        $awaitable->when(function ($exception, $value) use (&$result) {
+        $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
         
@@ -452,11 +447,11 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             return $value;
         });
         
-        $awaitable = $callable($value);
+        $promise = $callable($value);
         
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $this->assertInstanceOf(Promise::class, $promise);
     
-        $awaitable->when(function ($exception, $value) use (&$result) {
+        $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
     
@@ -472,11 +467,11 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
             throw $exception;
         });
         
-        $awaitable = $callable();
+        $promise = $callable();
         
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $this->assertInstanceOf(Promise::class, $promise);
     
-        $awaitable->when(function ($exception, $value) use (&$reason) {
+        $promise->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
     

@@ -2,25 +2,25 @@
 
 namespace Amp;
 
-use Interop\Async\{ Awaitable, Loop };
+use Interop\Async\{ Loop, Promise };
 
 /**
  * Creates a successful observable using the given value (which can be any value except another object implementing
- * \Interop\Async\Awaitable).
+ * \Interop\Async\Promise).
  */
 final class Success implements Observable {
     /** @var mixed */
     private $value;
 
     /**
-     * @param mixed $value Anything other than an Awaitable object.
+     * @param mixed $value Anything other than an Promise object.
      *
-     * @throws \Error If an awaitable is given as the value.
+     * @throws \Error If a promise is given as the value.
      */
     public function __construct($value = null)
     {
-        if ($value instanceof Awaitable) {
-            throw new \Error("Cannot use an awaitable as success value");
+        if ($value instanceof Promise) {
+            throw new \Error("Cannot use a promise as success value");
         }
 
         $this->value = $value;

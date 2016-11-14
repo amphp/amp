@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\Observable;
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 /**
  * An observable that cannot externally emit values. Used by Postponed in development mode.
@@ -22,9 +22,9 @@ final class PrivateObservable implements Observable {
          *
          * @param mixed $value
          *
-         * @return \Interop\Async\Awaitable
+         * @return \Interop\Async\Promise
          */
-        $emit = function ($value = null): Awaitable {
+        $emit = function ($value = null): Promise {
             return $this->emit($value);
         };
 

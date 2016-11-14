@@ -3,88 +3,85 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Failure;
-use Amp\Pause;
-use Amp\Success;
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Amp\{ Failure, Pause, Success };
+use Interop\Async\{ Loop, Promise };
 
 class TimeoutTest extends \PHPUnit_Framework_TestCase {
-    public function testSuccessfulAwaitable() {
+    public function testSuccessfulPromise() {
         Loop::execute(function () {
             $value = 1;
 
-            $awaitable = new Success($value);
+            $promise = new Success($value);
 
-            $awaitable = Amp\timeout($awaitable, 100);
-            $this->assertInstanceOf(Awaitable::class, $awaitable);
+            $promise = Amp\timeout($promise, 100);
+            $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$result) {
                 $result = $value;
             };
 
-            $awaitable->when($callback);
+            $promise->when($callback);
 
             $this->assertSame($value, $result);
         });
     }
 
-    public function testFailedAwaitable() {
+    public function testFailedPromise() {
         Loop::execute(function () {
             $exception = new \Exception;
 
-            $awaitable = new Failure($exception);
+            $promise = new Failure($exception);
 
-            $awaitable = Amp\timeout($awaitable, 100);
-            $this->assertInstanceOf(Awaitable::class, $awaitable);
+            $promise = Amp\timeout($promise, 100);
+            $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
 
-            $awaitable->when($callback);
+            $promise->when($callback);
 
             $this->assertSame($exception, $reason);
         });
     }
     
     /**
-     * @depends testSuccessfulAwaitable
+     * @depends testSuccessfulPromise
      */
     public function testFastPending() {
         $value = 1;
 
         Loop::execute(function () use (&$result, $value) {
-            $awaitable = new Pause(50, $value);
+            $promise = new Pause(50, $value);
 
-            $awaitable = Amp\timeout($awaitable, 100);
-            $this->assertInstanceOf(Awaitable::class, $awaitable);
+            $promise = Amp\timeout($promise, 100);
+            $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$result) {
                 $result = $value;
             };
 
-            $awaitable->when($callback);
+            $promise->when($callback);
         });
 
         $this->assertSame($value, $result);
     }
 
     /**
-     * @depends testSuccessfulAwaitable
+     * @depends testSuccessfulPromise
      */
     public function testSlowPending() {
         Loop::execute(function () use (&$reason) {
-            $awaitable = new Pause(200);
+            $promise = new Pause(200);
 
-            $awaitable = Amp\timeout($awaitable, 100);
-            $this->assertInstanceOf(Awaitable::class, $awaitable);
+            $promise = Amp\timeout($promise, 100);
+            $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
 
-            $awaitable->when($callback);
+            $promise->when($callback);
         });
 
         $this->assertInstanceOf(Amp\TimeoutException::class, $reason);

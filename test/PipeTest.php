@@ -3,12 +3,11 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Failure;
-use Amp\Success;
-use Interop\Async\Awaitable;
+use Amp\{ Failure, Success };
+use Interop\Async\Promise;
 
 class PipeTest extends \PHPUnit_Framework_TestCase {
-    public function testSuccessfulAwaitable() {
+    public function testSuccessfulPromise() {
         $invoked = false;
         $callback = function ($value) use (&$invoked) {
             $invoked = true;
@@ -17,22 +16,22 @@ class PipeTest extends \PHPUnit_Framework_TestCase {
 
         $value = 1;
 
-        $awaitable = new Success($value);
+        $promise = new Success($value);
 
-        $awaitable = Amp\pipe($awaitable, $callback);
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $promise = Amp\pipe($promise, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertTrue($invoked);
         $this->assertSame($value + 1, $result);
     }
 
-    public function testFailedAwaitable() {
+    public function testFailedPromise() {
         $invoked = false;
         $callback = function ($value) use (&$invoked) {
             $invoked = true;
@@ -41,23 +40,23 @@ class PipeTest extends \PHPUnit_Framework_TestCase {
 
         $exception = new \Exception;
 
-        $awaitable = new Failure($exception);
+        $promise = new Failure($exception);
 
-        $awaitable = Amp\pipe($awaitable, $callback);
-        $this->assertInstanceOf(Awaitable::class, $awaitable);
+        $promise = Amp\pipe($promise, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
 
-        $awaitable->when($callback);
+        $promise->when($callback);
 
         $this->assertFalse($invoked);
         $this->assertSame($exception, $reason);
     }
     
     /**
-     * @depends testSuccessfulAwaitable
+     * @depends testSuccessfulPromise
      */
     public function testCallbackThrowing() {
         $exception = new \Exception;
@@ -68,15 +67,15 @@ class PipeTest extends \PHPUnit_Framework_TestCase {
     
         $value = 1;
     
-        $awaitable = new Success($value);
+        $promise = new Success($value);
     
-        $awaitable = Amp\pipe($awaitable, $callback);
+        $promise = Amp\pipe($promise, $callback);
     
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
     
-        $awaitable->when($callback);
+        $promise->when($callback);
     
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);

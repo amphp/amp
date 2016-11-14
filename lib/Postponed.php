@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 // @codeCoverageIgnoreStart
 try {
@@ -18,7 +18,7 @@ try {
             /**
              * @return \Amp\Observable
              */
-            public function getObservable(): Observable {
+            public function observe(): Observable {
                 return $this;
             }
         }
@@ -58,7 +58,7 @@ try {
             /**
              * @return \Amp\Observable
              */
-            public function getObservable(): Observable {
+            public function observe(): Observable {
                 return $this->observable;
             }
 
@@ -67,9 +67,9 @@ try {
              *
              * @param mixed $value
              *
-             * @return \Interop\Async\Awaitable
+             * @return \Interop\Async\Promise
              */
-            public function emit($value): Awaitable {
+            public function emit($value): Promise {
                 return ($this->emit)($value);
             }
 

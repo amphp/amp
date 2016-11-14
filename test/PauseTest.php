@@ -13,13 +13,13 @@ class PauseTest extends \PHPUnit_Framework_TestCase {
         $start = microtime(true);
 
         Loop::execute(function () use (&$result, $time, $value) {
-            $awaitable = new Pause($time, $value);
+            $promise = new Pause($time, $value);
 
             $callback = function ($exception, $value) use (&$result) {
                 $result = $value;
             };
 
-            $awaitable->when($callback);
+            $promise->when($callback);
         });
 
         $this->assertLessThanOrEqual($time, microtime(true) - $start);

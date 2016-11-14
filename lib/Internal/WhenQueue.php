@@ -5,7 +5,7 @@ namespace Amp\Internal;
 use Interop\Async\Loop;
 
 /**
- * Stores a set of functions to be invoked when an awaitable is resolved.
+ * Stores a set of functions to be invoked when a promise is resolved.
  *
  * @internal
  */

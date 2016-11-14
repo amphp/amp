@@ -2,22 +2,22 @@
 
 namespace Amp;
 
-use Interop\Async\Awaitable;
+use Interop\Async\Promise;
 
 // @codeCoverageIgnoreStart
 try {
     if (@\assert(false)) {
         production: // PHP 7 production environment (zend.assertions=0)
-        final class Deferred implements Awaitable {
+        final class Deferred implements Promise {
             use Internal\Placeholder {
                 resolve as public;
                 fail as public;
             }
 
             /**
-             * @return \Interop\Async\Awaitable
+             * @return \Interop\Async\Promise
              */
-            public function getAwaitable(): Awaitable {
+            public function promise(): Promise {
                 return $this;
             }
         }
@@ -25,9 +25,9 @@ try {
         development: // PHP 7 development (zend.assertions=1) or PHP 5.x
         final class Deferred {
             /**
-             * @var \Interop\Async\Awaitable
+             * @var \Interop\Async\Promise
              */
-            private $awaitable;
+            private $promise;
 
             /**
              * @var callable
@@ -40,21 +40,21 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->awaitable = new Internal\PrivateAwaitable(function (callable $resolve, callable $fail) {
+                $this->promise = new Internal\PrivatePromise(function (callable $resolve, callable $fail) {
                     $this->resolve = $resolve;
                     $this->fail = $fail;
                 });
             }
 
             /**
-             * @return \Interop\Async\Awaitable
+             * @return \Interop\Async\Promise
              */
-            public function getAwaitable(): Awaitable {
-                return $this->awaitable;
+            public function promise(): Promise {
+                return $this->promise;
             }
 
             /**
-             * Fulfill the awaitable with the given value.
+             * Fulfill the promise with the given value.
              *
              * @param mixed $value
              */
@@ -63,7 +63,7 @@ try {
             }
 
             /**
-             * Fails the awaitable the the given reason.
+             * Fails the promise the the given reason.
              *
              * @param \Throwable $reason
              */
