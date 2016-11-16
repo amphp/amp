@@ -18,8 +18,8 @@ cache:
 
 install:
   - composer install
-  - composer show
+  - composer show -t
 
 script:
-  - find -name "*.php" -not -path "./vendor/*" -print0 | xargs -n 1 -0 php -l
-  - $(php -r 'if (PHP_MAJOR_VERSION >= 7) echo "phpdbg -qrr"; else echo "php";') vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+  - php vendor/bin/parallel-lint --exclude vendor .
+  - php vendor/bin/phpunit --coverage-text
