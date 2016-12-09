@@ -11,7 +11,7 @@ class MultiReasonException extends \Exception {
      * @param string|null $message
      */
     public function __construct(array $reasons, string $message = null) {
-        parent::__construct($message ?: "Too many promises were rejected");
+        parent::__construct($message ?: "Multiple errors encountered");
 
         $this->reasons = $reasons;
     }
