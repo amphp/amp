@@ -17,7 +17,7 @@ use Interop\Async\Promise;
 class Observer {
     /** @var \Amp\Observable */
     private $observable;
-    
+
     /** @var mixed[] */
     private $values = [];
 
@@ -44,7 +44,7 @@ class Observer {
      */
     public function __construct(Observable $observable) {
         $this->observable = $observable;
-        
+
         $deferred = &$this->deferred;
         $values = &$this->values;
         $deferreds = &$this->deferreds;
@@ -94,12 +94,12 @@ class Observer {
      */
     public function __destruct() {
         $this->resolved = true;
-        
+
         foreach ($this->deferreds as $deferred) {
             $deferred->resolve();
         }
     }
-    
+
     /**
      * @return \Amp\Observable The observable being observed.
      */
@@ -179,7 +179,7 @@ class Observer {
 
         return $this->result;
     }
-    
+
     /**
      * Returns an array of values that were not consumed by the Observer before the Observable completed.
      *
@@ -191,17 +191,17 @@ class Observer {
         if (!$this->resolved) {
             throw new \Error("The observable has not resolved");
         }
-    
+
         $values = $this->values;
         $this->values = [];
         $this->position = -1;
-        
+
         $deferreds = $this->deferreds;
         $this->deferreds = [];
         foreach ($deferreds as $deferred) {
             $deferred->resolve();
         }
-    
+
         return $values;
     }
 }
