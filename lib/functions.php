@@ -308,7 +308,7 @@ function wait(Promise $promise) {
     }, Loop::get());
 
     if (!$resolved) {
-        throw new \Error("Loop emptied without resolving promise");
+        throw new \Error("Loop stopped without resolving promise");
     }
 
     if ($exception) {

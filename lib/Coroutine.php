@@ -65,10 +65,9 @@ final class Coroutine implements Promise {
                 }
 
                 if ($this->generator->valid()) {
-                    $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                     throw new InvalidYieldError(
                         $this->generator,
-                        \sprintf("Unexpected yield (%s expected, got %s)", Promise::class, $got)
+                        \sprintf("Unexpected yield; Expected an instance of %s", Promise::class)
                     );
                 }
 
@@ -89,10 +88,9 @@ final class Coroutine implements Promise {
             }
 
             if ($this->generator->valid()) {
-                $got = \is_object($yielded) ? \get_class($yielded) : \gettype($yielded);
                 throw new InvalidYieldError(
                     $this->generator,
-                    \sprintf("Unexpected yield (%s expected, got %s)", Promise::class, $got)
+                    \sprintf("Unexpected yield; Expected an instance of %s", Promise::class)
                 );
             }
 
