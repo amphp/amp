@@ -414,9 +414,9 @@ function timeout(Promise $promise, int $timeout): Promise {
 }
 
 /**
- * Returns a promise that calls $promisor only when the result of the promise is requested (e.g., then() or
- * done() is called on the returned promise). $promisor can return a promise or any value. If $promisor throws
- * an exception, the returned promise is rejected with that exception.
+ * Returns a promise that calls $promisor only when the result of the promise is requested (i.e. when()  is called on
+ * the returned promise). $promisor can return a promise or any value. If $promisor throws an exception, the returned
+ * promise is rejected with that exception.
  *
  * @param callable $promisor
  * @param mixed ...$args
