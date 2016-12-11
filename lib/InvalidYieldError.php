@@ -12,7 +12,7 @@ class InvalidYieldError extends \Error {
         $prefix .= \sprintf(
             "; %s yielded at key %s",
             \is_object($yielded) ? \get_class($yielded) : \gettype($yielded),
-            $generator->key()
+            \var_export($generator->key(), true)
         );
 
         if (!$generator->valid()) {
