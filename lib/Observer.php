@@ -113,7 +113,7 @@ class Observer {
      *
      * @return \Interop\Async\Promise<bool>
      */
-    public function next(): Promise {
+    public function hasNext(): Promise {
         if (isset($this->deferreds[$this->position])) {
             $future = $this->deferreds[$this->position];
             unset($this->values[$this->position], $this->deferreds[$this->position]);
