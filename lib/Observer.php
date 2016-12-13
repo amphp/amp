@@ -9,7 +9,7 @@ use Interop\Async\Promise;
  *
  * Example:
  * $observer = new Observer($observable); // $observable is an instance of \Amp\Observable
- * while (yield $observer->next()) {
+ * while (yield $observer->advance()) {
  *     $emitted = $observer->getCurrent();
  * }
  * $result = $observer->getResult();
@@ -113,7 +113,7 @@ class Observer {
      *
      * @return \Interop\Async\Promise<bool>
      */
-    public function next(): Promise {
+    public function advance(): Promise {
         if (isset($this->deferreds[$this->position])) {
             $future = $this->deferreds[$this->position];
             unset($this->values[$this->position], $this->deferreds[$this->position]);
@@ -145,7 +145,7 @@ class Observer {
      *
      * @return mixed Value emitted from observable.
      *
-     * @throws \Error If the observable has resolved or next() was not called before calling this method.
+     * @throws \Error If the observable has resolved or advance() was not called before calling this method.
      */
     public function getCurrent() {
         if (empty($this->values) && $this->resolved) {
@@ -153,7 +153,7 @@ class Observer {
         }
 
         if (!\array_key_exists($this->position, $this->values)) {
-            throw new \Error("Promise returned from next() must resolve before calling this method");
+            throw new \Error("Promise returned from advance() must resolve before calling this method");
         }
 
         return $this->values[$this->position];

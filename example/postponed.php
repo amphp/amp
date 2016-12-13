@@ -34,7 +34,7 @@ Amp\execute(function () {
         $generator = function (Observable $observable) {
             $observer = new Observer($observable);
 
-            while (yield $observer->next()) {
+            while (yield $observer->advance()) {
                 printf("Observable emitted %d\n", $observer->getCurrent());
                 yield new Pause(100); // Observer consumption takes 100 ms.
             }
