@@ -132,4 +132,24 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame($exception, $caught);
         }
     }
+    
+    /**
+     * @depends testEmit
+     */
+    public function testEmitterCoroutineThrows() {
+        $exception = new \Exception;
+    
+        try {
+            Amp\execute(function () use ($exception) {
+                $emitter = new Emitter(function (callable $emit) use ($exception) {
+                    yield $emit(1);
+                    throw $exception;
+                });
+                
+                Amp\wait($emitter);
+            });
+        } catch (\Exception $caught) {
+            $this->assertSame($exception, $caught);
+        }
+    }
 }

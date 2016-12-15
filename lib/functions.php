@@ -838,15 +838,23 @@ function filter(Observable $observable, callable $filter): Observable {
  */
 function merge(array $observables): Observable {
     $postponed = new Postponed;
+    $pending = true;
 
     foreach ($observables as $observable) {
         if (!$observable instanceof Observable) {
             throw new \Error("Non-observable provided");
         }
-        $observable->subscribe([$postponed, 'emit']);
+        $observable->subscribe(function ($value) use (&$pending, $postponed) {
+            if ($pending) {
+                return $postponed->emit($value);
+            }
+            return null;
+        });
     }
 
-    all($observables)->when(function ($exception, array $values) use ($postponed) {
+    all($observables)->when(function ($exception, array $values = null) use (&$pending, $postponed) {
+        $pending = false;
+        
         if ($exception) {
             $postponed->fail($exception);
             return;
@@ -908,19 +916,29 @@ function concat(array $observables): Observable {
 
     foreach ($observables as $observable) {
         $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($postponed, $promise) {
-            try {
-                yield $promise;
-            } catch (\Throwable $exception) {
-                // Ignore exception in this context.
+            static $pending = true, $failed = false;
+
+            if ($failed) {
+                return;
             }
 
-            return yield $postponed->emit($value);
+            if ($pending) {
+                try {
+                    yield $promise;
+                    $pending = false;
+                } catch (\Throwable $exception) {
+                    $failed = true;
+                    return; // Prior observable failed.
+                }
+            }
+
+            yield $postponed->emit($value);
         }));
         $previous[] = $observable;
         $promise = all($previous);
     }
 
-    $promise->when(function ($exception, array $values) use ($postponed) {
+    $promise->when(function ($exception, array $values = null) use ($postponed) {
         if ($exception) {
             $postponed->fail($exception);
             return;

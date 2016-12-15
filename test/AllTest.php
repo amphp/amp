@@ -69,6 +69,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \Error
+     * @expectedExceptionMessage Non-promise provided
      */
     public function testNonPromise() {
         Amp\all([1]);
