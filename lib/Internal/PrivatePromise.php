@@ -34,10 +34,6 @@ final class PrivatePromise implements Promise {
             $this->fail($reason);
         };
 
-        try {
-            $resolver($resolve, $fail);
-        } catch (\Throwable $exception) {
-            $this->fail($exception);
-        }
+        $resolver($resolve, $fail);
     }
 }

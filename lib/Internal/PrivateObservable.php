@@ -46,10 +46,6 @@ final class PrivateObservable implements Observable {
             $this->fail($reason);
         };
 
-        try {
-            $emitter($emit, $resolve, $fail);
-        } catch (\Throwable $exception) {
-            $this->fail($exception);
-        }
+        $emitter($emit, $resolve, $fail);
     }
 }
