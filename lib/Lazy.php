@@ -1,36 +1,35 @@
 <?php declare(strict_types = 1);
 
-namespace Amp\Internal;
+namespace Amp;
 
-use Amp\{ Failure, Success };
 use Interop\Async\Promise;
 
 /**
- * Promise returned from Amp\lazy(). Use Amp\lazy() instead of instigating this object directly.
- *
- * @internal
+ * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. when() is called on
+ * the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails with
+ * that exception.
  */
-class LazyPromise implements Promise {
+class Lazy implements Promise {
     /** @var callable|null */
-    private $provider;
+    private $promisor;
 
     /** @var \Interop\Async\Promise|null */
     private $promise;
 
     /**
-     * @param callable $provider
+     * @param callable $promisor Function which starts an async operation, returning a Promise or any value.
      */
-    public function __construct(callable $provider) {
-        $this->provider = $provider;
+    public function __construct(callable $promisor) {
+        $this->promisor = $promisor;
     }
 
     /**
      * {@inheritdoc}
      */
     public function when(callable $onResolved) {
-        if (null === $this->promise) {
-            $provider = $this->provider;
-            $this->provider = null;
+        if ($this->promise === null) {
+            $provider = $this->promisor;
+            $this->promisor = null;
 
             try {
                 $this->promise = $provider();

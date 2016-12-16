@@ -414,26 +414,6 @@ function timeout(Promise $promise, int $timeout): Promise {
 }
 
 /**
- * Returns a promise that calls $promisor only when the result of the promise is requested (i.e. when()  is called on
- * the returned promise). $promisor can return a promise or any value. If $promisor throws an exception, the returned
- * promise is rejected with that exception.
- *
- * @param callable $promisor
- * @param mixed ...$args
- *
- * @return \Interop\Async\Promise
- */
-function lazy(callable $promisor, ...$args): Promise {
-    if (empty($args)) {
-        return new Internal\LazyPromise($promisor);
-    }
-
-    return new Internal\LazyPromise(function () use ($promisor, $args) {
-        return $promisor(...$args);
-    });
-}
-
-/**
  * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a promise usable by
  * components depending on placeholders implementing Promise.
  *
