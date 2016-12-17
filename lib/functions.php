@@ -398,6 +398,7 @@ function timeout(Promise $promise, int $timeout): Promise {
             $deferred->fail(new TimeoutException);
         }
     });
+    Loop::unreference($watcher);
 
     $promise->when(function () use (&$resolved, $promise, $deferred, $watcher) {
         Loop::cancel($watcher);
