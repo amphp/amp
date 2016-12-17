@@ -113,6 +113,71 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
+    
+    /**
+     * @depends testInvalidYield
+     */
+    public function testInvalidYieldCatchingThrownException() {
+        $generator = function () {
+            try {
+                yield 1;
+            } catch (\Error $exception) {
+                // No further yields.
+            }
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception) use (&$reason) {
+            $reason = $exception;
+        });
+        
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+    }
+    
+    /**
+     * @depends testInvalidYieldCatchingThrownException
+     */
+    public function testInvalidYieldCatchingThrownExceptionAndYieldingAgain() {
+        $generator = function () {
+            try {
+                yield 1;
+            } catch (\Error $exception) {
+                yield new Success;
+            }
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception) use (&$reason) {
+            $reason = $exception;
+        });
+        
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+    }
+    
+    /**
+     * @depends testInvalidYieldCatchingThrownException
+     */
+    public function testInvalidYieldCatchingThrownExceptionAndThrowing() {
+        $exception = new \Exception;
+        $generator = function () use ($exception) {
+            try {
+                yield 1;
+            } catch (\Error $error) {
+                throw $exception;
+            }
+        };
+        
+        $coroutine = new Coroutine($generator());
+        
+        $coroutine->when(function ($exception) use (&$reason) {
+            $reason = $exception;
+        });
+        
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+        $this->assertSame($exception, $reason->getPrevious());
+    }
 
     /**
      * @depends testInvalidYield
@@ -296,7 +361,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
                 try {
                     throw $exception;
                 } finally {
-                    $yielded = (yield new Pause(self::TIMEOUT, $value));
+                    $yielded = yield new Pause(self::TIMEOUT, $value);
                 }
             };
 
