@@ -41,18 +41,19 @@ abstract class Loop extends Driver {
     private $errorHandler;
 
     /**
-     * @var int
+     * @var bool
      */
-    private $running = 0;
+    private $running = false;
 
     /**
      * {@inheritdoc}
      */
     public function run() {
-        $previous = $this->running++;
+        $previous = $this->running;
+        $this->running = true;
 
         try {
-            while ($this->running > $previous) {
+            while ($this->running) {
                 if ($this->isEmpty()) {
                     return;
                 }
@@ -67,7 +68,7 @@ abstract class Loop extends Driver {
      * {@inheritdoc}
      */
     public function stop() {
-        --$this->running;
+        $this->running = false;
     }
 
     /**
@@ -99,7 +100,7 @@ abstract class Loop extends Driver {
                 $callback($watcher->id, $watcher->data);
             }
 
-            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue));
+            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
 
         } catch (\Throwable $exception) {
             if (null === $this->errorHandler) {
