@@ -30,6 +30,14 @@ The functionality exposed by this interface should include the ability to:
 - Listen for signals
 - Defer the execution of callables
 
+## Implementations
+
+You can find [available implementations on Packagist](https://packagist.org/providers/async-interop/event-loop-implementation).
+
+## Compatible Packages
+
+You can find [compatible packages on Packagist](https://packagist.org/packages/async-interop/event-loop/dependents).
+
 ## Contributors
 
 * [Aaron Piotrowski](https://github.com/trowski)
