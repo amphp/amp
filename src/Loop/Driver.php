@@ -246,7 +246,7 @@ abstract class Driver
      * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
-     * @return void
+     * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
      */
     abstract public function setErrorHandler(callable $callback = null);
 
