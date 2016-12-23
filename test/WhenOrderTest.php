@@ -6,23 +6,29 @@ use Amp\Deferred;
 
 class WhenOrderTest extends \PHPUnit_Framework_TestCase {
     public function testWhenOrder() {
-        $this->expectOutputString("1234");
+        $this->expectOutputString("123456");
 
         $deferred = new Deferred;
         $promise = $deferred->promise();
 
         $promise->when(function () use ($promise) {
+            print 1;
+
             $promise->when(function () {
-                printf("%d", 3);
+                print 2;
             });
-            printf("%d", 1);
+
+            print 3;
         });
 
         $promise->when(function () use ($promise) {
+            print 4;
+
             $promise->when(function () {
-                printf("%d", 4);
+                print 5;
             });
-            printf("%d", 2);
+
+            print 6;
         });
 
         $deferred->resolve();

@@ -3,7 +3,8 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Interop\Async\{ Loop, Promise };
+use Interop\Async\Loop;
+use Interop\Async\Promise;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -12,8 +13,8 @@ use Interop\Async\{ Loop, Promise };
  * @internal
  */
 trait Placeholder {
-    /** @var int */
-    private $resolved = 0;
+    /** @var bool */
+    private $resolved = false;
 
     /** @var mixed */
     private $result;
@@ -25,7 +26,7 @@ trait Placeholder {
      * @inheritdoc
      */
     public function when(callable $onResolved) {
-        if ($this->resolved === 2) {
+        if ($this->resolved) {
             if ($this->result instanceof Promise) {
                 $this->result->when($onResolved);
                 return;
@@ -63,29 +64,27 @@ trait Placeholder {
             throw new \Error("Promise has already been resolved");
         }
 
-        $this->resolved = 1;
+        $this->resolved = true;
         $this->result = $value;
 
+        if ($this->onResolved === null) {
+            return;
+        }
+
+        $onResolved = $this->onResolved;
+        $this->onResolved = null;
+
+        if ($this->result instanceof Promise) {
+            $this->result->when($onResolved);
+            return;
+        }
+
         try {
-            while ($this->onResolved !== null) {
-                $onResolved = $this->onResolved;
-                $this->onResolved = null;
-
-                if ($this->result instanceof Promise) {
-                    $this->result->when($onResolved);
-                    return;
-                }
-
-                try {
-                    $onResolved(null, $this->result);
-                } catch (\Throwable $exception) {
-                    Loop::defer(static function () use ($exception) {
-                        throw $exception;
-                    });
-                }
-            }
-        } finally {
-            $this->resolved = 2;
+            $onResolved(null, $this->result);
+        } catch (\Throwable $exception) {
+            Loop::defer(static function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 
