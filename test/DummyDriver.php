@@ -43,6 +43,6 @@ class DummyDriver extends Driver
     public function cancel($watcherId) {}
     public function reference($watcherId) {}
     public function unreference($watcherId) {}
-    public function info() {}
+    public function getInfo() {}
     public function getHandle() {}
 }

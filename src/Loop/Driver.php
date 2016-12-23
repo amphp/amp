@@ -268,9 +268,9 @@ abstract class Driver
      * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
      * MUST always be provided.
      *
-     * @return array
+     * @return array Statistics about the loop in the described format.
      */
-    abstract public function info();
+    abstract public function getInfo();
 
     /**
      * Get the underlying loop handle.

@@ -414,12 +414,12 @@ final class Loop
      * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
      * MUST always be provided.
      *
-     * @return array
+     * @return array Statistics about the loop in the described format.
      */
-    public static function info()
+    public static function getInfo()
     {
         $driver = self::$driver ?: self::get();
-        return $driver->info();
+        return $driver->getInfo();
     }
 
     /**
