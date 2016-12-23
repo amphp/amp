@@ -12,8 +12,8 @@ use Interop\Async\{ Loop, Promise };
  * @internal
  */
 trait Placeholder {
-    /** @var bool */
-    private $resolved = false;
+    /** @var int */
+    private $resolved = 0;
 
     /** @var mixed */
     private $result;
@@ -22,10 +22,10 @@ trait Placeholder {
     private $onResolved;
 
     /**
-     * @see \Interop\Async\Promise::when()
+     * @inheritdoc
      */
     public function when(callable $onResolved) {
-        if ($this->resolved) {
+        if ($this->resolved === 2) {
             if ($this->result instanceof Promise) {
                 $this->result->when($onResolved);
                 return;
@@ -63,6 +63,7 @@ trait Placeholder {
             throw new \Error("Promise has already been resolved");
         }
 
+        $this->resolved = 1;
         $this->result = $value;
 
         try {
@@ -84,7 +85,7 @@ trait Placeholder {
                 }
             }
         } finally {
-            $this->resolved = true;
+            $this->resolved = 2;
         }
     }
 
