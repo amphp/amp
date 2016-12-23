@@ -3,7 +3,8 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Interop\Async\{ Loop, Promise };
+use Interop\Async\Loop;
+use Interop\Async\Promise;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -17,12 +18,12 @@ trait Placeholder {
 
     /** @var mixed */
     private $result;
-    
+
     /** @var callable|\Amp\Internal\WhenQueue|null */
     private $onResolved;
-    
+
     /**
-     * @see \Interop\Async\Promise::when()
+     * @inheritdoc
      */
     public function when(callable $onResolved) {
         if ($this->resolved) {
@@ -77,7 +78,7 @@ trait Placeholder {
             $this->result->when($onResolved);
             return;
         }
-        
+
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
