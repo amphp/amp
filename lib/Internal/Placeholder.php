@@ -17,10 +17,10 @@ trait Placeholder {
 
     /** @var mixed */
     private $result;
-    
+
     /** @var callable|\Amp\Internal\WhenQueue|null */
     private $onResolved;
-    
+
     /**
      * @see \Interop\Async\Promise::when()
      */
@@ -63,27 +63,28 @@ trait Placeholder {
             throw new \Error("Promise has already been resolved");
         }
 
-        $this->resolved = true;
         $this->result = $value;
 
-        if ($this->onResolved === null) {
-            return;
-        }
-
-        $onResolved = $this->onResolved;
-        $this->onResolved = null;
-
-        if ($this->result instanceof Promise) {
-            $this->result->when($onResolved);
-            return;
-        }
-        
         try {
-            $onResolved(null, $this->result);
-        } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
+            while ($this->onResolved !== null) {
+                $onResolved = $this->onResolved;
+                $this->onResolved = null;
+
+                if ($this->result instanceof Promise) {
+                    $this->result->when($onResolved);
+                    return;
+                }
+
+                try {
+                    $onResolved(null, $this->result);
+                } catch (\Throwable $exception) {
+                    Loop::defer(static function () use ($exception) {
+                        throw $exception;
+                    });
+                }
+            }
+        } finally {
+            $this->resolved = true;
         }
     }
 
