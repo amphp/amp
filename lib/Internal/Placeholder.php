@@ -17,12 +17,12 @@ trait Placeholder {
 
     /** @var mixed */
     private $result;
-    
+
     /** @var callable|\Amp\Internal\WhenQueue|null */
     private $onResolved;
-    
+
     /**
-     * @see \Interop\Async\Promise::when()
+     * @inheritdoc
      */
     public function when(callable $onResolved) {
         if ($this->resolved) {
@@ -77,7 +77,7 @@ trait Placeholder {
             $this->result->when($onResolved);
             return;
         }
-        
+
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
