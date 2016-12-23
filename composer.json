@@ -1,17 +1,16 @@
 {
-  "name": "async-interop/awaitable-test",
-  "description": "An abstract test file to ensure compatibility between awaitable implementations.",
-  "keywords": ["awaitable", "async", "interop", "test"],
+  "name": "async-interop/promise-test",
+  "description": "An abstract test file to ensure compatibility between promise implementations.",
+  "keywords": ["promise", "async", "interop", "test"],
   "license": "MIT",
   "require": {
     "php": ">=5.5.0",
-    "async-interop/event-loop": "^0.3",
-    "async-interop/awaitable": "^0.1",
+    "async-interop/promise": "^0.3|dev-master",
     "phpunit/phpunit": "^4|^5"
   },
   "autoload": {
     "psr-4": {
-      "Interop\\Async\\Awaitable\\": "src"
+      "Interop\\Async\\Promise\\": "src"
     }
   }
 }

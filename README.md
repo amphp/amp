@@ -1,19 +1,19 @@
-# Awaitable Tests
+# Promise Tests
 
-This package provides a quite extensive phpunit test suite to be used against `Awaitable` implementations from the [async-interop/awaitable](https://github.com/async-interop/awaitable) package.
+This package provides a quite extensive phpunit test suite to be used against `Promise` implementations from the [async-interop/promise](https://github.com/async-interop/promise) package.
 
 ## Usage
 
 ```php
-class MyDriverTest extends \Interop\Async\Awaitable\Test {
+class MyDriverTest extends \Interop\Async\Promise\Test {
     function getFactory() {
         return new MyDriverFactory;
     }
     
-    function getAwaitable() {
-        $resolver = new MyAwaitableResolver;
+    function getPromise() {
+        $resolver = new MyPromiseResolver;
         return [
-            $resolver->getAwaitable(),
+            $resolver->promise(),
             function($v) use ($resolver) { $resolver->succeed($v); },
             function($e) use ($resolver) { $resolver->fail($e); },
         ];

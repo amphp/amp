@@ -1,40 +1,17 @@
 <?php
 
-namespace Interop\Async\Awaitable;
+namespace Interop\Async\Promise;
 
-use Interop\Async\Awaitable;
-use Interop\Async\Loop;
+use Interop\Async\Promise;
 
 abstract class Test extends \PHPUnit_Framework_TestCase {
     /**
-     * The DriverFactory to run this test on
+     * An Promise to use for a test with resolution methods.
+     * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in order to ensure resolution.
      *
-     * @return Loop\DriverFactory|null Use null to skip tests requiring an active event loop
+     * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result or a Throwable/Exception respectively
      */
-    abstract function getFactory();
-
-    /**
-     * An Awaitable to use for a test with resolution methods.
-     * Note that the callables shall take care of the Awaitable being resolved in any case. Example: The actual implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in order to ensure resolution.
-     *
-     * @return array(Awaitable, callable, callable) where the last two callables are resolving the Awaitable with a result or a Throwable/Exception respectively
-     */
-    abstract function getAwaitable();
-
-    function startLoop($cb)
-    {
-        $factory = $this->getFactory();
-        if ($factory === null) {
-            $this->markTestSkipped("Skipping test needing event loop");
-        }
-
-        $loop = $factory->create();
-        if (!$loop instanceof Loop\Driver) {
-            $this->fail("Factory did not return a loop Driver");
-        }
-
-        Loop::execute($cb, $loop);
-    }
+    abstract function promise();
 
     function provideSuccessValues() {
         return [
@@ -51,10 +28,10 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     }
 
     /** @dataProvider provideSuccessValues */
-    function testAwaitableSucceed($value)
+    function testPromiseSucceed($value)
     {
-        list($awaitable, $succeeder) = $this->getAwaitable();
-        $awaitable->when(function($e, $v) use (&$invoked, $value) {
+        list($promise, $succeeder) = $this->promise();
+        $promise->when(function($e, $v) use (&$invoked, $value) {
             $this->assertSame(null, $e);
             $this->assertSame($value, $v);
             $invoked = true;
@@ -64,10 +41,10 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     }
 
     /** @dataProvider provideSuccessValues */
-    function testWhenOnSucceededAwaitable($value) {
-        list($awaitable, $succeeder) = $this->getAwaitable();
+    function testWhenOnSucceededPromise($value) {
+        list($promise, $succeeder) = $this->promise();
         $succeeder($value);
-        $awaitable->when(function($e, $v) use (&$invoked, $value) {
+        $promise->when(function($e, $v) use (&$invoked, $value) {
             $this->assertSame(null, $e);
             $this->assertSame($value, $v);
             $invoked = true;
@@ -76,15 +53,15 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     }
     
     function testSuccessAllWhensExecuted() {
-        list($awaitable, $succeeder) = $this->getAwaitable();
+        list($promise, $succeeder) = $this->promise();
         $invoked = 0;
         
-        $awaitable->when(function($e, $v) use (&$invoked) {
+        $promise->when(function($e, $v) use (&$invoked) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
         });
-        $awaitable->when(function($e, $v) use (&$invoked) {
+        $promise->when(function($e, $v) use (&$invoked) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
@@ -92,12 +69,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         $succeeder(true);
 
-        $awaitable->when(function($e, $v) use (&$invoked) {
+        $promise->when(function($e, $v) use (&$invoked) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
         });
-        $awaitable->when(function($e, $v) use (&$invoked) {
+        $promise->when(function($e, $v) use (&$invoked) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
@@ -106,9 +83,9 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertSame(4, $invoked);
     }
 
-    function testAwaitableExceptionFailure() {
-        list($awaitable, , $failer) = $this->getAwaitable();
-        $awaitable->when(function ($e) use (&$invoked) {
+    function testPromiseExceptionFailure() {
+        list($promise, , $failer) = $this->promise();
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked = true;
         });
@@ -116,10 +93,10 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testWhenOnExceptionFailedAwaitable() {
-        list($awaitable, , $failer) = $this->getAwaitable();
+    function testWhenOnExceptionFailedPromise() {
+        list($promise, , $failer) = $this->promise();
         $failer(new \RuntimeException);
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked = true;
         });
@@ -127,25 +104,25 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     }
     
     function testFailureAllWhensExecuted() {
-        list($awaitable, , $failer) = $this->getAwaitable();
+        list($promise, , $failer) = $this->promise();
         $invoked = 0;
 
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked++;
         });
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked++;
         });
 
         $failer(new \RuntimeException);
 
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked++;
         });
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "RuntimeException");
             $invoked++;
         });
@@ -153,13 +130,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertSame(4, $invoked);
     }
 
-    function testAwaitableErrorFailure() {
+    function testPromiseErrorFailure() {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($awaitable, , $failer) = $this->getAwaitable();
-        $awaitable->when(function ($e) use (&$invoked) {
+        list($promise, , $failer) = $this->promise();
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "Error");
             $invoked = true;
         });
@@ -167,26 +144,26 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testWhenOnErrorFailedAwaitable() {
+    function testWhenOnErrorFailedPromise() {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($awaitable, , $failer) = $this->getAwaitable();
+        list($promise, , $failer) = $this->promise();
         $failer(new \Error);
-        $awaitable->when(function ($e) use (&$invoked) {
+        $promise->when(function ($e) use (&$invoked) {
             $this->assertSame(get_class($e), "Error");
             $invoked = true;
         });
         $this->assertTrue($invoked);
     }
 
-    /** Implementations MAY fail upon resolution with an Awaitable, but they definitely MUST NOT return an Awaitable */
-    function testAwaitableResolutionWithAwaitable() {
-        list($success, $succeeder) = $this->getAwaitable();
+    /** Implementations MAY fail upon resolution with an Promise, but they definitely MUST NOT return an Promise */
+    function testPromiseResolutionWithPromise() {
+        list($success, $succeeder) = $this->promise();
         $succeeder(true);
 
-        list($awaitable, $succeeder) = $this->getAwaitable();
+        list($promise, $succeeder) = $this->promise();
 
         $ex = false;
         try {
@@ -197,47 +174,41 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $ex = true;
         }
         if (!$ex) {
-            $awaitable->when(function ($e, $v) use (&$invoked) {
+            $promise->when(function ($e, $v) use (&$invoked) {
                 $invoked = true;
-                $this->assertFalse($v instanceof Awaitable);
+                $this->assertFalse($v instanceof Promise);
             });
             $this->assertTrue($invoked);
         }
     }
 
     function testThrowingInCallback() {
-        $this->startLoop(function() use (&$ranDefer) {
-            list($awaitable, $succeeder) = $this->getAwaitable();
-            $succeeder(true);
-            
-            $invoked = 0;
-            $awaitable->when(function($e, $v) use (&$invoked, &$ranDefer, &$handled, $awaitable) {
-                $this->assertSame(null, $e);
-                $this->assertSame(true, $v);
-                $invoked++;
-
-                Loop::defer(function() use (&$invoked, &$ranDefer, &$handled, $awaitable) {
-                    $this->assertSame(2, $invoked);
-                    $awaitable->when(function() use (&$ranDefer) {
-                        $ranDefer = true;
-                    });
-                    $this->assertTrue($handled);
-                });
-
-                throw new \Exception;
-            });
-            $awaitable->when(function() use (&$invoked) {
-                $invoked++;
-            });
-
-            Loop::setErrorHandler(function($e) use (&$handled) {
-                if (get_class($e) !== "Exception") {
-                    throw $e; // do not swallow phpunit exceptions due to failures
-                }
-                $handled = true;
-            });
-            $this->assertNotTrue($handled);
+        $invoked = 0;
+        Promise\ErrorHandler::set(function(&$invoked) {
+            $invoked++;
         });
-        $this->assertTrue($ranDefer);
+            
+        list($promise, $succeeder) = $this->promise();
+        $succeeder(true);
+        $promise->when(function($e, $v) use (&$invoked, &$ranDefer, &$handled, $promise) {
+            $this->assertSame(null, $e);
+            $this->assertSame(true, $v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+
+
+        list($promise, $succeeder) = $this->promise();
+        $promise->when(function($e, $v) use (&$invoked, &$ranDefer, &$handled, $promise) {
+            $this->assertSame(null, $e);
+            $this->assertSame(true, $v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+        $succeeder(true);
+
+        $this->assertEquals(4, $invoked);
     }
 }
