@@ -612,7 +612,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnEnableNonexistentWatcher()
     {
-        $this->loop->enable("nonexistentWatcher");
+        try {
+            $this->loop->enable("nonexistentWatcher");
+        } catch (Loop\InvalidWatcherException $e) {
+            $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
+            throw $e;
+        }
     }
 
     function testSuccessOnDisableNonexistentWatcher()
@@ -628,13 +633,23 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnReferenceNonexistentWatcher()
     {
-        $this->loop->reference("nonexistentWatcher");
+        try {
+            $this->loop->reference("nonexistentWatcher");
+        } catch (Loop\InvalidWatcherException $e) {
+            $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
+            throw $e;
+        }
     }
 
     /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
     function testExceptionOnUnreferenceNonexistentWatcher()
     {
-        $this->loop->unreference("nonexistentWatcher");
+        try {
+            $this->loop->unreference("nonexistentWatcher");
+        } catch (Loop\InvalidWatcherException $e) {
+            $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
+            throw $e;
+        }
     }
 
     /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
@@ -860,9 +875,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     function testErrorHandlerCapturesUncaughtException()
     {
         $msg = "";
-        $this->loop->setErrorHandler(function(\Exception $error) use (&$msg) {
+        $this->loop->setErrorHandler($f = function() {});
+        $oldErrorHandler = $this->loop->setErrorHandler(function(\Exception $error) use (&$msg) {
             $msg = $error->getMessage();
         });
+        $this->assertEquals($d, $oldErrorHandler);
         $this->start(function(Driver $loop) {
             $loop->defer(function() {
                 throw new \Exception("loop error");
@@ -1128,6 +1145,20 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($callbackData->delay);
         $this->assertTrue($callbackData->repeat);
         $this->assertTrue($callbackData->onWritable);
+    }
+
+    function testLoopStopPreventsTimerExecution()
+    {
+        $t = microtime(1);
+        $this->start(function(Driver $loop) {
+            $loop->delay($msDelay = 10000, function () {
+                $this->fail("Timer was executed despite stopped loop");
+            });
+            $loop->defer(function () use ($loop) {
+                $loop->stop();
+            });
+        });
+        $this->assertTrue($t + 0.1 > microtime(1));
     }
 
     // getState and setState are final, but test it here again to be sure
