@@ -270,7 +270,7 @@ abstract class Driver
      *
      * @return array
      */
-    abstract public function info();
+    abstract public function getInfo();
 
     /**
      * Get the underlying loop handle.

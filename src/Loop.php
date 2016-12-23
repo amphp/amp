@@ -416,10 +416,10 @@ final class Loop
      *
      * @return array
      */
-    public static function info()
+    public static function getInfo()
     {
         $driver = self::$driver ?: self::get();
-        return $driver->info();
+        return $driver->getInfo();
     }
 
     /**
