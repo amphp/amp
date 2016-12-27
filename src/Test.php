@@ -184,7 +184,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testThrowingInCallback() {
         $invoked = 0;
-        Promise\ErrorHandler::set(function(&$invoked) {
+        Promise\ErrorHandler::set(function () use (&$invoked) {
             $invoked++;
         });
             
