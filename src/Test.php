@@ -879,7 +879,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $oldErrorHandler = $this->loop->setErrorHandler(function(\Exception $error) use (&$msg) {
             $msg = $error->getMessage();
         });
-        $this->assertEquals($d, $oldErrorHandler);
+        $this->assertEquals($f, $oldErrorHandler);
         $this->start(function(Driver $loop) {
             $loop->defer(function() {
                 throw new \Exception("loop error");
