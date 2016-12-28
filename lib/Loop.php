@@ -5,11 +5,8 @@ namespace Amp\Loop;
 use Amp\Loop\Internal\Watcher;
 use Interop\Async\Loop\Driver;
 use Interop\Async\Loop\InvalidWatcherException;
-use Interop\Async\Loop\Registry;
 
-abstract class Loop implements Driver {
-    use Registry;
-
+abstract class Loop extends Driver {
     const MILLISEC_PER_SEC = 1e3;
     const MICROSEC_PER_SEC = 1e6;
 
@@ -44,18 +41,19 @@ abstract class Loop implements Driver {
     private $errorHandler;
 
     /**
-     * @var int
+     * @var bool
      */
-    private $running = 0;
+    private $running = false;
 
     /**
      * {@inheritdoc}
      */
     public function run() {
-        $previous = $this->running++;
+        $previous = $this->running;
+        $this->running = true;
 
         try {
-            while ($this->running > $previous) {
+            while ($this->running) {
                 if ($this->isEmpty()) {
                     return;
                 }
@@ -70,7 +68,7 @@ abstract class Loop implements Driver {
      * {@inheritdoc}
      */
     public function stop() {
-        --$this->running;
+        $this->running = false;
     }
 
     /**
@@ -102,7 +100,7 @@ abstract class Loop implements Driver {
                 $callback($watcher->id, $watcher->data);
             }
 
-            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue));
+            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
 
         } catch (\Throwable $exception) {
             if (null === $this->errorHandler) {
@@ -297,10 +295,9 @@ abstract class Loop implements Driver {
     /**
      * {@inheritdoc}
      */
-    public function disable($watcherIdentifier)
-    {
+    public function disable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new InvalidWatcherException("Cannot disable an invalid watcher identifier");
+            return;
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
@@ -337,10 +334,6 @@ abstract class Loop implements Driver {
      * {@inheritdoc}
      */
     public function cancel($watcherIdentifier) {
-        if (!isset($this->watchers[$watcherIdentifier])) {
-            return; // Avoid throwing from disable() if the watcher is invalid.
-        }
-
         $this->disable($watcherIdentifier);
         unset($this->watchers[$watcherIdentifier]);
     }
@@ -371,13 +364,15 @@ abstract class Loop implements Driver {
      * {@inheritdoc}
      */
     public function setErrorHandler(callable $callback = null) {
+        $previous = $this->errorHandler;
         $this->errorHandler = $callback;
+        return $previous;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function info() {
+    public function getInfo() {
         $watchers = [
             "referenced"   => 0,
             "unreferenced" => 0,

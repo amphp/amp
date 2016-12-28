@@ -14,15 +14,19 @@
         "async-interop/event-loop": "dev-master"
     },
     "require-dev": {
-        "async-interop/event-loop-test": "dev-master"
+        "async-interop/event-loop-test": "dev-master",
+        "friendsofphp/php-cs-fixer": "~1.9"
     },
     "provide": {
-        "async-interop/event-loop-implementation": "dev-master"
+        "async-interop/event-loop-implementation": "^0.3"
     },
     "autoload": {
         "psr-4": {
             "Amp\\Loop\\": "lib"
-        }
+        },
+        "files": [
+            "lib/bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

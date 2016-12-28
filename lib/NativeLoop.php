@@ -72,7 +72,7 @@ class NativeLoop extends Loop {
                 }
 
                 if ($this->timerExpires[$id] > $time) { // Timer at top of queue has not expired.
-                    return;
+                    break;
                 }
 
                 $this->timerQueue->extract();
@@ -214,10 +214,9 @@ class NativeLoop extends Loop {
 
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $priority = (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->value;
-                    $expiration = (int) $priority;
+                    $expiration = (int) (\microtime(true) * self::MILLISEC_PER_SEC) + $watcher->value;
                     $this->timerExpires[$watcher->id] = $expiration;
-                    $this->timerQueue->insert([$watcher, $expiration], -$priority);
+                    $this->timerQueue->insert([$watcher, $expiration], -$expiration);
                     break;
 
                 case Watcher::SIGNAL:
@@ -231,8 +230,7 @@ class NativeLoop extends Loop {
                                 $callback = $watcher->callback;
                                 $callback($watcher->id, $signo, $watcher->data);
                             }
-                        })
-                        ) {
+                        })) {
                             throw new \RuntimeException("Failed to register signal handler");
                         }
                     }
