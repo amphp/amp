@@ -240,7 +240,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         // being referenced is the default
         $watcherId1 = \call_user_func_array($func, $args);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 1, "unreferenced" => 0];
@@ -251,7 +251,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $watcherId2 = \call_user_func_array($func, $argsCopy);
         $loop->reference($watcherId2);
         $loop->reference($watcherId2);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 2, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 2, "unreferenced" => 0];
@@ -261,27 +261,27 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $loop->disable($watcherId2);
         $loop->disable($watcherId2);
         $loop->disable($watcherId2);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["referenced" => 1, "unreferenced" => 0];
         $this->assertSame($expected, $info["watchers"]);
 
         // enabling a referenced watcher should increment the referenced count
         $loop->enable($watcherId2);
         $loop->enable($watcherId2);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["referenced" => 2, "unreferenced" => 0];
         $this->assertSame($expected, $info["watchers"]);
 
         // cancelling an referenced watcher should decrement the referenced count
         $loop->cancel($watcherId2);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["referenced" => 1, "unreferenced" => 0];
         $this->assertSame($expected, $info["watchers"]);
 
         // unreference() should just increment unreferenced count
         $watcherId2 = \call_user_func_array($func, $args);
         $loop->unreference($watcherId2);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 2, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 1, "unreferenced" => 1];
@@ -307,13 +307,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         $watcherId = \call_user_func_array($func, $args);
         $this->assertInternalType("string", $watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
         // invoke enable() on active watcher to ensure it has no side-effects
         $loop->enable($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
@@ -321,37 +321,37 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $loop->disable($watcherId);
         $loop->disable($watcherId);
 
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 0, "disabled" => 1];
         $this->assertSame($expected, $info[$type]);
 
         $loop->cancel($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 0, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
         $watcherId = \call_user_func_array($func, $args);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
         $loop->disable($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 0, "disabled" => 1];
         $this->assertSame($expected, $info[$type]);
 
         $loop->enable($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
         $loop->cancel($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 0, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
 
         $loop->disable($watcherId);
-        $info = $loop->info();
+        $info = $loop->getInfo();
         $expected = ["enabled" => 0, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
     }
