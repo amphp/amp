@@ -2,7 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\UvPoll;
 use Amp\Loop\Internal\Watcher;
 
 class UvLoop extends Loop {
@@ -48,7 +47,7 @@ class UvLoop extends Loop {
      */
     private $signalCallback;
 
-    public static function enabled() {
+    public static function supported() {
         return \extension_loaded("uv");
     }
 
@@ -118,7 +117,7 @@ class UvLoop extends Loop {
      * {@inheritdoc}
      */
     protected function dispatch($blocking) {
-        \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_ONCE | \UV::RUN_NOWAIT);
+        \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
 
     /**
