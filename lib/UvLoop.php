@@ -99,12 +99,6 @@ class UvLoop extends Loop {
         };
     }
 
-    public function __destruct() {
-        if (\is_resource($this->handle)) {
-            \uv_loop_delete($this->handle);
-        }
-    }
-
     /**
      * {@inheritdoc}
      */
