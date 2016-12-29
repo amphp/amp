@@ -4,6 +4,8 @@ namespace Interop\Async\Loop;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
+ *
+ * Registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
 abstract class Driver
 {
