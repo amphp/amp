@@ -208,6 +208,50 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     }
 
     /** @dataProvider provideRegistrationArgs */
+    function testWeakTypes($type, $args) {
+        $this->start(function (Driver $loop) use ($type, $args, &$invoked) {
+            if ($type == "onReadable") {
+                $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                fwrite($ends[0], "trigger readability watcher");
+                $args = [$ends[1]];
+            } else {
+                array_pop($args);
+            }
+
+            $expectedData = 20.75;
+            if (substr($type, 0, 2) == "on") {
+                $args[] = function($watcherId, $arg, int $data) use ($loop, &$invoked, $expectedData) {
+                    $invoked = true;
+                    $this->assertSame((int) $expectedData, $data);
+                    $loop->unreference($watcherId);
+                };
+            } else {
+                $args[] = function($watcherId, int $data) use ($loop, &$invoked, $expectedData, $type) {
+                    $invoked = true;
+                    $this->assertSame((int) $expectedData, $data);
+                    if ($type == "repeat") {
+                        $loop->unreference($watcherId);
+                    }
+                };
+            }
+            $args[] = $expectedData;
+            call_user_func_array([$loop, $type], $args);
+
+            if ($type == "onSignal") {
+                $this->testSignalCapability();
+                if (!\extension_loaded("posix")) {
+                    $this->markTestSkipped("ext/posix required to test signal handlers");
+                }
+                $loop->defer(function() {
+                    \posix_kill(\getmypid(), \SIGUSR1);
+                });
+            }
+        });
+
+        $this->assertTrue($invoked);
+    }
+
+    /** @dataProvider provideRegistrationArgs */
     function testDisableWithConsecutiveCancel($type, $args)
     {
         if ($type === "onSignal") {
@@ -360,13 +404,16 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
     function testNoMemoryLeak($type, $args)
     {
     	if ($this->getTestResultObject()->getCollectCodeCoverageInformation()) {
-    		$this->markTestSkipped("Cannot run this test with code coverage active [code coverage consumes memory which makes it impossible to rely on memory_get_usage()]");
-		}
+            $this->markTestSkipped("Cannot run this test with code coverage active [code coverage consumes memory which makes it impossible to rely on memory_get_usage()]");
+        }
 
         $runs = 2000;
 
         if ($type === "onSignal") {
             $this->testSignalCapability();
+            if (!\extension_loaded("posix")) {
+                $this->markTestSkipped("ext/posix required to test signal handlers");
+            }
         }
 
         $this->start(function(Driver $loop) use ($type, $args, $runs) {
