@@ -209,6 +209,13 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     /** @dataProvider provideRegistrationArgs */
     function testWeakTypes($type, $args) {
+        if ($type == "onSignal") {
+            $this->testSignalCapability();
+            if (!\extension_loaded("posix")) {
+                $this->markTestSkipped("ext/posix required to test signal handlers");
+            }
+        }
+
         $this->start(function (Driver $loop) use ($type, $args, &$invoked) {
             if ($type == "onReadable") {
                 $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
@@ -238,10 +245,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             call_user_func_array([$loop, $type], $args);
 
             if ($type == "onSignal") {
-                $this->testSignalCapability();
-                if (!\extension_loaded("posix")) {
-                    $this->markTestSkipped("ext/posix required to test signal handlers");
-                }
                 $loop->defer(function() {
                     \posix_kill(\getmypid(), \SIGUSR1);
                 });
