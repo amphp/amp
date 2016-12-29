@@ -221,16 +221,7 @@ class NativeLoop extends Loop {
 
                 case Watcher::SIGNAL:
                     if (!isset($this->signalWatchers[$watcher->value])) {
-                        if (!@\pcntl_signal($watcher->value, function ($signo) {
-                            foreach ($this->signalWatchers[$signo] as $watcher) {
-                                if (!isset($this->signalWatchers[$signo][$watcher->id])) {
-                                    continue;
-                                }
-
-                                $callback = $watcher->callback;
-                                $callback($watcher->id, $signo, $watcher->data);
-                            }
-                        })) {
+                        if (!@\pcntl_signal($watcher->value, [$this, 'handleSignal'])) {
                             throw new \RuntimeException("Failed to register signal handler");
                         }
                     }
@@ -282,6 +273,20 @@ class NativeLoop extends Loop {
                 break;
 
             default: throw new \DomainException("Unknown watcher type");
+        }
+    }
+    
+    /**
+     * @param int $signo
+     */
+    private function handleSignal($signo) {
+        foreach ($this->signalWatchers[$signo] as $watcher) {
+            if (!isset($this->signalWatchers[$signo][$watcher->id])) {
+                continue;
+            }
+        
+            $callback = $watcher->callback;
+            $callback($watcher->id, $signo, $watcher->data);
         }
     }
 
