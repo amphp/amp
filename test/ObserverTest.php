@@ -4,12 +4,13 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Emitter, Observer, Pause, Postponed };
+use Interop\Async\Loop;
 
 class ObserverTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 10;
     
     public function testSingleEmittingObservable() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $value = 1;
             $observable = new Emitter(function (callable $emit) use ($value) {
                 yield $emit($value);
@@ -23,14 +24,14 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
             }
             
             $this->assertSame($observer->getResult(), $value);
-        });
+        }));
     }
     
     /**
      * @depends testSingleEmittingObservable
      */
     public function testFastEmittingObservable() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $count = 10;
             
             $postponed = new Postponed;
@@ -49,14 +50,14 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
             
             $this->assertSame($count, $i);
             $this->assertSame($observer->getResult(), $i);
-        });
+        }));
     }
     
     /**
      * @depends testSingleEmittingObservable
      */
     public function testSlowEmittingObservable() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $count = 10;
             $observable = new Emitter(function (callable $emit) use ($count) {
                 for ($i = 0; $i < $count; ++$i) {
@@ -74,14 +75,14 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
     
             $this->assertSame($count, $i);
             $this->assertSame($observer->getResult(), $i);
-        });
+        }));
     }
     
     /**
      * @depends testFastEmittingObservable
      */
     public function testDrain() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $count = 10;
             
             $postponed = new Postponed;
@@ -97,7 +98,7 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
             $values = $observer->drain();
             
             $this->assertSame(\range(0, $count - 1), $values);
-        });
+        }));
     }
     
     /**
@@ -113,7 +114,7 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
     }
     
     public function testFailingObservable() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $exception = new \Exception;
         
             $postponed = new Postponed;
@@ -135,7 +136,7 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
-        });
+        }));
     }
     
     /**
@@ -171,12 +172,12 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage The observable has not resolved
      */
     public function testGetResultBeforeResolution() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $postponed = new Postponed;
             
             $observer = new Observer($postponed->observe());
             
             $observer->getResult();
-        });
+        }));
     }
 }

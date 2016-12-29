@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Deferred, Failure, Success };
-use Interop\Async\Promise;
+use Interop\Async\{ Loop, Promise };
 
 class MapTest extends \PHPUnit_Framework_TestCase {
     public function testEmptyArray() {
@@ -20,7 +20,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
     }
     
     public function testSuccessfulPromisesArray() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
     
             $count = 0;
@@ -39,7 +39,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             }
             
             $this->assertSame(\count($promises), $count);
-        });
+        }));
     }
     
     public function testPendingPromisesArray() {
@@ -76,7 +76,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
     }
     
     public function testFailedPromisesArray() {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $exception = new \Exception;
             $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];;
         
@@ -95,7 +95,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             }
         
             $this->assertSame(0, $count);
-        });
+        }));
     }
     
     /**
@@ -103,7 +103,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
      */
     public function testCallbackThrowingExceptionRejectsPromises()
     {
-        Amp\execute(function () {
+        Loop::execute(Amp\wrap(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
             $exception = new \Exception;
     
@@ -124,7 +124,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
                     $this->assertSame($exception, $reason);
                 }
             }
-        });
+        }));
     }
     
     /**

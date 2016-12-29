@@ -3,16 +3,14 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\Coroutine;
-use Amp\Pause;
-use Amp\Postponed;
-use Amp\Loop\NativeLoop;
+use Amp\{ Coroutine, Pause, Postponed, Loop\NativeLoop };
+use Interop\Async\Loop;
 
-Amp\execute(function () {
+Loop::execute(Amp\wrap(function () {
     try {
         $postponed = new Postponed;
 
-        $observable = $postponed->getObservable();
+        $observable = $postponed->observe();
 
         $observable->subscribe(function ($value) {
             printf("Observable emitted %d\n", $value);
@@ -47,4 +45,4 @@ Amp\execute(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}, $loop = new NativeLoop());
+}), $loop = new NativeLoop());

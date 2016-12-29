@@ -4,6 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Deferred, Emitter, Pause };
+use Interop\Async\Loop;
 
 class EmitterTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 100;
@@ -18,7 +19,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
     
     public function testEmit() {
         $invoked = false;
-        Amp\execute(function () use (&$invoked) {
+        Loop::execute(Amp\wrap(function () use (&$invoked) {
             $value = 1;
     
             $emitter = new Emitter(function (callable $emit) use ($value) {
@@ -37,7 +38,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
             $emitter->when(function ($exception, $result) use ($value) {
                 $this->assertSame($result, $value);
             });
-        });
+        }));
         
         $this->assertTrue($invoked);
     }
@@ -47,7 +48,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitSuccessfulPromise() {
         $invoked = false;
-        Amp\execute(function () use (&$invoked) {
+        Loop::execute(Amp\wrap(function () use (&$invoked) {
             $deferred = new Deferred();
     
             $emitter = new Emitter(function (callable $emit) use ($deferred) {
@@ -64,7 +65,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
             $emitter->subscribe($callback);
     
             $deferred->resolve($value);
-        });
+        }));
     
         $this->assertTrue($invoked);
     }
@@ -74,7 +75,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitFailedPromise() {
         $exception = new \Exception;
-        Amp\execute(function () use ($exception) {
+        Loop::execute(Amp\wrap(function () use ($exception) {
             $deferred = new Deferred();
             
             $emitter = new Emitter(function (callable $emit) use ($deferred) {
@@ -86,7 +87,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
             $emitter->when(function ($reason) use ($exception) {
                 $this->assertSame($reason, $exception);
             });
-        });
+        }));
     }
     
     /**
@@ -94,7 +95,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitBackPressure() {
         $emits = 3;
-        Amp\execute(function () use (&$time, $emits) {
+        Loop::execute(Amp\wrap(function () use (&$time, $emits) {
             $emitter = new Emitter(function (callable $emit) use (&$time, $emits) {
                 $time = microtime(true);
                 for ($i = 0; $i < $emits; ++$i) {
@@ -106,7 +107,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
             $emitter->subscribe(function () {
                 return new Pause(self::TIMEOUT);
             });
-        });
+        }));
         
         $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
     }
@@ -118,7 +119,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
         
         try {
-            Amp\execute(function () use ($exception) {
+            Loop::execute(Amp\wrap(function () use ($exception) {
                 $emitter = new Emitter(function (callable $emit) {
                     yield $emit(1);
                     yield $emit(2);
@@ -127,7 +128,7 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
                 $emitter->subscribe(function () use ($exception) {
                     throw $exception;
                 });
-            });
+            }));
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
@@ -140,14 +141,14 @@ class EmitterTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
     
         try {
-            Amp\execute(function () use ($exception) {
+            Loop::execute(Amp\wrap(function () use ($exception) {
                 $emitter = new Emitter(function (callable $emit) use ($exception) {
                     yield $emit(1);
                     throw $exception;
                 });
                 
                 Amp\wait($emitter);
-            });
+            }));
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }

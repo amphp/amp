@@ -2,235 +2,11 @@
 
 namespace Amp;
 
-use Interop\Async\{ Promise, Loop, Loop\Driver };
-
-/**
- * Execute a callback within the event loop scope.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::execute()
- *
- * @param callable $callback
- * @param \Interop\Async\Loop\Driver|null $driver
- */
-function execute(callable $callback, Driver $driver = null) {
-    Loop::execute(function () use ($callback) {
-        $result = $callback();
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $driver);
-}
-
-/**
- * Stops the event loop.
- *
- * @see \Interop\Async\Loop::stop()
- */
-function stop() {
-    Loop::stop();
-}
-
-/**
- * Execute a callback when a stream resource becomes readable.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::onReadable()
- *
- * @param resource $stream The stream to monitor.
- * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function onReadable($stream, callable $callback, $data = null): string {
-    return Loop::onReadable($stream, function ($watcherId, $stream, $data) use ($callback) {
-        $result = $callback($watcherId, $stream, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-            return;
-        }
-    }, $data);
-}
-
-/**
- * Execute a callback when a stream resource becomes writable.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::onWritable()
- *
- * @param resource $stream The stream to monitor.
- * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function onWritable($stream, callable $callback, $data = null): string {
-    return Loop::onWritable($stream, function ($watcherId, $stream, $data) use ($callback) {
-        $result = $callback($watcherId, $stream, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $data);
-}
-
-/**
- * Execute a callback when a signal is received.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::onSignal()
- *
- * @param int $signo The signal number to monitor.
- * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function onSignal(int $signo, callable $callback, $data = null): string {
-    return Loop::onSignal($signo, function ($watcherId, $signo, $data) use ($callback) {
-        $result = $callback($watcherId, $signo, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $data);
-}
-
-/**
- * Defer the execution of a callback.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::defer()
- *
- * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function defer(callable $callback, $data = null): string {
-    return Loop::defer(function ($watcherId, $data) use ($callback) {
-        $result = $callback($watcherId, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $data);
-}
-
-/**
- * Delay the execution of a callback.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::delay()
- *
- * @param int $time
- * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function delay(int $time, callable $callback, $data = null): string {
-    return Loop::delay($time, function ($watcherId, $data) use ($callback) {
-        $result = $callback($watcherId, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $data);
-}
-
-/**
- * Repeatedly execute a callback.
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::repeat()
- *
- * @param int $time
- * @param callable(string $watcherId, mixed $data) $callback The callback to delay.
- * @param mixed $data
- *
- * @return string Watcher identifier.
- */
-function repeat(int $time, callable $callback, $data = null): string {
-    return Loop::repeat($time, function ($watcherId, $data) use ($callback) {
-        $result = $callback($watcherId, $data);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    }, $data);
-}
-
-/**
- * Enable a watcher.
- *
- * @see \Interop\Async\Loop::enable()
- *
- * @param string $watcherId
- */
-function enable(string $watcherId) {
-    Loop::enable($watcherId);
-}
-
-/**
- * Disable a watcher.
- *
- * @see \Interop\Async\Loop::disable()
- *
- * @param string $watcherId
- */
-function disable(string $watcherId) {
-    Loop::disable($watcherId);
-}
-
-/**
- * Cancel a watcher.
- *
- * @see \Interop\Async\Loop::cancel()
- *
- * @param string $watcherId
- */
-function cancel(string $watcherId) {
-    Loop::cancel($watcherId);
-}
-
-/**
- * Reference a watcher.
- *
- * @see \Interop\Async\Loop::reference()
- *
- * @param string $watcherId
- */
-function reference(string $watcherId) {
-    Loop::reference($watcherId);
-}
-
-/**
- * Unreference a watcher.
- *
- * @see \Interop\Async\Loop::unreference()
- *
- * @param string $watcherId
- */
-function unreference(string $watcherId) {
-    Loop::unreference($watcherId);
-}
-
-/**
- * Returned Generators are run as coroutines. Failures of the coroutine are forwarded to the loop error handler.
- *
- * @see \Interop\Async\Loop::setErrorHandler()
- *
- * @param callable $callback
- */
-function setErrorHandler(callable $callback) {
-    Loop::setErrorHandler(function ($exception) use ($callback) {
-        $result = $callback($exception);
-        if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
-        }
-    });
-}
+use Interop\Async\{ Loop, Promise };
 
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
- * calls rethrow() on the created coroutine.
+ * calls rethrow() on the returned promises (or the coroutine created).
  *
  * @param callable(...$args): \Generator|\Interop\Async\Promise|mixed $callback
  *
@@ -239,8 +15,13 @@ function setErrorHandler(callable $callback) {
 function wrap(callable $callback): callable {
     return function (...$args) use ($callback) {
         $result = $callback(...$args);
+        
         if ($result instanceof \Generator) {
-            rethrow(new Coroutine($result));
+            $result = new Coroutine($result);
+        }
+        
+        if ($result instanceof Promise) {
+            rethrow($result);
         }
     };
 }
