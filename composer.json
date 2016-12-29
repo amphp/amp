@@ -11,7 +11,7 @@
     "homepage": "http://amphp.org",
     "license": "MIT",
     "require": {
-        "async-interop/event-loop": "^0.3"
+        "async-interop/event-loop": "dev-master"
     },
     "require-dev": {
         "async-interop/event-loop-test": "dev-master",

@@ -364,13 +364,15 @@ abstract class Loop extends Driver {
      * {@inheritdoc}
      */
     public function setErrorHandler(callable $callback = null) {
+        $previous = $this->errorHandler;
         $this->errorHandler = $callback;
+        return $previous;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function info() {
+    public function getInfo() {
         $watchers = [
             "referenced"   => 0,
             "unreferenced" => 0,
