@@ -206,8 +206,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         return $args;
     }
-
-    /** @dataProvider provideRegistrationArgs */
+    
+    /**
+     * @requires PHP 7
+     * @dataProvider provideRegistrationArgs
+     */
     function testWeakTypes($type, $args) {
         if ($type == "onSignal") {
             $this->testSignalCapability();
