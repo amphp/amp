@@ -211,4 +211,23 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         $this->assertEquals(4, $invoked);
     }
+
+    function testWeakTypes() {
+        $invoked = 0;
+        list($promise, $succeeder) = $this->promise();
+
+        $expectedData = "15.24";
+
+        $promise->when(function($e, int $v) use (&$invoked, $expectedData) {
+            $invoked++;
+            $this->assertSame((int) $expectedData, $v);
+        });
+        $succeeder($expectedData);
+        $promise->when(function($e, int $v) use (&$invoked, $expectedData) {
+            $invoked++;
+            $this->assertSame((int) $expectedData, $v);
+        });
+
+        $this->assertEquals(2, $invoked);
+    }
 }
