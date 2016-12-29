@@ -27,13 +27,13 @@
     ],
     "require": {
         "php": ">=7",
-        "async-interop/promise": "^0.2",
+        "async-interop/promise": "^0.3",
         "async-interop/event-loop": "^0.3",
         "async-interop/event-loop-implementation": "^0.3"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
-        "phpunit/phpunit": "^5",
+        "async-interop/promise-test": "dev-master",
         "friendsofphp/php-cs-fixer": "~1.9"
     },
     "autoload": {
@@ -41,6 +41,7 @@
             "Amp\\": "lib/"
         },
         "files": [
+            "lib/bootstrap.php",
             "lib/functions.php"
         ]
     },

@@ -1,9 +1,9 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp\Internal;
 
 use Amp\{ Deferred, Success };
-use Interop\Async\{ Loop, Promise };
+use Interop\Async\{ Promise, Promise\ErrorHandler };
 
 /**
  * Trait used by Observable implementations. Do not use this trait in your code, instead compose your class from one of
@@ -78,9 +78,7 @@ trait Producer {
                     $promises[] = $result;
                 }
             } catch (\Throwable $e) {
-                Loop::defer(static function () use ($e) {
-                    throw $e;
-                });
+                ErrorHandler::notify($e);
             }
         }
 
@@ -92,9 +90,7 @@ trait Producer {
         $count = \count($promises);
         $f = static function ($e) use ($deferred, $value, &$count) {
             if ($e) {
-                Loop::defer(static function () use ($e) {
-                    throw $e;
-                });
+                ErrorHandler::notify($e);
             }
             if (!--$count) {
                 $deferred->resolve($value);

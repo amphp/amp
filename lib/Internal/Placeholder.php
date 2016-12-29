@@ -1,9 +1,9 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Interop\Async\{ Loop, Promise };
+use Interop\Async\{ Promise, Promise\ErrorHandler };
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -34,9 +34,7 @@ trait Placeholder {
             try {
                 $onResolved(null, $this->result);
             } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
+                ErrorHandler::notify($exception);
             }
             return;
         }
@@ -81,9 +79,7 @@ trait Placeholder {
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
+            ErrorHandler::notify($exception);
         }
     }
 

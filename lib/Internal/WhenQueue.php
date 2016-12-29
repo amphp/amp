@@ -1,8 +1,8 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp\Internal;
 
-use Interop\Async\Loop;
+use Interop\Async\Promise\ErrorHandler;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.
@@ -33,9 +33,7 @@ class WhenQueue {
             try {
                 $callback($exception, $value);
             } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
+                ErrorHandler::notify($exception);
             }
         }
     }

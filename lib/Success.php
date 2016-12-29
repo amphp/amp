@@ -1,8 +1,8 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp;
 
-use Interop\Async\{ Loop, Promise };
+use Interop\Async\{ Promise, Promise\ErrorHandler };
 
 /**
  * Creates a successful observable using the given value (which can be any value except another object implementing
@@ -33,9 +33,7 @@ final class Success implements Observable {
         try {
             $onResolved(null, $this->value);
         } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
+            ErrorHandler::notify($exception);
         }
     }
     

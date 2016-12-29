@@ -1,8 +1,8 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp;
 
-use Interop\Async\Loop;
+use Interop\Async\Promise\ErrorHandler;
 
 /**
  * Creates a failed observable using the given exception.
@@ -25,9 +25,7 @@ final class Failure implements Observable {
         try {
             $onResolved($this->exception, null);
         } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
+            ErrorHandler::notify($exception);
         }
     }
     

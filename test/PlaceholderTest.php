@@ -1,4 +1,4 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp\Test;
 
@@ -307,9 +307,24 @@ class PlaceholderTest extends \PHPUnit_Framework_TestCase {
 
     /**
      * @expectedException \Error
+     * @expectedExceptionMessage Promise has already been resolved
      */
     public function testDoubleResolve() {
         $this->placeholder->resolve();
         $this->placeholder->resolve();
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage Promise has already been resolved
+     */
+    public function testResolveAgainWithinWhenCallback() {
+        Loop::execute(function () {
+            $this->placeholder->when(function () {
+                $this->placeholder->resolve();
+            });
+            
+            $this->placeholder->resolve();
+        });
     }
 }

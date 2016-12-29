@@ -1,7 +1,8 @@
-<?php declare(strict_types = 1);
+<?php
 
 namespace Amp;
 
+// @codeCoverageIgnoreStart
 if (\PHP_VERSION_ID < 70100) {
     trait CallableMaker {
         /** @var \ReflectionClass */
@@ -68,4 +69,4 @@ if (\PHP_VERSION_ID < 70100) {
             return \Closure::fromCallable([self::class, $method]);
         }
     }
-}
+} // @codeCoverageIgnoreEnd
