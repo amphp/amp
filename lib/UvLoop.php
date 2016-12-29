@@ -167,8 +167,9 @@ class UvLoop extends Loop {
                         $event = $this->events[$id];
                     } else {
                         $event = $this->events[$id] = \uv_timer_init($this->handle);
-                        $this->watchers[(int) $event] = $watcher;
                     }
+
+                    $this->watchers[(int) $event] = $watcher;
 
                     \uv_timer_start(
                         $event,
@@ -183,8 +184,9 @@ class UvLoop extends Loop {
                         $event = $this->events[$id];
                     } else {
                         $event = $this->events[$id] = \uv_signal_init($this->handle);
-                        $this->watchers[(int) $event] = $watcher;
                     }
+                    
+                    $this->watchers[(int) $event] = $watcher;
 
                     \uv_signal_start($event, $this->signalCallback, $watcher->value);
                     break;
