@@ -6,6 +6,9 @@ use Amp\Loop\EvLoop;
 use Interop\Async\Loop\DriverFactory;
 use Interop\Async\Loop\Test;
 
+/**
+ * @requires extension ev
+ */
 class EvLoopTest extends Test {
     public function getFactory() {
         if (!EvLoop::supported()) {
