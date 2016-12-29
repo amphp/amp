@@ -426,6 +426,6 @@ abstract class Loop extends Driver {
      * @return array
      */
     public function __debugInfo() {
-        return $this->info();
+        return $this->getInfo();
     }
 }
