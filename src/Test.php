@@ -17,7 +17,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         return [
             ["string"],
             [0],
-            [PHP_INT_MIN],
+            [~PHP_INT_MAX],
             [-1.0],
             [true],
             [false],
