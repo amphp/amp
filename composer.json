@@ -4,7 +4,7 @@
   "keywords": ["promise", "async", "interop", "test"],
   "license": "MIT",
   "require": {
-    "php": ">=5.5.0",
+    "php": ">=5.4.0",
     "async-interop/promise": "^0.3|dev-master",
     "phpunit/phpunit": "^4|^5"
   },
