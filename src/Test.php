@@ -214,6 +214,39 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         Promise\ErrorHandler::set($original);
     }
 
+    function testThrowingInCallbackOnFailure() {
+        $invoked = 0;
+        $original = Promise\ErrorHandler::set(function () use (&$invoked) {
+            $invoked++;
+        });
+
+        list($promise, , $failer) = $this->promise();
+        $exception = new \Exception;
+        $failer($exception);
+        $promise->when(function($e, $v) use (&$invoked, $exception) {
+            $this->assertSame($exception, $e);
+            $this->assertNull($v);
+            $invoked++;
+
+            throw $e;
+        });
+
+        list($promise, , $failer) = $this->promise();
+        $exception = new \Exception;
+        $promise->when(function($e, $v) use (&$invoked, $exception) {
+            $this->assertSame($exception, $e);
+            $this->assertNull($v);
+            $invoked++;
+
+            throw $e;
+        });
+        $failer($exception);
+
+        $this->assertEquals(4, $invoked);
+
+        Promise\ErrorHandler::set($original);
+    }
+
     /** @requires PHP 7 */
     function testWeakTypes() {
         $invoked = 0;
