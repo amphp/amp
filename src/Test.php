@@ -247,7 +247,9 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         Promise\ErrorHandler::set($original);
     }
 
-    /** @requires PHP 7 */
+    /**
+     * @requires PHP 7
+     */
     function testWeakTypes() {
         $invoked = 0;
         list($promise, $succeeder) = $this->promise();
