@@ -9,9 +9,9 @@ use Interop\Async\Loop;
 class ConcatTest extends \PHPUnit_Framework_TestCase {
     public function getObservables() {
         return [
-            [[Amp\range(1, 3), Amp\range(4, 6)], \range(1, 6)],
-            [[Amp\range(1, 5), Amp\range(6, 8)], \range(1, 8)],
-            [[Amp\range(1, 4), Amp\range(5, 10)], \range(1, 10)],
+            [[Amp\observableFromIterable(\range(1, 3)), Amp\observableFromIterable(\range(4, 6))], \range(1, 6)],
+            [[Amp\observableFromIterable(\range(1, 5)), Amp\observableFromIterable(\range(6, 8))], \range(1, 8)],
+            [[Amp\observableFromIterable(\range(1, 4)), Amp\observableFromIterable(\range(5, 10))], \range(1, 10)],
         ];
     }
     
@@ -44,7 +44,7 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
                 throw $exception;
             });
     
-            $observable = Amp\concat([Amp\range(1, 5), $emitter, Amp\range(7, 10)]);
+            $observable = Amp\concat([Amp\observableFromIterable(\range(1, 5)), $emitter, Amp\observableFromIterable(\range(7, 10))]);
             
             $observable->subscribe(function ($value) use (&$results) {
                 $results[] = $value;

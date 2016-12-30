@@ -9,9 +9,9 @@ use Interop\Async\Loop;
 class MergeTest extends \PHPUnit_Framework_TestCase {
     public function getObservables() {
         return [
-            [[Amp\range(1, 3), Amp\range(4, 6)], [1, 4, 2, 5, 3, 6]],
-            [[Amp\range(1, 5), Amp\range(6, 8)], [1, 6, 2, 7, 3, 8, 4, 5]],
-            [[Amp\range(1, 4), Amp\range(5, 10)], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
+            [[Amp\observableFromIterable(\range(1, 3)), Amp\observableFromIterable(\range(4, 6))], [1, 4, 2, 5, 3, 6]],
+            [[Amp\observableFromIterable(\range(1, 5)), Amp\observableFromIterable(\range(6, 8))], [1, 6, 2, 7, 3, 8, 4, 5]],
+            [[Amp\observableFromIterable(\range(1, 4)), Amp\observableFromIterable(\range(5, 10))], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
         ];
     }
     
@@ -43,7 +43,7 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
                 throw $exception;
             });
     
-            $observable = Amp\merge([$emitter, Amp\range(1, 5)]);
+            $observable = Amp\merge([$emitter, Amp\observableFromIterable(\range(1, 5))]);
     
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;

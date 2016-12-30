@@ -501,6 +501,25 @@ function map(callable $callback, array ...$promises): array {
 }
 
 /**
+ * @param array|\Traversable $iterable
+ *
+ * @return \Amp\Observable
+ *
+ * @throws \TypeError If the argument is not an array or instance of \Traversable.
+ */
+function observableFromIterable(/* iterable */ $iterable): Observable {
+    if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
+        throw new \TypeError("Must provide an array or instance of Traversable");
+    }
+    
+    return new Emitter(function (callable $emit) use ($iterable) {
+        foreach ($iterable as $value) {
+            yield $emit($value);
+        }
+    });
+}
+
+/**
  * @param \Amp\Observable $observable
  * @param callable(mixed $value): mixed $onNext
  * @param callable(mixed $value): mixed|null $onComplete
@@ -677,13 +696,13 @@ function concat(array $observables): Observable {
     $promise = all($previous);
 
     foreach ($observables as $observable) {
-        $subscriptions[] = $observable->subscribe(coroutine(function ($value) use ($postponed, $promise) {
+        $generator = function ($value) use ($postponed, $promise) {
             static $pending = true, $failed = false;
-
+    
             if ($failed) {
                 return;
             }
-
+    
             if ($pending) {
                 try {
                     yield $promise;
@@ -693,9 +712,12 @@ function concat(array $observables): Observable {
                     return; // Prior observable failed.
                 }
             }
-
+    
             yield $postponed->emit($value);
-        }));
+        };
+        $subscriptions[] = $observable->subscribe(function ($value) use ($generator) {
+            return new Coroutine($generator($value));
+        });
         $previous[] = $observable;
         $promise = all($previous);
     }
@@ -740,29 +762,4 @@ function interval(int $interval, int $count = PHP_INT_MAX): Observable {
     });
 
     return $postponed->observe();
-}
-
-/**
- * @param int $start
- * @param int $end
- * @param int $step
- *
- * @return \Amp\Observable
- *
- * @throws \Error If the step is 0 or not of the correct sign.
- */
-function range(int $start, int $end, int $step = 1): Observable {
-    if (0 === $step) {
-        throw new \Error("Step must be a non-zero integer");
-    }
-
-    if ((($end - $start) ^ $step) < 0) {
-        throw new \Error("Step is not of the correct sign");
-    }
-
-    return new Emitter(function (callable $emit) use ($start, $end, $step) {
-        for ($i = $start; $i <= $end; $i += $step) {
-            yield $emit($i);
-        }
-    });
 }
