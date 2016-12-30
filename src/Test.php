@@ -184,7 +184,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testThrowingInCallback() {
         $invoked = 0;
-        Promise\ErrorHandler::set(function () use (&$invoked) {
+        $original = Promise\ErrorHandler::set(function () use (&$invoked) {
             $invoked++;
         });
             
@@ -210,6 +210,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $succeeder(true);
 
         $this->assertEquals(4, $invoked);
+
+        Promise\ErrorHandler::set($original);
     }
 
     /** @requires PHP 7 */
