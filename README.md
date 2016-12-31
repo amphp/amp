@@ -1,9 +1,9 @@
 # Event Loop Interopability
 
-The purpose of this proposal is to provide a common interface for event loop
-implementations. This will allow libraries and components from different
-vendors to operate in an event driven architecture, sharing a common event
-loop.
+The purpose of this specification is to provide a common interface for
+event loop implementations. This allows libraries and components from
+different vendors to operate in an event driven architecture, sharing a
+common event loop.
 
 ## Why Bother?
 
@@ -12,7 +12,7 @@ native to the execution environment. This allows package vendors to easily
 create asynchronous software that uses this native event loop. Although PHP
 is historically a synchronous programming environment, it is still possible
 to use asynchronous programming techniques. Using these techniques, package
-vendors have created PHP event loop implementations that have seen success.
+vendors have created event loop implementations that have seen success.
 
 However, as these event loop implementations are from package vendors, it
 is not yet possible to create event driven software components that are
