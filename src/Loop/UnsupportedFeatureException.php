@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace AsyncInterop\Loop;
 
 /**
  * MUST be thrown if a feature is not supported by the system.

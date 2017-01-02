@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace AsyncInterop\Loop;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.

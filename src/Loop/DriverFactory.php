@@ -1,11 +1,11 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace AsyncInterop\Loop;
 
 /**
  * Allows creating new driver instances.
  *
- * @see \Interop\Async\Loop::setFactory()
+ * @see \AsyncInterop\Loop::setFactory()
  */
 interface DriverFactory
 {
