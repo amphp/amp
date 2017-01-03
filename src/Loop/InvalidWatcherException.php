@@ -21,7 +21,7 @@ class InvalidWatcherException extends \Exception
         $this->watcherId = $watcherId;
 
         if ($message === null) {
-            $message = "An invalid watcher idenfier has been used: '{$watcherId}'";
+            $message = "An invalid watcher identifier has been used: '{$watcherId}'";
         }
 
         parent::__construct($message);
