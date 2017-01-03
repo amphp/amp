@@ -122,7 +122,7 @@ class Observer {
 
         ++$this->position;
 
-        if (\array_key_exists($this->position, $this->values)) {
+        if (isset($this->values[$this->position]) || \array_key_exists($this->position, $this->values)) {
             return new Success(true);
         }
 
