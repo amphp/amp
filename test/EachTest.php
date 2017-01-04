@@ -3,22 +3,22 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Emitter, Observable, Postponed };
+use Amp\{ Producer, Stream, Emitter };
 use Interop\Async\Loop;
 
 class EachTest extends \PHPUnit_Framework_TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
         Loop::execute(function () use (&$invoked){
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observable = Amp\each($postponed->observe(), function ($value) use (&$invoked) {
+            $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
             
-            $this->assertInstanceOf(Observable::class, $observable);
+            $this->assertInstanceOf(Stream::class, $stream);
             
-            $postponed->resolve();
+            $emitter->resolve();
         });
         
         $this->assertFalse($invoked);
@@ -30,25 +30,25 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $final = 4;
         $results = [];
         Loop::execute(function () use (&$results, &$result, &$count, $values, $final) {
-            $emitter = new Emitter(function (callable $emit) use ($values, $final) {
+            $producer = new Producer(function (callable $emit) use ($values, $final) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
                 return $final;
             });
         
-            $observable = Amp\each($emitter, function ($value) use (&$count) {
+            $stream = Amp\each($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
             }, function ($value) use (&$invoked) {
                 return $value + 1;
             });
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
     
-            $observable->when(function ($exception, $value) use (&$result) {
+            $stream->when(function ($exception, $value) use (&$result) {
                 $result = $value;
             });
         });
@@ -65,17 +65,17 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $values = [1, 2, 3];
         $exception = new \Exception;
         Loop::execute(function () use (&$reason, $values, $exception) {
-            $emitter = new Emitter(function (callable $emit) use ($values) {
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
         
-            $observable = Amp\each($emitter, function () use ($exception) {
+            $stream = Amp\each($producer, function () use ($exception) {
                 throw $exception;
             });
         
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
     
@@ -83,7 +83,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
                 $reason = $exception;
             };
     
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertSame($exception, $reason);
@@ -98,20 +98,20 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $results = [];
         $exception = new \Exception;
         Loop::execute(function () use (&$reason, &$results, &$count, $values, $exception) {
-            $emitter = new Emitter(function (callable $emit) use ($values) {
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
             
-            $observable = Amp\each($emitter, function ($value) use (&$count) {
+            $stream = Amp\each($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
             }, function ($value) use ($exception) {
                 throw $exception;
             });
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
             
@@ -119,7 +119,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
                 $reason = $exception;
             };
             
-            $observable->when($callback);
+            $stream->when($callback);
         });
     
         $this->assertSame(\count($values), $count);
@@ -127,23 +127,23 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame($exception, $reason);
     }
     
-    public function testObservableFails() {
+    public function testStreamFails() {
         $invoked = false;
         $exception = new \Exception;
         Loop::execute(function () use (&$invoked, &$reason, &$exception){
-            $postponed = new Postponed;
+            $emitter = new Emitter;
         
-            $observable = Amp\each($postponed->observe(), function ($value) use (&$invoked) {
+            $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
         
-            $postponed->fail($exception);
+            $emitter->fail($exception);
     
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
     
-            $observable->when($callback);
+            $stream->when($callback);
         });
     
         $this->assertFalse($invoked);

@@ -6,9 +6,9 @@ use Amp\{ Deferred, Success };
 use Interop\Async\{ Promise, Promise\ErrorHandler };
 
 /**
- * Trait used by Observable implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \Amp\Observable.
- * Note that it is the responsibility of the user of this trait to ensure that subscribers have a chance to subscribe first
+ * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Amp\Stream.
+ * Note that it is the responsibility of the user of this trait to ensure that listeners have a chance to listen first
  * before emitting values.
  *
  * @internal
@@ -19,32 +19,32 @@ trait Producer {
     }
 
     /** @var callable[] */
-    private $subscribers = [];
+    private $listeners = [];
     
     /**
      * @param callable $onNext
      */
-    public function subscribe(callable $onNext) {
+    public function listen(callable $onNext) {
         if ($this->resolved) {
             return;
         }
 
-        $this->subscribers[] = $onNext;
+        $this->listeners[] = $onNext;
     }
 
     /**
-     * Emits a value from the observable. The returned promise is resolved with the emitted value once all subscribers
+     * Emits a value from the stream. The returned promise is resolved with the emitted value once all listeners
      * have been invoked.
      *
      * @param mixed $value
      *
      * @return \Interop\Async\Promise
      *
-     * @throws \Error If the observable has resolved.
+     * @throws \Error If the stream has resolved.
      */
     private function emit($value): Promise {
         if ($this->resolved) {
-            throw new \Error("The observable has been resolved; cannot emit more values");
+            throw new \Error("The stream has been resolved; cannot emit more values");
         }
 
         if ($value instanceof Promise) {
@@ -52,7 +52,7 @@ trait Producer {
             $value->when(function ($e, $v) use ($deferred) {
                 if ($this->resolved) {
                     $deferred->fail(
-                        new \Error("The observable was resolved before the promise result could be emitted")
+                        new \Error("The stream was resolved before the promise result could be emitted")
                     );
                     return;
                 }
@@ -71,7 +71,7 @@ trait Producer {
 
         $promises = [];
 
-        foreach ($this->subscribers as $onNext) {
+        foreach ($this->listeners as $onNext) {
             try {
                 $result = $onNext($value);
                 if ($result instanceof Promise) {
@@ -106,14 +106,14 @@ trait Producer {
 
 
     /**
-     * Resolves the observable with the given value.
+     * Resolves the stream with the given value.
      *
      * @param mixed $value
      *
-     * @throws \Error If the observable has already been resolved.
+     * @throws \Error If the stream has already been resolved.
      */
     private function resolve($value = null) {
         $this->complete($value);
-        $this->subscribers = [];
+        $this->listeners = [];
     }
 }

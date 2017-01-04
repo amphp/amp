@@ -5,18 +5,18 @@ namespace Amp;
 use Interop\Async\Promise;
 
 /**
- * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Observable.
+ * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Stream.
  *
  * Example:
- * $observer = new Observer($observable); // $observable is an instance of \Amp\Observable
- * while (yield $observer->advance()) {
- *     $emitted = $observer->getCurrent();
+ * $listener = new Listener($stream); // $stream is an instance of \Amp\Stream
+ * while (yield $listener->advance()) {
+ *     $emitted = $listener->getCurrent();
  * }
- * $result = $observer->getResult();
+ * $result = $listener->getResult();
  */
-class Observer {
-    /** @var \Amp\Observable */
-    private $observable;
+class Listener {
+    /** @var \Amp\Stream */
+    private $stream;
 
     /** @var mixed[] */
     private $values = [];
@@ -40,17 +40,17 @@ class Observer {
     private $exception;
 
     /**
-     * @param \Amp\Observable $observable
+     * @param \Amp\Stream $stream
      */
-    public function __construct(Observable $observable) {
-        $this->observable = $observable;
+    public function __construct(Stream $stream) {
+        $this->stream = $stream;
 
         $deferred = &$this->deferred;
         $values = &$this->values;
         $deferreds = &$this->deferreds;
         $resolved = &$this->resolved;
 
-        $this->observable->subscribe(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
+        $this->stream->listen(static function ($value) use (&$deferred, &$values, &$deferreds, &$resolved) {
             $values[] = $value;
             $deferreds[] = $pressure = new Deferred;
 
@@ -70,7 +70,7 @@ class Observer {
         $result = &$this->result;
         $error = &$this->exception;
 
-        $this->observable->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
+        $this->stream->when(static function ($exception, $value) use (&$deferred, &$result, &$error, &$resolved) {
             $resolved = true;
 
             if ($exception) {
@@ -90,7 +90,7 @@ class Observer {
     }
 
     /**
-     * Marks the observer as resolved to relieve back-pressure on the observable.
+     * Marks the listener as resolved to relieve back-pressure on the stream.
      */
     public function __destruct() {
         $this->resolved = true;
@@ -101,15 +101,15 @@ class Observer {
     }
 
     /**
-     * @return \Amp\Observable The observable being observed.
+     * @return \Amp\Stream The stream being used by the listener.
      */
-    public function observe(): Observable {
-        return $this->observable;
+    public function stream(): Stream {
+        return $this->stream;
     }
 
     /**
-     * Succeeds with true if an emitted value is available by calling getCurrent() or false if the observable has
-     * resolved. If the observable fails, the returned promise will fail with the same exception.
+     * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has
+     * resolved. If the stream fails, the returned promise will fail with the same exception.
      *
      * @return \Interop\Async\Promise<bool>
      */
@@ -141,15 +141,15 @@ class Observer {
     }
 
     /**
-     * Gets the last emitted value or throws an exception if the observable has completed.
+     * Gets the last emitted value or throws an exception if the stream has completed.
      *
-     * @return mixed Value emitted from observable.
+     * @return mixed Value emitted from stream.
      *
-     * @throws \Error If the observable has resolved or advance() was not called before calling this method.
+     * @throws \Error If the stream has resolved or advance() was not called before calling this method.
      */
     public function getCurrent() {
         if (empty($this->values) && $this->resolved) {
-            throw new \Error("The observable has resolved");
+            throw new \Error("The stream has resolved");
         }
 
         if (!\array_key_exists($this->position, $this->values)) {
@@ -160,17 +160,17 @@ class Observer {
     }
 
     /**
-     * Gets the result of the observable or throws the failure reason. Also throws an exception if the observable has
+     * Gets the result of the stream or throws the failure reason. Also throws an exception if the stream has
      * not completed.
      *
-     * @return mixed Final return value of the observable.
+     * @return mixed Final return value of the stream.
      *
-     * @throws \Error If the observable has not completed.
-     * @throws \Throwable The exception used to fail the observable.
+     * @throws \Error If the stream has not completed.
+     * @throws \Throwable The exception used to fail the stream.
      */
     public function getResult() {
         if (!$this->resolved) {
-            throw new \Error("The observable has not resolved");
+            throw new \Error("The stream has not resolved");
         }
 
         if ($this->exception) {
@@ -181,15 +181,15 @@ class Observer {
     }
 
     /**
-     * Returns an array of values that were not consumed by the Observer before the Observable completed.
+     * Returns an array of values that were not consumed by the listener before the Stream completed.
      *
      * @return array Unconsumed emitted values.
      *
-     * @throws \Error If the observable has not completed.
+     * @throws \Error If the stream has not completed.
      */
     public function drain(): array {
         if (!$this->resolved) {
-            throw new \Error("The observable has not resolved");
+            throw new \Error("The stream has not resolved");
         }
 
         $values = $this->values;

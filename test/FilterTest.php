@@ -3,22 +3,22 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Emitter, Observable, Postponed };
+use Amp\{ Producer, Stream, Emitter };
 use Interop\Async\Loop;
 
 class FilterTest extends \PHPUnit_Framework_TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
         Loop::execute(function () use (&$invoked){
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observable = Amp\filter($postponed->observe(), function ($value) use (&$invoked) {
+            $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
             
-            $this->assertInstanceOf(Observable::class, $observable);
+            $this->assertInstanceOf(Stream::class, $stream);
             
-            $postponed->resolve();
+            $emitter->resolve();
         });
         
         $this->assertFalse($invoked);
@@ -30,22 +30,22 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
         $results = [];
         $expected = [1, 3];
         Loop::execute(function () use (&$results, &$result, &$count, $values) {
-            $emitter = new Emitter(function (callable $emit) use ($values) {
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
         
-            $observable = Amp\filter($emitter, function ($value) use (&$count) {
+            $stream = Amp\filter($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value & 1;
             });
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
     
-            $observable->when(function ($exception, $value) use (&$result) {
+            $stream->when(function ($exception, $value) use (&$result) {
                 $result = $value;
             });
         });
@@ -61,17 +61,17 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
         $values = [1, 2, 3];
         $exception = new \Exception;
         Loop::execute(function () use (&$reason, $values, $exception) {
-            $emitter = new Emitter(function (callable $emit) use ($values) {
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
             
-            $observable = Amp\filter($emitter, function () use ($exception) {
+            $stream = Amp\filter($producer, function () use ($exception) {
                 throw $exception;
             });
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
             
@@ -79,29 +79,29 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
                 $reason = $exception;
             };
             
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertSame($exception, $reason);
     }
     
-    public function testObservableFails() {
+    public function testStreamFails() {
         $invoked = false;
         $exception = new \Exception;
         Loop::execute(function () use (&$invoked, &$reason, &$exception){
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observable = Amp\filter($postponed->observe(), function ($value) use (&$invoked) {
+            $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
             
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
             
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertFalse($invoked);

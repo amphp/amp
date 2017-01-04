@@ -501,18 +501,21 @@ function map(callable $callback, array ...$promises): array {
 }
 
 /**
+ * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any promise
+ * fails, the stream will fail with the same reason.
+ *
  * @param array|\Traversable $iterable
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  *
  * @throws \TypeError If the argument is not an array or instance of \Traversable.
  */
-function observableFromIterable(/* iterable */ $iterable): Observable {
+function stream(/* iterable */ $iterable): Stream {
     if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
         throw new \TypeError("Must provide an array or instance of Traversable");
     }
     
-    return new Emitter(function (callable $emit) use ($iterable) {
+    return new Producer(function (callable $emit) use ($iterable) {
         foreach ($iterable as $value) {
             yield $emit($value);
         }
@@ -520,183 +523,156 @@ function observableFromIterable(/* iterable */ $iterable): Observable {
 }
 
 /**
- * @param \Amp\Observable $observable
+ * @param \Amp\Stream $stream
  * @param callable(mixed $value): mixed $onNext
  * @param callable(mixed $value): mixed|null $onComplete
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  */
-function each(Observable $observable, callable $onNext, callable $onComplete = null): Observable {
-    $postponed = new Postponed;
+function each(Stream $stream, callable $onNext, callable $onComplete = null): Stream {
+    $emitter = new Emitter;
     $pending = true;
 
-    $observable->subscribe(function ($value) use (&$pending, $postponed, $onNext) {
+    $stream->listen(function ($value) use (&$pending, $emitter, $onNext) {
         if ($pending) {
             try {
-                return $postponed->emit($onNext($value));
+                return $emitter->emit($onNext($value));
             } catch (\Throwable $exception) {
                 $pending = false;
-                $postponed->fail($exception);
+                $emitter->fail($exception);
             }
         }
         return null;
     });
 
-    $observable->when(function ($exception, $value) use (&$pending, $postponed, $onComplete) {
+    $stream->when(function ($exception, $value) use (&$pending, $emitter, $onComplete) {
         if (!$pending) {
             return;
         }
         $pending = false;
 
         if ($exception) {
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             return;
         }
 
         if ($onComplete === null) {
-            $postponed->resolve($value);
+            $emitter->resolve($value);
             return;
         }
 
         try {
-            $postponed->resolve($onComplete($value));
+            $emitter->resolve($onComplete($value));
         } catch (\Throwable $exception) {
-            $postponed->fail($exception);
+            $emitter->fail($exception);
         }
     });
 
-    return $postponed->observe();
+    return $emitter->stream();
 }
 
 /**
- * @param \Amp\Observable $observable
+ * @param \Amp\Stream $stream
  * @param callable(mixed $value): bool $filter
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  */
-function filter(Observable $observable, callable $filter): Observable {
-    $postponed = new Postponed;
+function filter(Stream $stream, callable $filter): Stream {
+    $emitter = new Emitter;
     $pending = true;
 
-    $observable->subscribe(function ($value) use (&$pending, $postponed, $filter) {
+    $stream->listen(function ($value) use (&$pending, $emitter, $filter) {
         if ($pending) {
             try {
                 if (!$filter($value)) {
                     return null;
                 }
-                return $postponed->emit($value);
+                return $emitter->emit($value);
             } catch (\Throwable $exception) {
                 $pending = false;
-                $postponed->fail($exception);
+                $emitter->fail($exception);
             }
         }
         return null;
     });
 
-    $observable->when(function ($exception, $value) use (&$pending, $postponed) {
+    $stream->when(function ($exception, $value) use (&$pending, $emitter) {
         if (!$pending) {
             return;
         }
         $pending = false;
 
         if ($exception) {
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             return;
         }
 
-        $postponed->resolve($value);
+        $emitter->resolve($value);
     });
 
-    return $postponed->observe();
+    return $emitter->stream();
 }
 
 /**
- * Creates an observable that emits values emitted from any observable in the array of observables.
+ * Creates a stream that emits values emitted from any stream in the array of streams.
  *
- * @param \Amp\Observable[] $observables
+ * @param \Amp\Stream[] $streams
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  */
-function merge(array $observables): Observable {
-    $postponed = new Postponed;
+function merge(array $streams): Stream {
+    $emitter = new Emitter;
     $pending = true;
 
-    foreach ($observables as $observable) {
-        if (!$observable instanceof Observable) {
-            throw new \Error("Non-observable provided");
+    foreach ($streams as $stream) {
+        if (!$stream instanceof Stream) {
+            throw new \Error("Non-stream provided");
         }
-        $observable->subscribe(function ($value) use (&$pending, $postponed) {
+        $stream->listen(function ($value) use (&$pending, $emitter) {
             if ($pending) {
-                return $postponed->emit($value);
+                return $emitter->emit($value);
             }
             return null;
         });
     }
 
-    all($observables)->when(function ($exception, array $values = null) use (&$pending, $postponed) {
+    all($streams)->when(function ($exception, array $values = null) use (&$pending, $emitter) {
         $pending = false;
         
         if ($exception) {
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             return;
         }
 
-        $postponed->resolve($values);
+        $emitter->resolve($values);
     });
 
-    return $postponed->observe();
-}
-
-
-/**
- * Creates an observable from the given array of promises, emitting the success value of each provided promise or
- * failing if any promise fails.
- *
- * @param \Interop\Async\Promise[] $promises
- *
- * @return \Amp\Observable
- *
- * @throws \Error If a non-promise is provided.
- */
-function stream(array $promises): Observable {
-    foreach ($promises as $promise) {
-        if (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
-        }
-    }
-
-    return new Emitter(function (callable $emit) use ($promises) {
-        $emits = [];
-        foreach ($promises as $promise) {
-            $emits[] = $emit($promise);
-        }
-        yield all($emits);
-    });
+    return $emitter->stream();
 }
 
 /**
- * Concatenates the given observables into a single observable, emitting values from a single observable at a time. The
- * prior observable must complete before values are emitted from any subsequent observable. Observables are concatenated
+ * Concatenates the given streams into a single stream, emitting values from a single stream at a time. The
+ * prior stream must complete before values are emitted from any subsequent stream. Streams are concatenated
  * in the order given (iteration order of the array).
  *
- * @param array $observables
+ * @param array $streams
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  */
-function concat(array $observables): Observable {
-    foreach ($observables as $observable) {
-        if (!$observable instanceof Observable) {
-            throw new \Error("Non-observable provided");
+function concat(array $streams): Stream {
+    foreach ($streams as $stream) {
+        if (!$stream instanceof Stream) {
+            throw new \Error("Non-stream provided");
         }
     }
 
-    $postponed = new Postponed;
+    $emitter = new Emitter;
     $subscriptions = [];
     $previous = [];
     $promise = all($previous);
 
-    foreach ($observables as $observable) {
-        $generator = function ($value) use ($postponed, $promise) {
+    foreach ($streams as $stream) {
+        $generator = function ($value) use ($emitter, $promise) {
             static $pending = true, $failed = false;
     
             if ($failed) {
@@ -709,57 +685,57 @@ function concat(array $observables): Observable {
                     $pending = false;
                 } catch (\Throwable $exception) {
                     $failed = true;
-                    return; // Prior observable failed.
+                    return; // Prior stream failed.
                 }
             }
     
-            yield $postponed->emit($value);
+            yield $emitter->emit($value);
         };
-        $subscriptions[] = $observable->subscribe(function ($value) use ($generator) {
+        $subscriptions[] = $stream->listen(function ($value) use ($generator) {
             return new Coroutine($generator($value));
         });
-        $previous[] = $observable;
+        $previous[] = $stream;
         $promise = all($previous);
     }
 
-    $promise->when(function ($exception, array $values = null) use ($postponed) {
+    $promise->when(function ($exception, array $values = null) use ($emitter) {
         if ($exception) {
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             return;
         }
 
-        $postponed->resolve($values);
+        $emitter->resolve($values);
     });
 
-    return $postponed->observe();
+    return $emitter->stream();
 }
 
 /**
- * Returns an observable that emits a value every $interval milliseconds after (up to $count times). The value emitted
- * is an integer of the number of times the observable emitted a value.
+ * Returns a stream that emits a value every $interval milliseconds after (up to $count times). The value emitted
+ * is an integer of the number of times the stream emitted a value.
  *
  * @param int $interval Time interval between emitted values in milliseconds.
  * @param int $count Number of values to emit. PHP_INT_MAX by default.
  *
- * @return \Amp\Observable
+ * @return \Amp\Stream
  *
  * @throws \Error If the number of times to emit is not a positive value.
  */
-function interval(int $interval, int $count = PHP_INT_MAX): Observable {
+function interval(int $interval, int $count = PHP_INT_MAX): Stream {
     if (0 >= $count) {
         throw new \Error("The number of times to emit must be a positive value");
     }
 
-    $postponed = new Postponed;
+    $emitter = new Emitter;
 
-    Loop::repeat($interval, function ($watcher) use (&$i, $postponed, $count) {
-        $postponed->emit(++$i);
+    Loop::repeat($interval, function ($watcher) use (&$i, $emitter, $count) {
+        $emitter->emit(++$i);
 
         if ($i === $count) {
             Loop::cancel($watcher);
-            $postponed->resolve();
+            $emitter->resolve();
         }
     });
 
-    return $postponed->observe();
+    return $emitter->stream();
 }

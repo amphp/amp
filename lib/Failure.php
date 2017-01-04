@@ -5,9 +5,9 @@ namespace Amp;
 use Interop\Async\Promise\ErrorHandler;
 
 /**
- * Creates a failed observable using the given exception.
+ * Creates a failed stream (which is also a promise) using the given exception.
  */
-final class Failure implements Observable {
+final class Failure implements Stream {
     /** @var \Throwable $exception */
     private $exception;
 
@@ -32,5 +32,5 @@ final class Failure implements Observable {
     /**
      * {@inheritdoc}
      */
-    public function subscribe(callable $onNext) {}
+    public function listen(callable $onNext) {}
 }

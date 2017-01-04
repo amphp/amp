@@ -2,23 +2,23 @@
 
 namespace Amp\Internal;
 
-use Amp\Observable;
+use Amp\Stream;
 use Interop\Async\Promise;
 
 /**
- * An observable that cannot externally emit values. Used by Postponed in development mode.
+ * An stream that cannot externally emit values. Used by Emitter in development mode.
  *
  * @internal
  */
-final class PrivateObservable implements Observable {
+final class PrivateStream implements Stream {
     use Producer;
 
     /**
-     * @param callable(callable $emit, callable $complete, callable $fail): void $emitter
+     * @param callable(callable $emit, callable $complete, callable $fail): void $producer
      */
-    public function __construct(callable $emitter) {
+    public function __construct(callable $producer) {
         /**
-         * Emits a value from the observable.
+         * Emits a value from the stream.
          *
          * @param mixed $value
          *
@@ -29,7 +29,7 @@ final class PrivateObservable implements Observable {
         };
 
         /**
-         * Completes the observable with the given value.
+         * Completes the stream with the given value.
          *
          * @param mixed $value
          */
@@ -38,7 +38,7 @@ final class PrivateObservable implements Observable {
         };
 
         /**
-         * Fails the observable with the given exception.
+         * Fails the stream with the given exception.
          *
          * @param \Throwable $reason
          */
@@ -46,6 +46,6 @@ final class PrivateObservable implements Observable {
             $this->fail($reason);
         };
 
-        $emitter($emit, $resolve, $fail);
+        $producer($emit, $resolve, $fail);
     }
 }

@@ -2,38 +2,44 @@
 
 namespace Amp\Test;
 
-use Amp\{ Deferred, Failure, Success };
-use Interop\Async\{ Loop, Promise };
-
-class Producer {
-    use \Amp\Internal\Producer {
-        emit as public;
-        resolve as public;
-        fail as public;
-    }
-}
+use Amp;
+use Amp\{ Deferred, Producer, Pause };
+use Interop\Async\Loop;
 
 class ProducerTest extends \PHPUnit_Framework_TestCase {
-    /** @var \Amp\Test\Producer */
-    private $producer;
-
-    public function setUp() {
-        $this->producer = new Producer;
+    const TIMEOUT = 100;
+    
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The callable did not return a Generator
+     */
+    public function testNonGeneratorCallable() {
+        $producer = new Producer(function () {});
     }
-
+    
     public function testEmit() {
         $invoked = false;
-        $value = 1;
+        Loop::execute(Amp\wrap(function () use (&$invoked) {
+            $value = 1;
     
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
+            $producer = new Producer(function (callable $emit) use ($value) {
+                yield $emit($value);
+                return $value;
+            });
+    
+            $invoked = false;
+            $callback = function ($emitted) use (&$invoked, $value) {
+                $invoked = true;
+                $this->assertSame($emitted, $value);
+            };
+    
+            $producer->listen($callback);
+            
+            $producer->when(function ($exception, $result) use ($value) {
+                $this->assertSame($result, $value);
+            });
+        }));
         
-        $this->producer->subscribe($callback);
-        $promise = $this->producer->emit($value);
-        
-        $this->assertInstanceOf(Promise::class, $promise);
         $this->assertTrue($invoked);
     }
     
@@ -42,204 +48,107 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitSuccessfulPromise() {
         $invoked = false;
-        $value = 1;
-        $promise = new Success($value);
+        Loop::execute(Amp\wrap(function () use (&$invoked) {
+            $deferred = new Deferred();
     
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
-        
-        $this->producer->subscribe($callback);
-        $this->producer->emit($promise);
-        
+            $producer = new Producer(function (callable $emit) use ($deferred) {
+                return yield $emit($deferred->promise());
+            });
+    
+            $value = 1;
+            $invoked = false;
+            $callback = function ($emitted) use (&$invoked, $value) {
+                $invoked = true;
+                $this->assertSame($emitted, $value);
+            };
+    
+            $producer->listen($callback);
+    
+            $deferred->resolve($value);
+        }));
+    
         $this->assertTrue($invoked);
     }
     
     /**
-     * @depends testEmit
+     * @depends testEmitSuccessfulPromise
      */
     public function testEmitFailedPromise() {
-        $invoked = false;
         $exception = new \Exception;
-        $promise = new Failure($exception);
-        
-        $callback = function ($emitted) use (&$invoked) {
-            $invoked = true;
-        };
-        
-        $this->producer->subscribe($callback);
-        $this->producer->emit($promise);
-        
-        $this->assertFalse($invoked);
-        
-        $this->producer->when(function ($exception) use (&$invoked, &$reason) {
-            $invoked = true;
-            $reason = $exception;
-        });
-        
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $reason);
+        Loop::execute(Amp\wrap(function () use ($exception) {
+            $deferred = new Deferred();
+            
+            $producer = new Producer(function (callable $emit) use ($deferred) {
+                return yield $emit($deferred->promise());
+            });
+            
+            $deferred->fail($exception);
+            
+            $producer->when(function ($reason) use ($exception) {
+                $this->assertSame($reason, $exception);
+            });
+        }));
     }
     
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromise() {
-        $invoked = false;
-        $value = 1;
-        $deferred = new Deferred;
-        
-        $callback = function ($emitted) use (&$invoked) {
-            $invoked = true;
-        };
+    public function testEmitBackPressure() {
+        $emits = 3;
+        Loop::execute(Amp\wrap(function () use (&$time, $emits) {
+            $producer = new Producer(function (callable $emit) use (&$time, $emits) {
+                $time = microtime(true);
+                for ($i = 0; $i < $emits; ++$i) {
+                    yield $emit($i);
+                }
+                $time = microtime(true) - $time;
+            });
     
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
-    
-        $this->producer->subscribe($callback);
-        $this->producer->emit($deferred->promise());
+            $producer->listen(function () {
+                return new Pause(self::TIMEOUT);
+            });
+        }));
         
-        $this->assertFalse($invoked);
-        
-        $deferred->resolve($value);
-        
-        $this->assertTrue($invoked);
+        $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
     }
     
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenNonPromise() {
-        $invoked = false;
-        $deferred = new Deferred;
-        
-        $callback = function ($emitted) use (&$invoked, &$result) {
-            $invoked = true;
-            $result = $emitted;
-        };
-        
-        $this->producer->subscribe($callback);
-        $this->producer->emit($deferred->promise());
-        
-        $this->assertFalse($invoked);
-        
-        $this->producer->emit(2);
-        $this->assertTrue($invoked);
-        $this->assertSame(2, $result);
-        
-        $deferred->resolve(1);
-        $this->assertSame(1, $result);
-    }
-    
-    /**
-     * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage The observable has been resolved; cannot emit more values
-     */
-    public function testEmitAfterResolve() {
-        $this->producer->resolve();
-        $this->producer->emit(1);
-    }
-    
-    /**
-     * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage The observable was resolved before the promise result could be emitted
-     */
-    public function testEmitPendingPromiseThenResolve() {
-        $invoked = false;
-        $deferred = new Deferred;
-        
-        $promise = $this->producer->emit($deferred->promise());
-        
-        $this->producer->resolve();
-        $deferred->resolve();
-        
-        $promise->when(function ($exception) use (&$invoked, &$reason) {
-            $invoked = true;
-            $reason = $exception;
-        });
-        
-        $this->assertTrue($invoked);
-        throw $reason;
-    }
-    
-    /**
-     * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage The observable was resolved before the promise result could be emitted
-     */
-    public function testEmitPendingPromiseThenFail() {
-        $invoked = false;
-        $deferred = new Deferred;
-        
-        $promise = $this->producer->emit($deferred->promise());
-        
-        $this->producer->resolve();
-        $deferred->fail(new \Exception);
-        
-        $promise->when(function ($exception) use (&$invoked, &$reason) {
-            $invoked = true;
-            $reason = $exception;
-        });
-        
-        $this->assertTrue($invoked);
-        throw $reason;
-    }
-    
     public function testSubscriberThrows() {
         $exception = new \Exception;
-    
+        
         try {
-            Loop::execute(function () use ($exception) {
-                $this->producer->subscribe(function () use ($exception) {
+            Loop::execute(Amp\wrap(function () use ($exception) {
+                $producer = new Producer(function (callable $emit) {
+                    yield $emit(1);
+                    yield $emit(2);
+                });
+        
+                $producer->listen(function () use ($exception) {
                     throw $exception;
                 });
-                
-                $this->producer->emit(1);
-            });
+            }));
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
     }
     
-    public function testSubscriberReturnsSuccessfulPromise() {
-        $invoked = true;
-        $value = 1;
-        $promise = new Success($value);
-        
-        $this->producer->subscribe(function () use ($promise) {
-            return $promise;
-        });
-        
-        $promise = $this->producer->emit(1);
-        $promise->when(function () use (&$invoked) {
-            $invoked = true;
-        });
-        
-        $this->assertTrue($invoked);
-    }
-    
-    public function testSubscriberReturnsFailedPromise() {
+    /**
+     * @depends testEmit
+     */
+    public function testProducerCoroutineThrows() {
         $exception = new \Exception;
-        $promise = new Failure($exception);
-        
+    
         try {
-            Loop::execute(function () use ($exception, $promise) {
-                $this->producer->subscribe(function () use ($promise) {
-                    return $promise;
+            Loop::execute(Amp\wrap(function () use ($exception) {
+                $producer = new Producer(function (callable $emit) use ($exception) {
+                    yield $emit(1);
+                    throw $exception;
                 });
-        
-                $promise = $this->producer->emit(1);
-                $promise->when(function () use (&$invoked) {
-                    $invoked = true;
-                });
-        
-                $this->assertTrue($invoked);
-            });
+                
+                Amp\wait($producer);
+            }));
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }

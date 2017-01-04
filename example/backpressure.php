@@ -3,44 +3,44 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\{ Coroutine, Pause, Postponed, Loop\NativeLoop };
+use Amp\{ Coroutine, Emitter, Pause, Loop\NativeLoop };
 use Interop\Async\Loop;
 
 Loop::execute(Amp\wrap(function () {
     try {
-        $postponed = new Postponed;
+        $emitter = new Emitter;
 
-        $observable = $postponed->observe();
+        $stream = $emitter->stream();
 
-        $observable->subscribe(function ($value) {
-            printf("Observable emitted %d\n", $value);
-            return new Pause(500); // Artificial back-pressure on observable.
+        $stream->listen(function ($value) {
+            printf("Stream emitted %d\n", $value);
+            return new Pause(500); // Artificial back-pressure on stream.
         });
 
-        $observable->when(function ($exception, $value) {
+        $stream->when(function ($exception, $value) {
             if ($exception) {
-                printf("Observable failed: %s\n", $exception->getMessage());
+                printf("Stream failed: %s\n", $exception->getMessage());
                 return;
             }
 
-            printf("Observable result %d\n", $value);
+            printf("Stream result %d\n", $value);
         });
 
-        $generator = function (Postponed $postponed) {
-            yield $postponed->emit(new Pause(500, 1));
-            yield $postponed->emit(new Pause(1500, 2));
-            yield $postponed->emit(new Pause(1000, 3));
-            yield $postponed->emit(new Pause(2000, 4));
-            yield $postponed->emit(5);
-            yield $postponed->emit(6);
-            yield $postponed->emit(7);
-            yield $postponed->emit(new Pause(2000, 8));
-            yield $postponed->emit(9);
-            yield $postponed->emit(10);
-            $postponed->resolve(11);
+        $generator = function (Emitter $emitter) {
+            yield $emitter->emit(new Pause(500, 1));
+            yield $emitter->emit(new Pause(1500, 2));
+            yield $emitter->emit(new Pause(1000, 3));
+            yield $emitter->emit(new Pause(2000, 4));
+            yield $emitter->emit(5);
+            yield $emitter->emit(6);
+            yield $emitter->emit(7);
+            yield $emitter->emit(new Pause(2000, 8));
+            yield $emitter->emit(9);
+            yield $emitter->emit(10);
+            $emitter->resolve(11);
         };
 
-        yield new Coroutine($generator($postponed));
+        yield new Coroutine($generator($emitter));
 
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);

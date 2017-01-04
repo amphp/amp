@@ -3,63 +3,63 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Emitter, Observer, Pause, Postponed };
+use Amp\{ Producer, Listener, Pause, Emitter };
 use Interop\Async\Loop;
 
-class ObserverTest extends \PHPUnit_Framework_TestCase {
+class ListenerTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 10;
     
-    public function testSingleEmittingObservable() {
+    public function testSingleEmittingStream() {
         Loop::execute(Amp\wrap(function () {
             $value = 1;
-            $observable = new Emitter(function (callable $emit) use ($value) {
+            $stream = new Producer(function (callable $emit) use ($value) {
                 yield $emit($value);
                 return $value;
             });
     
-            $observer = new Observer($observable);
+            $listener = new Listener($stream);
             
-            while (yield $observer->advance()) {
-                $this->assertSame($observer->getCurrent(), $value);
+            while (yield $listener->advance()) {
+                $this->assertSame($listener->getCurrent(), $value);
             }
             
-            $this->assertSame($observer->getResult(), $value);
+            $this->assertSame($listener->getResult(), $value);
         }));
     }
     
     /**
-     * @depends testSingleEmittingObservable
+     * @depends testSingleEmittingStream
      */
-    public function testFastEmittingObservable() {
+    public function testFastEmittingStream() {
         Loop::execute(Amp\wrap(function () {
             $count = 10;
             
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observer = new Observer($postponed->observe());
+            $listener = new Listener($emitter->stream());
     
             for ($i = 0; $i < $count; ++$i) {
-                $promises[] = $postponed->emit($i);
+                $promises[] = $emitter->emit($i);
             }
             
-            $postponed->resolve($i);
+            $emitter->resolve($i);
     
-            for ($i = 0; yield $observer->advance(); ++$i) {
-                $this->assertSame($observer->getCurrent(), $i);
+            for ($i = 0; yield $listener->advance(); ++$i) {
+                $this->assertSame($listener->getCurrent(), $i);
             }
             
             $this->assertSame($count, $i);
-            $this->assertSame($observer->getResult(), $i);
+            $this->assertSame($listener->getResult(), $i);
         }));
     }
     
     /**
-     * @depends testSingleEmittingObservable
+     * @depends testSingleEmittingStream
      */
-    public function testSlowEmittingObservable() {
+    public function testSlowEmittingStream() {
         Loop::execute(Amp\wrap(function () {
             $count = 10;
-            $observable = new Emitter(function (callable $emit) use ($count) {
+            $stream = new Producer(function (callable $emit) use ($count) {
                 for ($i = 0; $i < $count; ++$i) {
                     yield new Pause(self::TIMEOUT);
                     yield $emit($i);
@@ -67,35 +67,35 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
                 return $i;
             });
             
-            $observer = new Observer($observable);
+            $listener = new Listener($stream);
             
-            for ($i = 0; yield $observer->advance(); ++$i) {
-                $this->assertSame($observer->getCurrent(), $i);
+            for ($i = 0; yield $listener->advance(); ++$i) {
+                $this->assertSame($listener->getCurrent(), $i);
             }
     
             $this->assertSame($count, $i);
-            $this->assertSame($observer->getResult(), $i);
+            $this->assertSame($listener->getResult(), $i);
         }));
     }
     
     /**
-     * @depends testFastEmittingObservable
+     * @depends testFastEmittingStream
      */
     public function testDrain() {
         Loop::execute(Amp\wrap(function () {
             $count = 10;
             
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observer = new Observer($postponed->observe());
+            $listener = new Listener($emitter->stream());
             
             for ($i = 0; $i < $count; ++$i) {
-                $promises[] = $postponed->emit($i);
+                $promises[] = $emitter->emit($i);
             }
             
-            $postponed->resolve($i);
+            $emitter->resolve($i);
             
-            $values = $observer->drain();
+            $values = $listener->drain();
             
             $this->assertSame(\range(0, $count - 1), $values);
         }));
@@ -103,36 +103,36 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
     
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage The observable has not resolved
+     * @expectedExceptionMessage The stream has not resolved
      */
     public function testDrainBeforeResolution() {
-        $postponed = new Postponed;
+        $emitter = new Emitter;
     
-        $observer = new Observer($postponed->observe());
+        $listener = new Listener($emitter->stream());
     
-        $observer->drain();
+        $listener->drain();
     }
     
-    public function testFailingObservable() {
+    public function testFailingStream() {
         Loop::execute(Amp\wrap(function () {
             $exception = new \Exception;
         
-            $postponed = new Postponed;
+            $emitter = new Emitter;
         
-            $observer = new Observer($postponed->observe());
+            $listener = new Listener($emitter->stream());
             
-            $postponed->fail($exception);
+            $emitter->fail($exception);
             
             try {
-                while (yield $observer->advance());
-                $this->fail("Observer::advance() should throw observable failure reason");
+                while (yield $listener->advance());
+                $this->fail("Listener::advance() should throw stream failure reason");
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
             
             try {
-                $result = $observer->getResult();
-                $this->fail("Observer::getResult() should throw observable failure reason");
+                $result = $listener->getResult();
+                $this->fail("Listener::getResult() should throw stream failure reason");
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
@@ -144,40 +144,40 @@ class ObserverTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise returned from advance() must resolve before calling this method
      */
     public function testGetCurrentBeforeAdvanceResolves() {
-        $postponed = new Postponed;
+        $emitter = new Emitter;
         
-        $observer = new Observer($postponed->observe());
+        $listener = new Listener($emitter->stream());
         
-        $promise = $observer->advance();
+        $promise = $listener->advance();
         
-        $observer->getCurrent();
+        $listener->getCurrent();
     }
     
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage The observable has resolved
+     * @expectedExceptionMessage The stream has resolved
      */
     public function testGetCurrentAfterResolution() {
-        $postponed = new Postponed;
+        $emitter = new Emitter;
         
-        $observer = new Observer($postponed->observe());
+        $listener = new Listener($emitter->stream());
         
-        $postponed->resolve();
+        $emitter->resolve();
         
-        $observer->getCurrent();
+        $listener->getCurrent();
     }
     
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage The observable has not resolved
+     * @expectedExceptionMessage The stream has not resolved
      */
     public function testGetResultBeforeResolution() {
         Loop::execute(Amp\wrap(function () {
-            $postponed = new Postponed;
+            $emitter = new Emitter;
             
-            $observer = new Observer($postponed->observe());
+            $listener = new Listener($emitter->stream());
             
-            $observer->getResult();
+            $listener->getResult();
         }));
     }
 }

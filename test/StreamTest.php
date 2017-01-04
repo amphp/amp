@@ -10,9 +10,9 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromises() {
         $results = [];
         Loop::execute(function () use (&$results) {
-            $observable = Amp\stream([new Success(1), new Success(2), new Success(3)]);
+            $stream = Amp\stream([new Success(1), new Success(2), new Success(3)]);
     
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
         });
@@ -23,13 +23,13 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
     public function testFailedPromises() {
         $exception = new \Exception;
         Loop::execute(function () use (&$reason, $exception) {
-            $observable = Amp\stream([new Failure($exception), new Failure($exception)]);
+            $stream = Amp\stream([new Failure($exception), new Failure($exception)]);
             
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
     
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertSame($exception, $reason);
@@ -39,9 +39,9 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
         $results = [];
         Loop::execute(function () use (&$results, &$reason, $exception) {
-            $observable = Amp\stream([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+            $stream = Amp\stream([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
     
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
             
@@ -49,33 +49,42 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
                 $reason = $exception;
             };
             
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
-        $this->assertSame([1, 2], $results);
+        $this->assertSame(\range(1, 2), $results);
         $this->assertSame($exception, $reason);
     }
     
     public function testPendingPromises() {
-        
         $results = [];
         Loop::execute(function () use (&$results) {
-            $observable = Amp\stream([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
+            $stream = Amp\stream([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
         });
         
-        $this->assertSame([4, 2, 3, 1], $results);
+        $this->assertSame(\range(1, 4), $results);
     }
     
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Non-promise provided
-     */
-    public function testNonPromise() {
-        Amp\stream([1]);
-    }
+    public function testTraversable() {
+        $results = [];
+        Loop::execute(function () use (&$results) {
+            $generator = (function () {
+                foreach (\range(1, 4) as $value) {
+                    yield $value;
+                }
+            })();
+            
+            $stream = Amp\stream($generator);
+            
+            $stream->listen(function ($value) use (&$results) {
+                $results[] = $value;
+            });
+        });
     
+        $this->assertSame(\range(1, 4), $results);
+    }
 }

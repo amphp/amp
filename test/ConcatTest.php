@@ -3,29 +3,29 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Emitter;
+use Amp\Producer;
 use Interop\Async\Loop;
 
 class ConcatTest extends \PHPUnit_Framework_TestCase {
-    public function getObservables() {
+    public function getStreams() {
         return [
-            [[Amp\observableFromIterable(\range(1, 3)), Amp\observableFromIterable(\range(4, 6))], \range(1, 6)],
-            [[Amp\observableFromIterable(\range(1, 5)), Amp\observableFromIterable(\range(6, 8))], \range(1, 8)],
-            [[Amp\observableFromIterable(\range(1, 4)), Amp\observableFromIterable(\range(5, 10))], \range(1, 10)],
+            [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], \range(1, 6)],
+            [[Amp\stream(\range(1, 5)), Amp\stream(\range(6, 8))], \range(1, 8)],
+            [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], \range(1, 10)],
         ];
     }
     
     /**
-     * @dataProvider getObservables
+     * @dataProvider getStreams
      *
-     * @param array $observables
+     * @param array $streams
      * @param array $expected
      */
-    public function testConcat(array $observables, array $expected) {
-        Loop::execute(function () use ($observables, $expected) {
-            $observable = Amp\concat($observables);
+    public function testConcat(array $streams, array $expected) {
+        Loop::execute(function () use ($streams, $expected) {
+            $stream = Amp\concat($streams);
     
-            Amp\each($observable, function ($value) use ($expected) {
+            Amp\each($stream, function ($value) use ($expected) {
                 static $i = 0;
                 $this->assertSame($expected[$i++], $value);
             });
@@ -35,18 +35,18 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedObservable() {
+    public function testConcatWithFailedStream() {
         $exception = new \Exception;
         $results = [];
         Loop::execute(function () use (&$results, &$reason, $exception) {
-            $emitter = new Emitter(function (callable $emit) use ($exception) {
+            $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(6); // Emit once before failing.
                 throw $exception;
             });
     
-            $observable = Amp\concat([Amp\observableFromIterable(\range(1, 5)), $emitter, Amp\observableFromIterable(\range(7, 10))]);
+            $stream = Amp\concat([Amp\stream(\range(1, 5)), $producer, Amp\stream(\range(7, 10))]);
             
-            $observable->subscribe(function ($value) use (&$results) {
+            $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
             
@@ -54,7 +54,7 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
                 $reason = $exception;
             };
     
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertSame(\range(1, 6), $results);
@@ -63,9 +63,9 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
     
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Non-observable provided
+     * @expectedExceptionMessage Non-stream provided
      */
-    public function testNonObservable() {
+    public function testNonStream() {
         Amp\concat([1]);
     }
 }

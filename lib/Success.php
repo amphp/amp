@@ -5,10 +5,10 @@ namespace Amp;
 use Interop\Async\{ Promise, Promise\ErrorHandler };
 
 /**
- * Creates a successful observable using the given value (which can be any value except another object implementing
- * \Interop\Async\Promise).
+ * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
+ *  object implementing \Interop\Async\Promise).
  */
-final class Success implements Observable {
+final class Success implements Stream {
     /** @var mixed */
     private $value;
 
@@ -40,5 +40,5 @@ final class Success implements Observable {
     /**
      * {@inheritdoc}
      */
-    public function subscribe(callable $onNext) {}
+    public function listen(callable $onNext) {}
 }

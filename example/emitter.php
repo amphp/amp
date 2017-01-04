@@ -3,39 +3,44 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\{ Coroutine, Emitter, Observable, Observer, Pause };
+use Amp\{ Coroutine, Emitter, Listener, Pause, Stream, Loop\NativeLoop };
 use Interop\Async\Loop;
 
 Loop::execute(Amp\wrap(function () {
     try {
-        $emitter = new Emitter(function (callable $emit) {
-            yield $emit(1);
-            yield $emit(new Pause(500, 2));
-            yield $emit(3);
-            yield $emit(new Pause(300, 4));
-            yield $emit(5);
-            yield $emit(6);
-            yield $emit(new Pause(1000, 7));
-            yield $emit(8);
-            yield $emit(9);
-            yield $emit(new Pause(600, 10));
-            return 11;
+        $emitter = new Emitter;
+
+        Loop::defer(function () use ($emitter) {
+            // Listener emits all values at once.
+            $emitter->emit(1);
+            $emitter->emit(2);
+            $emitter->emit(3);
+            $emitter->emit(4);
+            $emitter->emit(5);
+            $emitter->emit(6);
+            $emitter->emit(7);
+            $emitter->emit(8);
+            $emitter->emit(9);
+            $emitter->emit(10);
+            $emitter->resolve(11);
         });
 
-        $generator = function (Observable $observable) {
-            $observer = new Observer($observable);
+        $stream = $emitter->stream();
 
-            while (yield $observer->advance()) {
-                printf("Observable emitted %d\n", $observer->getCurrent());
-                yield new Pause(100); // Observer consumption takes 100 ms.
+        $generator = function (Stream $stream) {
+            $listener = new Listener($stream);
+
+            while (yield $listener->advance()) {
+                printf("Stream emitted %d\n", $listener->getCurrent());
+                yield new Pause(100); // Listener consumption takes 100 ms.
             }
 
-            printf("Observable result %d\n", $observer->getResult());
+            printf("Stream result %d\n", $listener->getResult());
         };
 
-        yield new Coroutine($generator($emitter));
+        yield new Coroutine($generator($stream));
 
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}));
+}), $loop = new NativeLoop());

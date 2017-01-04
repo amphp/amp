@@ -3,29 +3,29 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Emitter;
+use Amp\Producer;
 use Interop\Async\Loop;
 
 class MergeTest extends \PHPUnit_Framework_TestCase {
-    public function getObservables() {
+    public function getStreams() {
         return [
-            [[Amp\observableFromIterable(\range(1, 3)), Amp\observableFromIterable(\range(4, 6))], [1, 4, 2, 5, 3, 6]],
-            [[Amp\observableFromIterable(\range(1, 5)), Amp\observableFromIterable(\range(6, 8))], [1, 6, 2, 7, 3, 8, 4, 5]],
-            [[Amp\observableFromIterable(\range(1, 4)), Amp\observableFromIterable(\range(5, 10))], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
+            [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], [1, 4, 2, 5, 3, 6]],
+            [[Amp\stream(\range(1, 5)), Amp\stream(\range(6, 8))], [1, 6, 2, 7, 3, 8, 4, 5]],
+            [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
         ];
     }
     
     /**
-     * @dataProvider getObservables
+     * @dataProvider getStreams
      *
-     * @param array $observables
+     * @param array $streams
      * @param array $expected
      */
-    public function testMerge(array $observables, array $expected) {
-        Loop::execute(function () use ($observables, $expected) {
-            $observable = Amp\merge($observables);
+    public function testMerge(array $streams, array $expected) {
+        Loop::execute(function () use ($streams, $expected) {
+            $stream = Amp\merge($streams);
     
-            Amp\each($observable, function ($value) use ($expected) {
+            Amp\each($stream, function ($value) use ($expected) {
                 static $i = 0;
                 $this->assertSame($expected[$i++], $value);
             });
@@ -35,21 +35,21 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedObservable() {
+    public function testMergeWithFailedStream() {
         $exception = new \Exception;
         Loop::execute(function () use (&$reason, $exception) {
-            $emitter = new Emitter(function (callable $emit) use ($exception) {
+            $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(1); // Emit once before failing.
                 throw $exception;
             });
     
-            $observable = Amp\merge([$emitter, Amp\observableFromIterable(\range(1, 5))]);
+            $stream = Amp\merge([$producer, Amp\stream(\range(1, 5))]);
     
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
     
-            $observable->when($callback);
+            $stream->when($callback);
         });
         
         $this->assertSame($exception, $reason);
@@ -57,9 +57,9 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
     
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Non-observable provided
+     * @expectedExceptionMessage Non-stream provided
      */
-    public function testNonObservable() {
+    public function testNonStream() {
         Amp\merge([1]);
     }
 }
