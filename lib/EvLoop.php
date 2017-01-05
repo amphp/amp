@@ -62,7 +62,7 @@ class EvLoop extends Loop {
             $watcher = $event->data;
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $event->signum, $watcher->data);
+            $callback($watcher->id, $watcher->value, $watcher->data);
         };
     }
 
