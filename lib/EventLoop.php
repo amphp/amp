@@ -29,6 +29,16 @@ class EventLoop extends Loop {
      * @var callable
      */
     private $signalCallback;
+    
+    /**
+     * @var \Event[]
+     */
+    private $signals = [];
+    
+    /**
+     * @var \Event[]|null
+     */
+    private static $activeSignals;
 
     public static function supported() {
         return \extension_loaded("event");
@@ -36,7 +46,11 @@ class EventLoop extends Loop {
 
     public function __construct() {
         $this->handle = new \EventBase;
-
+    
+        if (self::$activeSignals === null) {
+            self::$activeSignals = &$this->signals;
+        }
+        
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
             $callback = $watcher->callback;
             $callback($watcher->id, $watcher->value, $watcher->data);
@@ -60,6 +74,37 @@ class EventLoop extends Loop {
     public function __destruct() {
         foreach ($this->events as $event) {
             $event->free();
+        }
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function run() {
+        $active = self::$activeSignals;
+        
+        foreach ($active as $event) {
+            $event->del();
+        }
+        
+        self::$activeSignals = &$this->signals;
+        
+        foreach ($this->signals as $event) {
+            $event->add();
+        }
+        
+        try {
+            parent::run();
+        } finally {
+            foreach ($this->signals as $event) {
+                $event->del();
+            }
+            
+            self::$activeSignals = &$active;
+            
+            foreach ($active as $event) {
+                $event->add();
+            }
         }
     }
 
@@ -140,6 +185,10 @@ class EventLoop extends Loop {
                 case Watcher::REPEAT:
                     $this->events[$id]->add($watcher->value / self::MILLISEC_PER_SEC);
                     break;
+                    
+                case Watcher::SIGNAL:
+                    $this->signals[$id] = $this->events[$id];
+                    // No break
                 
                 default:
                     $this->events[$id]->add();
@@ -154,6 +203,10 @@ class EventLoop extends Loop {
     protected function deactivate(Watcher $watcher) {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->del();
+            
+            if ($watcher->type === Watcher::SIGNAL) {
+                unset($this->signals[$id]);
+            }
         }
     }
 

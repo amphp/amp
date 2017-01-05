@@ -29,6 +29,16 @@ class EvLoop extends Loop {
      * @var callable
      */
     private $signalCallback;
+    
+    /**
+     * @var \EvSignal[]
+     */
+    private $signals = [];
+    
+    /**
+     * @var \EvSignal[]|null
+     */
+    private static $activeSignals;
 
     public static function supported() {
         return \extension_loaded("ev");
@@ -36,6 +46,10 @@ class EvLoop extends Loop {
 
     public function __construct() {
         $this->handle = new \EvLoop;
+        
+        if (self::$activeSignals === null) {
+            self::$activeSignals = &$this->signals;
+        }
 
         $this->ioCallback = function (\EvIO $event) {
             /** @var \Amp\Loop\Internal\Watcher $watcher */
@@ -64,6 +78,37 @@ class EvLoop extends Loop {
             $callback = $watcher->callback;
             $callback($watcher->id, $watcher->value, $watcher->data);
         };
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function run() {
+        $active = self::$activeSignals;
+        
+        foreach ($active as $event) {
+            $event->stop();
+        }
+        
+        self::$activeSignals = &$this->signals;
+        
+        foreach ($this->signals as $event) {
+            $event->start();
+        }
+        
+        try {
+            parent::run();
+        } finally {
+            foreach ($this->signals as $event) {
+                $event->stop();
+            }
+            
+            self::$activeSignals = &$active;
+            
+            foreach ($active as $event) {
+                $event->start();
+            }
+        }
     }
 
     /**
@@ -117,6 +162,10 @@ class EvLoop extends Loop {
             } else {
                 $this->events[$id]->start();
             }
+
+            if ($watcher->type === Watcher::SIGNAL) {
+                $this->signals[$id] = $this->events[$id];
+            }
         }
     }
 
@@ -126,6 +175,9 @@ class EvLoop extends Loop {
     protected function deactivate(Watcher $watcher) {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();
+            if ($watcher->type === Watcher::SIGNAL) {
+                unset($this->signals[$id]);
+            }
         }
     }
 
