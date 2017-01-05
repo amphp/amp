@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace AsyncInterop\Loop;
 
 class LoopStateTest extends \PHPUnit_Framework_TestCase
 {

@@ -1,16 +1,16 @@
 <?php
 
-namespace Interop\Async;
+namespace AsyncInterop;
 
-use Interop\Async\Loop\Driver;
-use Interop\Async\Loop\DriverFactory;
-use Interop\Async\Loop\InvalidWatcherException;
-use Interop\Async\Loop\UnsupportedFeatureException;
+use AsyncInterop\Loop\Driver;
+use AsyncInterop\Loop\DriverFactory;
+use AsyncInterop\Loop\InvalidWatcherException;
+use AsyncInterop\Loop\UnsupportedFeatureException;
 
 /**
  * Accessor to allow global access to the event loop.
  *
- * @see \Interop\Async\Loop\Driver
+ * @see \AsyncInterop\Loop\Driver
  */
 final class Loop
 {
@@ -64,7 +64,7 @@ final class Loop
      *
      * @return void
      *
-     * @see \Interop\Async\Loop::setFactory()
+     * @see \AsyncInterop\Loop::setFactory()
      */
     public static function execute(callable $callback, Driver $driver = null)
     {

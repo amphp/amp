@@ -1,8 +1,8 @@
 <?php
 
-namespace Interop\Async\Loop\Test;
+namespace AsyncInterop\Loop\Test;
 
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class LoopTest extends \PHPUnit_Framework_TestCase
 {

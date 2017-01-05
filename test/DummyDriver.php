@@ -1,8 +1,8 @@
 <?php
 
-namespace Interop\Async\Loop\Test;
+namespace AsyncInterop\Loop\Test;
 
-use Interop\Async\Loop\Driver;
+use AsyncInterop\Loop\Driver;
 
 class DummyDriver extends Driver
 {
