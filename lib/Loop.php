@@ -421,7 +421,7 @@ abstract class Loop extends Driver {
     }
 
     /**
-     * Returns the same array of data as info().
+     * Returns the same array of data as getInfo().
      *
      * @return array
      */
