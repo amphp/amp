@@ -79,7 +79,13 @@ class EvLoop extends Loop {
             $callback($watcher->id, $watcher->value, $watcher->data);
         };
     }
-    
+
+    public function __destruct() {
+        foreach ($this->events as $event) {
+            $event->stop();
+        }
+    }
+
     /**
      * {@inheritdoc}
      */
