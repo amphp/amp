@@ -11,14 +11,10 @@ use Interop\Async\Loop\Test;
  */
 class EventLoopTest extends Test {
     public function getFactory() {
-        if (!EventLoop::supported()) {
-            $this->markTestSkipped("EventLoop is not available");
-        }
-
         $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
 
         $factory->method('create')
-            ->willReturn(new EventLoop());
+            ->willReturn(new EventLoop);
 
         return $factory;
     }

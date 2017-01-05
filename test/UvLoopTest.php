@@ -14,7 +14,7 @@ class UvLoopTest extends Test {
         $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
 
         $factory->method('create')
-            ->willReturn(new UvLoop());
+            ->willReturn(new UvLoop);
 
         return $factory;
     }
