@@ -123,7 +123,7 @@ class EvLoop extends Loop {
     /**
      * {@inheritdoc}
      */
-    public function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher) {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();
         }

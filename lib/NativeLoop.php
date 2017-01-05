@@ -238,7 +238,7 @@ class NativeLoop extends Loop {
     /**
      * {@inheritdoc}
      */
-    public function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher) {
         switch ($watcher->type) {
             case Watcher::READABLE:
                 $streamId = (int) $watcher->value;

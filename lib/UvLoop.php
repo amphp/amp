@@ -199,7 +199,7 @@ class UvLoop extends Loop {
     /**
      * {@inheritdoc}
      */
-    public function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher) {
         $id = $watcher->id;
 
         if (!isset($this->events[$id])) {
