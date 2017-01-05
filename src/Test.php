@@ -533,7 +533,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testExecutionOrderGuarantees()
     {
-        $this->expectOutputString("01 02 03 04 ".str_repeat("05 ", 8)."10 11 12 ".str_repeat("13 ", 4)."20 21 21 21 21 22 30 31 ");
+        $this->expectOutputString("01 02 03 04 ".str_repeat("05 ", 8)."10 11 12 ".str_repeat("13 ", 4)."20 ".str_repeat("21 ", 4)."30 40 41 ");
         $this->start(function(Driver $loop) use (&$ticks) {
             $f = function() use ($loop) {
                 $args = func_get_args();
@@ -549,7 +549,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->onWritable(STDIN, $f(0, 5));
             $writ1 = $loop->onWritable(STDIN, $f(0, 5));
             $writ2 = $loop->onWritable(STDIN, $f(0, 5));
-
+            
             $loop->delay($msDelay = 0, $f(0, 5));
             $del1 = $loop->delay($msDelay = 0, $f(0, 5));
             $del2 = $loop->delay($msDelay = 0, $f(0, 5));
@@ -585,14 +585,14 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 $loop->enable($del4);
                 $loop->onWritable(STDIN, $f(1, 3));
             });
-
-            $loop->delay($msDelay = 25, $f(3, 1));
-            $loop->delay($msDelay = 6, $f(2, 2));
-            $loop->delay($msDelay = 5, $f(2, 1));
-            $loop->repeat($msDelay = 5, $f(2, 1));
-            $rep1 = $loop->repeat($msDelay = 5, $f(2, 1));
+            
+            $loop->delay($msDelay = 1000, $f(4, 1));
+            $loop->delay($msDelay = 600, $f(3, 0));
+            $loop->delay($msDelay = 500, $f(2, 1));
+            $loop->repeat($msDelay = 500, $f(2, 1));
+            $rep1 = $loop->repeat($msDelay = 50, $f(2, 1));
             $loop->disable($rep1);
-            $loop->delay($msDelay = 5, $f(2, 1));
+            $loop->delay($msDelay = 500, $f(2, 1));
             $loop->enable($rep1);
 
             $loop->defer($f(0, 1));
@@ -612,9 +612,9 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 $loop->defer(function() use ($loop, $del5, $f) {
                     $loop->enable($del5);
                     $loop->defer(function() use ($loop, $f) {
-                        usleep(7000); // to have $msDelay == 5 and $msDelay == 6 run at the same tick (but not $msDelay == 15)
+                        usleep(700000); // to have $msDelay == 500 and $msDelay == 600 run at the same tick (but not $msDelay == 150)
                         $loop->defer(function () use ($loop, $f) {
-                            $loop->defer($f(3, 0));
+                            $loop->defer($f(4, 0));
                         });
                     });
                 });
