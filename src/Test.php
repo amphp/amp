@@ -1214,6 +1214,31 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($t + 0.1 > microtime(1));
     }
 
+    function testDeferEnabledInNextTick() {
+        $tick = function() {
+            $this->loop->defer(function() {
+                $this->loop->stop();
+            });
+            $this->loop->run();
+        };
+
+        $invoked = 0;
+
+        $repeat = $this->loop->repeat($delay = 0, function () use (&$invoked) {
+            $invoked++;
+        });
+
+        $tick();
+        $tick();
+        $tick();
+
+        $this->loop->disable($repeat);
+        $this->loop->enable($repeat);
+        $tick(); // disable + immediate enable after a tick should have no effect either
+
+        $this->assertEquals(4, $invoked);
+    }
+
     // getState and setState are final, but test it here again to be sure
     function testRegistry() {
         $this->assertNull($this->loop->getState("foo"));
