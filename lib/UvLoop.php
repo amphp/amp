@@ -102,14 +102,6 @@ class UvLoop extends Loop {
     /**
      * {@inheritdoc}
      */
-    public function stop() {
-        \uv_stop($this->handle);
-        parent::stop();
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
     protected function dispatch($blocking) {
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
