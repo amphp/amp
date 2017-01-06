@@ -88,6 +88,13 @@ abstract class Loop extends Driver {
      * Executes a single tick of the event loop.
      */
     private function tick() {
+        $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        $this->nextTickQueue = [];
+
+        $queue = $this->enableQueue;
+        $this->enableQueue = [];
+        $this->activate($queue);
+
         try {
             foreach ($this->deferQueue as $watcher) {
                 if (!isset($this->deferQueue[$watcher->id])) {
@@ -117,15 +124,6 @@ abstract class Loop extends Driver {
             $errorHandler = $this->errorHandler;
             $errorHandler($exception);
         }
-
-        foreach ($this->nextTickQueue as $watcher) {
-            $this->deferQueue[$watcher->id] = $watcher;
-        }
-        $this->nextTickQueue = [];
-
-        $queue = $this->enableQueue;
-        $this->enableQueue = [];
-        $this->activate($queue);
     }
 
     /**
