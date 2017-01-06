@@ -91,9 +91,8 @@ abstract class Loop extends Driver {
         $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
         $this->nextTickQueue = [];
 
-        $queue = $this->enableQueue;
+        $this->activate($this->enableQueue);
         $this->enableQueue = [];
-        $this->activate($queue);
 
         try {
             foreach ($this->deferQueue as $watcher) {
