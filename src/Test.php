@@ -1224,7 +1224,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         $invoked = 0;
 
-        $repeat = $this->loop->repeat($delay = 0, function () use (&$invoked) {
+        $watcher = $this->loop->onWritable(STDOUT, function () use (&$invoked) {
             $invoked++;
         });
 
@@ -1232,8 +1232,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $tick();
         $tick();
 
-        $this->loop->disable($repeat);
-        $this->loop->enable($repeat);
+        $this->loop->disable($watcher);
+        $this->loop->enable($watcher);
         $tick(); // disable + immediate enable after a tick should have no effect either
 
         $this->assertEquals(4, $invoked);
