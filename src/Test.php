@@ -36,6 +36,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             [[]],
             [null],
             [new \StdClass],
+            [new \Exception],
         ];
     }
 
