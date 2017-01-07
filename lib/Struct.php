@@ -30,7 +30,7 @@ trait Struct {
     private function generateStructPropertyError(string $property): string {
         $suggestion = $this->suggestPropertyName($property);
         $suggestStr = ($suggestion == "") ? "" : " ... did you mean \"{$suggestion}?\"";
-        
+
         return \sprintf(
             "%s property \"%s\" does not exist%s",
             \str_replace("\0", "@", \get_class($this)), // Handle anonymous class names.
@@ -42,8 +42,8 @@ trait Struct {
     private function suggestPropertyName(string $badProperty): string {
         $badProperty = \strtolower($badProperty);
         $bestMatch = "";
-        $bestMatchPercentage = 0.0;
-        $byRefPercentage = 0.0;
+        $bestMatchPercentage = 0;
+
         foreach ($this as $property => $value) {
             // Never suggest properties that begin with an underscore
             if ($property[0] === "_") {

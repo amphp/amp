@@ -200,7 +200,6 @@ class Listener {
 
         $values = $this->values;
         $this->values = [];
-        $this->position = -1;
 
         $deferreds = $this->backPressure;
         $this->backPressure = [];

@@ -2,6 +2,9 @@
     "source": {
         "directories": [
             "lib"
+        ],
+        "excludes": [
+            "lib/functions.php"
         ]
     },
     "timeout": 10,
