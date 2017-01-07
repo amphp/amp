@@ -5,12 +5,12 @@
   "license": "MIT",
   "require": {
     "php": ">=5.4.0",
-    "async-interop/promise": "^0.3|dev-master",
+    "async-interop/promise": "^0.3",
     "phpunit/phpunit": "^4|^5"
   },
   "autoload": {
     "psr-4": {
-      "Interop\\Async\\Promise\\": "src"
+      "AsyncInterop\\Promise\\": "src"
     }
   }
 }

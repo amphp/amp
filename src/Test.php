@@ -1,8 +1,8 @@
 <?php
 
-namespace Interop\Async\Promise;
+namespace AsyncInterop\Promise;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 abstract class Test extends \PHPUnit_Framework_TestCase {
     /**
@@ -51,11 +51,11 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
         $this->assertTrue($invoked);
     }
-    
+
     function testSuccessAllWhensExecuted() {
         list($promise, $succeeder) = $this->promise();
         $invoked = 0;
-        
+
         $promise->when(function($e, $v) use (&$invoked) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
@@ -79,7 +79,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $this->assertSame(true, $v);
             $invoked++;
         });
-        
+
         $this->assertSame(4, $invoked);
     }
 
@@ -102,7 +102,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
         $this->assertTrue($invoked);
     }
-    
+
     function testFailureAllWhensExecuted() {
         list($promise, , $failer) = $this->promise();
         $invoked = 0;
