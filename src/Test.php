@@ -40,6 +40,12 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         ];
     }
 
+    function testPromiseImplementsPromise()
+    {
+        list($promise) = $this->promise();
+        $this->assertInstanceOf(Promise::class, $promise);
+    }
+
     /** @dataProvider provideSuccessValues */
     function testPromiseSucceed($value)
     {
