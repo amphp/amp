@@ -8,13 +8,17 @@ php:
   - nightly
 
 matrix:
+  env:
+    - DEPS=lowest
+    - DEPS=highest
   allow_failures:
     - php: nightly
   fast_finish: true
 
 install:
-  - composer self-update
-  - composer install --no-interaction --prefer-source
+  - if [ "$DEPS" = "lowest" ]; then composer install -n --prefer-source --prefer-lowest; fi;
+  - if [ "$DEPS" = "highest" ]; then composer install -n --prefer-source; fi;
+  - composer show
 
 script:
   - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
