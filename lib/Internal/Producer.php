@@ -44,7 +44,7 @@ trait Producer {
      */
     private function emit($value): Promise {
         if ($this->resolved) {
-            throw new \Error("The stream has been resolved; cannot emit more values");
+            throw new \Error("Streams cannot emit values after calling resolve");
         }
 
         if ($value instanceof Promise) {

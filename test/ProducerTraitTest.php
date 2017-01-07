@@ -137,7 +137,7 @@ class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage The stream has been resolved; cannot emit more values
+     * @expectedExceptionMessage Streams cannot emit values after calling resolve
      */
     public function testEmitAfterResolve() {
         $this->producer->resolve();
