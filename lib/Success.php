@@ -2,11 +2,11 @@
 
 namespace Amp;
 
-use Interop\Async\{ Promise, Promise\ErrorHandler };
+use AsyncInterop\{ Promise, Promise\ErrorHandler };
 
 /**
  * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
- *  object implementing \Interop\Async\Promise).
+ *  object implementing \AsyncInterop\Promise).
  */
 final class Success implements Stream {
     /** @var mixed */
@@ -36,7 +36,7 @@ final class Success implements Stream {
             ErrorHandler::notify($exception);
         }
     }
-    
+
     /**
      * {@inheritdoc}
      */

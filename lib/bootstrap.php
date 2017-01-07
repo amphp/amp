@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\{ Loop, Promise\ErrorHandler };
+use AsyncInterop\{ Loop, Promise\ErrorHandler };
 
 ErrorHandler::set(function (\Throwable $exception) {
     Loop::defer(function () use ($exception) {

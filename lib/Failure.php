@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Promise\ErrorHandler;
+use AsyncInterop\Promise\ErrorHandler;
 
 /**
  * Creates a failed stream (which is also a promise) using the given exception.
@@ -28,7 +28,7 @@ final class Failure implements Stream {
             ErrorHandler::notify($exception);
         }
     }
-    
+
     /**
      * {@inheritdoc}
      */

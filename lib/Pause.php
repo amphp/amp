@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 /**
  * Creates a promise that resolves itself with a given value after a number of milliseconds.

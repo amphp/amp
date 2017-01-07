@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Lazy, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class LazyTest extends \PHPUnit_Framework_TestCase {
     public function testPromisorNotCalledOnConstruct() {
@@ -14,7 +14,7 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
         });
         $this->assertFalse($invoked);
     }
-    
+
     public function testPromisorReturningScalar() {
         $invoked = false;
         $value = 1;
@@ -22,15 +22,15 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             return $value;
         });
-        
+
         $lazy->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
+
         $this->assertTrue($invoked);
         $this->assertSame($value, $result);
     }
-    
+
     public function testPromisorReturningSuccessfulPromise() {
         $invoked = false;
         $value = 1;
@@ -39,15 +39,15 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             return $promise;
         });
-        
+
         $lazy->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
+
         $this->assertTrue($invoked);
         $this->assertSame($value, $result);
     }
-    
+
     public function testPromisorReturningFailedPromise() {
         $invoked = false;
         $exception = new \Exception;
@@ -56,15 +56,15 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             return $promise;
         });
-        
+
         $lazy->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
-        
+
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
     }
-    
+
     public function testPromisorThrowingException() {
         $invoked = false;
         $exception = new \Exception;
@@ -72,11 +72,11 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             throw $exception;
         });
-        
+
         $lazy->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
-        
+
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
     }

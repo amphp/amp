@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Producer;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class MergeTest extends \PHPUnit_Framework_TestCase {
     public function getStreams() {
@@ -14,7 +14,7 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
             [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
         ];
     }
-    
+
     /**
      * @dataProvider getStreams
      *
@@ -24,14 +24,14 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
     public function testMerge(array $streams, array $expected) {
         Loop::execute(function () use ($streams, $expected) {
             $stream = Amp\merge($streams);
-    
+
             Amp\each($stream, function ($value) use ($expected) {
                 static $i = 0;
                 $this->assertSame($expected[$i++], $value);
             });
         });
     }
-    
+
     /**
      * @depends testMerge
      */
@@ -42,19 +42,19 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
                 yield $emit(1); // Emit once before failing.
                 throw $exception;
             });
-    
+
             $stream = Amp\merge([$producer, Amp\stream(\range(1, 5))]);
-    
+
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
-    
+
             $stream->when($callback);
         });
-        
+
         $this->assertSame($exception, $reason);
     }
-    
+
     /**
      * @expectedException \Error
      * @expectedExceptionMessage Non-stream provided

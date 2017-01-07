@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Success;
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
     /**

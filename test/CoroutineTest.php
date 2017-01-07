@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Coroutine, Failure, InvalidYieldError, Pause, Success };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 100;
@@ -81,7 +81,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         }
 
     }
-    
+
     public function testInvalidYield() {
         $generator = function () {
             yield 1;
@@ -113,7 +113,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
-    
+
     /**
      * @depends testInvalidYield
      */
@@ -125,16 +125,16 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
                 // No further yields.
             }
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception) use (&$reason) {
             $reason = $exception;
         });
-        
+
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
-    
+
     /**
      * @depends testInvalidYieldCatchingThrownException
      */
@@ -146,16 +146,16 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
                 yield new Success;
             }
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception) use (&$reason) {
             $reason = $exception;
         });
-        
+
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
-    
+
     /**
      * @depends testInvalidYieldCatchingThrownException
      */
@@ -168,13 +168,13 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
                 throw $exception;
             }
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception) use (&$reason) {
             $reason = $exception;
         });
-        
+
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
         $this->assertSame($exception, $reason->getPrevious());
     }
@@ -199,7 +199,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
     }
-    
+
     /**
      * @depends testInvalidYield
      */
@@ -481,7 +481,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertInstanceOf(Coroutine::class, $callable());
     }
-    
+
     /**
      * @depends testCoroutineFunction
      */
@@ -491,18 +491,18 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $callable = Amp\coroutine(function ($value) {
             return $value;
         });
-        
+
         $promise = $callable($promise);
-        
+
         $this->assertInstanceOf(Promise::class, $promise);
-        
+
         $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
+
         $this->assertSame($value, $result);
     }
-    
+
     /**
      * @depends testCoroutineFunction
      */
@@ -511,18 +511,18 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $callable = Amp\coroutine(function ($value) {
             return $value;
         });
-        
+
         $promise = $callable($value);
-        
+
         $this->assertInstanceOf(Promise::class, $promise);
-    
+
         $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-    
+
         $this->assertSame($value, $result);
     }
-    
+
     /**
      * @depends testCoroutineFunction
      */
@@ -531,82 +531,82 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $callable = Amp\coroutine(function () use ($exception) {
             throw $exception;
         });
-        
+
         $promise = $callable();
-        
+
         $this->assertInstanceOf(Promise::class, $promise);
-    
+
         $promise->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
-    
+
         $this->assertSame($exception, $reason);
     }
-    
+
     public function testCoroutineResolvedWithReturn() {
         $value = 1;
-        
+
         $generator = function () use ($value) {
             return $value;
             yield; // Unreachable, but makes function a coroutine.
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
+
         $this->assertSame($value, $result);
     }
-    
+
     /**
      * @depends testCoroutineResolvedWithReturn
      */
     public function testYieldFromGenerator() {
         $value = 1;
-        
+
         $generator = function () use ($value) {
             $generator = function () use ($value) {
                 return yield new Success($value);
             };
-            
+
             return yield from $generator();
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
-        
+
+
         $this->assertSame($value, $result);
     }
-    
+
     /**
      * @depends testCoroutineResolvedWithReturn
      */
     public function testFastReturningGenerator()
     {
         $value = 1;
-        
+
         $generator = function () use ($value) {
             if (true) {
                 return $value;
             }
-            
+
             yield;
-            
+
             return -$value;
         };
-        
+
         $coroutine = new Coroutine($generator());
-        
+
         $coroutine->when(function ($exception, $value) use (&$result) {
             $result = $value;
         });
-        
+
         $this->assertSame($value, $result);
     }
 }

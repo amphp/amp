@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Success };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class CaptureTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {
@@ -56,7 +56,7 @@ class CaptureTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame($exception, $reason);
         $this->assertSame(-1, $result);
     }
-    
+
     /**
      * @depends testFailedPromise
      */

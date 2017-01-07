@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Pause;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class PauseTest extends \PHPUnit_Framework_TestCase {
     public function testPause() {

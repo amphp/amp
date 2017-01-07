@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Represents a set of asynchronous values. A stream is analogous to an asynchronous generator, yielding (emitting)

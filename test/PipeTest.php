@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Success };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class PipeTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {
@@ -54,7 +54,7 @@ class PipeTest extends \PHPUnit_Framework_TestCase {
         $this->assertFalse($invoked);
         $this->assertSame($exception, $reason);
     }
-    
+
     /**
      * @depends testSuccessfulPromise
      */
@@ -64,19 +64,19 @@ class PipeTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             throw $exception;
         };
-    
+
         $value = 1;
-    
+
         $promise = new Success($value);
-    
+
         $promise = Amp\pipe($promise, $callback);
-    
+
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
-    
+
         $promise->when($callback);
-    
+
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
     }

@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Pause, Success };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class TimeoutTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {
@@ -44,7 +44,7 @@ class TimeoutTest extends \PHPUnit_Framework_TestCase {
             $this->assertSame($exception, $reason);
         });
     }
-    
+
     /**
      * @depends testSuccessfulPromise
      */

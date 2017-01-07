@@ -4,7 +4,7 @@
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Amp\{ Coroutine, Emitter, Pause, Loop\NativeLoop };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 Loop::execute(Amp\wrap(function () {
     try {

@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class StreamTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromises() {

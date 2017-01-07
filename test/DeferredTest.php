@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class DeferredTest extends \PHPUnit_Framework_TestCase {
     /** @var \Amp\Deferred */
@@ -17,7 +17,7 @@ class DeferredTest extends \PHPUnit_Framework_TestCase {
         $promise = $this->deferred->promise();
         $this->assertInstanceOf(Promise::class, $promise);
     }
-    
+
     /**
      * @depends testGetPromise
      */
@@ -30,7 +30,7 @@ class DeferredTest extends \PHPUnit_Framework_TestCase {
             $invoked = true;
             $result = $value;
         });
-        
+
         $this->deferred->resolve($value);
 
         $this->assertTrue($invoked);

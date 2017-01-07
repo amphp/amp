@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class AllTest extends \PHPUnit_Framework_TestCase {
     public function testEmptyArray() {

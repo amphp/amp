@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Failure;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class FailureTest extends \PHPUnit_Framework_TestCase {
     /**

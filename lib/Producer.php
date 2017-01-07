@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 final class Producer implements Stream {
     use CallableMaker, Internal\Producer;
@@ -18,19 +18,19 @@ final class Producer implements Stream {
         if (!$result instanceof \Generator) {
             throw new \Error("The callable did not return a Generator");
         }
-        
+
         Loop::defer(function () use ($result) {
             $coroutine = new Coroutine($result);
             $coroutine->when(function ($exception, $value) {
                 if ($this->resolved) {
                     return;
                 }
-        
+
                 if ($exception) {
                     $this->fail($exception);
                     return;
                 }
-        
+
                 $this->resolve($value);
             });
         });

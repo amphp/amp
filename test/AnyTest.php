@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class AnyTest extends \PHPUnit_Framework_TestCase {
     public function testEmptyArray() {
@@ -28,30 +28,30 @@ class AnyTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertEquals([[], [1, 2, 3]], $result);
     }
-    
+
     public function testFailedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
-    
+
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
-    
+
         Amp\any($promises)->when($callback);
-    
+
         $this->assertEquals([[$exception, $exception, $exception], []], $result);
     }
-    
+
     public function testMixedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Success(1), new Failure($exception), new Success(3)];
-    
+
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
-    
+
         Amp\any($promises)->when($callback);
-    
+
         $this->assertEquals([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
 
@@ -72,7 +72,7 @@ class AnyTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertEquals([[], [1, 2, 3]], $result);
     }
-    
+
     /**
      * @depends testMixedPromisesArray
      */

@@ -2,24 +2,24 @@
 
 namespace Amp;
 
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the returned promises (or the coroutine created).
  *
- * @param callable(...$args): \Generator|\Interop\Async\Promise|mixed $callback
+ * @param callable(...$args): \Generator|\AsyncInterop\Promise|mixed $callback
  *
  * @return callable(...$args): void
  */
 function wrap(callable $callback): callable {
     return function (...$args) use ($callback) {
         $result = $callback(...$args);
-        
+
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
         }
-        
+
         if ($result instanceof Promise) {
             rethrow($result);
         }
@@ -33,7 +33,7 @@ function wrap(callable $callback): callable {
  *
  * @param callable(mixed ...$args): mixed $worker
  *
- * @return callable(mixed ...$args): \Interop\Async\Promise
+ * @return callable(mixed ...$args): \AsyncInterop\Promise
  */
 function coroutine(callable $worker): callable {
     return function (...$args) use ($worker): Promise {
@@ -58,7 +58,7 @@ function coroutine(callable $worker): callable {
 /**
  * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
- * @param \Interop\Async\Promise $promise
+ * @param \AsyncInterop\Promise $promise
  */
 function rethrow(Promise $promise) {
     $promise->when(function ($exception) {
@@ -71,7 +71,7 @@ function rethrow(Promise $promise) {
 /**
  * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
  *
- * @param \Interop\Async\Promise $promise
+ * @param \AsyncInterop\Promise $promise
  *
  * @return mixed Promise success value.
  *
@@ -102,10 +102,10 @@ function wait(Promise $promise) {
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param \Interop\Async\Promise $promise
+ * @param \AsyncInterop\Promise $promise
  * @param callable(mixed $value): mixed $functor
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  */
 function pipe(Promise $promise, callable $functor): Promise {
     $deferred = new Deferred;
@@ -127,12 +127,12 @@ function pipe(Promise $promise, callable $functor): Promise {
 }
 
 /**
- * @param \Interop\Async\Promise $promise
+ * @param \AsyncInterop\Promise $promise
  * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
  * @param callable(\Throwable $exception): mixed $functor
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  */
 function capture(Promise $promise, string $className, callable $functor): Promise {
     $deferred = new Deferred;
@@ -164,10 +164,10 @@ function capture(Promise $promise, string $className, callable $functor): Promis
  * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
  * \Amp\TimeoutException.
  *
- * @param \Interop\Async\Promise $promise
+ * @param \AsyncInterop\Promise $promise
  * @param int $timeout Timeout in milliseconds.
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  */
 function timeout(Promise $promise, int $timeout): Promise {
     $deferred = new Deferred;
@@ -201,7 +201,7 @@ function timeout(Promise $promise, int $timeout): Promise {
  *
  * @param object $thenable Object with a then() method.
  *
- * @return \Interop\Async\Promise Promise resolved by the $thenable object.
+ * @return \AsyncInterop\Promise Promise resolved by the $thenable object.
  *
  * @throws \Error If the provided object does not have a then() method.
  */
@@ -229,7 +229,7 @@ function lift(callable $worker): callable {
     /**
      * @param mixed ...$args Promises or values.
      *
-     * @return \Interop\Async\Promise
+     * @return \AsyncInterop\Promise
      */
     return function (...$args) use ($worker): Promise {
         foreach ($args as $key => $arg) {
@@ -258,7 +258,7 @@ function lift(callable $worker): callable {
  *
  * @param Promise[] $promises
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -300,7 +300,7 @@ function any(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -346,7 +346,7 @@ function all(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  *
  * @throws \Error If the array is empty or a non-Promise is in the array.
  */
@@ -394,7 +394,7 @@ function first(array $promises): Promise {
 
  * @param Promise[] $promises
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  */
 function some(array $promises): Promise {
     if (empty($promises)) {
@@ -438,7 +438,7 @@ function some(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \Interop\Async\Promise
+ * @return \AsyncInterop\Promise
  *
  * @throws \Error If the array is empty or a non-Promise is in the array.
  */
@@ -484,7 +484,7 @@ function choose(array $promises): Promise {
  * @param callable(mixed $value): mixed $callback
  * @param Promise[] ...$promises
  *
- * @return \Interop\Async\Promise[] Array of promises resolved with the result of the mapped function.
+ * @return \AsyncInterop\Promise[] Array of promises resolved with the result of the mapped function.
  */
 function map(callable $callback, array ...$promises): array {
     $callback = lift($callback);
@@ -514,7 +514,7 @@ function stream(/* iterable */ $iterable): Stream {
     if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
         throw new \TypeError("Must provide an array or instance of Traversable");
     }
-    
+
     return new Producer(function (callable $emit) use ($iterable) {
         foreach ($iterable as $value) {
             yield $emit($value);
@@ -638,7 +638,7 @@ function merge(array $streams): Stream {
 
     all($streams)->when(function ($exception, array $values = null) use (&$pending, $emitter) {
         $pending = false;
-        
+
         if ($exception) {
             $emitter->fail($exception);
             return;
@@ -674,11 +674,11 @@ function concat(array $streams): Stream {
     foreach ($streams as $stream) {
         $generator = function ($value) use ($emitter, $promise) {
             static $pending = true, $failed = false;
-    
+
             if ($failed) {
                 return;
             }
-    
+
             if ($pending) {
                 try {
                     yield $promise;
@@ -688,7 +688,7 @@ function concat(array $streams): Stream {
                     return; // Prior stream failed.
                 }
             }
-    
+
             yield $emitter->emit($value);
         };
         $subscriptions[] = $stream->listen(function ($value) use ($generator) {

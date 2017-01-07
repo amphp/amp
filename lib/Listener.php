@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Stream.
@@ -111,7 +111,7 @@ class Listener {
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has
      * resolved. If the stream fails, the returned promise will fail with the same exception.
      *
-     * @return \Interop\Async\Promise<bool>
+     * @return \AsyncInterop\Promise<bool>
      */
     public function advance(): Promise {
         if (isset($this->deferreds[$this->position])) {

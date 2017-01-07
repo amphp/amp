@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\Stream;
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * An stream that cannot externally emit values. Used by Emitter in development mode.
@@ -22,7 +22,7 @@ final class PrivateStream implements Stream {
          *
          * @param mixed $value
          *
-         * @return \Interop\Async\Promise
+         * @return \AsyncInterop\Promise
          */
         $emit = function ($value = null): Promise {
             return $this->emit($value);

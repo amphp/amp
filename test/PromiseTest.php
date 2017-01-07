@@ -9,7 +9,7 @@ class Promise {
     }
 }
 
-class PromiseTest extends \Interop\Async\Promise\Test {
+class PromiseTest extends \AsyncInterop\Promise\Test {
     public function promise() {
         $promise = new Promise;
         return [

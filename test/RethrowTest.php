@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Failure;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class RethrowTest extends \PHPUnit_Framework_TestCase {
     public function testWaitOnPendingPromise() {

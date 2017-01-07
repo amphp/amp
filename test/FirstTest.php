@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, MultiReasonException, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class FirstTest extends \PHPUnit_Framework_TestCase {
     /**
@@ -26,31 +26,31 @@ class FirstTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame(1, $result);
     }
-    
+
     public function testFailedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
-    
+
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
-    
+
         Amp\first($promises)->when($callback);
-    
+
         $this->assertInstanceOf(MultiReasonException::class, $reason);
         $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
     }
-    
+
     public function testMixedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
-    
+
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
-    
+
         Amp\first($promises)->when($callback);
-    
+
         $this->assertSame(3, $result);
     }
 
@@ -68,10 +68,10 @@ class FirstTest extends \PHPUnit_Framework_TestCase {
 
             Amp\first($promises)->when($callback);
         });
-    
+
         $this->assertSame(3, $result);
     }
-    
+
     /**
      * @expectedException \Error
      * @expectedExceptionMessage Non-promise provided

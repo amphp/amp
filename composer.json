@@ -27,14 +27,15 @@
     ],
     "require": {
         "php": ">=7",
-        "async-interop/promise": "^0.3",
-        "async-interop/event-loop": "^0.4",
-        "async-interop/event-loop-implementation": "^0.4"
+        "async-interop/promise": "^0.4",
+        "async-interop/event-loop": "^0.5",
+        "async-interop/event-loop-implementation": "^0.5"
     },
     "require-dev": {
         "amphp/loop": "dev-master",
-        "async-interop/promise-test": "dev-master",
-        "friendsofphp/php-cs-fixer": "~1.9"
+        "async-interop/promise-test": "^0.4",
+        "friendsofphp/php-cs-fixer": "~1.9",
+        "humbug/humbug": "^1@dev"
     },
     "autoload": {
         "psr-4": {

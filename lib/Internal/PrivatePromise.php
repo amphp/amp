@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * An promise that cannot be externally resolved. Used by Deferred in development mode.
@@ -24,7 +24,7 @@ final class PrivatePromise implements Promise {
         $resolve = function ($value = null) {
             $this->resolve($value);
         };
-        
+
         /**
          * Fails the promise with the given exception.
          *

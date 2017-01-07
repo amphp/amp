@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Deferred, Failure, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class WaitTest extends \PHPUnit_Framework_TestCase {
     public function testWaitOnSuccessfulPromise()

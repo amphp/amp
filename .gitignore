@@ -2,3 +2,5 @@ build
 composer.lock
 phpunit.xml
 vendor
+humbuglog.txt
+humbug.json

@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Interop\Async\Promise\ErrorHandler;
+use AsyncInterop\Promise\ErrorHandler;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.

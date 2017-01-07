@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 // @codeCoverageIgnoreStart
 try {
@@ -15,7 +15,7 @@ try {
          */
         final class Deferred {
             /**
-             * @var \Interop\Async\Promise
+             * @var \AsyncInterop\Promise
              */
             private $promise;
 
@@ -37,7 +37,7 @@ try {
             }
 
             /**
-             * @return \Interop\Async\Promise
+             * @return \AsyncInterop\Promise
              */
             public function promise(): Promise {
                 return $this->promise;
@@ -73,7 +73,7 @@ try {
             }
 
             /**
-             * @return \Interop\Async\Promise
+             * @return \AsyncInterop\Promise
              */
             public function promise(): Promise {
                 return $this;

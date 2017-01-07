@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class ChooseTest extends \PHPUnit_Framework_TestCase {
     /**
@@ -26,43 +26,43 @@ class ChooseTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame(1, $result);
     }
-    
+
     public function testFailedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
-    
+
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
-    
+
         Amp\choose($promises)->when($callback);
-    
+
         $this->assertSame($exception, $reason);
     }
-    
+
     public function testFirstPromiseSuccessfulArray() {
         $exception = new \Exception;
         $promises = [new Success(1), new Failure($exception), new Success(3)];
-    
+
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
-    
+
         Amp\choose($promises)->when($callback);
-    
+
         $this->assertSame(1, $result);
     }
-    
+
     public function testFirstPromiseFailedArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Success(2), new Success(3)];
-    
+
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
-    
+
         Amp\choose($promises)->when($callback);
-    
+
         $this->assertSame($exception, $reason);
     }
 
@@ -80,10 +80,10 @@ class ChooseTest extends \PHPUnit_Framework_TestCase {
 
             Amp\choose($promises)->when($callback);
         });
-    
+
         $this->assertSame(3, $result);
     }
-    
+
     /**
      * @expectedException \Error
      * @expectedExceptionMessage Non-promise provided

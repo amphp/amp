@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 /**
  * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. when() is called on
@@ -13,7 +13,7 @@ class Lazy implements Promise {
     /** @var callable|null */
     private $promisor;
 
-    /** @var \Interop\Async\Promise|null */
+    /** @var \AsyncInterop\Promise|null */
     private $promise;
 
     /**

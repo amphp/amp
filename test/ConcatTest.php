@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Producer;
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class ConcatTest extends \PHPUnit_Framework_TestCase {
     public function getStreams() {
@@ -14,7 +14,7 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
             [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], \range(1, 10)],
         ];
     }
-    
+
     /**
      * @dataProvider getStreams
      *
@@ -24,14 +24,14 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
     public function testConcat(array $streams, array $expected) {
         Loop::execute(function () use ($streams, $expected) {
             $stream = Amp\concat($streams);
-    
+
             Amp\each($stream, function ($value) use ($expected) {
                 static $i = 0;
                 $this->assertSame($expected[$i++], $value);
             });
         });
     }
-    
+
     /**
      * @depends testConcat
      */
@@ -43,24 +43,24 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
                 yield $emit(6); // Emit once before failing.
                 throw $exception;
             });
-    
+
             $stream = Amp\concat([Amp\stream(\range(1, 5)), $producer, Amp\stream(\range(7, 10))]);
-            
+
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
             });
-            
+
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
             };
-    
+
             $stream->when($callback);
         });
-        
+
         $this->assertSame(\range(1, 6), $results);
         $this->assertSame($exception, $reason);
     }
-    
+
     /**
      * @expectedException \Error
      * @expectedExceptionMessage Non-stream provided

@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\{ Deferred, Success };
-use Interop\Async\{ Promise, Promise\ErrorHandler };
+use AsyncInterop\{ Promise, Promise\ErrorHandler };
 
 /**
  * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
@@ -20,7 +20,7 @@ trait Producer {
 
     /** @var callable[] */
     private $listeners = [];
-    
+
     /**
      * @param callable $onNext
      */
@@ -38,7 +38,7 @@ trait Producer {
      *
      * @param mixed $value
      *
-     * @return \Interop\Async\Promise
+     * @return \AsyncInterop\Promise
      *
      * @throws \Error If the stream has resolved.
      */
@@ -56,16 +56,16 @@ trait Producer {
                     );
                     return;
                 }
-                
+
                 if ($e) {
                     $this->fail($e);
                     $deferred->fail($e);
                     return;
                 }
-                
+
                 $deferred->resolve($this->emit($v));
             });
-            
+
             return $deferred->promise();
         }
 

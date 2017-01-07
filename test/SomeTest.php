@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, MultiReasonException, Pause, Success };
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 class SomeTest extends \PHPUnit_Framework_TestCase {
     /**
@@ -26,17 +26,17 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame([[], [1, 2, 3]], $result);
     }
-    
+
     public function testFailedPromisesArray() {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
-        
+
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
         };
-        
+
         Amp\some($promises)->when($callback);
-    
+
         $this->assertInstanceOf(MultiReasonException::class, $reason);
         $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
     }

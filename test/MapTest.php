@@ -4,100 +4,100 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Deferred, Failure, Success };
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class MapTest extends \PHPUnit_Framework_TestCase {
     public function testEmptyArray() {
         $values = [];
         $invoked = false;
-        
+
         $result = Amp\map(function () use (&$invoked) {
             $invoked = true;
         }, $values);
-        
+
         $this->assertSame($result, $values);
         $this->assertFalse($invoked);
     }
-    
+
     public function testSuccessfulPromisesArray() {
         Loop::execute(Amp\wrap(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
-    
+
             $count = 0;
             $callback = function ($value) use (&$count) {
                 ++$count;
                 return $value - 1;
             };
-    
+
             $result = Amp\map($callback, $promises);
-    
+
             $this->assertTrue(\is_array($result));
-            
+
             foreach ($result as $key => $promise) {
                 $this->assertInstanceOf(Promise::class, $promise);
                 $this->assertSame($key, Amp\wait($promise));
             }
-            
+
             $this->assertSame(\count($promises), $count);
         }));
     }
-    
+
     public function testPendingPromisesArray() {
         $deferreds = [
             new Deferred,
             new Deferred,
             new Deferred,
         ];
-        
+
         $promises = \array_map(function (Deferred $deferred) {
             return $deferred->promise();
         }, $deferreds);
-    
+
         $count = 0;
         $callback = function ($value) use (&$count) {
             ++$count;
             return $value - 1;
         };
-    
+
         $result = Amp\map($callback, $promises);
-    
+
         $this->assertTrue(\is_array($result));
-        
+
         foreach ($deferreds as $key => $deferred) {
             $deferred->resolve($key + 1);
         }
-    
+
         foreach ($result as $key => $promise) {
             $this->assertInstanceOf(Promise::class, $promise);
             $this->assertSame($key, Amp\wait($promise));
         }
-    
+
         $this->assertSame(\count($promises), $count);
     }
-    
+
     public function testFailedPromisesArray() {
         Loop::execute(Amp\wrap(function () {
             $exception = new \Exception;
             $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];;
-        
+
             $count = 0;
             $callback = function ($value) use (&$count) {
                 ++$count;
                 return $value - 1;
             };
-        
+
             $result = Amp\map($callback, $promises);
-        
+
             $this->assertTrue(\is_array($result));
-        
+
             foreach ($result as $key => $promise) {
                 $this->assertInstanceOf(Promise::class, $promise);
             }
-        
+
             $this->assertSame(0, $count);
         }));
     }
-    
+
     /**
      * @depends testFailedPromisesArray
      */
@@ -106,17 +106,17 @@ class MapTest extends \PHPUnit_Framework_TestCase {
         Loop::execute(Amp\wrap(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
             $exception = new \Exception;
-    
+
             $callback = function () use ($exception) {
                 throw $exception;
             };
-    
+
             $result = Amp\map($callback, $promises);
-    
+
             foreach ($result as $key => $promise) {
                 $this->assertInstanceOf(Promise::class, $promise);
             }
-    
+
             foreach ($result as $key => $promise) {
                 try {
                     Amp\wait($promise);
@@ -126,14 +126,14 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             }
         }));
     }
-    
+
     /**
      * @depends testPendingPromisesArray
      */
     public function testMultipleArrays() {
         $promises1 = [new Success(1), new Success(2), new Success(3)];;
         $promises2 = [new Success(3), new Success(2), new Success(1)];;
-    
+
         $count = 0;
         $callback = function ($value1, $value2) use (&$count) {
             ++$count;

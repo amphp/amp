@@ -4,10 +4,10 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Success };
-use Interop\Async\Promise;
+use AsyncInterop\Promise;
 
 class PromiseMock {
-    /** @var \Interop\Async\Promise */
+    /** @var \AsyncInterop\Promise */
     private $promise;
 
     public function __construct(Promise $promise) {
@@ -35,7 +35,7 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()
             ->getMock();
-        
+
         $mock->expects($this->once())
             ->method("then")
             ->with(
@@ -46,12 +46,12 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
                     return is_callable($reject);
                 })
             );
-        
+
         $promise = Amp\adapt($mock);
-        
+
         $this->assertInstanceOf(Promise::class, $promise);
     }
-    
+
     /**
      * @depends testThenCalled
      */
@@ -68,7 +68,7 @@ class AdaptTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame($value, $result);
     }
-    
+
     /**
      * @depends testThenCalled
      */

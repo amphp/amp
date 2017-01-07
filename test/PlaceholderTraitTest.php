@@ -2,7 +2,7 @@
 
 namespace Amp\Test;
 
-use Interop\Async\{ Loop, Promise };
+use AsyncInterop\{ Loop, Promise };
 
 class Placeholder {
     use \Amp\Internal\Placeholder {
@@ -323,7 +323,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
             $this->placeholder->when(function () {
                 $this->placeholder->resolve();
             });
-            
+
             $this->placeholder->resolve();
         });
     }
