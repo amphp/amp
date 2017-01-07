@@ -3,8 +3,8 @@
 namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
-use Interop\Async\Loop\Driver;
-use Interop\Async\Loop\InvalidWatcherException;
+use AsyncInterop\Loop\Driver;
+use AsyncInterop\Loop\InvalidWatcherException;
 
 abstract class Loop extends Driver {
     const MILLISEC_PER_SEC = 1e3;
@@ -245,7 +245,7 @@ abstract class Loop extends Driver {
     /**
      * {@inheritdoc}
      *
-     * @throws \Interop\Async\Loop\UnsupportedFeatureException If the pcntl extension is not available.
+     * @throws \AsyncInterop\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      * @throws \RuntimeException If creating the backend signal handler fails.
      */
     public function onSignal($signo, callable $callback, $data = null) {

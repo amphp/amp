@@ -2,6 +2,6 @@
 
 namespace Amp\Loop;
 
-use Interop\Async\Loop;
+use AsyncInterop\Loop;
 
 Loop::setFactory(new LoopFactory());

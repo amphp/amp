@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-use Interop\Async\Loop\DriverFactory;
+use AsyncInterop\Loop\DriverFactory;
 
 /**
  * Default loop factory for Amp.
@@ -15,11 +15,11 @@ class LoopFactory implements DriverFactory {
         if (UvLoop::supported()) {
             return new UvLoop;
         }
-        
+
         if (EvLoop::supported()) {
             return new EvLoop;
         }
-        
+
         if (EventLoop::supported()) {
             return new EventLoop;
         }

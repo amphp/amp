@@ -3,8 +3,8 @@
 namespace Amp\Test\Loop;
 
 use Amp\Loop\EventLoop;
-use Interop\Async\Loop\DriverFactory;
-use Interop\Async\Loop\Test;
+use AsyncInterop\Loop\DriverFactory;
+use AsyncInterop\Loop\Test;
 
 /**
  * @requires extension event

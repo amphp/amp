@@ -3,8 +3,8 @@
 namespace Amp\Test\Loop;
 
 use Amp\Loop\NativeLoop;
-use Interop\Async\Loop\DriverFactory;
-use Interop\Async\Loop\Test;
+use AsyncInterop\Loop\DriverFactory;
+use AsyncInterop\Loop\Test;
 
 class NativeLoopTest extends Test {
     public function getFactory() {

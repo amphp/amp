@@ -3,7 +3,7 @@
 namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
-use Interop\Async\Loop\UnsupportedFeatureException;
+use AsyncInterop\Loop\UnsupportedFeatureException;
 
 class NativeLoop extends Loop {
     /**
@@ -183,7 +183,7 @@ class NativeLoop extends Loop {
     /**
      * {@inheritdoc}
      *
-     * @throws \Interop\Async\Loop\UnsupportedFeatureException If the pcntl extension is not available.
+     * @throws \AsyncInterop\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      * @throws \RuntimeException If creating the backend signal handler fails.
      */
     public function onSignal($signo, callable $callback, $data = null) {
@@ -275,7 +275,7 @@ class NativeLoop extends Loop {
             default: throw new \DomainException("Unknown watcher type");
         }
     }
-    
+
     /**
      * @param int $signo
      */
@@ -284,7 +284,7 @@ class NativeLoop extends Loop {
             if (!isset($this->signalWatchers[$signo][$watcher->id])) {
                 continue;
             }
-        
+
             $callback = $watcher->callback;
             $callback($watcher->id, $signo, $watcher->data);
         }
