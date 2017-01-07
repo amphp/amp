@@ -16,8 +16,8 @@ env:
   fast_finish: true
 
 install:
-  - if [ "$DEPS" = "lowest" ]; then composer install -n --prefer-source --prefer-lowest; fi;
-  - if [ "$DEPS" = "highest" ]; then composer install -n --prefer-source; fi;
+  - if [ "$DEPS" = "lowest" ]; then composer update -n --prefer-source --prefer-lowest; fi;
+  - if [ "$DEPS" = "highest" ]; then composer update -n --prefer-source; fi;
   - composer show
 
 script:
