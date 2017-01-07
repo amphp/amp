@@ -223,8 +223,31 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $succeeder(true);
 
         $this->assertEquals(4, $invoked);
+    }
 
-        Promise\ErrorHandler::set($original);
+    function testThrowingInCallbackContinuesOtherWhens() {
+        $invoked = 0;
+
+        Promise\ErrorHandler::set(function () use (&$invoked) {
+            $invoked++;
+        });
+
+        list($promise, $succeeder) = $this->promise();
+        $promise->when(function($e, $v) use (&$invoked, $promise) {
+            $this->assertSame(null, $e);
+            $this->assertSame(true, $v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+        $promise->when(function($e, $v) use (&$invoked, $promise) {
+            $this->assertSame(null, $e);
+            $this->assertSame(true, $v);
+            $invoked++;
+        });
+        $succeeder(true);
+
+        $this->assertEquals(3, $invoked);
     }
 
     function testThrowingInCallbackOnFailure() {
