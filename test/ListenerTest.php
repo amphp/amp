@@ -180,4 +180,15 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
             $listener->getResult();
         }));
     }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The prior promise returned must resolve before invoking this method again
+     */
+    public function testConsecutiveAdvanceCalls() {
+        $emitter = new Emitter;
+        $listener = new Listener($emitter->stream());
+        $listener->advance();
+        $listener->advance();
+    }
 }
