@@ -5,12 +5,12 @@
   "license": "MIT",
   "require": {
     "php": ">=5.5.0",
-    "async-interop/event-loop": "^0.4|dev-master",
+    "async-interop/event-loop": "^0.5",
     "phpunit/phpunit": "^4|^5"
   },
   "autoload": {
     "psr-4": {
-      "Interop\\Async\\Loop\\": "src"
+      "AsyncInterop\\Loop\\": "src"
     }
   }
 }

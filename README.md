@@ -5,7 +5,7 @@ This package provides a quite extensive phpunit test suite to be used against `L
 ## Usage
 
 ```php
-class MyDriverTest extends \Interop\Async\Loop\Test {
+class MyDriverTest extends \AsyncInterop\Loop\Test {
     function getFactory() {
         return new MyDriverFactory;
     }

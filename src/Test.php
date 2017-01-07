@@ -1,6 +1,6 @@
 <?php
 
-namespace Interop\Async\Loop;
+namespace AsyncInterop\Loop;
 
 if (!defined("SIGUSR1")) {
 	define("SIGUSR1", 30);
@@ -206,7 +206,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
         return $args;
     }
-    
+
     /**
      * @requires PHP 7
      * @dataProvider provideRegistrationArgs
@@ -549,7 +549,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             $loop->onWritable(STDIN, $f(0, 5));
             $writ1 = $loop->onWritable(STDIN, $f(0, 5));
             $writ2 = $loop->onWritable(STDIN, $f(0, 5));
-            
+
             $loop->delay($msDelay = 0, $f(0, 5));
             $del1 = $loop->delay($msDelay = 0, $f(0, 5));
             $del2 = $loop->delay($msDelay = 0, $f(0, 5));
@@ -585,7 +585,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
                 $loop->enable($del4);
                 $loop->onWritable(STDIN, $f(1, 3));
             });
-            
+
             $loop->delay($msDelay = 1000, $f(4, 1));
             $loop->delay($msDelay = 600, $f(3, 0));
             $loop->delay($msDelay = 500, $f(2, 1));
@@ -662,7 +662,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
+    /** @expectedException \AsyncInterop\Loop\InvalidWatcherException */
     function testExceptionOnEnableNonexistentWatcher()
     {
         try {
@@ -683,7 +683,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $this->loop->cancel("nonexistentWatcher");
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
+    /** @expectedException \AsyncInterop\Loop\InvalidWatcherException */
     function testExceptionOnReferenceNonexistentWatcher()
     {
         try {
@@ -694,7 +694,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         }
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
+    /** @expectedException \AsyncInterop\Loop\InvalidWatcherException */
     function testExceptionOnUnreferenceNonexistentWatcher()
     {
         try {
@@ -705,7 +705,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         }
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
+    /** @expectedException \AsyncInterop\Loop\InvalidWatcherException */
     function testWatcherInvalidityOnDefer() {
         $this->start(function(Driver $loop) {
             $loop->defer(function($watcher) use ($loop) {
@@ -714,7 +714,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
-    /** @expectedException \Interop\Async\Loop\InvalidWatcherException */
+    /** @expectedException \AsyncInterop\Loop\InvalidWatcherException */
     function testWatcherInvalidityOnDelay() {
         $this->start(function(Driver $loop) {
             $loop->delay($msDelay = 0, function($watcher) use ($loop) {
