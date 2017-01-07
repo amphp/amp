@@ -2,6 +2,7 @@
 
 namespace Amp\Internal;
 
+use Amp\CallableMaker;
 use AsyncInterop\Promise;
 
 /**
@@ -10,30 +11,15 @@ use AsyncInterop\Promise;
  * @internal
  */
 final class PrivatePromise implements Promise {
-    use Placeholder;
+    use CallableMaker, Placeholder;
 
     /**
      * @param callable(callable $resolve, callable $reject): void $resolver
      */
     public function __construct(callable $resolver) {
-        /**
-         * Resolves the promise with the given promise or value.
-         *
-         * @param mixed $value
-         */
-        $resolve = function ($value = null) {
-            $this->resolve($value);
-        };
-
-        /**
-         * Fails the promise with the given exception.
-         *
-         * @param \Throwable $reason
-         */
-        $fail = function (\Throwable $reason) {
-            $this->fail($reason);
-        };
-
-        $resolver($resolve, $fail);
+        $resolver(
+            $this->callableFromInstanceMethod("resolve"),
+            $this->callableFromInstanceMethod("fail")
+        );
     }
 }
