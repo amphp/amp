@@ -2,12 +2,11 @@ sudo: false
 
 language: php
 
-php:
-  - 7.0
-  - 7.1
-  - nightly
-
 matrix:
+  php:
+    - 7.0
+    - 7.1
+    - nightly
   env:
     - DEPS=lowest
     - DEPS=highest
