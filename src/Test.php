@@ -5,6 +5,8 @@ namespace AsyncInterop\Promise;
 use AsyncInterop\Promise;
 
 abstract class Test extends \PHPUnit_Framework_TestCase {
+    private $originalErrorHandler;
+
     /**
      * An Promise to use for a test with resolution methods.
      * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in order to ensure resolution.
@@ -12,6 +14,16 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
      * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result or a Throwable/Exception respectively
      */
     abstract function promise();
+
+    function setUp() {
+        $this->originalErrorHandler = Promise\ErrorHandler::set(function ($e) {
+            throw $e;
+        });
+    }
+
+    function tearDown() {
+        Promise\ErrorHandler::set($this->originalErrorHandler);
+    }
 
     function provideSuccessValues() {
         return [
@@ -184,13 +196,14 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testThrowingInCallback() {
         $invoked = 0;
-        $original = Promise\ErrorHandler::set(function () use (&$invoked) {
+
+        Promise\ErrorHandler::set(function () use (&$invoked) {
             $invoked++;
         });
-            
+
         list($promise, $succeeder) = $this->promise();
         $succeeder(true);
-        $promise->when(function($e, $v) use (&$invoked, &$ranDefer, &$handled, $promise) {
+        $promise->when(function($e, $v) use (&$invoked, $promise) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
@@ -198,9 +211,8 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
             throw new \Exception;
         });
 
-
         list($promise, $succeeder) = $this->promise();
-        $promise->when(function($e, $v) use (&$invoked, &$ranDefer, &$handled, $promise) {
+        $promise->when(function($e, $v) use (&$invoked, $promise) {
             $this->assertSame(null, $e);
             $this->assertSame(true, $v);
             $invoked++;
@@ -216,7 +228,7 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
 
     function testThrowingInCallbackOnFailure() {
         $invoked = 0;
-        $original = Promise\ErrorHandler::set(function () use (&$invoked) {
+        Promise\ErrorHandler::set(function () use (&$invoked) {
             $invoked++;
         });
 
@@ -243,8 +255,6 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         $failer($exception);
 
         $this->assertEquals(4, $invoked);
-
-        Promise\ErrorHandler::set($original);
     }
 
     /**
