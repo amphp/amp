@@ -33,7 +33,7 @@
     },
     "require-dev": {
         "amphp/loop": "dev-master",
-        "async-interop/promise-test": "^0.4",
+        "async-interop/promise-test": "^0.4.1",
         "friendsofphp/php-cs-fixer": "~1.9",
         "humbug/humbug": "^1@dev"
     },
