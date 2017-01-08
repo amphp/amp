@@ -9,6 +9,13 @@ use AsyncInterop\Loop;
 class ListenerTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 10;
 
+    public function testSubjectStreamReturnedByStream() {
+        $emitter = new Emitter;
+        $stream = $emitter->stream();
+        $listener = new Listener($stream);
+        $this->assertSame($listener->stream(), $stream);
+    }
+
     public function testSingleEmittingStream() {
         Loop::execute(Amp\wrap(function () {
             $value = 1;
@@ -190,5 +197,54 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
         $listener = new Listener($emitter->stream());
         $listener->advance();
         $listener->advance();
+    }
+
+    public function testListenerDestroyedAfterEmits() {
+        $emitter = new Emitter;
+        $listener = new Listener($emitter->stream());
+
+        $promise = $emitter->emit(1);
+
+        unset($listener);
+
+        $invoked = false;
+        $promise->when(function () use (&$invoked) {
+            $invoked = true;
+        });
+
+        $this->assertTrue($invoked);
+    }
+
+    public function testListenerDestroyedThenStreamEmits() {
+        $emitter = new Emitter;
+        $listener = new Listener($emitter->stream());
+
+        $emitter->emit(1);
+
+        unset($listener);
+
+        $promise = $emitter->emit(2);
+
+        $invoked = false;
+        $promise->when(function () use (&$invoked) {
+            $invoked = true;
+        });
+
+        $this->assertTrue($invoked);
+    }
+
+    public function testStreamFailsWhenListenerWaiting() {
+        $exception = new \Exception;
+        $emitter = new Emitter;
+        $listener = new Listener($emitter->stream());
+
+        $promise = $listener->advance();
+        $promise->when(function ($exception, $value) use (&$reason) {
+            $reason = $exception;
+        });
+
+        $emitter->fail($exception);
+
+        $this->assertSame($exception, $reason);
     }
 }
