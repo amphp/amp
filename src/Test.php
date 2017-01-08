@@ -176,6 +176,34 @@ abstract class Test extends \PHPUnit_Framework_TestCase {
         });
     }
 
+    function testUnreferencedDeferWatcherStillExecutes()
+    {
+        $invoked = false;
+        $this->start(function(Driver $loop) use (&$invoked) {
+            $watcher = $loop->defer(function () use (&$invoked) {
+                $invoked = true;
+            });
+            $loop->unreference($watcher);
+            $loop->defer(function () {
+                // just to keep loop running
+            });
+        });
+        $this->assertTrue($invoked);
+    }
+
+    function testLoopDoesNotBlockOnNegativeTimerExpiration()
+    {
+        $invoked = false;
+        $this->start(function(Driver $loop) use (&$invoked) {
+            $loop->delay(1, function () use (&$invoked) {
+                $invoked = true;
+            });
+
+            usleep(1000 * 10);
+        });
+        $this->assertTrue($invoked);
+    }
+
     function testDisabledDeferReenableInSubsequentTick()
     {
         $this->expectOutputString("123");
