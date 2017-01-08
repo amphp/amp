@@ -180,51 +180,6 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @depends testInvalidYield
-     */
-    public function testCatchesExceptionAfterInvalidYield() {
-        $generator = function () {
-            try {
-                yield 1;
-            } catch (\Exception $exception) {
-                return 1;
-            }
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldError::class, $reason);
-    }
-
-    /**
-     * @depends testInvalidYield
-     */
-    public function testThrowAfterInvalidYield() {
-        $exception = new \Exception;
-
-        $generator = function () use ($exception) {
-            try {
-                yield 1;
-            } catch (\Throwable $reason) {
-                throw $exception;
-            }
-        };
-
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->when(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldError::class, $reason);
-        $this->assertSame($exception, $reason->getPrevious());
-    }
-
-    /**
      * @depends testYieldFailedPromise
      */
     public function testCatchingFailedPromiseExceptionWithNoFurtherYields() {
