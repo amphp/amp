@@ -3,13 +3,12 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Lazy, Success };
-use AsyncInterop\Loop;
+use Amp\{ Failure, LazyPromise, Success };
 
-class LazyTest extends \PHPUnit_Framework_TestCase {
+class LazyPromiseTest extends \PHPUnit_Framework_TestCase {
     public function testPromisorNotCalledOnConstruct() {
         $invoked = false;
-        $lazy = new Lazy(function () use (&$invoked) {
+        $lazy = new LazyPromise(function () use (&$invoked) {
             $invoked = true;
         });
         $this->assertFalse($invoked);
@@ -18,7 +17,7 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
     public function testPromisorReturningScalar() {
         $invoked = false;
         $value = 1;
-        $lazy = new Lazy(function () use (&$invoked, $value) {
+        $lazy = new LazyPromise(function () use (&$invoked, $value) {
             $invoked = true;
             return $value;
         });
@@ -35,7 +34,7 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
         $invoked = false;
         $value = 1;
         $promise = new Success($value);
-        $lazy = new Lazy(function () use (&$invoked, $promise) {
+        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
             $invoked = true;
             return $promise;
         });
@@ -52,7 +51,7 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
         $invoked = false;
         $exception = new \Exception;
         $promise = new Failure($exception);
-        $lazy = new Lazy(function () use (&$invoked, $promise) {
+        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
             $invoked = true;
             return $promise;
         });
@@ -68,7 +67,7 @@ class LazyTest extends \PHPUnit_Framework_TestCase {
     public function testPromisorThrowingException() {
         $invoked = false;
         $exception = new \Exception;
-        $lazy = new Lazy(function () use (&$invoked, $exception) {
+        $lazy = new LazyPromise(function () use (&$invoked, $exception) {
             $invoked = true;
             throw $exception;
         });

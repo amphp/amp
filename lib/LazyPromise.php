@@ -9,7 +9,7 @@ use AsyncInterop\Promise;
  * the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails with
  * that exception.
  */
-class Lazy implements Promise {
+class LazyPromise implements Promise {
     /** @var callable|null */
     private $promisor;
 
