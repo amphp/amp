@@ -402,13 +402,13 @@ final class Loop
      * The returned array MUST contain the following data describing the driver's currently registered watchers:
      *
      *     [
-     *         "defer"         => ["enabled" => int, "disabled" => int],
-     *         "delay"         => ["enabled" => int, "disabled" => int],
-     *         "repeat"        => ["enabled" => int, "disabled" => int],
-     *         "on_readable"   => ["enabled" => int, "disabled" => int],
-     *         "on_writable"   => ["enabled" => int, "disabled" => int],
-     *         "on_signal"     => ["enabled" => int, "disabled" => int],
-     *         "watchers"      => ["referenced" => int, "unreferenced" => int],
+     *         "defer"            => ["enabled" => int, "disabled" => int],
+     *         "delay"            => ["enabled" => int, "disabled" => int],
+     *         "repeat"           => ["enabled" => int, "disabled" => int],
+     *         "on_readable"      => ["enabled" => int, "disabled" => int],
+     *         "on_writable"      => ["enabled" => int, "disabled" => int],
+     *         "on_signal"        => ["enabled" => int, "disabled" => int],
+     *         "enabled_watchers" => ["referenced" => int, "unreferenced" => int],
      *     ];
      *
      * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
