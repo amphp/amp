@@ -16,6 +16,9 @@
         <testsuite name="Amp Loop">
             <directory>test</directory>
         </testsuite>
+        <testsuite name="Amp Loop PHPT">
+            <directory suffix=".phpt">test/phpt</directory>
+        </testsuite>
     </testsuites>
     <filter>
         <whitelist>
