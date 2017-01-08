@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class TimeoutException extends \Exception {
+final class TimeoutException extends \Exception {
     /**
      * @param string|null $message
      */

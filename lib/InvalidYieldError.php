@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class InvalidYieldError extends \Error {
+final class InvalidYieldError extends \Error {
     /**
      * @param \Generator $generator
      * @param string $prefix

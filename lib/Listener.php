@@ -14,7 +14,7 @@ use AsyncInterop\Promise;
  * }
  * $result = $listener->getResult();
  */
-class Listener {
+final class Listener {
     /** @var \Amp\Stream */
     private $stream;
 
