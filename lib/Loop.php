@@ -267,7 +267,7 @@ abstract class Loop extends Driver {
      */
     public function enable($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new InvalidWatcherException("Cannot enable an invalid watcher identifier");
+            throw new InvalidWatcherException($watcherIdentifier, "Cannot enable an invalid watcher identifier: '{$watcherIdentifier}'");
         }
 
         $watcher = $this->watchers[$watcherIdentifier];
@@ -340,7 +340,7 @@ abstract class Loop extends Driver {
      */
     public function reference($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new InvalidWatcherException("Cannot reference an invalid watcher identifier");
+            throw new InvalidWatcherException($watcherIdentifier, "Cannot reference an invalid watcher identifier: '{$watcherIdentifier}'");
         }
 
         $this->watchers[$watcherIdentifier]->referenced = true;
@@ -351,7 +351,7 @@ abstract class Loop extends Driver {
      */
     public function unreference($watcherIdentifier) {
         if (!isset($this->watchers[$watcherIdentifier])) {
-            throw new InvalidWatcherException("Cannot unreference an invalid watcher identifier");
+            throw new InvalidWatcherException($watcherIdentifier, "Cannot unreference an invalid watcher identifier: '{$watcherIdentifier}'");
         }
 
         $this->watchers[$watcherIdentifier]->referenced = false;
