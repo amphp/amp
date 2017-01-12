@@ -7,18 +7,21 @@ php:
   - 7.1
   - nightly
 
-env:
-  matrix:
-    - DEPS=lowest
-    - DEPS=highest
+matrix:
   allow_failures:
     - php: nightly
   fast_finish: true
 
+env:
+  - DEPS=lowest
+  - DEPS=highest
+
 install:
-  - if [ "$DEPS" = "lowest" ]; then composer update -n --prefer-source --prefer-lowest; fi;
-  - if [ "$DEPS" = "highest" ]; then composer update -n --prefer-source; fi;
-  - composer show
+  - if [ "$DEPS" = "lowest" ]; then
+      composer update -n --prefer-source --prefer-lowest;
+    else
+      composer update -n --prefer-source;
+    fi;
 
 script:
   - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
