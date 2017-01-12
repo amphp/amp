@@ -196,6 +196,8 @@ class Listener {
             throw new \Error("The stream has not resolved");
         }
 
+        unset($this->values[$this->position]);
+
         $values = $this->values;
         $this->values = [];
 

@@ -91,6 +91,7 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
     public function testDrain() {
         Loop::execute(Amp\wrap(function () {
             $count = 10;
+            $expected = \range(0, $count - 1);
 
             $emitter = new Emitter;
 
@@ -100,11 +101,19 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
                 $promises[] = $emitter->emit($i);
             }
 
+            $value = null;
+            if (yield $listener->advance()) {
+                $value = $listener->getCurrent();
+            }
+
+            $this->assertSame(reset($expected), $value);
+            unset($expected[0]);
+
             $emitter->resolve($i);
 
             $values = $listener->drain();
 
-            $this->assertSame(\range(0, $count - 1), $values);
+            $this->assertSame($expected, $values);
         }));
     }
 
