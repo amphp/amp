@@ -9,13 +9,6 @@ use AsyncInterop\Loop;
 class ListenerTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 10;
 
-    public function testSubjectStreamReturnedByStream() {
-        $emitter = new Emitter;
-        $stream = $emitter->stream();
-        $listener = new Listener($stream);
-        $this->assertSame($listener->stream(), $stream);
-    }
-
     public function testSingleEmittingStream() {
         Loop::execute(Amp\wrap(function () {
             $value = 1;
