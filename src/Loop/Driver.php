@@ -15,7 +15,14 @@ abstract class Driver
     private $registry = [];
 
     /**
-     * Start the event loop.
+     * Runs the event loop.
+     *
+     * One iteration of the loop is called one "tick". A tick covers the following steps:
+     *
+     *  1. Activate watchers created / enabled in the last tick / before `run`.
+     *  2. Execute all enabled defer watchers.
+     *  3. Execute all due timers, each timer only once per tick.
+     *  4. Execute actionable stream watchers, each only once per tick.
      *
      * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
      * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
