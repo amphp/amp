@@ -15,7 +15,7 @@ abstract class Driver
     private $registry = [];
 
     /**
-     * Runs the event loop.
+     * Run the event loop.
      *
      * One iteration of the loop is called one "tick". A tick covers the following steps:
      *
