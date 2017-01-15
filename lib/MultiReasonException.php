@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-class MultiReasonException extends \Exception {
+final class MultiReasonException extends \Exception {
     /** @var \Throwable[] */
     private $reasons;
 
