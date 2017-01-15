@@ -434,47 +434,6 @@ function some(array $promises): Promise {
 }
 
 /**
- * Returns a promise that succeeds or fails when the first promise succeeds or fails.
- *
- * @param Promise[] $promises
- *
- * @return \AsyncInterop\Promise
- *
- * @throws \Error If the array is empty or a non-Promise is in the array.
- */
-function choose(array $promises): Promise {
-    if (empty($promises)) {
-        throw new \Error("No promises provided");
-    }
-
-    $deferred = new Deferred;
-    $resolved = false;
-
-    foreach ($promises as $promise) {
-        if (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
-        }
-
-        $promise->when(function ($exception, $value) use (&$resolved, $deferred) {
-            if ($resolved) {
-                return;
-            }
-
-            $resolved = true;
-
-            if ($exception) {
-                $deferred->fail($exception);
-                return;
-            }
-
-            $deferred->resolve($value);
-        });
-    }
-
-    return $deferred->promise();
-}
-
-/**
  * Maps the callback to each promise as it succeeds. Returns an array of promises resolved by the return
  * callback value of the callback function. The callback may return promises or throw exceptions to fail
  * promises in the array. If a promise in the passed array fails, the callback will not be called and the
