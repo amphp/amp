@@ -41,7 +41,7 @@ class UvLoop extends Loop {
      * @var callable
      */
     private $timerCallback;
-    
+
     /**
      * @var callable
      */
@@ -177,7 +177,7 @@ class UvLoop extends Loop {
                     } else {
                         $event = $this->events[$id] = \uv_signal_init($this->handle);
                     }
-                    
+
                     $this->watchers[(int) $event] = $watcher;
 
                     \uv_signal_start($event, $this->signalCallback, $watcher->value);

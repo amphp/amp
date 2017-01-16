@@ -7,8 +7,9 @@ use AsyncInterop\Loop\Driver;
 use AsyncInterop\Loop\InvalidWatcherException;
 
 abstract class Loop extends Driver {
-    const MILLISEC_PER_SEC = 1e3;
-    const MICROSEC_PER_SEC = 1e6;
+    // Don't use 1e3 / 1e6, they result in a float instead of int
+    const MILLISEC_PER_SEC = 1000;
+    const MICROSEC_PER_SEC = 1000000;
 
     /**
      * @var string
@@ -36,7 +37,7 @@ abstract class Loop extends Driver {
     private $nextTickQueue = [];
 
     /**
-     * @var callable
+     * @var callable|null
      */
     private $errorHandler;
 
