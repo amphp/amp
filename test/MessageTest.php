@@ -29,6 +29,7 @@ class MessageTest extends \PHPUnit_Framework_TestCase {
     public function testFullStreamConsumption() {
         Loop::execute(Amp\wrap(function () {
             $values = ["abc", "def", "ghi"];
+            $result = 1;
 
             $emitter = new Emitter;
             $message = new Message($emitter->stream());
@@ -38,17 +39,42 @@ class MessageTest extends \PHPUnit_Framework_TestCase {
             }
 
             $buffer = "";
-            for ($i = 0; $i < \count($values) && yield $message->advance(); ++$i) {
+            while (yield $message->advance()) {
                 $buffer .= $message->getCurrent();
             }
 
-            $emitter->resolve();
+            $emitter->resolve($result);
 
             $this->assertSame(\implode($values), $buffer);
             $this->assertSame("", yield $message);
+            $this->assertSame($result, $message->getResult());
         }));
     }
 
+    public function testFastResolvingStream() {
+        Loop::execute(Amp\wrap(function () {
+            $values = ["abc", "def", "ghi"];
+            $result = 1;
+
+            $emitter = new Emitter;
+            $message = new Message($emitter->stream());
+
+            foreach ($values as $value) {
+                $emitter->emit($value);
+            }
+
+            $emitter->resolve($result);
+
+            $emitted = [];
+            while (yield $message->advance()) {
+                $emitted[] = $message->getCurrent();
+            }
+
+            $this->assertSame([\implode($values)], $emitted);
+            $this->assertSame(\implode($values), yield $message);
+            $this->assertSame($result, $message->getResult());
+        }));
+    }
     public function testPartialStreamConsumption() {
         Loop::execute(Amp\wrap(function () {
             $values = ["abc", "def", "ghi"];
@@ -91,6 +117,58 @@ class MessageTest extends \PHPUnit_Framework_TestCase {
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
+        }));
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The stream has resolved
+     */
+    public function testAdvanceAfterCompletion() {
+        Loop::execute(Amp\wrap(function () {
+            $value = "abc";
+
+            $emitter = new Emitter;
+            $message = new Message($emitter->stream());
+
+            $emitter->emit($value);
+            $emitter->resolve();
+
+            for ($i = 0; $i < 3; ++$i) {
+                yield $message->advance();
+            }
+        }));
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The stream has resolved
+     */
+    public function testGetCurrentAfterCompletion() {
+        Loop::execute(Amp\wrap(function () {
+            $value = "abc";
+
+            $emitter = new Emitter;
+            $message = new Message($emitter->stream());
+
+            $emitter->emit($value);
+            $emitter->resolve();
+
+            while (yield $message->advance());
+
+            $message->getCurrent();
+        }));
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The stream has not resolved
+     */
+    public function testGetResultBeforeCompletion() {
+        Loop::execute(Amp\wrap(function () {
+            $emitter = new Emitter;
+            $message = new Message($emitter->stream());
+            $message->getResult();
         }));
     }
 }

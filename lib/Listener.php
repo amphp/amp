@@ -14,7 +14,7 @@ use AsyncInterop\Promise;
  * }
  * $result = $listener->getResult();
  */
-class Listener {
+class Listener implements Iterator {
     /** @var \Amp\Stream */
     private $stream;
 
@@ -200,17 +200,6 @@ class Listener {
             $deferred->resolve();
         }
 
-        return $values;
-    }
-
-    /**
-     * Returns an array of values currently buffered by the listener.
-     *
-     * @return array
-     */
-    protected function getBuffered(): array {
-        $values = $this->values;
-        unset($values[$this->position]);
         return $values;
     }
 }
