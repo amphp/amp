@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Emitter, Message };
+use Amp\{ Emitter, Message, Success };
 use AsyncInterop\Loop;
 
 class MessageTest extends \PHPUnit_Framework_TestCase {
@@ -117,6 +117,16 @@ class MessageTest extends \PHPUnit_Framework_TestCase {
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
+        }));
+    }
+
+    public function testEmptyStream() {
+        Loop::execute(Amp\wrap(function () {
+            $value = 1;
+            $message = new Message(new Success($value));
+
+            $this->assertFalse(yield $message->advance());
+            $this->assertSame($value, $message->getResult());
         }));
     }
 

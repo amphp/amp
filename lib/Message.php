@@ -53,7 +53,7 @@ class Message implements Iterator, Promise {
 
             $result = \implode($this->listener->drain());
             $this->listener = null;
-            $this->status = self::BUFFERING;
+            $this->status = \strlen($result) ? self::BUFFERING : self::WAITING;
             $this->value = $value;
             $this->resolve($result);
         });
