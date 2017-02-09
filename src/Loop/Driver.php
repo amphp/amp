@@ -5,7 +5,10 @@ namespace AsyncInterop\Loop;
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
  *
- * Registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
+ * Watchers (enabled or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks can
+ * be called) right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
+ *
+ * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
 abstract class Driver
 {
@@ -143,9 +146,8 @@ abstract class Driver
     /**
      * Enable a watcher.
      *
-     * Watchers (enabling or new watchers) MUST immediately be marked as enabled, but only be activated (i.e. callbacks
-     * can be called) right before the next tick. Callbacks of watchers MUST not be called in the tick they were
-     * enabled.
+     * Watchers MUST immediately be marked as enabled, but only be activated (i.e. callbacks can be called) right before
+     * the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param string $watcherId The watcher identifier.
      *
