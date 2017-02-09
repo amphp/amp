@@ -47,8 +47,11 @@ abstract class Driver
     /**
      * Defer the execution of a callback.
      *
-     * The deferred callable MUST be executed in the next tick of the event loop and before any other type of watcher.
-     * Order of enabling MUST be preserved when executing the callbacks.
+     * The deferred callable MUST be executed before any other type of watcher in a tick. Order of enabling MUST be
+     * preserved when executing the callbacks.
+     *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
      *     invalidated before the callback call.
@@ -63,6 +66,9 @@ abstract class Driver
      *
      * The delay is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be determined by which
      * timers expire first, but timers with the same expiration time MAY be executed in any order.
+     *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param int $delay The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
@@ -79,6 +85,9 @@ abstract class Driver
      * The interval between executions is a minimum and approximate, accuracy is not guaranteed. Order of calls MUST be
      * determined by which timers expire first, but timers with the same expiration time MAY be executed in any order.
      * The first execution is scheduled after the first interval period.
+     *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param int $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
@@ -98,6 +107,9 @@ abstract class Driver
      *
      * Multiple watchers on the same stream MAY be executed in any order.
      *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
+     *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
@@ -116,6 +128,9 @@ abstract class Driver
      *
      * Multiple watchers on the same stream MAY be executed in any order.
      *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
+     *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
@@ -133,6 +148,9 @@ abstract class Driver
      *
      * Multiple watchers on the same signal MAY be executed in any order.
      *
+     * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
+     * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
+     *
      * @param int $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
@@ -144,7 +162,7 @@ abstract class Driver
     abstract public function onSignal($signo, callable $callback, $data = null);
 
     /**
-     * Enable a watcher.
+     * Enable a watcher to be active starting in the next tick.
      *
      * Watchers MUST immediately be marked as enabled, but only be activated (i.e. callbacks can be called) right before
      * the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
@@ -158,7 +176,10 @@ abstract class Driver
     abstract public function enable($watcherId);
 
     /**
-     * Disable a watcher.
+     * Disable a watcher immediately.
+     *
+     * A watcher MUST be disabled immediately, e.g. if a defer watcher disables a later defer watcher, the second defer
+     * watcher isn't executed in this tick.
      *
      * Disabling a watcher MUST NOT invalidate the watcher. Calling this function MUST NOT fail, even if passed an
      * invalid watcher.
