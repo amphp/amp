@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Deferred, Failure, Success };
+use Amp\{ Deferred, Failure, Pause, Success };
 use AsyncInterop\{ Loop, Promise };
 
 class MapTest extends \PHPUnit_Framework_TestCase {
@@ -148,6 +148,28 @@ class MapTest extends \PHPUnit_Framework_TestCase {
 
         foreach ($result as $promise) {
             $this->assertInstanceOf(Promise::class, $promise);
+            $this->assertSame(4, Amp\wait($promise));
+        }
+    }
+
+    /**
+     * @depends testMultipleArrays
+     */
+    public function testMultipleArrayArgumentOrder() {
+        $promises1 = [new Pause(10, 1), new Pause(20, 1), new Pause(30, 1)];;
+        $promises2 = [new Pause(30, 3), new Pause(20, 3), new Pause(10, 3)];;
+
+        $count = 0;
+        $callback = function ($value1, $value2) use (&$count) {
+            ++$count;
+            $this->assertSame(1, $value1);
+            $this->assertSame(3, $value2);
+            return $value1 + $value2;
+        };
+
+        $result = Amp\map($callback, $promises1, $promises2);
+
+        foreach ($result as $promise) {
             $this->assertSame(4, Amp\wait($promise));
         }
     }

@@ -243,6 +243,7 @@ function lift(callable $worker): callable {
         }
 
         return pipe(all($args), function (array $args) use ($worker) {
+            \ksort($args); // Needed to ensure correct argument order.
             return $worker(...$args);
         });
     };
