@@ -446,8 +446,6 @@ function some(array $promises): Promise {
  * @return \AsyncInterop\Promise[] Array of promises resolved with the result of the mapped function.
  */
 function map(callable $callback, array ...$promises): array {
-    $callback = lift($callback);
-
     foreach ($promises as $promiseSet) {
         foreach ($promiseSet as $promise) {
             if (!$promise instanceof Promise) {
@@ -456,7 +454,7 @@ function map(callable $callback, array ...$promises): array {
         }
     }
 
-    return array_map($callback, ...$promises);
+    return \array_map(lift($callback), ...$promises);
 }
 
 /**
@@ -489,45 +487,16 @@ function stream(/* iterable */ $iterable): Stream {
  * @return \Amp\Stream
  */
 function each(Stream $stream, callable $onNext, callable $onComplete = null): Stream {
-    $emitter = new Emitter;
-    $pending = true;
-
-    $stream->listen(function ($value) use (&$pending, $emitter, $onNext) {
-        if ($pending) {
-            try {
-                return $emitter->emit($onNext($value));
-            } catch (\Throwable $exception) {
-                $pending = false;
-                $emitter->fail($exception);
-            }
+    $listener = new Listener($stream);
+    return new Producer(function (callable $emit) use ($listener, $onNext, $onComplete) {
+        while (yield $listener->advance()) {
+            yield $emit($onNext($listener->getCurrent()));
         }
-        return null;
-    });
-
-    $stream->when(function ($exception, $value) use (&$pending, $emitter, $onComplete) {
-        if (!$pending) {
-            return;
-        }
-        $pending = false;
-
-        if ($exception) {
-            $emitter->fail($exception);
-            return;
-        }
-
         if ($onComplete === null) {
-            $emitter->resolve($value);
-            return;
+            return $listener->getResult();
         }
-
-        try {
-            $emitter->resolve($onComplete($value));
-        } catch (\Throwable $exception) {
-            $emitter->fail($exception);
-        }
+        return $onComplete($listener->getResult());
     });
-
-    return $emitter->stream();
 }
 
 /**
@@ -537,39 +506,15 @@ function each(Stream $stream, callable $onNext, callable $onComplete = null): St
  * @return \Amp\Stream
  */
 function filter(Stream $stream, callable $filter): Stream {
-    $emitter = new Emitter;
-    $pending = true;
-
-    $stream->listen(function ($value) use (&$pending, $emitter, $filter) {
-        if ($pending) {
-            try {
-                if (!$filter($value)) {
-                    return null;
-                }
-                return $emitter->emit($value);
-            } catch (\Throwable $exception) {
-                $pending = false;
-                $emitter->fail($exception);
+    $listener = new Listener($stream);
+    return new Producer(function (callable $emit) use ($listener, $filter) {
+        while (yield $listener->advance()) {
+            if ($filter($listener->getCurrent())) {
+                yield $emit($listener->getCurrent());
             }
         }
-        return null;
+        return $listener->getResult();
     });
-
-    $stream->when(function ($exception, $value) use (&$pending, $emitter) {
-        if (!$pending) {
-            return;
-        }
-        $pending = false;
-
-        if ($exception) {
-            $emitter->fail($exception);
-            return;
-        }
-
-        $emitter->resolve($value);
-    });
-
-    return $emitter->stream();
 }
 
 /**
