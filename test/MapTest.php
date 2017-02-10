@@ -150,6 +150,8 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             $this->assertInstanceOf(Promise::class, $promise);
             $this->assertSame(4, Amp\wait($promise));
         }
+
+        $this->assertSame(3, $count);
     }
 
     /**
@@ -172,5 +174,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
         foreach ($result as $promise) {
             $this->assertSame(4, Amp\wait($promise));
         }
+
+        $this->assertSame(3, $count);
     }
 }
