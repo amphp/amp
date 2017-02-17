@@ -42,19 +42,19 @@ abstract class Loop extends Driver {
     private $errorHandler;
 
     /**
-     * @var bool
+     * @var int
      */
-    private $running = false;
+    private $running = 0;
 
     /**
      * {@inheritdoc}
      */
     public function run() {
         $previous = $this->running;
-        $this->running = true;
+        ++$this->running;
 
         try {
-            while ($this->running) {
+            while ($this->running > $previous) {
                 if ($this->isEmpty()) {
                     return;
                 }
@@ -69,7 +69,7 @@ abstract class Loop extends Driver {
      * {@inheritdoc}
      */
     public function stop() {
-        $this->running = false;
+        --$this->running > 0 ?: $this->running = 0;
     }
 
     /**
@@ -414,7 +414,7 @@ abstract class Loop extends Driver {
             "on_readable" => $onReadable,
             "on_writable" => $onWritable,
             "on_signal"   => $onSignal,
-            "running"     => $this->running,
+            "running"     => (bool) $this->running,
         ];
     }
 
