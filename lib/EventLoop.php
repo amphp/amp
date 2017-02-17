@@ -138,14 +138,10 @@ class EventLoop extends Loop {
 
                     case Watcher::DELAY:
                     case Watcher::REPEAT:
-                        $flags = \Event::TIMEOUT;
-                        if ($watcher->type === Watcher::REPEAT) {
-                            $flags |= \Event::PERSIST;
-                        }
                         $this->events[$id] = new \Event(
                             $this->handle,
                             -1,
-                            $flags,
+                            \Event::TIMEOUT | \Event::PERSIST,
                             $this->timerCallback,
                             $watcher
                         );
