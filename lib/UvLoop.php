@@ -5,46 +5,28 @@ namespace Amp\Loop;
 use Amp\Loop\Internal\Watcher;
 
 class UvLoop extends Loop {
-    /**
-     * A uv_loop resource created with uv_loop_new()
-     *
-     * @var resource
-     */
+    /** @var resource A uv_loop resource created with uv_loop_new() */
     private $handle;
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $events = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[]|\Amp\Loop\Internal\Watcher[][]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[]|\Amp\Loop\Internal\Watcher[][] */
     private $watchers = [];
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $read = [];
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $write = [];
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $ioCallback;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $timerCallback;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $signalCallback;
 
     public static function supported() {

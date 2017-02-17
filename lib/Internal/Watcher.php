@@ -12,29 +12,19 @@ class Watcher {
     const WRITABLE = 0b00010000;
     const SIGNAL   = 0b00100000;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     public $type;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     public $enabled = true;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     public $referenced = true;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     public $id;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     public $callback;
 
     /**

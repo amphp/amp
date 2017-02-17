@@ -5,39 +5,25 @@ namespace Amp\Loop;
 use Amp\Loop\Internal\Watcher;
 
 class EvLoop extends Loop {
-    /**
-     * @var \EvLoop
-     */
+    /** @var \EvLoop */
     private $handle;
 
-    /**
-     * @var \EvWatcher[]
-     */
+    /** @var \EvWatcher[] */
     private $events = [];
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $ioCallback;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $timerCallback;
     
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $signalCallback;
     
-    /**
-     * @var \EvSignal[]
-     */
+    /** @var \EvSignal[] */
     private $signals = [];
     
-    /**
-     * @var \EvSignal[]|null
-     */
+    /** @var \EvSignal[]|null */
     private static $activeSignals;
 
     public static function supported() {

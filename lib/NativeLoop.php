@@ -6,44 +6,28 @@ use Amp\Loop\Internal\Watcher;
 use AsyncInterop\Loop\UnsupportedFeatureException;
 
 class NativeLoop extends Loop {
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $readStreams = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[][]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[][] */
     private $readWatchers = [];
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $writeStreams = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[][]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[][] */
     private $writeWatchers = [];
 
-    /**
-     * @var int[]
-     */
+    /** @var int[] */
     private $timerExpires = [];
 
-    /**
-     * @var \SplPriorityQueue
-     */
+    /** @var \SplPriorityQueue */
     private $timerQueue;
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[][]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[][] */
     private $signalWatchers = [];
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $signalHandling;
 
     public function __construct() {

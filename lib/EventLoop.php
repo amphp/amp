@@ -5,39 +5,25 @@ namespace Amp\Loop;
 use Amp\Loop\Internal\Watcher;
 
 class EventLoop extends Loop {
-    /**
-     * @var \EventBase
-     */
+    /** @var \EventBase */
     private $handle;
 
-    /**
-     * @var \Event[]
-     */
+    /** @var \Event[] */
     private $events = [];
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $ioCallback;
 
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $timerCallback;
     
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $signalCallback;
     
-    /**
-     * @var \Event[]
-     */
+    /** @var \Event[] */
     private $signals = [];
     
-    /**
-     * @var \Event[]|null
-     */
+    /** @var \Event[]|null */
     private static $activeSignals;
 
     public static function supported() {

@@ -11,39 +11,25 @@ abstract class Loop extends Driver {
     const MILLISEC_PER_SEC = 1000;
     const MICROSEC_PER_SEC = 1000000;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $nextId = "a";
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[] */
     private $watchers = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[] */
     private $enableQueue = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[] */
     private $deferQueue = [];
 
-    /**
-     * @var \Amp\Loop\Internal\Watcher[]
-     */
+    /** @var \Amp\Loop\Internal\Watcher[] */
     private $nextTickQueue = [];
 
-    /**
-     * @var callable|null
-     */
+    /** @var callable|null */
     private $errorHandler;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $running = 0;
 
     /**
