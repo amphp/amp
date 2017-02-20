@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use React\Promise\PromiseInterface as ReactPromise;
+
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the returned promises (or the coroutine created).
@@ -16,6 +18,10 @@ function wrap(callable $callback): callable {
 
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
+        }
+
+        if ($result instanceof ReactPromise) {
+            $result = adapt($result);
         }
 
         if ($result instanceof Promise) {
@@ -45,6 +51,10 @@ function coroutine(callable $worker): callable {
             return new Coroutine($result);
         }
 
+        if ($result instanceof ReactPromise) {
+            $result = adapt($result);
+        }
+
         if (!$result instanceof Promise) {
             return new Success($result);
         }
@@ -60,7 +70,7 @@ function coroutine(callable $worker): callable {
  * @param callable(mixed ...$args): mixed $functor
  * @param array ...$args Arguments to pass to the function.
  *
- * @return \Amp\Promise
+ * @return \AsyncInterop\Promise
  */
 function call(callable $functor, ...$args): Promise {
     try {
@@ -71,6 +81,10 @@ function call(callable $functor, ...$args): Promise {
 
     if ($result instanceof \Generator) {
         return new Coroutine($result);
+    }
+
+    if ($result instanceof ReactPromise) {
+        $result = adapt($result);
     }
 
     if (!$result instanceof Promise) {
@@ -221,19 +235,26 @@ function timeout(Promise $promise, int $timeout): Promise {
 }
 
 /**
- * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a promise usable by
- * components depending on placeholders implementing Promise.
+ * Adapts any object with a done(callable $onFulfilled, callable $onRejected) or then(callable $onFulfilled,
+ * callable $onRejected) method to a promise usable by components depending on placeholders implementing
+ * \AsyncInterop\Promise.
  *
- * @param object $thenable Object with a then() method.
+ * @param object $promise Object with a done() or then() method.
  *
  * @return \Amp\Promise Promise resolved by the $thenable object.
  *
  * @throws \Error If the provided object does not have a then() method.
  */
-function adapt($thenable): Promise {
+function adapt($promise): Promise {
     $deferred = new Deferred;
 
-    $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
+    if (\method_exists($promise, 'done')) {
+        $promise->done([$deferred, 'resolve'], [$deferred, 'fail']);
+    } elseif (\method_exists($promise, 'then')) {
+        $promise->then([$deferred, 'resolve'], [$deferred, 'fail']);
+    } else {
+        throw new \Error("Object must have a 'then' or 'done' method");
+    }
 
     return $deferred->promise();
 }
@@ -259,7 +280,11 @@ function lift(callable $worker): callable {
     return function (...$args) use ($worker): Promise {
         foreach ($args as $key => $arg) {
             if (!$arg instanceof Promise) {
-                $args[$key] = new Success($arg);
+                if ($arg instanceof ReactPromise) {
+                    $args[$key] = adapt($arg);
+                } else {
+                    $args[$key] = new Success($arg);
+                }
             }
         }
 
@@ -300,7 +325,9 @@ function any(array $promises): Promise {
     $values = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -342,7 +369,9 @@ function all(array $promises): Promise {
     $values = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -388,7 +417,9 @@ function first(array $promises): Promise {
     $exceptions = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -434,7 +465,9 @@ function some(array $promises): Promise {
     $exceptions = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -474,7 +507,7 @@ function some(array $promises): Promise {
 function map(callable $callback, array ...$promises): array {
     foreach ($promises as $promiseSet) {
         foreach ($promiseSet as $promise) {
-            if (!$promise instanceof Promise) {
+            if (!$promise instanceof Promise && !$promise instanceof ReactPromise) {
                 throw new \Error("Non-promise provided");
             }
         }
