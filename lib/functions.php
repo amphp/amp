@@ -56,6 +56,33 @@ function coroutine(callable $worker): callable {
 }
 
 /**
+ * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
+ * coroutine. If the function throws, a failed promise will be returned.
+ *
+ * @param callable(mixed ...$args): mixed $functor
+ * @param array ...$args Arguments to pass to the function.
+ *
+ * @return \AsyncInterop\Promise
+ */
+function call(callable $functor, ...$args): Promise {
+    try {
+        $result = $functor(...$args);
+    } catch (\Throwable $exception) {
+        return new Failure($exception);
+    }
+
+    if ($result instanceof \Generator) {
+        return new Coroutine($result);
+    }
+
+    if (!$result instanceof Promise) {
+        return new Success($result);
+    }
+
+    return $result;
+}
+
+/**
  * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
  * @param \AsyncInterop\Promise $promise
