@@ -5,7 +5,7 @@ namespace Amp;
 use AsyncInterop\Loop;
 
 final class Producer implements Stream {
-    use CallableMaker, Internal\Producer;
+    use Internal\CallableMaker, Internal\Producer;
 
     /**
      * @param callable(callable(mixed $value): Promise $emit): \Generator $producer

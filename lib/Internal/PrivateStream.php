@@ -2,7 +2,6 @@
 
 namespace Amp\Internal;
 
-use Amp\CallableMaker;
 use Amp\Stream;
 
 /**
