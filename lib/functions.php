@@ -2,7 +2,17 @@
 
 namespace Amp;
 
-use AsyncInterop\{ Loop, Promise };
+use Amp\{
+    function all,
+    function lift,
+    function pipe,
+    function rethrow
+};
+
+use AsyncInterop\{
+    Loop,
+    Promise
+};
 
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
