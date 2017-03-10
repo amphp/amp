@@ -2,7 +2,10 @@
 
 namespace Amp\Loop;
 
+use Amp\Coroutine;
+use Amp\Promise;
 use Amp\Internal\Watcher;
+use function Amp\rethrow;
 
 class EvLoop extends Driver {
     /** @var \EvSignal[]|null */
@@ -32,7 +35,15 @@ class EvLoop extends Driver {
             $watcher = $event->data;
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->value, $watcher->data);
+            $result = $callback($watcher->id, $watcher->value, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
 
         $this->timerCallback = function (\EvTimer $event) {
@@ -44,7 +55,15 @@ class EvLoop extends Driver {
             }
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->data);
+            $result = $callback($watcher->id, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
 
         $this->signalCallback = function (\EvSignal $event) {
@@ -52,7 +71,15 @@ class EvLoop extends Driver {
             $watcher = $event->data;
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->value, $watcher->data);
+            $result = $callback($watcher->id, $watcher->value, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
     }
 

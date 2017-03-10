@@ -81,7 +81,7 @@ final class Loop {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function defer(callable $callback, $data = null): string {
-        return self::$driver->defer(wrap($callback), $data);
+        return self::$driver->defer($callback, $data);
     }
 
     /**
@@ -101,7 +101,7 @@ final class Loop {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function delay(int $delay, callable $callback, $data = null): string {
-        return self::$driver->delay($delay, wrap($callback), $data);
+        return self::$driver->delay($delay, $callback, $data);
     }
 
     /**
@@ -121,7 +121,7 @@ final class Loop {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function repeat(int $interval, callable $callback, $data = null): string {
-        return self::$driver->repeat($interval, wrap($callback), $data);
+        return self::$driver->repeat($interval, $callback, $data);
     }
 
     /**
@@ -144,7 +144,7 @@ final class Loop {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function onReadable($stream, callable $callback, $data = null): string {
-        return self::$driver->onReadable($stream, wrap($callback), $data);
+        return self::$driver->onReadable($stream, $callback, $data);
     }
 
     /**
@@ -167,7 +167,7 @@ final class Loop {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public static function onWritable($stream, callable $callback, $data = null): string {
-        return self::$driver->onWritable($stream, wrap($callback), $data);
+        return self::$driver->onWritable($stream, $callback, $data);
     }
 
     /**
@@ -191,7 +191,7 @@ final class Loop {
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
     public static function onSignal(int $signo, callable $callback, $data = null): string {
-        return self::$driver->onSignal($signo, wrap($callback), $data);
+        return self::$driver->onSignal($signo, $callback, $data);
     }
 
     /**

@@ -2,7 +2,10 @@
 
 namespace Amp\Loop;
 
+use Amp\Coroutine;
+use Amp\Promise;
 use Amp\Internal\Watcher;
+use function Amp\rethrow;
 
 class EventLoop extends Driver {
     /** @var \Event[]|null */
@@ -29,7 +32,15 @@ class EventLoop extends Driver {
 
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->value, $watcher->data);
+            $result = $callback($watcher->id, $watcher->value, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
 
         $this->timerCallback = function ($resource, $what, Watcher $watcher) {
@@ -38,12 +49,28 @@ class EventLoop extends Driver {
             }
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->data);
+            $result = $callback($watcher->id, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
 
         $this->signalCallback = function ($signum, $what, Watcher $watcher) {
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->value, $watcher->data);
+            $result = $callback($watcher->id, $watcher->value, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
     }
 

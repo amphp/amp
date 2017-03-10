@@ -2,7 +2,10 @@
 
 namespace Amp\Loop;
 
+use Amp\Coroutine;
+use Amp\Promise;
 use Amp\Internal\Watcher;
+use function Amp\rethrow;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
@@ -104,7 +107,15 @@ abstract class Driver {
                 unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
 
                 $callback = $watcher->callback;
-                $callback($watcher->id, $watcher->data);
+                $result = $callback($watcher->id, $watcher->data);
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise) {
+                    rethrow($result);
+                }
             }
 
             $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);

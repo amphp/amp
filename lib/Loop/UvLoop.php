@@ -2,7 +2,10 @@
 
 namespace Amp\Loop;
 
+use Amp\Coroutine;
+use Amp\Promise;
 use Amp\Internal\Watcher;
+use function Amp\rethrow;
 
 class UvLoop extends Driver {
     /** @var resource A uv_loop resource created with uv_loop_new() */
@@ -54,7 +57,15 @@ class UvLoop extends Driver {
 
             foreach ($watchers as $watcher) {
                 $callback = $watcher->callback;
-                $callback($watcher->id, $resource, $watcher->data);
+                $result = $callback($watcher->id, $resource, $watcher->data);
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise) {
+                    rethrow($result);
+                }
             }
         };
 
@@ -66,14 +77,30 @@ class UvLoop extends Driver {
             }
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $watcher->data);
+            $result = $callback($watcher->id, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
 
         $this->signalCallback = function ($event, $signo) {
             $watcher = $this->watchers[(int) $event];
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $signo, $watcher->data);
+            $result = $callback($watcher->id, $signo, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         };
     }
 

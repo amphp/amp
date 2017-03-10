@@ -2,7 +2,10 @@
 
 namespace Amp\Loop;
 
+use Amp\Coroutine;
+use Amp\Promise;
 use Amp\Internal\Watcher;
+use function Amp\rethrow;
 
 class NativeLoop extends Driver {
     /** @var resource[] */
@@ -89,7 +92,15 @@ class NativeLoop extends Driver {
 
                 // Execute the timer.
                 $callback = $watcher->callback;
-                $callback($id, $watcher->data);
+                $result = $callback($id, $watcher->data);
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise) {
+                    rethrow($result);
+                }
             }
         }
 
@@ -130,7 +141,15 @@ class NativeLoop extends Driver {
                             }
 
                             $callback = $watcher->callback;
-                            $callback($watcher->id, $stream, $watcher->data);
+                            $result = $callback($watcher->id, $stream, $watcher->data);
+
+                            if ($result instanceof \Generator) {
+                                $result = new Coroutine($result);
+                            }
+
+                            if ($result instanceof Promise) {
+                                rethrow($result);
+                            }
                         }
                     }
                 }
@@ -144,7 +163,15 @@ class NativeLoop extends Driver {
                             }
 
                             $callback = $watcher->callback;
-                            $callback($watcher->id, $stream, $watcher->data);
+                            $result = $callback($watcher->id, $stream, $watcher->data);
+
+                            if ($result instanceof \Generator) {
+                                $result = new Coroutine($result);
+                            }
+
+                            if ($result instanceof Promise) {
+                                rethrow($result);
+                            }
                         }
                     }
                 }
@@ -277,7 +304,15 @@ class NativeLoop extends Driver {
             }
 
             $callback = $watcher->callback;
-            $callback($watcher->id, $signo, $watcher->data);
+            $result = $callback($watcher->id, $signo, $watcher->data);
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise) {
+                rethrow($result);
+            }
         }
     }
 }
