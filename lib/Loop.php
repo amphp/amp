@@ -16,7 +16,7 @@ final class Loop {
     /**
      * @var Driver
      */
-    private static $driver = null;
+    private static $driver;
 
     /**
      * Disable construction as this is a static class.
@@ -28,9 +28,9 @@ final class Loop {
     /**
      * Sets the driver to be used for `Loop::run()`.
      *
-     * @param Driver|null $driver
+     * @param Driver $driver
      */
-    public static function set(Driver $driver = null) {
+    public static function set(Driver $driver) {
         self::$driver = $driver;
     }
 
@@ -342,8 +342,7 @@ final class Loop {
      * @return array Statistics about the loop in the described format.
      */
     public static function getInfo() {
-        $driver = self::$driver ?: self::get();
-        return $driver->getInfo();
+        return self::$driver->getInfo();
     }
 
     /**
