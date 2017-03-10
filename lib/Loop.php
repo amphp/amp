@@ -6,7 +6,6 @@ use Amp\Loop\Driver;
 use Amp\Loop\Factory;
 use Amp\Loop\InvalidWatcherException;
 use Amp\Loop\UnsupportedFeatureException;
-use Amp\Promise\ErrorHandler;
 
 /**
  * Accessor to allow global access to the event loop.
@@ -51,21 +50,7 @@ final class Loop {
             self::$driver->defer(wrap($callback));
         }
 
-        self::setupErrorHandlerIfNoneExists();
         self::$driver->run();
-    }
-
-    private static function setupErrorHandlerIfNoneExists() {
-        $errorHandler = ErrorHandler::set(function ($error) {
-            Loop::defer(function () use ($error) {
-                throw $error;
-            });
-        });
-
-        if ($errorHandler !== null) {
-            // Restore if another handler has already been set
-            ErrorHandler::set($errorHandler);
-        }
     }
 
     /**

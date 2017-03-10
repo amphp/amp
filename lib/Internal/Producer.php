@@ -3,8 +3,8 @@
 namespace Amp\Internal;
 
 use Amp\Deferred;
+use Amp\Loop;
 use Amp\Promise;
-use Amp\Promise\ErrorHandler;
 use Amp\Success;
 
 /**
@@ -80,7 +80,9 @@ trait Producer {
                     $promises[] = $result;
                 }
             } catch (\Throwable $e) {
-                ErrorHandler::notify($e);
+                Loop::defer(function () use ($e) {
+                    throw $e;
+                });
             }
         }
 
@@ -92,7 +94,9 @@ trait Producer {
         $count = \count($promises);
         $f = static function ($e) use ($deferred, $value, &$count) {
             if ($e) {
-                ErrorHandler::notify($e);
+                Loop::defer(function () use ($e) {
+                    throw $e;
+                });
             }
             if (!--$count) {
                 $deferred->resolve($value);

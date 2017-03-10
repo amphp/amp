@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use Amp\Promise\ErrorHandler;
-
 /**
  * Creates a failed stream (which is also a promise) using the given exception.
  */
@@ -25,7 +23,9 @@ final class Failure implements Stream {
         try {
             $onResolved($this->exception, null);
         } catch (\Throwable $exception) {
-            ErrorHandler::notify($exception);
+            Loop::defer(function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 

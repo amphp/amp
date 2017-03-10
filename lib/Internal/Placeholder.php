@@ -3,8 +3,8 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
+use Amp\Loop;
 use Amp\Promise;
-use Amp\Promise\ErrorHandler;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -35,7 +35,9 @@ trait Placeholder {
             try {
                 $onResolved(null, $this->result);
             } catch (\Throwable $exception) {
-                ErrorHandler::notify($exception);
+                Loop::defer(function () use ($exception) {
+                    throw $exception;
+                });
             }
             return;
         }
@@ -80,7 +82,9 @@ trait Placeholder {
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
-            ErrorHandler::notify($exception);
+            Loop::defer(function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 

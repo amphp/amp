@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Amp\Promise\ErrorHandler;
+use Amp\Loop;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.
@@ -47,7 +47,9 @@ class WhenQueue {
             try {
                 $callback($exception, $value);
             } catch (\Throwable $exception) {
-                ErrorHandler::notify($exception);
+                Loop::defer(function () use ($exception) {
+                    throw $exception;
+                });
             }
         }
     }

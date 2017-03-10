@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use Amp\Promise\ErrorHandler;
-
 /**
  * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
  *  object implementing \Amp\Promise).
@@ -32,7 +30,9 @@ final class Success implements Stream {
         try {
             $onResolved(null, $this->value);
         } catch (\Throwable $exception) {
-            ErrorHandler::notify($exception);
+            Loop::defer(function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 
