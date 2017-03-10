@@ -12,8 +12,7 @@ use Amp\Internal\Watcher;
  *
  * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
-abstract class Driver
-{
+abstract class Driver {
     // Don't use 1e3 / 1e6, they result in a float instead of int
     const MILLISEC_PER_SEC = 1000;
     const MICROSEC_PER_SEC = 1000000;
@@ -74,6 +73,67 @@ abstract class Driver
     }
 
     /**
+     * @return bool True if no enabled and referenced watchers remain in the loop.
+     */
+    private function isEmpty() {
+        foreach ($this->watchers as $watcher) {
+            if ($watcher->enabled && $watcher->referenced) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Executes a single tick of the event loop.
+     */
+    private function tick() {
+        $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        $this->nextTickQueue = [];
+
+        $this->activate($this->enableQueue);
+        $this->enableQueue = [];
+
+        try {
+            foreach ($this->deferQueue as $watcher) {
+                if (!isset($this->deferQueue[$watcher->id])) {
+                    continue; // Watcher disabled by another defer watcher.
+                }
+
+                unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
+
+                $callback = $watcher->callback;
+                $callback($watcher->id, $watcher->data);
+            }
+
+            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
+
+        } catch (\Throwable $exception) {
+            if (null === $this->errorHandler) {
+                throw $exception;
+            }
+
+            $errorHandler = $this->errorHandler;
+            $errorHandler($exception);
+        }
+    }
+
+    /**
+     * Activates (enables) all the given watchers.
+     *
+     * @param \Amp\Loop\Internal\Watcher[] $watchers
+     */
+    abstract protected function activate(array $watchers);
+
+    /**
+     * Dispatches any pending read/write, timer, and signal events.
+     *
+     * @param bool $blocking
+     */
+    abstract protected function dispatch($blocking);
+
+    /**
      * Stop the event loop.
      *
      * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
@@ -94,7 +154,7 @@ abstract class Driver
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
@@ -122,8 +182,8 @@ abstract class Driver
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
+     * @param int   $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
@@ -157,8 +217,8 @@ abstract class Driver
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $interval The time interval, in milliseconds, to wait between executions.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
+     * @param int   $interval The time interval, in milliseconds, to wait between executions.
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -195,8 +255,8 @@ abstract class Driver
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -228,8 +288,8 @@ abstract class Driver
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -259,8 +319,8 @@ abstract class Driver
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $signo The signal number to monitor.
-     * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
+     * @param int   $signo The signal number to monitor.
+     * @param       callable (string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -318,6 +378,21 @@ abstract class Driver
     }
 
     /**
+     * Cancel a watcher.
+     *
+     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
+     * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
+     *
+     * @param string $watcherId The watcher identifier.
+     *
+     * @return void
+     */
+    public function cancel(string $watcherId) {
+        $this->disable($watcherId);
+        unset($this->watchers[$watcherId]);
+    }
+
+    /**
      * Disable a watcher immediately.
      *
      * A watcher MUST be disabled immediately, e.g. if a defer watcher disables a later defer watcher, the second defer
@@ -366,19 +441,11 @@ abstract class Driver
     }
 
     /**
-     * Cancel a watcher.
+     * Deactivates (disables) the given watcher.
      *
-     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
-     * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
-     *
-     * @param string $watcherId The watcher identifier.
-     *
-     * @return void
+     * @param \Amp\Loop\Internal\Watcher $watcher
      */
-    public function cancel(string $watcherId) {
-        $this->disable($watcherId);
-        unset($this->watchers[$watcherId]);
-    }
+    abstract protected function deactivate(Watcher $watcher);
 
     /**
      * Reference a watcher.
@@ -427,12 +494,11 @@ abstract class Driver
      * retrieve the stored state of other packages. Packages MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
-     * @param mixed $value The value to be stored.
+     * @param mixed  $value The value to be stored.
      *
      * @return void
      */
-    final public function setState(string $key, $value)
-    {
+    final public function setState(string $key, $value) {
         if ($value === null) {
             unset($this->registry[$key]);
         } else {
@@ -450,8 +516,7 @@ abstract class Driver
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    final public function getState(string $key)
-    {
+    final public function getState(string $key) {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
 
@@ -464,7 +529,7 @@ abstract class Driver
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     * @param callable (\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
      * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
@@ -473,6 +538,27 @@ abstract class Driver
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
         return $previous;
+    }
+
+    /**
+     * Get the underlying loop handle.
+     *
+     * Example: the `uv_loop` resource for `libuv` or the `EvLoop` object for `libev` or `null` for a native driver.
+     *
+     * Note: This function is *not* exposed in the `Loop` class. Users shall access it directly on the respective loop
+     * instance.
+     *
+     * @return null|object|resource The loop handle the event loop operates on. `null` if there is none.
+     */
+    abstract public function getHandle();
+
+    /**
+     * Returns the same array of data as getInfo().
+     *
+     * @return array
+     */
+    public function __debugInfo() {
+        return $this->getInfo();
     }
 
     /**
@@ -498,25 +584,38 @@ abstract class Driver
      */
     public function getInfo() {
         $watchers = [
-            "referenced"   => 0,
+            "referenced" => 0,
             "unreferenced" => 0,
         ];
 
         $defer = $delay = $repeat = $onReadable = $onWritable = $onSignal = [
-            "enabled"  => 0,
+            "enabled" => 0,
             "disabled" => 0,
         ];
 
         foreach ($this->watchers as $watcher) {
             switch ($watcher->type) {
-                case Watcher::READABLE: $array = &$onReadable; break;
-                case Watcher::WRITABLE: $array = &$onWritable; break;
-                case Watcher::SIGNAL:   $array = &$onSignal; break;
-                case Watcher::DEFER:    $array = &$defer; break;
-                case Watcher::DELAY:    $array = &$delay; break;
-                case Watcher::REPEAT:   $array = &$repeat; break;
+                case Watcher::READABLE:
+                    $array = &$onReadable;
+                    break;
+                case Watcher::WRITABLE:
+                    $array = &$onWritable;
+                    break;
+                case Watcher::SIGNAL:
+                    $array = &$onSignal;
+                    break;
+                case Watcher::DEFER:
+                    $array = &$defer;
+                    break;
+                case Watcher::DELAY:
+                    $array = &$delay;
+                    break;
+                case Watcher::REPEAT:
+                    $array = &$repeat;
+                    break;
 
-                default: throw new \DomainException("Unknown watcher type");
+                default:
+                    throw new \DomainException("Unknown watcher type");
             }
 
             if ($watcher->enabled) {
@@ -534,102 +633,13 @@ abstract class Driver
 
         return [
             "enabled_watchers" => $watchers,
-            "defer"            => $defer,
-            "delay"            => $delay,
-            "repeat"           => $repeat,
-            "on_readable"      => $onReadable,
-            "on_writable"      => $onWritable,
-            "on_signal"        => $onSignal,
-            "running"          => (bool) $this->running,
+            "defer" => $defer,
+            "delay" => $delay,
+            "repeat" => $repeat,
+            "on_readable" => $onReadable,
+            "on_writable" => $onWritable,
+            "on_signal" => $onSignal,
+            "running" => (bool) $this->running,
         ];
-    }
-
-    /**
-     * Get the underlying loop handle.
-     *
-     * Example: the `uv_loop` resource for `libuv` or the `EvLoop` object for `libev` or `null` for a native driver.
-     *
-     * Note: This function is *not* exposed in the `Loop` class. Users shall access it directly on the respective loop
-     * instance.
-     *
-     * @return null|object|resource The loop handle the event loop operates on. `null` if there is none.
-     */
-    abstract public function getHandle();
-
-    /**
-     * @return bool True if no enabled and referenced watchers remain in the loop.
-     */
-    private function isEmpty() {
-        foreach ($this->watchers as $watcher) {
-            if ($watcher->enabled && $watcher->referenced) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Executes a single tick of the event loop.
-     */
-    private function tick() {
-        $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
-        $this->nextTickQueue = [];
-
-        $this->activate($this->enableQueue);
-        $this->enableQueue = [];
-
-        try {
-            foreach ($this->deferQueue as $watcher) {
-                if (!isset($this->deferQueue[$watcher->id])) {
-                    continue; // Watcher disabled by another defer watcher.
-                }
-
-                unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
-
-                $callback = $watcher->callback;
-                $callback($watcher->id, $watcher->data);
-            }
-
-            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
-
-        } catch (\Throwable $exception) {
-            if (null === $this->errorHandler) {
-                throw $exception;
-            }
-
-            $errorHandler = $this->errorHandler;
-            $errorHandler($exception);
-        }
-    }
-
-    /**
-     * Dispatches any pending read/write, timer, and signal events.
-     *
-     * @param bool $blocking
-     */
-    abstract protected function dispatch($blocking);
-
-    /**
-     * Activates (enables) all the given watchers.
-     *
-     * @param \Amp\Loop\Internal\Watcher[] $watchers
-     */
-    abstract protected function activate(array $watchers);
-
-    /**
-     * Deactivates (disables) the given watcher.
-     *
-     * @param \Amp\Loop\Internal\Watcher $watcher
-     */
-    abstract protected function deactivate(Watcher $watcher);
-
-    /**
-     * Returns the same array of data as getInfo().
-     *
-     * @return array
-     */
-    public function __debugInfo() {
-        return $this->getInfo();
     }
 }

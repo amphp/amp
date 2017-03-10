@@ -2,11 +2,11 @@
 
 namespace Amp;
 
-use AsyncInterop\{ Promise, Promise\ErrorHandler };
+use Amp\Promise\ErrorHandler;
 
 /**
  * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
- *  object implementing \AsyncInterop\Promise).
+ *  object implementing \Amp\Promise).
  */
 final class Success implements Stream {
     /** @var mixed */
@@ -17,8 +17,7 @@ final class Success implements Stream {
      *
      * @throws \Error If a promise is given as the value.
      */
-    public function __construct($value = null)
-    {
+    public function __construct($value = null) {
         if ($value instanceof Promise) {
             throw new \Error("Cannot use a promise as success value");
         }
@@ -40,5 +39,6 @@ final class Success implements Stream {
     /**
      * {@inheritdoc}
      */
-    public function listen(callable $onNext) {}
+    public function listen(callable $onNext) {
+    }
 }

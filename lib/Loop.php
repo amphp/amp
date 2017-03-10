@@ -12,12 +12,18 @@ use Amp\Loop\UnsupportedFeatureException;
  *
  * @see \Amp\Loop\Driver
  */
-final class Loop
-{
+final class Loop {
     /**
      * @var Driver
      */
     private static $driver = null;
+
+    /**
+     * Disable construction as this is a static class.
+     */
+    private function __construct() {
+        // intentionally left blank
+    }
 
     /**
      * Sets the driver to be used for `Loop::run()`.
@@ -39,23 +45,12 @@ final class Loop
      *
      * @return void
      */
-    public static function run(callable $callback = null)
-    {
+    public static function run(callable $callback = null) {
         if ($callback) {
             self::$driver->defer(wrap($callback));
         }
 
         self::$driver->run();
-    }
-
-    /**
-     * Retrieve the event loop driver that is in scope.
-     *
-     * @return Driver|null
-     */
-    public static function get()
-    {
-        return self::$driver;
     }
 
     /**
@@ -66,8 +61,7 @@ final class Loop
      *
      * @return void
      */
-    public static function stop()
-    {
+    public static function stop() {
         self::$driver->stop();
     }
 
@@ -80,14 +74,13 @@ final class Loop
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function defer(callable $callback, $data = null)
-    {
+    public static function defer(callable $callback, $data = null) {
         return self::$driver->defer(wrap($callback), $data);
     }
 
@@ -100,15 +93,14 @@ final class Loop
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
+     * @param int   $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function delay(int $delay, callable $callback, $data = null)
-    {
+    public static function delay(int $delay, callable $callback, $data = null) {
         return self::$driver->delay($delay, wrap($callback), $data);
     }
 
@@ -122,14 +114,13 @@ final class Loop
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $interval The time interval, in milliseconds, to wait between executions.
-     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
+     * @param int   $interval The time interval, in milliseconds, to wait between executions.
+     * @param       callable (string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function repeat(int $interval, callable $callback, $data = null)
-    {
+    public static function repeat(int $interval, callable $callback, $data = null) {
         return self::$driver->repeat($interval, wrap($callback), $data);
     }
 
@@ -147,13 +138,12 @@ final class Loop
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onReadable($stream, callable $callback, $data = null)
-    {
+    public static function onReadable($stream, callable $callback, $data = null) {
         return self::$driver->onReadable($stream, wrap($callback), $data);
     }
 
@@ -171,13 +161,12 @@ final class Loop
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onWritable($stream, callable $callback, $data = null)
-    {
+    public static function onWritable($stream, callable $callback, $data = null) {
         return self::$driver->onWritable($stream, wrap($callback), $data);
     }
 
@@ -193,16 +182,15 @@ final class Loop
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $signo The signal number to monitor.
-     * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
+     * @param int   $signo The signal number to monitor.
+     * @param       callable (string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public static function onSignal(int $signo, callable $callback, $data = null)
-    {
+    public static function onSignal(int $signo, callable $callback, $data = null) {
         return self::$driver->onSignal($signo, wrap($callback), $data);
     }
 
@@ -218,8 +206,7 @@ final class Loop
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public static function enable(string $watcherId)
-    {
+    public static function enable(string $watcherId) {
         self::$driver->enable($watcherId);
     }
 
@@ -236,8 +223,7 @@ final class Loop
      *
      * @return void
      */
-    public static function disable(string $watcherId)
-    {
+    public static function disable(string $watcherId) {
         self::$driver->disable($watcherId);
     }
 
@@ -251,8 +237,7 @@ final class Loop
      *
      * @return void
      */
-    public static function cancel(string $watcherId)
-    {
+    public static function cancel(string $watcherId) {
         self::$driver->cancel($watcherId);
     }
 
@@ -268,8 +253,7 @@ final class Loop
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public static function reference(string $watcherId)
-    {
+    public static function reference(string $watcherId) {
         self::$driver->reference($watcherId);
     }
 
@@ -285,8 +269,7 @@ final class Loop
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    public static function unreference(string $watcherId)
-    {
+    public static function unreference(string $watcherId) {
         self::$driver->unreference($watcherId);
     }
 
@@ -297,12 +280,11 @@ final class Loop
      * retrieve the stored state of other packages. Packages MUST use the following prefix for keys: `vendor.package.`
      *
      * @param string $key The namespaced storage key.
-     * @param mixed $value The value to be stored.
+     * @param mixed  $value The value to be stored.
      *
      * @return void
      */
-    public static function setState(string $key, $value)
-    {
+    public static function setState(string $key, $value) {
         self::$driver->setState($key, $value);
     }
 
@@ -316,8 +298,7 @@ final class Loop
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    public static function getState(string $key)
-    {
+    public static function getState(string $key) {
         return self::$driver->getState($key);
     }
 
@@ -330,13 +311,12 @@ final class Loop
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     * @param callable (\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
      * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
      */
-    public static function setErrorHandler(callable $callback = null)
-    {
+    public static function setErrorHandler(callable $callback = null) {
         return self::$driver->setErrorHandler($callback);
     }
 
@@ -361,18 +341,18 @@ final class Loop
      *
      * @return array Statistics about the loop in the described format.
      */
-    public static function getInfo()
-    {
+    public static function getInfo() {
         $driver = self::$driver ?: self::get();
         return $driver->getInfo();
     }
 
     /**
-     * Disable construction as this is a static class.
+     * Retrieve the event loop driver that is in scope.
+     *
+     * @return Driver|null
      */
-    private function __construct()
-    {
-        // intentionally left blank
+    public static function get() {
+        return self::$driver;
     }
 }
 

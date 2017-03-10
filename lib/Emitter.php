@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 // @codeCoverageIgnoreStart
 try {
     if (!@\assert(false)) {
@@ -56,7 +54,7 @@ try {
              *
              * @param mixed $value
              *
-             * @return \AsyncInterop\Promise
+             * @return \Amp\Promise
              */
             public function emit($value): Promise {
                 return ($this->emit)($value);

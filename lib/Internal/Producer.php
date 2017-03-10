@@ -2,8 +2,10 @@
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Success };
-use AsyncInterop\{ Promise, Promise\ErrorHandler };
+use Amp\Deferred;
+use Amp\Promise;
+use Amp\Promise\ErrorHandler;
+use Amp\Success;
 
 /**
  * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
@@ -38,7 +40,7 @@ trait Producer {
      *
      * @param mixed $value
      *
-     * @return \AsyncInterop\Promise
+     * @return \Amp\Promise
      *
      * @throws \Error If the stream has resolved.
      */

@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\{
     Deferred, Failure, Loop, Success
 };
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class Producer {
     use \Amp\Internal\Producer {

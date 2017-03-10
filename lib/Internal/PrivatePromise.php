@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\CallableMaker;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 /**
  * An promise that cannot be externally resolved. Used by Deferred in development mode.
@@ -14,7 +14,7 @@ final class PrivatePromise implements Promise {
     use CallableMaker, Placeholder;
 
     /**
-     * @param callable(callable $resolve, callable $reject): void $resolver
+     * @param callable (callable $resolve, callable $reject): void $resolver
      */
     public function __construct(callable $resolver) {
         $resolver(

@@ -29,10 +29,6 @@ class UvLoop extends Driver {
     /** @var callable */
     private $signalCallback;
 
-    public static function supported() {
-        return \extension_loaded("uv");
-    }
-
     public function __construct() {
         $this->handle = \uv_loop_new();
 
@@ -79,6 +75,36 @@ class UvLoop extends Driver {
             $callback = $watcher->callback;
             $callback($watcher->id, $signo, $watcher->data);
         };
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
+
+        if (!isset($this->events[$watcherId])) {
+            return;
+        }
+
+        $event = $this->events[$watcherId];
+
+        if (empty($this->watchers[(int) $event])) {
+            \uv_close($event);
+        }
+
+        unset($this->events[$watcherId]);
+    }
+
+    public static function supported() {
+        return \extension_loaded("uv");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getHandle() {
+        return $this->handle;
     }
 
     /**
@@ -165,7 +191,8 @@ class UvLoop extends Driver {
                     \uv_signal_start($event, $this->signalCallback, $watcher->value);
                     break;
 
-                default: throw new \DomainException("Unknown watcher type");
+                default:
+                    throw new \DomainException("Unknown watcher type");
             }
         }
     }
@@ -223,33 +250,8 @@ class UvLoop extends Driver {
                 }
                 break;
 
-            default: throw new \DomainException("Unknown watcher type");
+            default:
+                throw new \DomainException("Unknown watcher type");
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cancel(string $watcherId) {
-        parent::cancel($watcherId);
-
-        if (!isset($this->events[$watcherId])) {
-            return;
-        }
-
-        $event = $this->events[$watcherId];
-
-        if (empty($this->watchers[(int) $event])) {
-            \uv_close($event);
-        }
-
-        unset($this->events[$watcherId]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHandle() {
-        return $this->handle;
     }
 }

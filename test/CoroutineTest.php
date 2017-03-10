@@ -9,7 +9,7 @@ use Amp\InvalidYieldError;
 use Amp\Loop;
 use Amp\Pause;
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 100;

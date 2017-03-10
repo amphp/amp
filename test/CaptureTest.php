@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp;
 use Amp\Failure;
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class CaptureTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {

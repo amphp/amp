@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp;
 use Amp\Coroutine;
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class CallTest extends \PHPUnit_Framework_TestCase {
     public function testCallWithFunctionReturningPromise() {

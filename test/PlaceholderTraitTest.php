@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Loop;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class Placeholder {
     use \Amp\Internal\Placeholder {

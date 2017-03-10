@@ -2,13 +2,11 @@
 
 namespace Amp;
 
-use AsyncInterop\{ Loop, Promise };
-
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the returned promises (or the coroutine created).
  *
- * @param callable(...$args): \Generator|\AsyncInterop\Promise|mixed $callback
+ * @param callable (...$args): \Generator|\Amp\Promise|mixed $callback
  *
  * @return callable(...$args): void
  */
@@ -31,9 +29,9 @@ function wrap(callable $callback): callable {
  * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws, a failed
  * promise is returned.
  *
- * @param callable(mixed ...$args): mixed $worker
+ * @param callable (mixed ...$args): mixed $worker
  *
- * @return callable(mixed ...$args): \AsyncInterop\Promise
+ * @return callable(mixed ...$args): \Amp\Promise
  */
 function coroutine(callable $worker): callable {
     return function (...$args) use ($worker): Promise {
@@ -59,10 +57,10 @@ function coroutine(callable $worker): callable {
  * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
  * coroutine. If the function throws, a failed promise will be returned.
  *
- * @param callable(mixed ...$args): mixed $functor
+ * @param       callable (mixed ...$args): mixed $functor
  * @param array ...$args Arguments to pass to the function.
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function call(callable $functor, ...$args): Promise {
     try {
@@ -85,7 +83,7 @@ function call(callable $functor, ...$args): Promise {
 /**
  * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  */
 function rethrow(Promise $promise) {
     $promise->when(function ($exception) {
@@ -98,7 +96,7 @@ function rethrow(Promise $promise) {
 /**
  * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  *
  * @return mixed Promise success value.
  *
@@ -129,10 +127,10 @@ function wait(Promise $promise) {
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param \AsyncInterop\Promise $promise
- * @param callable(mixed $value): mixed $functor
+ * @param \Amp\Promise $promise
+ * @param              callable (mixed $value): mixed $functor
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function pipe(Promise $promise, callable $functor): Promise {
     $deferred = new Deferred;
@@ -154,12 +152,12 @@ function pipe(Promise $promise, callable $functor): Promise {
 }
 
 /**
- * @param \AsyncInterop\Promise $promise
- * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
+ * @param \Amp\Promise $promise
+ * @param string       $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
- * @param callable(\Throwable $exception): mixed $functor
+ * @param              callable (\Throwable $exception): mixed $functor
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function capture(Promise $promise, string $className, callable $functor): Promise {
     $deferred = new Deferred;
@@ -191,10 +189,10 @@ function capture(Promise $promise, string $className, callable $functor): Promis
  * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
  * \Amp\TimeoutException.
  *
- * @param \AsyncInterop\Promise $promise
- * @param int $timeout Timeout in milliseconds.
+ * @param \Amp\Promise $promise
+ * @param int          $timeout Timeout in milliseconds.
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function timeout(Promise $promise, int $timeout): Promise {
     $deferred = new Deferred;
@@ -228,7 +226,7 @@ function timeout(Promise $promise, int $timeout): Promise {
  *
  * @param object $thenable Object with a then() method.
  *
- * @return \AsyncInterop\Promise Promise resolved by the $thenable object.
+ * @return \Amp\Promise Promise resolved by the $thenable object.
  *
  * @throws \Error If the provided object does not have a then() method.
  */
@@ -256,7 +254,7 @@ function lift(callable $worker): callable {
     /**
      * @param mixed ...$args Promises or values.
      *
-     * @return \AsyncInterop\Promise
+     * @return \Amp\Promise
      */
     return function (...$args) use ($worker): Promise {
         foreach ($args as $key => $arg) {
@@ -286,7 +284,7 @@ function lift(callable $worker): callable {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -328,7 +326,7 @@ function any(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -374,7 +372,7 @@ function all(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If the array is empty or a non-Promise is in the array.
  */
@@ -419,10 +417,10 @@ function first(array $promises): Promise {
  * Resolves with a two-item array delineating successful and failed Promise results.
  *
  * The returned promise will only fail if ALL of the promises fail.
-
+ *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function some(array $promises): Promise {
     if (empty($promises)) {
@@ -468,10 +466,10 @@ function some(array $promises): Promise {
  * promise in the array fails for the same reason. Tip: Use all() or any() to determine when all
  * promises in the array have been resolved.
  *
- * @param callable(mixed $value): mixed $callback
+ * @param           callable (mixed $value): mixed $callback
  * @param Promise[] ...$promises
  *
- * @return \AsyncInterop\Promise[] Array of promises resolved with the result of the mapped function.
+ * @return \Amp\Promise[] Array of promises resolved with the result of the mapped function.
  */
 function map(callable $callback, array ...$promises): array {
     foreach ($promises as $promiseSet) {
@@ -495,7 +493,8 @@ function map(callable $callback, array ...$promises): array {
  *
  * @throws \TypeError If the argument is not an array or instance of \Traversable.
  */
-function stream(/* iterable */ $iterable): Stream {
+function stream(/* iterable */
+    $iterable): Stream {
     if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
         throw new \TypeError("Must provide an array or instance of Traversable");
     }
@@ -509,8 +508,8 @@ function stream(/* iterable */ $iterable): Stream {
 
 /**
  * @param \Amp\Stream $stream
- * @param callable(mixed $value): mixed $onNext
- * @param callable(mixed $value): mixed|null $onComplete
+ * @param             callable (mixed $value): mixed $onNext
+ * @param             callable (mixed $value): mixed|null $onComplete
  *
  * @return \Amp\Stream
  */
@@ -529,7 +528,7 @@ function each(Stream $stream, callable $onNext, callable $onComplete = null): St
 
 /**
  * @param \Amp\Stream $stream
- * @param callable(mixed $value): bool $filter
+ * @param             callable (mixed $value): bool $filter
  *
  * @return \Amp\Stream
  */

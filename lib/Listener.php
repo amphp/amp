@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 /**
  * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Stream.
  *
@@ -104,7 +102,7 @@ class Listener implements Iterator {
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has
      * resolved. If the stream fails, the returned promise will fail with the same exception.
      *
-     * @return \AsyncInterop\Promise<bool>
+     * @return \Amp\Promise<bool>
      *
      * @throws \Error If the prior promise returned from this method has not resolved.
      */

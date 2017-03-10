@@ -4,10 +4,10 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Success };
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class PromiseMock {
-    /** @var \AsyncInterop\Promise */
+    /** @var \Amp\Promise */
     private $promise;
 
     public function __construct(Promise $promise) {

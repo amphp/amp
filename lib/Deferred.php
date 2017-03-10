@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 // @codeCoverageIgnoreStart
 try {
     if (!@\assert(false)) {
@@ -15,7 +13,7 @@ try {
          */
         final class Deferred {
             /**
-             * @var \AsyncInterop\Promise
+             * @var \Amp\Promise
              */
             private $promise;
 
@@ -37,7 +35,7 @@ try {
             }
 
             /**
-             * @return \AsyncInterop\Promise
+             * @return \Amp\Promise
              */
             public function promise(): Promise {
                 return $this->promise;
@@ -73,7 +71,7 @@ try {
             }
 
             /**
-             * @return \AsyncInterop\Promise
+             * @return \Amp\Promise
              */
             public function promise(): Promise {
                 return $this;

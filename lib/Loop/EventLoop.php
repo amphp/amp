@@ -5,30 +5,20 @@ namespace Amp\Loop;
 use Amp\Internal\Watcher;
 
 class EventLoop extends Driver {
-    /** @var \EventBase */
-    private $handle;
-
-    /** @var \Event[] */
-    private $events = [];
-
-    /** @var callable */
-    private $ioCallback;
-
-    /** @var callable */
-    private $timerCallback;
-
-    /** @var callable */
-    private $signalCallback;
-
-    /** @var \Event[] */
-    private $signals = [];
-
     /** @var \Event[]|null */
     private static $activeSignals;
-
-    public static function supported() {
-        return \extension_loaded("event");
-    }
+    /** @var \EventBase */
+    private $handle;
+    /** @var \Event[] */
+    private $events = [];
+    /** @var callable */
+    private $ioCallback;
+    /** @var callable */
+    private $timerCallback;
+    /** @var callable */
+    private $signalCallback;
+    /** @var \Event[] */
+    private $signals = [];
 
     public function __construct() {
         $this->handle = new \EventBase;
@@ -55,6 +45,22 @@ class EventLoop extends Driver {
             $callback = $watcher->callback;
             $callback($watcher->id, $watcher->value, $watcher->data);
         };
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
+
+        if (isset($this->events[$watcherId])) {
+            $this->events[$watcherId]->free();
+            unset($this->events[$watcherId]);
+        }
+    }
+
+    public static function supported() {
+        return \extension_loaded("event");
     }
 
     public function __destruct() {
@@ -100,6 +106,13 @@ class EventLoop extends Driver {
     public function stop() {
         $this->handle->stop();
         parent::stop();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getHandle() {
+        return $this->handle;
     }
 
     /**
@@ -170,7 +183,7 @@ class EventLoop extends Driver {
 
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
-                    // No break
+                // No break
 
                 default:
                     $this->events[$id]->add();
@@ -190,24 +203,5 @@ class EventLoop extends Driver {
                 unset($this->signals[$id]);
             }
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cancel(string $watcherId) {
-        parent::cancel($watcherId);
-
-        if (isset($this->events[$watcherId])) {
-            $this->events[$watcherId]->free();
-            unset($this->events[$watcherId]);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHandle() {
-        return $this->handle;
     }
 }

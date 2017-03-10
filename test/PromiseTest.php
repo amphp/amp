@@ -2,14 +2,14 @@
 
 namespace Amp\Test;
 
-class Promise implements \AsyncInterop\Promise {
+class Promise implements \Amp\Promise {
     use \Amp\Internal\Placeholder {
         resolve as public;
         fail as public;
     }
 }
 
-class PromiseTest extends \AsyncInterop\Promise\Test {
+class PromiseTest extends \Amp\Promise\Test {
     public function promise() {
         $promise = new Promise;
         return [

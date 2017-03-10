@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 /**
  * Creates a promise from a generator function yielding promises.
  *
@@ -38,7 +36,7 @@ final class Coroutine implements Promise {
 
         /**
          * @param \Throwable|null $exception Exception to be thrown into the generator.
-         * @param mixed $value Value to be sent into the generator.
+         * @param mixed           $value Value to be sent into the generator.
          */
         $this->when = function ($exception, $value) {
             if ($this->depth > self::MAX_CONTINUATION_DEPTH) { // Defer continuation to avoid blowing up call stack.

@@ -7,7 +7,7 @@ use Amp\Failure;
 use Amp\Loop;
 use Amp\Pause;
 use Amp\Success;
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class TimeoutTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {

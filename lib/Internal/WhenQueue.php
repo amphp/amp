@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use AsyncInterop\Promise\ErrorHandler;
+use Amp\Promise\ErrorHandler;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.
@@ -23,22 +23,6 @@ class WhenQueue {
     }
 
     /**
-     * Calls each callback in the queue, passing the provided values to the function.
-     *
-     * @param \Throwable|null $exception
-     * @param mixed $value
-     */
-    public function __invoke($exception, $value) {
-        foreach ($this->queue as $callback) {
-            try {
-                $callback($exception, $value);
-            } catch (\Throwable $exception) {
-                ErrorHandler::notify($exception);
-            }
-        }
-    }
-
-    /**
      * Unrolls instances of self to avoid blowing up the call stack on resolution.
      *
      * @param callable $callback
@@ -50,5 +34,21 @@ class WhenQueue {
         }
 
         $this->queue[] = $callback;
+    }
+
+    /**
+     * Calls each callback in the queue, passing the provided values to the function.
+     *
+     * @param \Throwable|null $exception
+     * @param mixed           $value
+     */
+    public function __invoke($exception, $value) {
+        foreach ($this->queue as $callback) {
+            try {
+                $callback($exception, $value);
+            } catch (\Throwable $exception) {
+                ErrorHandler::notify($exception);
+            }
+        }
     }
 }

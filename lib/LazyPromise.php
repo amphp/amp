@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 /**
  * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. when() is called on
  * the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails with
@@ -13,7 +11,7 @@ class LazyPromise implements Promise {
     /** @var callable|null */
     private $promisor;
 
-    /** @var \AsyncInterop\Promise|null */
+    /** @var \Amp\Promise|null */
     private $promise;
 
     /**

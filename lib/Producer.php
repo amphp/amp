@@ -2,13 +2,11 @@
 
 namespace Amp;
 
-use Amp\Loop;
-
 final class Producer implements Stream {
     use CallableMaker, Internal\Producer;
 
     /**
-     * @param callable(callable(mixed $value): Promise $emit): \Generator $producer
+     * @param callable (callable(mixed $value): Promise $emit): \Generator $producer
      *
      * @throws \Error Thrown if the callable does not return a Generator.
      */

@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Failure, Success };
-use AsyncInterop\Promise;
+use Amp\Promise;
 
 class PipeTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {

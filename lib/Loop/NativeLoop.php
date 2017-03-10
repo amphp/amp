@@ -34,6 +34,27 @@ class NativeLoop extends Driver {
         $this->signalHandling = \extension_loaded("pcntl");
     }
 
+    /**
+     * {@inheritdoc}
+     *
+     * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
+     * @throws \RuntimeException If creating the backend signal handler fails.
+     */
+    public function onSignal(int $signo, callable $callback, $data = null) {
+        if (!$this->signalHandling) {
+            throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
+        }
+
+        return parent::onSignal($signo, $callback, $data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getHandle() {
+        return null;
+    }
+
     protected function dispatch($blocking) {
         $this->selectStreams(
             $this->readStreams,
@@ -80,7 +101,7 @@ class NativeLoop extends Driver {
     /**
      * @param resource[] $read
      * @param resource[] $write
-     * @param int $timeout
+     * @param int        $timeout
      */
     private function selectStreams(array $read, array $write, $timeout) {
         $timeout /= self::MILLISEC_PER_SEC;
@@ -165,20 +186,6 @@ class NativeLoop extends Driver {
 
     /**
      * {@inheritdoc}
-     *
-     * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
-     * @throws \RuntimeException If creating the backend signal handler fails.
-     */
-    public function onSignal(int $signo, callable $callback, $data = null) {
-        if (!$this->signalHandling) {
-            throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
-        }
-
-        return parent::onSignal($signo, $callback, $data);
-    }
-
-    /**
-     * {@inheritdoc}
      */
     protected function activate(array $watchers) {
         foreach ($watchers as $watcher) {
@@ -255,7 +262,8 @@ class NativeLoop extends Driver {
                 }
                 break;
 
-            default: throw new \DomainException("Unknown watcher type");
+            default:
+                throw new \DomainException("Unknown watcher type");
         }
     }
 
@@ -271,12 +279,5 @@ class NativeLoop extends Driver {
             $callback = $watcher->callback;
             $callback($watcher->id, $signo, $watcher->data);
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHandle() {
-        return null;
     }
 }

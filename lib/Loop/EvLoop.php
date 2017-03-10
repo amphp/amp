@@ -5,30 +5,20 @@ namespace Amp\Loop;
 use Amp\Internal\Watcher;
 
 class EvLoop extends Driver {
-    /** @var \EvLoop */
-    private $handle;
-
-    /** @var \EvWatcher[] */
-    private $events = [];
-
-    /** @var callable */
-    private $ioCallback;
-
-    /** @var callable */
-    private $timerCallback;
-
-    /** @var callable */
-    private $signalCallback;
-
-    /** @var \EvSignal[] */
-    private $signals = [];
-
     /** @var \EvSignal[]|null */
     private static $activeSignals;
-
-    public static function supported() {
-        return \extension_loaded("ev");
-    }
+    /** @var \EvLoop */
+    private $handle;
+    /** @var \EvWatcher[] */
+    private $events = [];
+    /** @var callable */
+    private $ioCallback;
+    /** @var callable */
+    private $timerCallback;
+    /** @var callable */
+    private $signalCallback;
+    /** @var \EvSignal[] */
+    private $signals = [];
 
     public function __construct() {
         $this->handle = new \EvLoop;
@@ -64,6 +54,18 @@ class EvLoop extends Driver {
             $callback = $watcher->callback;
             $callback($watcher->id, $watcher->value, $watcher->data);
         };
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
+        unset($this->events[$watcherId]);
+    }
+
+    public static function supported() {
+        return \extension_loaded("ev");
     }
 
     public function __destruct() {
@@ -109,6 +111,13 @@ class EvLoop extends Driver {
     public function stop() {
         $this->handle->stop();
         parent::stop();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getHandle() {
+        return $this->handle;
     }
 
     /**
@@ -171,20 +180,5 @@ class EvLoop extends Driver {
                 unset($this->signals[$id]);
             }
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cancel(string $watcherId) {
-        parent::cancel($watcherId);
-        unset($this->events[$watcherId]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getHandle() {
-        return $this->handle;
     }
 }

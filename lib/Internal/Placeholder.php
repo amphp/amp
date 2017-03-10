@@ -3,11 +3,12 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use AsyncInterop\{ Promise, Promise\ErrorHandler };
+use Amp\Promise;
+use Amp\Promise\ErrorHandler;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \AsyncInterop\Promise.
+ * the available classes implementing \Amp\Promise.
  *
  * @internal
  */
