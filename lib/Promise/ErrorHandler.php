@@ -51,10 +51,10 @@ final class ErrorHandler {
     public static function notify(\Throwable $error) {
         if (self::$callback === null) {
             self::triggerErrorHandler(
-                "An exception has been thrown from an AsyncInterop\\Promise::when() handler, but no handler has been"
-                . " registered via AsyncInterop\\Promise\\ErrorHandler::set(). A handler has to be registered to"
-                . " prevent exceptions from going unnoticed. Do NOT install an empty handler that just does nothing."
-                . " If the handler is called, there is ALWAYS something wrong.",
+                "An exception has been thrown from an Amp\\Promise::when() handler, but no handler has been registered"
+                . " via Amp\\Promise\\ErrorHandler::set(). A handler has to be registered to prevent exceptions from"
+                . " going unnoticed. Do NOT install an empty handler that just does nothing. If the handler is called,"
+                . " there is ALWAYS something wrong.",
                 $error
             );
 
@@ -66,13 +66,13 @@ final class ErrorHandler {
         } catch (\Exception $e) {
             self::triggerErrorHandler(
                 "An exception has been thrown from the promise error handler registered to"
-                . " AsyncInterop\\Promise\\ErrorHandler::set().",
+                . " Amp\\Promise\\ErrorHandler::set().",
                 $e
             );
         } catch (\Throwable $e) {
             self::triggerErrorHandler(
                 "An exception has been thrown from the promise error handler registered to"
-                . " AsyncInterop\\Promise\\ErrorHandler::set().",
+                . " Amp\\Promise\\ErrorHandler::set().",
                 $e
             );
         }
