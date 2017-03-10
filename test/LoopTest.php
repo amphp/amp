@@ -22,7 +22,7 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
      *
      * @return callable
      */
-    abstract function getFactory();
+    abstract function getFactory(): callable;
 
     /** @var Driver */
     public $loop;
@@ -313,7 +313,7 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
         $expected = ["enabled" => 1, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 1, "unreferenced" => 0];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         // explicitly reference() even though it's the default setting
         $argsCopy = $args;
@@ -324,7 +324,7 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
         $expected = ["enabled" => 2, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 2, "unreferenced" => 0];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         // disabling a referenced watcher should decrement the referenced count
         $loop->disable($watcherId2);
@@ -332,20 +332,20 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
         $loop->disable($watcherId2);
         $info = $loop->getInfo();
         $expected = ["referenced" => 1, "unreferenced" => 0];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         // enabling a referenced watcher should increment the referenced count
         $loop->enable($watcherId2);
         $loop->enable($watcherId2);
         $info = $loop->getInfo();
         $expected = ["referenced" => 2, "unreferenced" => 0];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         // cancelling an referenced watcher should decrement the referenced count
         $loop->cancel($watcherId2);
         $info = $loop->getInfo();
         $expected = ["referenced" => 1, "unreferenced" => 0];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         // unreference() should just increment unreferenced count
         $watcherId2 = \call_user_func_array($func, $args);
@@ -354,7 +354,7 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
         $expected = ["enabled" => 2, "disabled" => 0];
         $this->assertSame($expected, $info[$type]);
         $expected = ["referenced" => 1, "unreferenced" => 1];
-        $this->assertSame($expected, $info["watchers"]);
+        $this->assertSame($expected, $info["enabled_watchers"]);
 
         $loop->cancel($watcherId1);
         $loop->cancel($watcherId2);
@@ -1037,7 +1037,8 @@ abstract class LoopTest extends \PHPUnit_Framework_TestCase {
             });
 
             $loop->delay($msDelay = 1, function () {
-                $loop = $this->getFactory()->create();
+                /** @var Driver $loop */
+                $loop = ($this->getFactory())();
                 $stop = $loop->delay($msDelay = 10, function () use ($loop) {
                     echo "ERROR: manual stop";
                     $loop->stop();

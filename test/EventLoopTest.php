@@ -9,7 +9,7 @@ use Amp\Test\LoopTest;
  * @requires extension event
  */
 class EventLoopLoopTest extends LoopTest {
-    public function getFactory() {
+    public function getFactory(): callable {
         return function () {
             return new EventLoop;
         };
