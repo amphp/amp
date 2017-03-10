@@ -20,16 +20,16 @@ abstract class Driver {
     /** @var string */
     private $nextId = "a";
 
-    /** @var \Amp\Loop\Internal\Watcher[] */
+    /** @var \Amp\Internal\Watcher[] */
     private $watchers = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[] */
+    /** @var \Amp\Internal\Watcher[] */
     private $enableQueue = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[] */
+    /** @var \Amp\Internal\Watcher[] */
     private $deferQueue = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[] */
+    /** @var \Amp\Internal\Watcher[] */
     private $nextTickQueue = [];
 
     /** @var callable|null */
@@ -122,7 +122,7 @@ abstract class Driver {
     /**
      * Activates (enables) all the given watchers.
      *
-     * @param \Amp\Loop\Internal\Watcher[] $watchers
+     * @param \Amp\Internal\Watcher[] $watchers
      */
     abstract protected function activate(array $watchers);
 
@@ -131,7 +131,7 @@ abstract class Driver {
      *
      * @param bool $blocking
      */
-    abstract protected function dispatch($blocking);
+    abstract protected function dispatch(bool $blocking);
 
     /**
      * Stop the event loop.
@@ -160,7 +160,7 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function defer(callable $callback, $data = null) {
+    public function defer(callable $callback, $data = null): string {
         $watcher = new Watcher;
         $watcher->type = Watcher::DEFER;
         $watcher->id = $this->nextId++;
@@ -189,7 +189,7 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function delay(int $delay, callable $callback, $data = null) {
+    public function delay(int $delay, callable $callback, $data = null): string {
         if ($delay < 0) {
             throw new \InvalidArgumentException("Delay must be greater than or equal to zero");
         }
@@ -223,7 +223,7 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function repeat(int $interval, callable $callback, $data = null) {
+    public function repeat(int $interval, callable $callback, $data = null): string {
         if ($interval < 0) {
             throw new \InvalidArgumentException("Interval must be greater than or equal to zero");
         }
@@ -260,7 +260,7 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onReadable($stream, callable $callback, $data = null) {
+    public function onReadable($stream, callable $callback, $data = null): string {
         $watcher = new Watcher;
         $watcher->type = Watcher::READABLE;
         $watcher->id = $this->nextId++;
@@ -293,7 +293,7 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onWritable($stream, callable $callback, $data = null) {
+    public function onWritable($stream, callable $callback, $data = null): string {
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
         $watcher->id = $this->nextId++;
@@ -327,7 +327,7 @@ abstract class Driver {
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public function onSignal(int $signo, callable $callback, $data = null) {
+    public function onSignal(int $signo, callable $callback, $data = null): string {
         $watcher = new Watcher;
         $watcher->type = Watcher::SIGNAL;
         $watcher->id = $this->nextId++;
@@ -443,7 +443,7 @@ abstract class Driver {
     /**
      * Deactivates (disables) the given watcher.
      *
-     * @param \Amp\Loop\Internal\Watcher $watcher
+     * @param \Amp\Internal\Watcher $watcher
      */
     abstract protected function deactivate(Watcher $watcher);
 
@@ -582,7 +582,7 @@ abstract class Driver {
      *
      * @return array Statistics about the loop in the described format.
      */
-    public function getInfo() {
+    public function getInfo(): array {
         $watchers = [
             "referenced" => 0,
             "unreferenced" => 0,

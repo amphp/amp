@@ -40,7 +40,7 @@ class NativeLoop extends Driver {
      * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      * @throws \RuntimeException If creating the backend signal handler fails.
      */
-    public function onSignal(int $signo, callable $callback, $data = null) {
+    public function onSignal(int $signo, callable $callback, $data = null): string {
         if (!$this->signalHandling) {
             throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
         }
@@ -55,7 +55,7 @@ class NativeLoop extends Driver {
         return null;
     }
 
-    protected function dispatch($blocking) {
+    protected function dispatch(bool $blocking) {
         $this->selectStreams(
             $this->readStreams,
             $this->writeStreams,
@@ -270,7 +270,7 @@ class NativeLoop extends Driver {
     /**
      * @param int $signo
      */
-    private function handleSignal($signo) {
+    private function handleSignal(int $signo) {
         foreach ($this->signalWatchers[$signo] as $watcher) {
             if (!isset($this->signalWatchers[$signo][$watcher->id])) {
                 continue;

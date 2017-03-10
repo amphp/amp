@@ -96,7 +96,7 @@ class UvLoop extends Driver {
         unset($this->events[$watcherId]);
     }
 
-    public static function supported() {
+    public static function supported(): bool {
         return \extension_loaded("uv");
     }
 
@@ -110,7 +110,7 @@ class UvLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function dispatch($blocking) {
+    protected function dispatch(bool $blocking) {
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
 

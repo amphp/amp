@@ -59,7 +59,7 @@ class EventLoop extends Driver {
         }
     }
 
-    public static function supported() {
+    public static function supported(): bool {
         return \extension_loaded("event");
     }
 
@@ -111,14 +111,14 @@ class EventLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function getHandle() {
+    public function getHandle(): \EventBase {
         return $this->handle;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function dispatch($blocking) {
+    protected function dispatch(bool $blocking) {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
     }
 

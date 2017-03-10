@@ -80,7 +80,7 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function defer(callable $callback, $data = null) {
+    public static function defer(callable $callback, $data = null): string {
         return self::$driver->defer(wrap($callback), $data);
     }
 
@@ -100,7 +100,7 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function delay(int $delay, callable $callback, $data = null) {
+    public static function delay(int $delay, callable $callback, $data = null): string {
         return self::$driver->delay($delay, wrap($callback), $data);
     }
 
@@ -120,7 +120,7 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function repeat(int $interval, callable $callback, $data = null) {
+    public static function repeat(int $interval, callable $callback, $data = null): string {
         return self::$driver->repeat($interval, wrap($callback), $data);
     }
 
@@ -143,7 +143,7 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onReadable($stream, callable $callback, $data = null) {
+    public static function onReadable($stream, callable $callback, $data = null): string {
         return self::$driver->onReadable($stream, wrap($callback), $data);
     }
 
@@ -166,7 +166,7 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onWritable($stream, callable $callback, $data = null) {
+    public static function onWritable($stream, callable $callback, $data = null): string {
         return self::$driver->onWritable($stream, wrap($callback), $data);
     }
 
@@ -190,7 +190,7 @@ final class Loop {
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public static function onSignal(int $signo, callable $callback, $data = null) {
+    public static function onSignal(int $signo, callable $callback, $data = null): string {
         return self::$driver->onSignal($signo, wrap($callback), $data);
     }
 
@@ -341,16 +341,16 @@ final class Loop {
      *
      * @return array Statistics about the loop in the described format.
      */
-    public static function getInfo() {
+    public static function getInfo(): array {
         return self::$driver->getInfo();
     }
 
     /**
      * Retrieve the event loop driver that is in scope.
      *
-     * @return Driver|null
+     * @return Driver
      */
-    public static function get() {
+    public static function get(): Driver {
         return self::$driver;
     }
 }

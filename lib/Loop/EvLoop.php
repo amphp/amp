@@ -64,7 +64,7 @@ class EvLoop extends Driver {
         unset($this->events[$watcherId]);
     }
 
-    public static function supported() {
+    public static function supported(): bool {
         return \extension_loaded("ev");
     }
 
@@ -116,14 +116,14 @@ class EvLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function getHandle() {
+    public function getHandle(): \EvLoop {
         return $this->handle;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function dispatch($blocking) {
+    protected function dispatch(bool $blocking) {
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
 
