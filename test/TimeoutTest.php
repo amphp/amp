@@ -3,12 +3,15 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Pause, Success };
-use AsyncInterop\{ Loop, Promise };
+use Amp\Failure;
+use Amp\Loop;
+use Amp\Pause;
+use Amp\Success;
+use AsyncInterop\Promise;
 
 class TimeoutTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromise() {
-        Loop::execute(function () {
+        Loop::run(function () {
             $value = 1;
 
             $promise = new Success($value);
@@ -27,7 +30,7 @@ class TimeoutTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testFailedPromise() {
-        Loop::execute(function () {
+        Loop::run(function () {
             $exception = new \Exception;
 
             $promise = new Failure($exception);
@@ -51,7 +54,7 @@ class TimeoutTest extends \PHPUnit_Framework_TestCase {
     public function testFastPending() {
         $value = 1;
 
-        Loop::execute(function () use (&$result, $value) {
+        Loop::run(function () use (&$result, $value) {
             $promise = new Pause(50, $value);
 
             $promise = Amp\timeout($promise, 100);
@@ -71,7 +74,7 @@ class TimeoutTest extends \PHPUnit_Framework_TestCase {
      * @depends testSuccessfulPromise
      */
     public function testSlowPending() {
-        Loop::execute(function () use (&$reason) {
+        Loop::run(function () use (&$reason) {
             $promise = new Pause(200);
 
             $promise = Amp\timeout($promise, 100);

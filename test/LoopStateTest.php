@@ -1,19 +1,19 @@
 <?php
 
-namespace AsyncInterop\Loop;
+namespace Amp\Test;
 
-class LoopStateTest extends \PHPUnit_Framework_TestCase
-{
+use Amp\Loop\Driver;
+
+class LoopStateTest extends \PHPUnit_Framework_TestCase {
+    /** @var Driver */
     private $loop;
 
-    protected function setUp()
-    {
+    protected function setUp() {
         $this->loop = $this->getMockForAbstractClass(Driver::class);
     }
 
     /** @test */
-    public function defaultsToNull()
-    {
+    public function defaultsToNull() {
         $this->assertNull($this->loop->getState("foobar"));
     }
 
@@ -21,14 +21,12 @@ class LoopStateTest extends \PHPUnit_Framework_TestCase
      * @test
      * @dataProvider provideValues
      */
-    public function getsPreviouslySetValue($value)
-    {
+    public function getsPreviouslySetValue($value) {
         $this->loop->setState("foobar", $value);
         $this->assertSame($value, $this->loop->getState("foobar"));
     }
 
-    public function provideValues()
-    {
+    public function provideValues() {
         return [
             ["string"],
             [42],

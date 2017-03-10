@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Producer;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 class ConcatTest extends \PHPUnit_Framework_TestCase {
     public function getStreams() {
@@ -22,7 +22,7 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
      * @param array $expected
      */
     public function testConcat(array $streams, array $expected) {
-        Loop::execute(function () use ($streams, $expected) {
+        Loop::run(function () use ($streams, $expected) {
             $stream = Amp\concat($streams);
 
             Amp\each($stream, function ($value) use ($expected) {
@@ -38,7 +38,7 @@ class ConcatTest extends \PHPUnit_Framework_TestCase {
     public function testConcatWithFailedStream() {
         $exception = new \Exception;
         $results = [];
-        Loop::execute(function () use (&$results, &$reason, $exception) {
+        Loop::run(function () use (&$results, &$reason, $exception) {
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(6); // Emit once before failing.
                 throw $exception;

@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\Watcher;
+use Amp\Internal\Watcher;
 
 class EvLoop extends Driver {
     /** @var \EvLoop */
@@ -38,7 +38,7 @@ class EvLoop extends Driver {
         }
 
         $this->ioCallback = function (\EvIO $event) {
-            /** @var \Amp\Loop\Internal\Watcher $watcher */
+            /** @var \Amp\Internal\Watcher $watcher */
             $watcher = $event->data;
 
             $callback = $watcher->callback;
@@ -46,7 +46,7 @@ class EvLoop extends Driver {
         };
 
         $this->timerCallback = function (\EvTimer $event) {
-            /** @var \Amp\Loop\Internal\Watcher $watcher */
+            /** @var \Amp\Internal\Watcher $watcher */
             $watcher = $event->data;
 
             if ($watcher->type & Watcher::DELAY) {
@@ -58,7 +58,7 @@ class EvLoop extends Driver {
         };
 
         $this->signalCallback = function (\EvSignal $event) {
-            /** @var \Amp\Loop\Internal\Watcher $watcher */
+            /** @var \Amp\Internal\Watcher $watcher */
             $watcher = $event->data;
 
             $callback = $watcher->callback;
@@ -176,9 +176,9 @@ class EvLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel($watcherIdentifier) {
-        parent::cancel($watcherIdentifier);
-        unset($this->events[$watcherIdentifier]);
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
+        unset($this->events[$watcherId]);
     }
 
     /**

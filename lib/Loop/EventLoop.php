@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\Watcher;
+use Amp\Internal\Watcher;
 
 class EventLoop extends Driver {
     /** @var \EventBase */
@@ -195,12 +195,12 @@ class EventLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel($watcherIdentifier) {
-        parent::cancel($watcherIdentifier);
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
 
-        if (isset($this->events[$watcherIdentifier])) {
-            $this->events[$watcherIdentifier]->free();
-            unset($this->events[$watcherIdentifier]);
+        if (isset($this->events[$watcherId])) {
+            $this->events[$watcherId]->free();
+            unset($this->events[$watcherId]);
         }
     }
 

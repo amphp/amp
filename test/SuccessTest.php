@@ -2,8 +2,9 @@
 
 namespace Amp\Test;
 
+use Amp\Loop;
 use Amp\Success;
-use AsyncInterop\{ Loop, Promise };
+use AsyncInterop\Promise;
 
 class SuccessTest extends \PHPUnit_Framework_TestCase {
     /**
@@ -34,7 +35,7 @@ class SuccessTest extends \PHPUnit_Framework_TestCase {
      * @depends testWhen
      */
     public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
 

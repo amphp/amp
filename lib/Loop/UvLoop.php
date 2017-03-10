@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\Watcher;
+use Amp\Internal\Watcher;
 
 class UvLoop extends Driver {
     /** @var resource A uv_loop resource created with uv_loop_new() */
@@ -11,7 +11,7 @@ class UvLoop extends Driver {
     /** @var resource[] */
     private $events = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[]|\Amp\Loop\Internal\Watcher[][] */
+    /** @var \Amp\Internal\Watcher[]|\Amp\Internal\Watcher[][] */
     private $watchers = [];
 
     /** @var resource[] */
@@ -230,20 +230,20 @@ class UvLoop extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel($watcherIdentifier) {
-        parent::cancel($watcherIdentifier);
+    public function cancel(string $watcherId) {
+        parent::cancel($watcherId);
 
-        if (!isset($this->events[$watcherIdentifier])) {
+        if (!isset($this->events[$watcherId])) {
             return;
         }
 
-        $event = $this->events[$watcherIdentifier];
+        $event = $this->events[$watcherId];
 
         if (empty($this->watchers[(int) $event])) {
             \uv_close($event);
         }
 
-        unset($this->events[$watcherIdentifier]);
+        unset($this->events[$watcherId]);
     }
 
     /**

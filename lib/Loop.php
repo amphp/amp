@@ -3,13 +3,14 @@
 namespace Amp;
 
 use Amp\Loop\Driver;
+use Amp\Loop\Factory;
 use Amp\Loop\InvalidWatcherException;
 use Amp\Loop\UnsupportedFeatureException;
 
 /**
  * Accessor to allow global access to the event loop.
  *
- * @see \AsyncInterop\Loop\Driver
+ * @see \Amp\Loop\Driver
  */
 final class Loop
 {
@@ -17,6 +18,15 @@ final class Loop
      * @var Driver
      */
     private static $driver = null;
+
+    /**
+     * Sets the driver to be used for `Loop::run()`.
+     *
+     * @param Driver|null $driver
+     */
+    public static function set(Driver $driver = null) {
+        self::$driver = $driver;
+    }
 
     /**
      * Run the event loop and optionally execute a callback within the scope of it.
@@ -32,7 +42,7 @@ final class Loop
     public static function run(callable $callback = null)
     {
         if ($callback) {
-            self::$driver->defer($callback);
+            self::$driver->defer(wrap($callback));
         }
 
         self::$driver->run();
@@ -78,7 +88,7 @@ final class Loop
      */
     public static function defer(callable $callback, $data = null)
     {
-        return self::$driver->defer($callback, $data);
+        return self::$driver->defer(wrap($callback), $data);
     }
 
     /**
@@ -99,7 +109,7 @@ final class Loop
      */
     public static function delay(int $delay, callable $callback, $data = null)
     {
-        return self::$driver->delay($delay, $callback, $data);
+        return self::$driver->delay($delay, wrap($callback), $data);
     }
 
     /**
@@ -120,7 +130,7 @@ final class Loop
      */
     public static function repeat(int $interval, callable $callback, $data = null)
     {
-        return self::$driver->repeat($interval, $callback, $data);
+        return self::$driver->repeat($interval, wrap($callback), $data);
     }
 
     /**
@@ -144,7 +154,7 @@ final class Loop
      */
     public static function onReadable($stream, callable $callback, $data = null)
     {
-        return self::$driver->onReadable($stream, $callback, $data);
+        return self::$driver->onReadable($stream, wrap($callback), $data);
     }
 
     /**
@@ -168,7 +178,7 @@ final class Loop
      */
     public static function onWritable($stream, callable $callback, $data = null)
     {
-        return self::$driver->onWritable($stream, $callback, $data);
+        return self::$driver->onWritable($stream, wrap($callback), $data);
     }
 
     /**
@@ -193,7 +203,7 @@ final class Loop
      */
     public static function onSignal(int $signo, callable $callback, $data = null)
     {
-        return self::$driver->onSignal($signo, $callback, $data);
+        return self::$driver->onSignal($signo, wrap($callback), $data);
     }
 
     /**
@@ -365,3 +375,8 @@ final class Loop
         // intentionally left blank
     }
 }
+
+// Default factory, don't move this a file loaded by the composer "files" autoload mechanism, otherwise custom
+// implementations might have issues setting a default loop, because it's overridden by us then.
+
+Loop::set((new Factory)->create());

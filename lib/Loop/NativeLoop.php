@@ -2,19 +2,19 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\Watcher;
+use Amp\Internal\Watcher;
 
 class NativeLoop extends Driver {
     /** @var resource[] */
     private $readStreams = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[][] */
+    /** @var \Amp\Internal\Watcher[][] */
     private $readWatchers = [];
 
     /** @var resource[] */
     private $writeStreams = [];
 
-    /** @var \Amp\Loop\Internal\Watcher[][] */
+    /** @var \Amp\Internal\Watcher[][] */
     private $writeWatchers = [];
 
     /** @var int[] */
@@ -23,7 +23,7 @@ class NativeLoop extends Driver {
     /** @var \SplPriorityQueue */
     private $timerQueue;
 
-    /** @var \Amp\Loop\Internal\Watcher[][] */
+    /** @var \Amp\Internal\Watcher[][] */
     private $signalWatchers = [];
 
     /** @var bool */
@@ -166,10 +166,10 @@ class NativeLoop extends Driver {
     /**
      * {@inheritdoc}
      *
-     * @throws \AsyncInterop\Loop\UnsupportedFeatureException If the pcntl extension is not available.
+     * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      * @throws \RuntimeException If creating the backend signal handler fails.
      */
-    public function onSignal($signo, callable $callback, $data = null) {
+    public function onSignal(int $signo, callable $callback, $data = null) {
         if (!$this->signalHandling) {
             throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
         }

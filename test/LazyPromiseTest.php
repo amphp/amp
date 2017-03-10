@@ -3,7 +3,9 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, LazyPromise, Success };
+use Amp\Failure;
+use Amp\LazyPromise;
+use Amp\Success;
 
 class LazyPromiseTest extends \PHPUnit_Framework_TestCase {
     public function testPromisorNotCalledOnConstruct() {

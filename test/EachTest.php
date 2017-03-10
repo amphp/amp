@@ -3,13 +3,15 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Producer, Stream, Emitter };
-use AsyncInterop\Loop;
+use Amp\Producer;
+use Amp\Stream;
+use Amp\Emitter;
+use Amp\Loop;
 
 class EachTest extends \PHPUnit_Framework_TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
-        Loop::execute(function () use (&$invoked){
+        Loop::run(function () use (&$invoked){
             $emitter = new Emitter;
 
             $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {
@@ -29,7 +31,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $values = [1, 2, 3];
         $final = 4;
         $results = [];
-        Loop::execute(function () use (&$results, &$result, &$count, $values, $final) {
+        Loop::run(function () use (&$results, &$result, &$count, $values, $final) {
             $producer = new Producer(function (callable $emit) use ($values, $final) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -64,7 +66,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
     public function testOnNextCallbackThrows() {
         $values = [1, 2, 3];
         $exception = new \Exception;
-        Loop::execute(function () use (&$reason, $values, $exception) {
+        Loop::run(function () use (&$reason, $values, $exception) {
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -97,7 +99,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
         $values = [1, 2, 3];
         $results = [];
         $exception = new \Exception;
-        Loop::execute(function () use (&$reason, &$results, &$count, $values, $exception) {
+        Loop::run(function () use (&$reason, &$results, &$count, $values, $exception) {
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -130,7 +132,7 @@ class EachTest extends \PHPUnit_Framework_TestCase {
     public function testStreamFails() {
         $invoked = false;
         $exception = new \Exception;
-        Loop::execute(function () use (&$invoked, &$reason, &$exception){
+        Loop::run(function () use (&$invoked, &$reason, &$exception){
             $emitter = new Emitter;
 
             $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {

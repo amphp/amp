@@ -106,7 +106,7 @@ function rethrow(Promise $promise) {
  */
 function wait(Promise $promise) {
     $resolved = false;
-    Loop::execute(function () use (&$resolved, &$value, &$exception, $promise) {
+    Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
         $promise->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
             Loop::stop();
             $resolved = true;

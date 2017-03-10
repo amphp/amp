@@ -3,7 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Pause;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 class PauseTest extends \PHPUnit_Framework_TestCase {
     public function testPause() {
@@ -11,7 +11,7 @@ class PauseTest extends \PHPUnit_Framework_TestCase {
         $value = "test";
         $start = microtime(true);
 
-        Loop::execute(function () use (&$result, $time, $value) {
+        Loop::run(function () use (&$result, $time, $value) {
             $promise = new Pause($time, $value);
 
             $callback = function ($exception, $value) use (&$result) {
@@ -31,7 +31,7 @@ class PauseTest extends \PHPUnit_Framework_TestCase {
         $start = microtime(true);
 
         $invoked = false;
-        Loop::execute(function () use (&$invoked, $time, $value) {
+        Loop::run(function () use (&$invoked, $time, $value) {
             $promise = new Pause($time, $value);
             $promise->unreference();
 
@@ -55,7 +55,7 @@ class PauseTest extends \PHPUnit_Framework_TestCase {
         $start = microtime(true);
 
         $invoked = false;
-        Loop::execute(function () use (&$invoked, $time, $value) {
+        Loop::run(function () use (&$invoked, $time, $value) {
             $promise = new Pause($time, $value);
             $promise->unreference();
             $promise->reference();

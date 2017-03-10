@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Loop\Internal;
+namespace Amp\Internal;
 
 class Watcher {
     const DEFER    = 0b00000001;

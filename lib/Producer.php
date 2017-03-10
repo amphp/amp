@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 final class Producer implements Stream {
     use CallableMaker, Internal\Producer;

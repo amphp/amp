@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\{ Pause, Success };
-use AsyncInterop\Loop;
+use Amp\Loop;
 
 class AllTest extends \PHPUnit_Framework_TestCase {
     public function testEmptyArray() {
@@ -30,7 +30,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testPendingAwatiablesArray() {
-        Loop::execute(function () use (&$result) {
+        Loop::run(function () use (&$result) {
             $promises = [
                 new Pause(20, 1),
                 new Pause(30, 2),
@@ -50,7 +50,7 @@ class AllTest extends \PHPUnit_Framework_TestCase {
     public function testArrayKeysPreserved() {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
-        Loop::execute(function () use (&$result) {
+        Loop::run(function () use (&$result) {
             $promises = [
                 'one'   => new Pause(20, 1),
                 'two'   => new Pause(30, 2),

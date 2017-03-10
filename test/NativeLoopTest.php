@@ -3,16 +3,12 @@
 namespace Amp\Test\Loop;
 
 use Amp\Loop\NativeLoop;
-use AsyncInterop\Loop\DriverFactory;
-use AsyncInterop\Loop\Test;
+use Amp\Test\LoopTest;
 
-class NativeLoopTest extends Test {
+class NativeLoopLoopTest extends LoopTest {
     public function getFactory() {
-        $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
-
-        $factory->method('create')
-            ->willReturn(new NativeLoop());
-
-        return $factory;
+        return function () {
+            return new NativeLoop;
+        };
     }
 }

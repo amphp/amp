@@ -3,13 +3,15 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Pause, Success };
-use AsyncInterop\Loop;
+use Amp\Failure;
+use Amp\Pause;
+use Amp\Success;
+use Amp\Loop;
 
 class StreamTest extends \PHPUnit_Framework_TestCase {
     public function testSuccessfulPromises() {
         $results = [];
-        Loop::execute(function () use (&$results) {
+        Loop::run(function () use (&$results) {
             $stream = Amp\stream([new Success(1), new Success(2), new Success(3)]);
 
             $stream->listen(function ($value) use (&$results) {
@@ -22,7 +24,7 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
 
     public function testFailedPromises() {
         $exception = new \Exception;
-        Loop::execute(function () use (&$reason, $exception) {
+        Loop::run(function () use (&$reason, $exception) {
             $stream = Amp\stream([new Failure($exception), new Failure($exception)]);
 
             $callback = function ($exception, $value) use (&$reason) {
@@ -38,7 +40,7 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
     public function testMixedPromises() {
         $exception = new \Exception;
         $results = [];
-        Loop::execute(function () use (&$results, &$reason, $exception) {
+        Loop::run(function () use (&$results, &$reason, $exception) {
             $stream = Amp\stream([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
             $stream->listen(function ($value) use (&$results) {
@@ -58,7 +60,7 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
 
     public function testPendingPromises() {
         $results = [];
-        Loop::execute(function () use (&$results) {
+        Loop::run(function () use (&$results) {
             $stream = Amp\stream([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
 
             $stream->listen(function ($value) use (&$results) {
@@ -71,7 +73,7 @@ class StreamTest extends \PHPUnit_Framework_TestCase {
 
     public function testTraversable() {
         $results = [];
-        Loop::execute(function () use (&$results) {
+        Loop::run(function () use (&$results) {
             $generator = (function () {
                 foreach (\range(1, 4) as $value) {
                     yield $value;

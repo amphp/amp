@@ -3,19 +3,15 @@
 namespace Amp\Test\Loop;
 
 use Amp\Loop\EvLoop;
-use AsyncInterop\Loop\DriverFactory;
-use AsyncInterop\Loop\Test;
+use Amp\Test\LoopTest;
 
 /**
  * @requires extension ev
  */
-class EvLoopTest extends Test {
+class EvLoopLoopTest extends LoopTest {
     public function getFactory() {
-        $factory = $this->getMockBuilder(DriverFactory::class)->getMock();
-
-        $factory->method('create')
-            ->willReturn(new EvLoop);
-
-        return $factory;
+        return function () {
+            return new EvLoop;
+        };
     }
 }

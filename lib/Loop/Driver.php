@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Loop\Internal\Watcher;
+use Amp\Internal\Watcher;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
@@ -431,7 +431,7 @@ abstract class Driver
      *
      * @return void
      */
-    final public function setState($key, $value)
+    final public function setState(string $key, $value)
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -450,7 +450,7 @@ abstract class Driver
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    final public function getState($key)
+    final public function getState(string $key)
     {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
@@ -594,13 +594,6 @@ abstract class Driver
             $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
 
         } catch (\Throwable $exception) {
-            if (null === $this->errorHandler) {
-                throw $exception;
-            }
-
-            $errorHandler = $this->errorHandler;
-            $errorHandler($exception);
-        } catch (\Exception $exception) { // @todo Remove when PHP 5.x support is no longer needed.
             if (null === $this->errorHandler) {
                 throw $exception;
             }

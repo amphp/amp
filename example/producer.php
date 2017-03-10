@@ -3,10 +3,14 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\{ Coroutine, Listener, Pause, Producer, Stream };
-use AsyncInterop\Loop;
+use Amp\Coroutine;
+use Amp\Listener;
+use Amp\Pause;
+use Amp\Producer;
+use Amp\Stream;
+use Amp\Loop;
 
-Loop::execute(Amp\wrap(function () {
+Loop::run(function () {
     try {
         $producer = new Producer(function (callable $emit) {
             yield $emit(1);
@@ -38,4 +42,4 @@ Loop::execute(Amp\wrap(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}));
+});

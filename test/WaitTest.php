@@ -3,12 +3,14 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Deferred, Failure, Pause, Success };
-use AsyncInterop\Loop;
+use Amp\Deferred;
+use Amp\Failure;
+use Amp\Pause;
+use Amp\Success;
+use Amp\Loop;
 
 class WaitTest extends \PHPUnit_Framework_TestCase {
-    public function testWaitOnSuccessfulPromise()
-    {
+    public function testWaitOnSuccessfulPromise() {
         $value = 1;
 
         $promise = new Success($value);
@@ -18,8 +20,7 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testWaitOnFailedPromise()
-    {
+    public function testWaitOnFailedPromise() {
         $exception = new \Exception();
 
         $promise = new Failure($exception);
@@ -37,9 +38,8 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
     /**
      * @depends testWaitOnSuccessfulPromise
      */
-    public function testWaitOnPendingPromise()
-    {
-        Loop::execute(function () {
+    public function testWaitOnPendingPromise() {
+        Loop::run(function () {
             $value = 1;
 
             $promise = new Pause(100, $value);
@@ -54,8 +54,7 @@ class WaitTest extends \PHPUnit_Framework_TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Loop stopped without resolving promise
      */
-    public function testPromiseWithNoResolutionPathThrowsException()
-    {
+    public function testPromiseWithNoResolutionPathThrowsException() {
         $promise = new Deferred;
 
         $result = Amp\wait($promise->promise());

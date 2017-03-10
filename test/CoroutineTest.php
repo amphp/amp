@@ -3,8 +3,13 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Coroutine, Failure, InvalidYieldError, Pause, Success };
-use AsyncInterop\{ Loop, Promise };
+use Amp\Coroutine;
+use Amp\Failure;
+use Amp\InvalidYieldError;
+use Amp\Loop;
+use Amp\Pause;
+use Amp\Success;
+use AsyncInterop\Promise;
 
 class CoroutineTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 100;
@@ -45,7 +50,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
     public function testYieldPendingPromise() {
         $value = 1;
 
-        Loop::execute(function () use (&$yielded, $value) {
+        Loop::run(function () use (&$yielded, $value) {
             $generator = function () use (&$yielded, $value) {
                 $yielded = yield new Pause(self::TIMEOUT, $value);
             };
@@ -280,7 +285,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
         $value = 1;
 
-        Loop::execute(function () use (&$yielded, &$invoked, &$reason, $exception, $value) {
+        Loop::run(function () use (&$yielded, &$invoked, &$reason, $exception, $value) {
             $invoked = false;
             $generator = function () use (&$yielded, &$invoked, $exception, $value) {
                 try {
@@ -313,7 +318,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
         $value = 1;
 
-        Loop::execute(function () use (&$yielded, &$reason, $exception, $value) {
+        Loop::run(function () use (&$yielded, &$reason, $exception, $value) {
             $generator = function () use (&$yielded, $exception, $value) {
                 try {
                     throw $exception;
@@ -364,7 +369,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
      */
     public function testYieldConsecutiveSucceeded() {
         $invoked = false;
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $count = 1000;
             $promise = new Success;
 
@@ -389,7 +394,7 @@ class CoroutineTest extends \PHPUnit_Framework_TestCase {
      */
     public function testYieldConsecutiveFailed() {
         $invoked = false;
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $count = 1000;
             $promise = new Failure(new \Exception);
 

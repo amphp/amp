@@ -46,7 +46,6 @@
             "Amp\\": "lib/"
         },
         "files": [
-            "lib/bootstrap.php",
             "lib/functions.php"
         ]
     },

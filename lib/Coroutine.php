@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use AsyncInterop\{ Loop, Promise };
+use AsyncInterop\Promise;
 
 /**
  * Creates a promise from a generator function yielding promises.

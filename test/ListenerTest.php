@@ -3,14 +3,17 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Producer, Listener, Pause, Emitter };
-use AsyncInterop\Loop;
+use Amp\Producer;
+use Amp\Listener;
+use Amp\Pause;
+use Amp\Emitter;
+use Amp\Loop;
 
 class ListenerTest extends \PHPUnit_Framework_TestCase {
     const TIMEOUT = 10;
 
     public function testSingleEmittingStream() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $value = 1;
             $stream = new Producer(function (callable $emit) use ($value) {
                 yield $emit($value);
@@ -24,14 +27,14 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
             }
 
             $this->assertSame($listener->getResult(), $value);
-        }));
+        });
     }
 
     /**
      * @depends testSingleEmittingStream
      */
     public function testFastEmittingStream() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $count = 10;
 
             $emitter = new Emitter;
@@ -50,14 +53,14 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
 
             $this->assertSame($count, $i);
             $this->assertSame($listener->getResult(), $i);
-        }));
+        });
     }
 
     /**
      * @depends testSingleEmittingStream
      */
     public function testSlowEmittingStream() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $count = 10;
             $stream = new Producer(function (callable $emit) use ($count) {
                 for ($i = 0; $i < $count; ++$i) {
@@ -75,14 +78,14 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
 
             $this->assertSame($count, $i);
             $this->assertSame($listener->getResult(), $i);
-        }));
+        });
     }
 
     /**
      * @depends testFastEmittingStream
      */
     public function testDrain() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $count = 10;
             $expected = \range(0, $count - 1);
 
@@ -107,7 +110,7 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
             $values = $listener->drain();
 
             $this->assertSame($expected, $values);
-        }));
+        });
     }
 
     /**
@@ -123,7 +126,7 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testFailingStream() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $exception = new \Exception;
 
             $emitter = new Emitter;
@@ -145,7 +148,7 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
-        }));
+        });
     }
 
     /**
@@ -181,7 +184,7 @@ class ListenerTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage The stream has not resolved
      */
     public function testGetResultBeforeResolution() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(Amp\wrap(function () {
             $emitter = new Emitter;
 
             $listener = new Listener($emitter->stream());
