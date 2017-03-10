@@ -4,7 +4,7 @@ namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
 
-class EvLoop extends Loop {
+class EvLoop extends Driver {
     /** @var \EvLoop */
     private $handle;
 
@@ -16,13 +16,13 @@ class EvLoop extends Loop {
 
     /** @var callable */
     private $timerCallback;
-    
+
     /** @var callable */
     private $signalCallback;
-    
+
     /** @var \EvSignal[] */
     private $signals = [];
-    
+
     /** @var \EvSignal[]|null */
     private static $activeSignals;
 
@@ -32,7 +32,7 @@ class EvLoop extends Loop {
 
     public function __construct() {
         $this->handle = new \EvLoop;
-        
+
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
         }
@@ -77,26 +77,26 @@ class EvLoop extends Loop {
      */
     public function run() {
         $active = self::$activeSignals;
-        
+
         foreach ($active as $event) {
             $event->stop();
         }
-        
+
         self::$activeSignals = &$this->signals;
-        
+
         foreach ($this->signals as $event) {
             $event->start();
         }
-        
+
         try {
             parent::run();
         } finally {
             foreach ($this->signals as $event) {
                 $event->stop();
             }
-            
+
             self::$activeSignals = &$active;
-            
+
             foreach ($active as $event) {
                 $event->start();
             }
@@ -180,7 +180,7 @@ class EvLoop extends Loop {
         parent::cancel($watcherIdentifier);
         unset($this->events[$watcherIdentifier]);
     }
-    
+
     /**
      * {@inheritdoc}
      */

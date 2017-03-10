@@ -4,7 +4,7 @@ namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
 
-class UvLoop extends Loop {
+class UvLoop extends Driver {
     /** @var resource A uv_loop resource created with uv_loop_new() */
     private $handle;
 

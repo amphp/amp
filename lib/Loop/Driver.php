@@ -1,6 +1,8 @@
 <?php
 
-namespace AsyncInterop\Loop;
+namespace Amp\Loop;
+
+use Amp\Loop\Internal\Watcher;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
@@ -12,9 +14,32 @@ namespace AsyncInterop\Loop;
  */
 abstract class Driver
 {
-    /**
-     * @var array
-     */
+    // Don't use 1e3 / 1e6, they result in a float instead of int
+    const MILLISEC_PER_SEC = 1000;
+    const MICROSEC_PER_SEC = 1000000;
+
+    /** @var string */
+    private $nextId = "a";
+
+    /** @var \Amp\Loop\Internal\Watcher[] */
+    private $watchers = [];
+
+    /** @var \Amp\Loop\Internal\Watcher[] */
+    private $enableQueue = [];
+
+    /** @var \Amp\Loop\Internal\Watcher[] */
+    private $deferQueue = [];
+
+    /** @var \Amp\Loop\Internal\Watcher[] */
+    private $nextTickQueue = [];
+
+    /** @var callable|null */
+    private $errorHandler;
+
+    /** @var int */
+    private $running = 0;
+
+    /** @var array */
     private $registry = [];
 
     /**
@@ -32,7 +57,21 @@ abstract class Driver
      *
      * @return void
      */
-    abstract public function run();
+    public function run() {
+        $previous = $this->running;
+        ++$this->running;
+
+        try {
+            while ($this->running > $previous) {
+                if ($this->isEmpty()) {
+                    return;
+                }
+                $this->tick();
+            }
+        } finally {
+            $this->running = $previous;
+        }
+    }
 
     /**
      * Stop the event loop.
@@ -42,7 +81,9 @@ abstract class Driver
      *
      * @return void
      */
-    abstract public function stop();
+    public function stop() {
+        --$this->running > 0 ?: $this->running = 0;
+    }
 
     /**
      * Defer the execution of a callback.
@@ -59,7 +100,18 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    abstract public function defer(callable $callback, $data = null);
+    public function defer(callable $callback, $data = null) {
+        $watcher = new Watcher;
+        $watcher->type = Watcher::DEFER;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->nextTickQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Delay the execution of a callback.
@@ -77,7 +129,23 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    abstract public function delay($delay, callable $callback, $data = null);
+    public function delay(int $delay, callable $callback, $data = null) {
+        if ($delay < 0) {
+            throw new \InvalidArgumentException("Delay must be greater than or equal to zero");
+        }
+
+        $watcher = new Watcher;
+        $watcher->type = Watcher::DELAY;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->value = $delay;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->enableQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Repeatedly execute a callback.
@@ -95,7 +163,23 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    abstract public function repeat($interval, callable $callback, $data = null);
+    public function repeat(int $interval, callable $callback, $data = null) {
+        if ($interval < 0) {
+            throw new \InvalidArgumentException("Interval must be greater than or equal to zero");
+        }
+
+        $watcher = new Watcher;
+        $watcher->type = Watcher::REPEAT;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->value = $interval;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->enableQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Execute a callback when a stream resource becomes readable or is closed for reading.
@@ -116,7 +200,19 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    abstract public function onReadable($stream, callable $callback, $data = null);
+    public function onReadable($stream, callable $callback, $data = null) {
+        $watcher = new Watcher;
+        $watcher->type = Watcher::READABLE;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->value = $stream;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->enableQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Execute a callback when a stream resource becomes writable or is closed for writing.
@@ -137,7 +233,19 @@ abstract class Driver
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    abstract public function onWritable($stream, callable $callback, $data = null);
+    public function onWritable($stream, callable $callback, $data = null) {
+        $watcher = new Watcher;
+        $watcher->type = Watcher::WRITABLE;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->value = $stream;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->enableQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Execute a callback when a signal is received.
@@ -159,7 +267,19 @@ abstract class Driver
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    abstract public function onSignal($signo, callable $callback, $data = null);
+    public function onSignal(int $signo, callable $callback, $data = null) {
+        $watcher = new Watcher;
+        $watcher->type = Watcher::SIGNAL;
+        $watcher->id = $this->nextId++;
+        $watcher->callback = $callback;
+        $watcher->value = $signo;
+        $watcher->data = $data;
+
+        $this->watchers[$watcher->id] = $watcher;
+        $this->enableQueue[$watcher->id] = $watcher;
+
+        return $watcher->id;
+    }
 
     /**
      * Enable a watcher to be active starting in the next tick.
@@ -173,7 +293,29 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    abstract public function enable($watcherId);
+    public function enable(string $watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            throw new InvalidWatcherException($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
+        }
+
+        $watcher = $this->watchers[$watcherId];
+
+        if ($watcher->enabled) {
+            return; // Watcher already enabled.
+        }
+
+        $watcher->enabled = true;
+
+        switch ($watcher->type) {
+            case Watcher::DEFER:
+                $this->nextTickQueue[$watcher->id] = $watcher;
+                break;
+
+            default:
+                $this->enableQueue[$watcher->id] = $watcher;
+                break;
+        }
+    }
 
     /**
      * Disable a watcher immediately.
@@ -188,7 +330,40 @@ abstract class Driver
      *
      * @return void
      */
-    abstract public function disable($watcherId);
+    public function disable(string $watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            return;
+        }
+
+        $watcher = $this->watchers[$watcherId];
+
+        if (!$watcher->enabled) {
+            return; // Watcher already disabled.
+        }
+
+        $watcher->enabled = false;
+        $id = $watcher->id;
+
+        switch ($watcher->type) {
+            case Watcher::DEFER:
+                if (isset($this->nextTickQueue[$id])) {
+                    // Watcher was only queued to be enabled.
+                    unset($this->nextTickQueue[$id]);
+                } else {
+                    unset($this->deferQueue[$id]);
+                }
+                break;
+
+            default:
+                if (isset($this->enableQueue[$id])) {
+                    // Watcher was only queued to be enabled.
+                    unset($this->enableQueue[$id]);
+                } else {
+                    $this->deactivate($watcher);
+                }
+                break;
+        }
+    }
 
     /**
      * Cancel a watcher.
@@ -200,7 +375,10 @@ abstract class Driver
      *
      * @return void
      */
-    abstract public function cancel($watcherId);
+    public function cancel(string $watcherId) {
+        $this->disable($watcherId);
+        unset($this->watchers[$watcherId]);
+    }
 
     /**
      * Reference a watcher.
@@ -214,7 +392,13 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    abstract public function reference($watcherId);
+    public function reference(string $watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            throw new InvalidWatcherException($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
+        }
+
+        $this->watchers[$watcherId]->referenced = true;
+    }
 
     /**
      * Unreference a watcher.
@@ -228,7 +412,13 @@ abstract class Driver
      *
      * @throws InvalidWatcherException If the watcher identifier is invalid.
      */
-    abstract public function unreference($watcherId);
+    public function unreference(string $watcherId) {
+        if (!isset($this->watchers[$watcherId])) {
+            throw new InvalidWatcherException($watcherId, "Cannot unreference an invalid watcher identifier: '{$watcherId}'");
+        }
+
+        $this->watchers[$watcherId]->referenced = false;
+    }
 
     /**
      * Stores information in the loop bound registry.
@@ -279,7 +469,11 @@ abstract class Driver
      *
      * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
      */
-    abstract public function setErrorHandler(callable $callback = null);
+    public function setErrorHandler(callable $callback = null) {
+        $previous = $this->errorHandler;
+        $this->errorHandler = $callback;
+        return $previous;
+    }
 
     /**
      * Retrieve an associative array of information about the event loop driver.
@@ -294,6 +488,7 @@ abstract class Driver
      *         "on_writable"      => ["enabled" => int, "disabled" => int],
      *         "on_signal"        => ["enabled" => int, "disabled" => int],
      *         "enabled_watchers" => ["referenced" => int, "unreferenced" => int],
+     *         "running"          => bool
      *     ];
      *
      * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
@@ -301,7 +496,53 @@ abstract class Driver
      *
      * @return array Statistics about the loop in the described format.
      */
-    abstract public function getInfo();
+    public function getInfo() {
+        $watchers = [
+            "referenced"   => 0,
+            "unreferenced" => 0,
+        ];
+
+        $defer = $delay = $repeat = $onReadable = $onWritable = $onSignal = [
+            "enabled"  => 0,
+            "disabled" => 0,
+        ];
+
+        foreach ($this->watchers as $watcher) {
+            switch ($watcher->type) {
+                case Watcher::READABLE: $array = &$onReadable; break;
+                case Watcher::WRITABLE: $array = &$onWritable; break;
+                case Watcher::SIGNAL:   $array = &$onSignal; break;
+                case Watcher::DEFER:    $array = &$defer; break;
+                case Watcher::DELAY:    $array = &$delay; break;
+                case Watcher::REPEAT:   $array = &$repeat; break;
+
+                default: throw new \DomainException("Unknown watcher type");
+            }
+
+            if ($watcher->enabled) {
+                ++$array["enabled"];
+
+                if ($watcher->referenced) {
+                    ++$watchers["referenced"];
+                } else {
+                    ++$watchers["unreferenced"];
+                }
+            } else {
+                ++$array["disabled"];
+            }
+        }
+
+        return [
+            "enabled_watchers" => $watchers,
+            "defer"            => $defer,
+            "delay"            => $delay,
+            "repeat"           => $repeat,
+            "on_readable"      => $onReadable,
+            "on_writable"      => $onWritable,
+            "on_signal"        => $onSignal,
+            "running"          => (bool) $this->running,
+        ];
+    }
 
     /**
      * Get the underlying loop handle.
@@ -314,4 +555,88 @@ abstract class Driver
      * @return null|object|resource The loop handle the event loop operates on. `null` if there is none.
      */
     abstract public function getHandle();
+
+    /**
+     * @return bool True if no enabled and referenced watchers remain in the loop.
+     */
+    private function isEmpty() {
+        foreach ($this->watchers as $watcher) {
+            if ($watcher->enabled && $watcher->referenced) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Executes a single tick of the event loop.
+     */
+    private function tick() {
+        $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        $this->nextTickQueue = [];
+
+        $this->activate($this->enableQueue);
+        $this->enableQueue = [];
+
+        try {
+            foreach ($this->deferQueue as $watcher) {
+                if (!isset($this->deferQueue[$watcher->id])) {
+                    continue; // Watcher disabled by another defer watcher.
+                }
+
+                unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
+
+                $callback = $watcher->callback;
+                $callback($watcher->id, $watcher->data);
+            }
+
+            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
+
+        } catch (\Throwable $exception) {
+            if (null === $this->errorHandler) {
+                throw $exception;
+            }
+
+            $errorHandler = $this->errorHandler;
+            $errorHandler($exception);
+        } catch (\Exception $exception) { // @todo Remove when PHP 5.x support is no longer needed.
+            if (null === $this->errorHandler) {
+                throw $exception;
+            }
+
+            $errorHandler = $this->errorHandler;
+            $errorHandler($exception);
+        }
+    }
+
+    /**
+     * Dispatches any pending read/write, timer, and signal events.
+     *
+     * @param bool $blocking
+     */
+    abstract protected function dispatch($blocking);
+
+    /**
+     * Activates (enables) all the given watchers.
+     *
+     * @param \Amp\Loop\Internal\Watcher[] $watchers
+     */
+    abstract protected function activate(array $watchers);
+
+    /**
+     * Deactivates (disables) the given watcher.
+     *
+     * @param \Amp\Loop\Internal\Watcher $watcher
+     */
+    abstract protected function deactivate(Watcher $watcher);
+
+    /**
+     * Returns the same array of data as getInfo().
+     *
+     * @return array
+     */
+    public function __debugInfo() {
+        return $this->getInfo();
+    }
 }

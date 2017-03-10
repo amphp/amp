@@ -1,6 +1,6 @@
 <?php
 
-namespace AsyncInterop\Loop;
+namespace Amp\Loop;
 
 /**
  * MUST be thrown if any operation (except disable() and cancel()) is attempted with an invalid watcher identifier.

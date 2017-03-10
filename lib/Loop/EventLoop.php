@@ -4,7 +4,7 @@ namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
 
-class EventLoop extends Loop {
+class EventLoop extends Driver {
     /** @var \EventBase */
     private $handle;
 
@@ -16,13 +16,13 @@ class EventLoop extends Loop {
 
     /** @var callable */
     private $timerCallback;
-    
+
     /** @var callable */
     private $signalCallback;
-    
+
     /** @var \Event[] */
     private $signals = [];
-    
+
     /** @var \Event[]|null */
     private static $activeSignals;
 
@@ -32,11 +32,11 @@ class EventLoop extends Loop {
 
     public function __construct() {
         $this->handle = new \EventBase;
-    
+
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
         }
-        
+
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
             $callback = $watcher->callback;
             $callback($watcher->id, $watcher->value, $watcher->data);
@@ -56,38 +56,38 @@ class EventLoop extends Loop {
             $callback($watcher->id, $watcher->value, $watcher->data);
         };
     }
-    
+
     public function __destruct() {
         foreach ($this->events as $event) {
             $event->free();
         }
     }
-    
+
     /**
      * {@inheritdoc}
      */
     public function run() {
         $active = self::$activeSignals;
-        
+
         foreach ($active as $event) {
             $event->del();
         }
-        
+
         self::$activeSignals = &$this->signals;
-        
+
         foreach ($this->signals as $event) {
             $event->add();
         }
-        
+
         try {
             parent::run();
         } finally {
             foreach ($this->signals as $event) {
                 $event->del();
             }
-            
+
             self::$activeSignals = &$active;
-            
+
             foreach ($active as $event) {
                 $event->add();
             }
@@ -161,17 +161,17 @@ class EventLoop extends Loop {
                         throw new \DomainException("Unknown watcher type");
                 }
             }
-            
+
             switch ($watcher->type) {
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
                     $this->events[$id]->add($watcher->value / self::MILLISEC_PER_SEC);
                     break;
-                    
+
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
                     // No break
-                
+
                 default:
                     $this->events[$id]->add();
                     break;
@@ -185,7 +185,7 @@ class EventLoop extends Loop {
     protected function deactivate(Watcher $watcher) {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->del();
-            
+
             if ($watcher->type === Watcher::SIGNAL) {
                 unset($this->signals[$id]);
             }
@@ -197,13 +197,13 @@ class EventLoop extends Loop {
      */
     public function cancel($watcherIdentifier) {
         parent::cancel($watcherIdentifier);
-        
+
         if (isset($this->events[$watcherIdentifier])) {
             $this->events[$watcherIdentifier]->free();
             unset($this->events[$watcherIdentifier]);
         }
     }
-    
+
     /**
      * {@inheritdoc}
      */

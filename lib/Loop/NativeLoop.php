@@ -3,9 +3,8 @@
 namespace Amp\Loop;
 
 use Amp\Loop\Internal\Watcher;
-use AsyncInterop\Loop\UnsupportedFeatureException;
 
-class NativeLoop extends Loop {
+class NativeLoop extends Driver {
     /** @var resource[] */
     private $readStreams = [];
 

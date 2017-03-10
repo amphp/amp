@@ -16,23 +16,26 @@
     "authors": [
         {
             "name": "Daniel Lowrey",
-            "email": "rdlowrey@php.net",
-            "role": "Creator / Lead Developer"
+            "email": "rdlowrey@php.net"
         },
         {
             "name": "Aaron Piotrowski",
-            "email": "aaron@trowski.com",
-            "role": "v2.0 Developer"
+            "email": "aaron@trowski.com"
+        },
+        {
+            "name": "Bob Weinand",
+            "email": "bobwei9@hotmail.com"
+        },
+        {
+            "name": "Niklas Keller",
+            "email": "me@kelunik.com"
         }
     ],
     "require": {
         "php": ">=7",
-        "async-interop/promise": "^0.4",
-        "async-interop/event-loop": "^0.5",
-        "async-interop/event-loop-implementation": "^0.5"
+        "async-interop/promise": "^0.4"
     },
     "require-dev": {
-        "amphp/loop": "dev-master",
         "async-interop/promise-test": "^0.4.1",
         "friendsofphp/php-cs-fixer": "~1.9",
         "humbug/humbug": "^1@dev",
