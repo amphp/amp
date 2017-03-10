@@ -47,7 +47,7 @@ final class Loop {
      */
     public static function run(callable $callback = null) {
         if ($callback) {
-            self::$driver->defer(wrap($callback));
+            self::$driver->defer($callback);
         }
 
         self::$driver->run();
