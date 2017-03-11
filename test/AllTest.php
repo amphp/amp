@@ -7,7 +7,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
 
-class AllTest extends \PHPUnit_Framework_TestCase {
+class AllTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;

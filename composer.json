@@ -35,9 +35,9 @@
         "php": ">=7"
     },
     "require-dev": {
+        "amphp/phpunit-util": "dev-master",
         "friendsofphp/php-cs-fixer": "~1.9",
-        "humbug/humbug": "^1@dev",
-        "phpunit/phpunit": "^5.7"
+        "phpunit/phpunit": "^6"
     },
     "autoload": {
         "psr-4": {

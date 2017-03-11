@@ -8,7 +8,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
 
-class StreamTest extends \PHPUnit_Framework_TestCase {
+class StreamTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromises() {
         $results = [];
         Loop::run(function () use (&$results) {

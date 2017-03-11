@@ -6,7 +6,7 @@ use Amp;
 use Amp\Producer;
 use Amp\Loop;
 
-class MergeTest extends \PHPUnit_Framework_TestCase {
+class MergeTest extends \PHPUnit\Framework\TestCase {
     public function getStreams() {
         return [
             [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], [1, 4, 2, 5, 3, 6]],

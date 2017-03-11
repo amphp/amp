@@ -9,7 +9,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Promise;
 
-class TimeoutTest extends \PHPUnit_Framework_TestCase {
+class TimeoutTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromise() {
         Loop::run(function () {
             $value = 1;

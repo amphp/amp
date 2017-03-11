@@ -23,7 +23,7 @@
         </whitelist>
     </filter>
     <listeners>
-        <listener class="Amp\Test\LoopReset"/>
+        <listener class="Amp\PHPUnit\LoopReset"/>
     </listeners>
     <logging>
         <log type="coverage-html" target="build/coverage" title="Amp" highlight="true"/>

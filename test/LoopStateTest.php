@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp\Loop\Driver;
 
-class LoopStateTest extends \PHPUnit_Framework_TestCase {
+class LoopStateTest extends \PHPUnit\Framework\TestCase {
     /** @var Driver */
     private $loop;
 

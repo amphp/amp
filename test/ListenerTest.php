@@ -9,7 +9,7 @@ use Amp\Pause;
 use Amp\Emitter;
 use Amp\Loop;
 
-class ListenerTest extends \PHPUnit_Framework_TestCase {
+class ListenerTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
 
     public function testSingleEmittingStream() {

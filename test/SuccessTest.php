@@ -6,7 +6,7 @@ use Amp\Loop;
 use Amp\Success;
 use Amp\Promise;
 
-class SuccessTest extends \PHPUnit_Framework_TestCase {
+class SuccessTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \Error
      */

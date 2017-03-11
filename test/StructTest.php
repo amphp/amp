@@ -8,7 +8,7 @@ class StructTestFixture {
     public $_foofoofoofoofoofoofoofoobar;
 }
 
-class StructTest extends \PHPUnit_Framework_TestCase {
+class StructTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean "callback?"
@@ -51,20 +51,24 @@ class StructTest extends \PHPUnit_Framework_TestCase {
      */
     public function testSuggestionIgnoresPropertyStartingWithUnderscore() {
         $struct = new StructTestFixture;
-        $test = $struct->__propertySuggestThreshold;
+        $struct->__propertySuggestThreshold;
     }
 
     public function testSetErrorWithoutSuggestionBecauseUnderscore() {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
-        $this->setExpectedExceptionRegExp(\Error::class, "(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+
         $struct = new StructTestFixture;
         $struct->foofoofoofoofoofoofoofoobar = "test";
     }
 
     public function testGetErrorWithoutSuggestionBecauseUnderscore() {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
-        $this->setExpectedExceptionRegExp(\Error::class, "(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+
         $struct = new StructTestFixture;
-        $test = $struct->foofoofoofoofoofoofoofoobar;
+        $struct->foofoofoofoofoofoofoofoobar;
     }
 }

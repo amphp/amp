@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp\Failure;
 
-class FailureTest extends \PHPUnit_Framework_TestCase {
+class FailureTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */

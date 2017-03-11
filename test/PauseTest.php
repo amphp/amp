@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\Pause;
 use Amp\Loop;
 
-class PauseTest extends \PHPUnit_Framework_TestCase {
+class PauseTest extends \PHPUnit\Framework\TestCase {
     public function testPause() {
         $time = 100;
         $value = "test";

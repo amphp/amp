@@ -11,7 +11,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Promise;
 
-class CoroutineTest extends \PHPUnit_Framework_TestCase {
+class CoroutineTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 100;
 
     public function testYieldSuccessfulPromise() {

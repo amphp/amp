@@ -8,7 +8,7 @@ use Amp\Message;
 use Amp\Success;
 use Amp\Loop;
 
-class MessageTest extends \PHPUnit_Framework_TestCase {
+class MessageTest extends \PHPUnit\Framework\TestCase {
     public function testBufferingAll() {
         Loop::run(function () {
             $values = ["abc", "def", "ghi"];

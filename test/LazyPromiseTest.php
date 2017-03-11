@@ -7,7 +7,7 @@ use Amp\Failure;
 use Amp\LazyPromise;
 use Amp\Success;
 
-class LazyPromiseTest extends \PHPUnit_Framework_TestCase {
+class LazyPromiseTest extends \PHPUnit\Framework\TestCase {
     public function testPromisorNotCalledOnConstruct() {
         $invoked = false;
         $lazy = new LazyPromise(function () use (&$invoked) {

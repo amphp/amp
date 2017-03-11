@@ -31,7 +31,7 @@ class PromiseMock {
     }
 }
 
-class AdaptTest extends \PHPUnit_Framework_TestCase {
+class AdaptTest extends \PHPUnit\Framework\TestCase {
     public function testThenCalled() {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()

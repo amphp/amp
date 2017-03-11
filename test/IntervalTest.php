@@ -6,7 +6,7 @@ use Amp;
 use Amp\Pause;
 use Amp\Loop;
 
-class IntervalTest extends \PHPUnit_Framework_TestCase {
+class IntervalTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
 
     public function testInterval() {

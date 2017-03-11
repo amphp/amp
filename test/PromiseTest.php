@@ -11,7 +11,7 @@ class Promise implements \Amp\Promise {
     }
 }
 
-class PromiseTest extends \PHPUnit_Framework_TestCase {
+class PromiseTest extends \PHPUnit\Framework\TestCase {
     private $originalErrorHandler;
 
     /**

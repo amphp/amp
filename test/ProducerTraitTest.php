@@ -16,7 +16,7 @@ class Producer {
     }
 }
 
-class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
+class ProducerTraitTest extends \PHPUnit\Framework\TestCase {
     /** @var \Amp\Test\Producer */
     private $producer;
 

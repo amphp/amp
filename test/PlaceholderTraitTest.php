@@ -12,7 +12,7 @@ class Placeholder {
     }
 }
 
-class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
+class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     /** @var \Amp\Test\Placeholder */
     private $placeholder;
 

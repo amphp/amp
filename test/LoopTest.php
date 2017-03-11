@@ -16,7 +16,7 @@ if (!defined("PHP_INT_MIN")) {
     define("PHP_INT_MIN", ~PHP_INT_MAX);
 }
 
-abstract class LoopTest extends \PHPUnit_Framework_TestCase {
+abstract class LoopTest extends \PHPUnit\Framework\TestCase {
     /**
      * The DriverFactory to run this test on
      *

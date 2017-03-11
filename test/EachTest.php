@@ -8,7 +8,7 @@ use Amp\Stream;
 use Amp\Emitter;
 use Amp\Loop;
 
-class EachTest extends \PHPUnit_Framework_TestCase {
+class EachTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
         Loop::run(function () use (&$invoked){

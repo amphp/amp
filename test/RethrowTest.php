@@ -6,7 +6,7 @@ use Amp;
 use Amp\Failure;
 use Amp\Loop;
 
-class RethrowTest extends \PHPUnit_Framework_TestCase {
+class RethrowTest extends \PHPUnit\Framework\TestCase {
     public function testWaitOnPendingPromise() {
         $exception = new \Exception;
 

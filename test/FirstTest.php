@@ -9,7 +9,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
 
-class FirstTest extends \PHPUnit_Framework_TestCase {
+class FirstTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \Error
      * @expectedExceptionMessage No promises provided

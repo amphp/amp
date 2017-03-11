@@ -8,7 +8,7 @@ use Amp\Producer;
 use Amp\Pause;
 use Amp\Loop;
 
-class ProducerTest extends \PHPUnit_Framework_TestCase {
+class ProducerTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 100;
 
     /**

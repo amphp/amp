@@ -9,7 +9,7 @@ use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
 
-class WaitTest extends \PHPUnit_Framework_TestCase {
+class WaitTest extends \PHPUnit\Framework\TestCase {
     public function testWaitOnSuccessfulPromise() {
         $value = 1;
 

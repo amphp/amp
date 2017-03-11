@@ -6,7 +6,7 @@ use Amp;
 use Amp\Producer;
 use Amp\Loop;
 
-class ConcatTest extends \PHPUnit_Framework_TestCase {
+class ConcatTest extends \PHPUnit\Framework\TestCase {
     public function getStreams() {
         return [
             [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], \range(1, 6)],

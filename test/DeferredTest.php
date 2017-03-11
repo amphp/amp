@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Promise;
 
-class DeferredTest extends \PHPUnit_Framework_TestCase {
+class DeferredTest extends \PHPUnit\Framework\TestCase {
     /** @var \Amp\Deferred */
     private $deferred;
 
