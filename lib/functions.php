@@ -111,7 +111,7 @@ function wait(Promise $promise) {
             $exception = $e;
             $value = $v;
         });
-    }, Loop::get());
+    });
 
     if (!$resolved) {
         throw new \Error("Loop stopped without resolving promise");
