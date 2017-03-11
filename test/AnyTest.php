@@ -3,7 +3,9 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Pause, Success };
+use Amp\Failure;
+use Amp\Pause;
+use Amp\Success;
 use Amp\Loop;
 
 class AnyTest extends \PHPUnit_Framework_TestCase {

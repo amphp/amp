@@ -2,9 +2,10 @@
 
 namespace Amp\Test;
 
-use Amp\{
-    Deferred, Failure, Loop, Success
-};
+use Amp\Deferred;
+use Amp\Failure;
+use Amp\Loop;
+use Amp\Success;
 use Amp\Promise;
 
 class Producer {

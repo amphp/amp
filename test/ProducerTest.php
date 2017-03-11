@@ -3,7 +3,9 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Deferred, Producer, Pause };
+use Amp\Deferred;
+use Amp\Producer;
+use Amp\Pause;
 use Amp\Loop;
 
 class ProducerTest extends \PHPUnit_Framework_TestCase {

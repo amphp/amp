@@ -3,7 +3,8 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Success };
+use Amp\Failure;
+use Amp\Success;
 use Amp\Promise;
 
 class PipeTest extends \PHPUnit_Framework_TestCase {
