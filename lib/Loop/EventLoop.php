@@ -5,6 +5,8 @@ namespace Amp\Loop;
 use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
+use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\adapt;
 use function Amp\rethrow;
 
 class EventLoop extends Driver {
@@ -36,6 +38,8 @@ class EventLoop extends Driver {
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
+            } elseif ($result instanceof ReactPromise) {
+                $result = adapt($result);
             }
 
             if ($result instanceof Promise) {
@@ -53,6 +57,8 @@ class EventLoop extends Driver {
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
+            } elseif ($result instanceof ReactPromise) {
+                $result = adapt($result);
             }
 
             if ($result instanceof Promise) {
@@ -66,6 +72,8 @@ class EventLoop extends Driver {
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
+            } elseif ($result instanceof ReactPromise) {
+                $result = adapt($result);
             }
 
             if ($result instanceof Promise) {

@@ -18,9 +18,7 @@ function wrap(callable $callback): callable {
 
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
-        }
-
-        if ($result instanceof ReactPromise) {
+        } elseif ($result instanceof ReactPromise) {
             $result = adapt($result);
         }
 
@@ -49,9 +47,7 @@ function coroutine(callable $worker): callable {
 
         if ($result instanceof \Generator) {
             return new Coroutine($result);
-        }
-
-        if ($result instanceof ReactPromise) {
+        } elseif ($result instanceof ReactPromise) {
             $result = adapt($result);
         }
 
@@ -81,9 +77,7 @@ function call(callable $functor, ...$args): Promise {
 
     if ($result instanceof \Generator) {
         return new Coroutine($result);
-    }
-
-    if ($result instanceof ReactPromise) {
+    } elseif ($result instanceof ReactPromise) {
         $result = adapt($result);
     }
 

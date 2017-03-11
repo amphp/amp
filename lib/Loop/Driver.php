@@ -5,6 +5,8 @@ namespace Amp\Loop;
 use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
+use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\adapt;
 use function Amp\rethrow;
 
 /**
@@ -111,6 +113,8 @@ abstract class Driver {
 
                 if ($result instanceof \Generator) {
                     $result = new Coroutine($result);
+                } elseif ($result instanceof ReactPromise) {
+                    $result = adapt($result);
                 }
 
                 if ($result instanceof Promise) {
