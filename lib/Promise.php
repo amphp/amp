@@ -11,7 +11,7 @@ interface Promise {
      *
      * If the promise is already resolved, the callback MUST be executed immediately.
      *
-     * @param callable (\Throwable|\Exception|null $reason, $value) $onResolved `$reason` shall be `null` on
+     * @param callable(\Throwable|\Exception|null $reason, $value) $onResolved `$reason` shall be `null` on
      *     success, `$value` shall be `null` on failure.
      *
      * @return mixed Return type and value are unspecified.

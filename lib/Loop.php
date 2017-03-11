@@ -74,7 +74,7 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param       callable (string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
+     * @param callable(string $watcherId, mixed $data) $callback The callback to defer. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
@@ -93,8 +93,8 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int   $delay The amount of time, in milliseconds, to delay the execution for.
-     * @param       callable (string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
+     * @param int $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
@@ -114,8 +114,8 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int   $interval The time interval, in milliseconds, to wait between executions.
-     * @param       callable (string $watcherId, mixed $data) $callback The callback to repeat.
+     * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -138,8 +138,8 @@ final class Loop {
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -161,8 +161,8 @@ final class Loop {
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
      * @param resource $stream The stream to monitor.
-     * @param          callable (string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
+     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
@@ -182,8 +182,8 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int   $signo The signal number to monitor.
-     * @param       callable (string $watcherId, int $signo, mixed $data) $callback The callback to execute.
+     * @param int $signo The signal number to monitor.
+     * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
@@ -311,7 +311,7 @@ final class Loop {
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable (\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
      * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.

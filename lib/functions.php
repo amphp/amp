@@ -6,7 +6,7 @@ namespace Amp;
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the returned promises (or the coroutine created).
  *
- * @param callable (...$args): \Generator|\Amp\Promise|mixed $callback
+ * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
  *
  * @return callable(...$args): void
  */
@@ -29,7 +29,7 @@ function wrap(callable $callback): callable {
  * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws, a failed
  * promise is returned.
  *
- * @param callable (mixed ...$args): mixed $worker
+ * @param callable(mixed ...$args): mixed $worker
  *
  * @return callable(mixed ...$args): \Amp\Promise
  */
@@ -57,7 +57,7 @@ function coroutine(callable $worker): callable {
  * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
  * coroutine. If the function throws, a failed promise will be returned.
  *
- * @param       callable (mixed ...$args): mixed $functor
+ * @param callable(mixed ...$args): mixed $functor
  * @param array ...$args Arguments to pass to the function.
  *
  * @return \Amp\Promise
@@ -128,7 +128,7 @@ function wait(Promise $promise) {
  * Pipe the promised value through the specified functor once it resolves.
  *
  * @param \Amp\Promise $promise
- * @param              callable (mixed $value): mixed $functor
+ * @param callable(mixed $value): mixed $functor
  *
  * @return \Amp\Promise
  */
@@ -153,9 +153,9 @@ function pipe(Promise $promise, callable $functor): Promise {
 
 /**
  * @param \Amp\Promise $promise
- * @param string       $className Exception class name to capture. Given callback will only be invoked if the failure reason
+ * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
- * @param              callable (\Throwable $exception): mixed $functor
+ * @param callable(\Throwable $exception): mixed $functor
  *
  * @return \Amp\Promise
  */
@@ -190,7 +190,7 @@ function capture(Promise $promise, string $className, callable $functor): Promis
  * \Amp\TimeoutException.
  *
  * @param \Amp\Promise $promise
- * @param int          $timeout Timeout in milliseconds.
+ * @param int $timeout Timeout in milliseconds.
  *
  * @return \Amp\Promise
  */
@@ -466,7 +466,7 @@ function some(array $promises): Promise {
  * promise in the array fails for the same reason. Tip: Use all() or any() to determine when all
  * promises in the array have been resolved.
  *
- * @param           callable (mixed $value): mixed $callback
+ * @param callable(mixed $value): mixed $callback
  * @param Promise[] ...$promises
  *
  * @return \Amp\Promise[] Array of promises resolved with the result of the mapped function.
@@ -508,8 +508,8 @@ function stream(/* iterable */
 
 /**
  * @param \Amp\Stream $stream
- * @param             callable (mixed $value): mixed $onNext
- * @param             callable (mixed $value): mixed|null $onComplete
+ * @param callable(mixed $value): mixed $onNext
+ * @param callable(mixed $value): mixed|null $onComplete
  *
  * @return \Amp\Stream
  */
@@ -528,7 +528,7 @@ function each(Stream $stream, callable $onNext, callable $onComplete = null): St
 
 /**
  * @param \Amp\Stream $stream
- * @param             callable (mixed $value): bool $filter
+ * @param callable(mixed $value): bool $filter
  *
  * @return \Amp\Stream
  */
