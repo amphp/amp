@@ -2,13 +2,16 @@
 
 namespace Amp\Test;
 
+use Amp\Loop;
+
 class Promise implements \Amp\Promise {
     use \Amp\Internal\Placeholder {
         resolve as public;
         fail as public;
     }
 }
-abstract class PromiseTest extends \PHPUnit_Framework_TestCase {
+
+class PromiseTest extends \PHPUnit_Framework_TestCase {
     private $originalErrorHandler;
 
     /**
@@ -27,13 +30,13 @@ abstract class PromiseTest extends \PHPUnit_Framework_TestCase {
     }
 
     function setUp() {
-        $this->originalErrorHandler = Promise\ErrorHandler::set(function ($e) {
+        $this->originalErrorHandler = Loop::setErrorHandler(function ($e) {
             throw $e;
         });
     }
 
     function tearDown() {
-        Promise\ErrorHandler::set($this->originalErrorHandler);
+        Loop::setErrorHandler($this->originalErrorHandler);
     }
 
     function provideSuccessValues() {
@@ -213,89 +216,95 @@ abstract class PromiseTest extends \PHPUnit_Framework_TestCase {
     }
 
     function testThrowingInCallback() {
-        $invoked = 0;
+        Loop::run(function () {
+            $invoked = 0;
 
-        Promise\ErrorHandler::set(function () use (&$invoked) {
-            $invoked++;
+            Loop::setErrorHandler(function () use (&$invoked) {
+                $invoked++;
+            });
+
+            list($promise, $succeeder) = $this->promise();
+            $succeeder(true);
+            $promise->when(function ($e, $v) use (&$invoked, $promise) {
+                $this->assertSame(null, $e);
+                $this->assertSame(true, $v);
+                $invoked++;
+
+                throw new \Exception;
+            });
+
+            list($promise, $succeeder) = $this->promise();
+            $promise->when(function ($e, $v) use (&$invoked, $promise) {
+                $this->assertSame(null, $e);
+                $this->assertSame(true, $v);
+                $invoked++;
+
+                throw new \Exception;
+            });
+            $succeeder(true);
+
+            $this->assertEquals(4, $invoked);
         });
-
-        list($promise, $succeeder) = $this->promise();
-        $succeeder(true);
-        $promise->when(function($e, $v) use (&$invoked, $promise) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
-            $invoked++;
-
-            throw new \Exception;
-        });
-
-        list($promise, $succeeder) = $this->promise();
-        $promise->when(function($e, $v) use (&$invoked, $promise) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
-            $invoked++;
-
-            throw new \Exception;
-        });
-        $succeeder(true);
-
-        $this->assertEquals(4, $invoked);
     }
 
     function testThrowingInCallbackContinuesOtherWhens() {
-        $invoked = 0;
+        Loop::run(function () {
+            $invoked = 0;
 
-        Promise\ErrorHandler::set(function () use (&$invoked) {
-            $invoked++;
+            Loop::setErrorHandler(function () use (&$invoked) {
+                $invoked++;
+            });
+
+            list($promise, $succeeder) = $this->promise();
+            $promise->when(function ($e, $v) use (&$invoked, $promise) {
+                $this->assertSame(null, $e);
+                $this->assertSame(true, $v);
+                $invoked++;
+
+                throw new \Exception;
+            });
+            $promise->when(function ($e, $v) use (&$invoked, $promise) {
+                $this->assertSame(null, $e);
+                $this->assertSame(true, $v);
+                $invoked++;
+            });
+            $succeeder(true);
+
+            $this->assertEquals(3, $invoked);
         });
-
-        list($promise, $succeeder) = $this->promise();
-        $promise->when(function($e, $v) use (&$invoked, $promise) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
-            $invoked++;
-
-            throw new \Exception;
-        });
-        $promise->when(function($e, $v) use (&$invoked, $promise) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
-            $invoked++;
-        });
-        $succeeder(true);
-
-        $this->assertEquals(3, $invoked);
     }
 
     function testThrowingInCallbackOnFailure() {
-        $invoked = 0;
-        Promise\ErrorHandler::set(function () use (&$invoked) {
-            $invoked++;
+        Loop::run(function () {
+            $invoked = 0;
+            Loop::setErrorHandler(function () use (&$invoked) {
+                $invoked++;
+            });
+
+            list($promise, , $failer) = $this->promise();
+            $exception = new \Exception;
+            $failer($exception);
+            $promise->when(function ($e, $v) use (&$invoked, $exception) {
+                $this->assertSame($exception, $e);
+                $this->assertNull($v);
+                $invoked++;
+
+                throw $e;
+            });
+
+            list($promise, , $failer) = $this->promise();
+            $exception = new \Exception;
+            $promise->when(function ($e, $v) use (&$invoked, $exception) {
+                $this->assertSame($exception, $e);
+                $this->assertNull($v);
+                $invoked++;
+
+                throw $e;
+            });
+            $failer($exception);
+
+            $this->assertEquals(4, $invoked);
         });
-
-        list($promise, , $failer) = $this->promise();
-        $exception = new \Exception;
-        $failer($exception);
-        $promise->when(function($e, $v) use (&$invoked, $exception) {
-            $this->assertSame($exception, $e);
-            $this->assertNull($v);
-            $invoked++;
-
-            throw $e;
-        });
-
-        list($promise, , $failer) = $this->promise();
-        $exception = new \Exception;
-        $promise->when(function($e, $v) use (&$invoked, $exception) {
-            $this->assertSame($exception, $e);
-            $this->assertNull($v);
-            $invoked++;
-
-            throw $e;
-        });
-        $failer($exception);
-
-        $this->assertEquals(4, $invoked);
     }
 
     /**
