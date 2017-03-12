@@ -7,8 +7,10 @@ use Amp\Deferred;
 use Amp\Producer;
 use Amp\Pause;
 use Amp\Loop;
+use PHPUnit\Framework\TestCase;
+use React\Promise\Promise as ReactPromise;
 
-class ProducerTest extends \PHPUnit\Framework\TestCase {
+class ProducerTest extends TestCase {
     const TIMEOUT = 100;
 
     /**
@@ -108,6 +110,30 @@ class ProducerTest extends \PHPUnit\Framework\TestCase {
 
             $producer->listen(function () {
                 return new Pause(self::TIMEOUT);
+            });
+        });
+
+        $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
+    }
+
+    /**
+     * @depends testEmit
+     */
+    public function testEmitReactBackPressure() {
+        $emits = 3;
+        Loop::run(function () use (&$time, $emits) {
+            $producer = new Producer(function (callable $emit) use (&$time, $emits) {
+                $time = microtime(true);
+                for ($i = 0; $i < $emits; ++$i) {
+                    yield $emit($i);
+                }
+                $time = microtime(true) - $time;
+            });
+
+            $producer->listen(function () {
+                return new ReactPromise(function ($resolve) {
+                    Loop::delay(self::TIMEOUT, $resolve);
+                });
             });
         });
 

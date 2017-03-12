@@ -7,6 +7,8 @@ use Amp\Failure;
 use Amp\Loop;
 use Amp\Success;
 use Amp\Promise;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
 class Producer {
     use \Amp\Internal\Producer {
@@ -16,7 +18,7 @@ class Producer {
     }
 }
 
-class ProducerTraitTest extends \PHPUnit\Framework\TestCase {
+class ProducerTraitTest extends TestCase {
     /** @var \Amp\Test\Producer */
     private $producer;
 
@@ -104,6 +106,25 @@ class ProducerTraitTest extends \PHPUnit\Framework\TestCase {
         $this->assertFalse($invoked);
 
         $deferred->resolve($value);
+
+        $this->assertTrue($invoked);
+    }
+
+    /**
+     * @depends testEmit
+     */
+    public function testEmitSuccessfulReactPromise() {
+        $invoked = false;
+        $value = 1;
+        $promise = new FulfilledReactPromise($value);
+
+        $callback = function ($emitted) use (&$invoked, $value) {
+            $invoked = true;
+            $this->assertSame($emitted, $value);
+        };
+
+        $this->producer->listen($callback);
+        $this->producer->emit($promise);
 
         $this->assertTrue($invoked);
     }

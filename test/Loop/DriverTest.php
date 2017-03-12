@@ -6,6 +6,7 @@ use Amp\Loop\Driver;
 use Amp\Loop\InvalidWatcherException;
 use Amp\Loop\UnsupportedFeatureException;
 use PHPUnit\Framework\TestCase;
+use React\Promise\RejectedPromise as RejectedReactPromise;
 
 if (!defined("SIGUSR1")) {
     define("SIGUSR1", 30);
@@ -1275,5 +1276,16 @@ abstract class DriverTest extends TestCase {
             [null],
             [new \StdClass],
         ];
+    }
+
+    function testDeferRethrowsReactPromise() {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("rethrow test");
+
+        $this->loop->defer(function () {
+            return new RejectedReactPromise(new \Exception("rethrow test"));
+        });
+
+        $this->loop->run();
     }
 }

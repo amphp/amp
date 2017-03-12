@@ -6,8 +6,11 @@ use Amp;
 use Amp\Failure;
 use Amp\LazyPromise;
 use Amp\Success;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise as FulfilledReactPromise;
+use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class LazyPromiseTest extends \PHPUnit\Framework\TestCase {
+class LazyPromiseTest extends TestCase {
     public function testPromisorNotCalledOnConstruct() {
         $invoked = false;
         $lazy = new LazyPromise(function () use (&$invoked) {
@@ -72,6 +75,40 @@ class LazyPromiseTest extends \PHPUnit\Framework\TestCase {
         $lazy = new LazyPromise(function () use (&$invoked, $exception) {
             $invoked = true;
             throw $exception;
+        });
+
+        $lazy->when(function ($exception, $value) use (&$reason) {
+            $reason = $exception;
+        });
+
+        $this->assertTrue($invoked);
+        $this->assertSame($exception, $reason);
+    }
+
+    public function testPromisorReturningSuccessfulReactPromise() {
+        $invoked = false;
+        $value = 1;
+        $promise = new FulfilledReactPromise($value);
+        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
+            $invoked = true;
+            return $promise;
+        });
+
+        $lazy->when(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+
+        $this->assertTrue($invoked);
+        $this->assertSame($value, $result);
+    }
+
+    public function testPromisorReturningFailedReactPromise() {
+        $invoked = false;
+        $exception = new \Exception;
+        $promise = new RejectedReactPromise($exception);
+        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
+            $invoked = true;
+            return $promise;
         });
 
         $lazy->when(function ($exception, $value) use (&$reason) {
