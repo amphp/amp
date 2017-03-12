@@ -29,7 +29,7 @@ class MessageTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testFullStreamConsumption() {
-        Loop::run(function () {
+        Loop::run(function () use (&$invoked) {
             $values = ["abc", "def", "ghi"];
             $result = 1;
 
@@ -40,12 +40,14 @@ class MessageTest extends \PHPUnit\Framework\TestCase {
                 $emitter->emit($value);
             }
 
+            Loop::delay(5, function () use ($emitter, $result) {
+                $emitter->resolve($result);
+            });
+
             $buffer = "";
             while (yield $message->advance()) {
                 $buffer .= $message->getCurrent();
             }
-
-            $emitter->resolve($result);
 
             $this->assertSame(\implode($values), $buffer);
             $this->assertSame("", yield $message);

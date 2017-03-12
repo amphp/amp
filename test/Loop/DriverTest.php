@@ -86,10 +86,10 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    function testSignalCapability() {
+    /** This MUST NOT have a "test" prefix, otherwise it's executed as test and marked as risky. */
+    function checkForSignalCapability() {
         try {
-            $watcher = $this->loop->onSignal(SIGUSR1, function () {
-            });
+            $watcher = $this->loop->onSignal(SIGUSR1, function () {});
             $this->loop->cancel($watcher);
         } catch (UnsupportedFeatureException $e) {
             $this->markTestSkipped("The loop is not capable of handling signals properly. Skipping.");
@@ -159,7 +159,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends testSignalCapability */
+    /** @depends checkForSignalCapability */
     function testOnSignalWatcherKeepAliveRunResult() {
         $this->start(function (Driver $loop) {
             $watcher = $loop->onSignal(SIGUSR1, function () {
@@ -236,7 +236,7 @@ abstract class DriverTest extends TestCase {
      */
     function testWeakTypes($type, $args) {
         if ($type == "onSignal") {
-            $this->testSignalCapability();
+            $this->checkForSignalCapability();
             if (!\extension_loaded("posix")) {
                 $this->markTestSkipped("ext/posix required to test signal handlers");
             }
@@ -283,7 +283,7 @@ abstract class DriverTest extends TestCase {
     /** @dataProvider provideRegistrationArgs */
     function testDisableWithConsecutiveCancel($type, $args) {
         if ($type === "onSignal") {
-            $this->testSignalCapability();
+            $this->checkForSignalCapability();
         }
 
         $this->start(function (Driver $loop) use ($type, $args) {
@@ -299,7 +299,7 @@ abstract class DriverTest extends TestCase {
     /** @dataProvider provideRegistrationArgs */
     function testWatcherReferenceInfo($type, $args) {
         if ($type === "onSignal") {
-            $this->testSignalCapability();
+            $this->checkForSignalCapability();
         }
 
         $loop = $this->loop;
@@ -365,7 +365,7 @@ abstract class DriverTest extends TestCase {
     /** @dataProvider provideRegistrationArgs */
     function testWatcherRegistrationAndCancellationInfo($type, $args) {
         if ($type === "onSignal") {
-            $this->testSignalCapability();
+            $this->checkForSignalCapability();
         }
 
         $loop = $this->loop;
@@ -435,7 +435,7 @@ abstract class DriverTest extends TestCase {
         $runs = 2000;
 
         if ($type === "onSignal") {
-            $this->testSignalCapability();
+            $this->checkForSignalCapability();
             if (!\extension_loaded("posix")) {
                 $this->markTestSkipped("ext/posix required to test signal handlers");
             }
@@ -641,7 +641,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends testSignalCapability */
+    /** @depends checkForSignalCapability */
     function testSignalExecutionOrder() {
         if (!\extension_loaded("posix")) {
             $this->markTestSkipped("ext/posix required to test signal handlers");
@@ -691,10 +691,16 @@ abstract class DriverTest extends TestCase {
 
     function testSuccessOnDisableNonexistentWatcher() {
         $this->loop->disable("nonexistentWatcher");
+
+        // Otherwise risky, throwing fails the test
+        $this->assertTrue(true);
     }
 
     function testSuccessOnCancelNonexistentWatcher() {
         $this->loop->cancel("nonexistentWatcher");
+
+        // Otherwise risky, throwing fails the test
+        $this->assertTrue(true);
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherException */
@@ -774,6 +780,9 @@ abstract class DriverTest extends TestCase {
                 $diswatchers = $f();
             });
         });
+
+        // Otherwise risky, as we only rely on $this->fail()
+        $this->assertTrue(true);
     }
 
     function testEnablingWatcherAllowsSubsequentInvocation() {
@@ -972,7 +981,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends testSignalCapability */
+    /** @depends checkForSignalCapability */
     function testOnSignalWatcher() {
         if (!\extension_loaded("posix")) {
             $this->markTestSkipped("ext/posix required to test signal handlers");
@@ -994,7 +1003,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends testSignalCapability */
+    /** @depends checkForSignalCapability */
     function testInitiallyDisabledOnSignalWatcher() {
         if (!\extension_loaded("posix")) {
             $this->markTestSkipped("ext/posix required to test signal handlers");
@@ -1022,7 +1031,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends testSignalCapability */
+    /** @depends checkForSignalCapability */
     function testNestedLoopSignalDispatch() {
         if (!\extension_loaded("posix")) {
             $this->markTestSkipped("ext/posix required to test signal handlers");
@@ -1062,16 +1071,22 @@ abstract class DriverTest extends TestCase {
     }
 
     function testCancelRemovesWatcher() {
-        $this->start(function (Driver $loop) {
+        $invoked = false;
+
+        $this->start(function (Driver $loop) use (&$invoked) {
             $watcherId = $loop->delay($msDelay = 10, function () {
                 $this->fail('Watcher was not cancelled as expected');
             });
 
-            $loop->defer(function () use ($loop, $watcherId) {
+            $loop->defer(function () use ($loop, $watcherId, &$invoked) {
                 $loop->cancel($watcherId);
+                $invoked = true;
             });
+
             $loop->delay($msDelay = 5, [$loop, "stop"]);
         });
+
+        $this->assertTrue($invoked);
     }
 
     function testOnWritableWatcher() {

@@ -493,8 +493,7 @@ function map(callable $callback, array ...$promises): array {
  *
  * @throws \TypeError If the argument is not an array or instance of \Traversable.
  */
-function stream(/* iterable */
-    $iterable): Stream {
+function stream(/* iterable */ $iterable): Stream {
     if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
         throw new \TypeError("Must provide an array or instance of Traversable");
     }
