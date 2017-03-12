@@ -123,7 +123,7 @@ class UvDriver extends Driver {
         unset($this->events[$watcherId]);
     }
 
-    public static function supported(): bool {
+    public static function isSupported(): bool {
         return \extension_loaded("uv");
     }
 

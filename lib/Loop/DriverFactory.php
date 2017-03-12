@@ -2,22 +2,22 @@
 
 namespace Amp\Loop;
 
-class Factory {
+class DriverFactory {
     /**
      * Creates a new loop instance and chooses the best available driver.
      *
      * @return Driver
      */
     public function create(): Driver {
-        if (UvDriver::supported()) {
+        if (UvDriver::isSupported()) {
             return new UvDriver;
         }
 
-        if (EvDriver::supported()) {
+        if (EvDriver::isSupported()) {
             return new EvDriver;
         }
 
-        if (EventDriver::supported()) {
+        if (EventDriver::isSupported()) {
             return new EventDriver;
         }
 

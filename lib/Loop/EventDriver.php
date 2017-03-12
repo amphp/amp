@@ -86,7 +86,7 @@ class EventDriver extends Driver {
         }
     }
 
-    public static function supported(): bool {
+    public static function isSupported(): bool {
         return \extension_loaded("event");
     }
 
