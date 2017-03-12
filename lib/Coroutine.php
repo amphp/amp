@@ -63,13 +63,26 @@ final class Coroutine implements Promise {
                         return;
                     }
 
-                    if ($yielded instanceof ReactPromise) {
+                    if (\is_array($yielded)) {
+                        try {
+                            $yielded = all($yielded);
+                        } catch (\Error $e) {
+                            throw new InvalidYieldError(
+                                $this->generator,
+                                \sprintf(
+                                    "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
+                                    Promise::class,
+                                    ReactPromise::class
+                                )
+                            );
+                        }
+                    } else if ($yielded instanceof ReactPromise) {
                         $yielded = adapt($yielded);
                     } else {
                         throw new InvalidYieldError(
                             $this->generator,
                             \sprintf(
-                                "Unexpected yield; Expected an instance of %s or %s",
+                                "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
                                 Promise::class,
                                 ReactPromise::class
                             )
@@ -94,13 +107,26 @@ final class Coroutine implements Promise {
                     return;
                 }
 
-                if ($yielded instanceof ReactPromise) {
+                if (\is_array($yielded)) {
+                    try {
+                        $yielded = all($yielded);
+                    } catch (\Error $e) {
+                        throw new InvalidYieldError(
+                            $this->generator,
+                            \sprintf(
+                                "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
+                                Promise::class,
+                                ReactPromise::class
+                            )
+                        );
+                    }
+                } else if ($yielded instanceof ReactPromise) {
                     $yielded = adapt($yielded);
                 } else {
                     throw new InvalidYieldError(
                         $this->generator,
                         \sprintf(
-                            "Unexpected yield; Expected an instance of %s or %s",
+                            "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
                             Promise::class,
                             ReactPromise::class
                         )
