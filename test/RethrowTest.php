@@ -5,8 +5,9 @@ namespace Amp\Test;
 use Amp;
 use Amp\Failure;
 use Amp\Loop;
+use PHPUnit\Framework\TestCase;
 
-class RethrowTest extends \PHPUnit\Framework\TestCase {
+class RethrowTest extends TestCase {
     public function testWaitOnPendingPromise() {
         $exception = new \Exception;
 

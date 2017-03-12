@@ -2,6 +2,7 @@
 
 namespace Amp\Test\Loop;
 
+use Amp\Loop;
 use Amp\Loop\Driver;
 use Amp\Loop\InvalidWatcherException;
 use Amp\Loop\UnsupportedFeatureException;
@@ -32,9 +33,13 @@ abstract class DriverTest extends TestCase {
 
     function setUp() {
         $this->loop = ($this->getFactory())();
+
         if (!$this->loop instanceof Driver) {
             $this->fail("Factory did not return a loop Driver");
         }
+
+        // Required for error handler to work
+        Loop::set($this->loop);
     }
 
     function start($cb) {
