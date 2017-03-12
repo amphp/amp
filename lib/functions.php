@@ -66,7 +66,7 @@ function coroutine(callable $worker): callable {
  * @param callable(mixed ...$args): mixed $functor
  * @param array ...$args Arguments to pass to the function.
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function call(callable $functor, ...$args): Promise {
     try {
