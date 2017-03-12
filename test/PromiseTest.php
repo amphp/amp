@@ -15,7 +15,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     private $originalErrorHandler;
 
     /**
-     * An Promise to use for a test with resolution methods.
+     * A Promise to use for a test with resolution methods.
      * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in order to ensure resolution.
      *
      * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result or a Throwable/Exception respectively
@@ -191,7 +191,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    /** Implementations MAY fail upon resolution with an Promise, but they definitely MUST NOT return an Promise */
+    /** Implementations MAY fail upon resolution with a Promise, but they definitely MUST NOT return a Promise */
     function testPromiseResolutionWithPromise() {
         list($success, $succeeder) = $this->promise();
         $succeeder(true);
