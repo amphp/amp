@@ -6,7 +6,7 @@ use Amp\CallableMaker;
 use Amp\Promise;
 
 /**
- * An promise that cannot be externally resolved. Used by Deferred in development mode.
+ * A promise that cannot be externally resolved. Used by Deferred in development mode.
  *
  * @internal
  */

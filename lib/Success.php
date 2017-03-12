@@ -11,7 +11,7 @@ final class Success implements Stream {
     private $value;
 
     /**
-     * @param mixed $value Anything other than an Promise object.
+     * @param mixed $value Anything other than a Promise object.
      *
      * @throws \Error If a promise is given as the value.
      */
