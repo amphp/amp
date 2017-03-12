@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use Amp\Coroutine;
 use Amp\Emitter;
@@ -43,7 +43,6 @@ Loop::run(function () {
         };
 
         yield new Coroutine($generator($stream));
-
     } catch (\Throwable $exception) {
         printf("Exception: %s\n", $exception);
     }

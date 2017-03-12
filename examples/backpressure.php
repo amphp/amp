@@ -43,7 +43,6 @@ Loop::run(function () {
         };
 
         yield new Coroutine($generator($emitter));
-
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
