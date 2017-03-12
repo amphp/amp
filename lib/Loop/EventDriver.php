@@ -36,6 +36,10 @@ class EventDriver extends Driver {
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $watcher->value, $watcher->data);
 
+            if ($result === null) {
+                return;
+            }
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
             } elseif ($result instanceof ReactPromise) {
@@ -51,9 +55,13 @@ class EventDriver extends Driver {
             if ($watcher->type & Watcher::DELAY) {
                 $this->cancel($watcher->id);
             }
-
+            
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $watcher->data);
+
+            if ($result === null) {
+                return;
+            }
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
@@ -69,6 +77,10 @@ class EventDriver extends Driver {
         $this->signalCallback = function ($signum, $what, Watcher $watcher) {
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $watcher->value, $watcher->data);
+
+            if ($result === null) {
+                return;
+            }
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);

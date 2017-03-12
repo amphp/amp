@@ -61,6 +61,10 @@ class UvDriver extends Driver {
                 $callback = $watcher->callback;
                 $result = $callback($watcher->id, $resource, $watcher->data);
 
+                if ($result === null) {
+                    return;
+                }
+
                 if ($result instanceof \Generator) {
                     $result = new Coroutine($result);
                 } elseif ($result instanceof ReactPromise) {
@@ -83,6 +87,10 @@ class UvDriver extends Driver {
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $watcher->data);
 
+            if ($result === null) {
+                return;
+            }
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
             } elseif ($result instanceof ReactPromise) {
@@ -99,6 +107,10 @@ class UvDriver extends Driver {
 
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $signo, $watcher->data);
+
+            if ($result === null) {
+                return;
+            }
 
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);

@@ -147,6 +147,10 @@ class NativeDriver extends Driver {
                             $callback = $watcher->callback;
                             $result = $callback($watcher->id, $stream, $watcher->data);
 
+                            if ($result === null) {
+                                continue;
+                            }
+
                             if ($result instanceof \Generator) {
                                 $result = new Coroutine($result);
                             } elseif ($result instanceof ReactPromise) {
@@ -170,6 +174,10 @@ class NativeDriver extends Driver {
 
                             $callback = $watcher->callback;
                             $result = $callback($watcher->id, $stream, $watcher->data);
+
+                            if ($result === null) {
+                                continue;
+                            }
 
                             if ($result instanceof \Generator) {
                                 $result = new Coroutine($result);
@@ -314,8 +322,14 @@ class NativeDriver extends Driver {
             $callback = $watcher->callback;
             $result = $callback($watcher->id, $signo, $watcher->data);
 
+            if ($result === null) {
+                continue;
+            }
+
             if ($result instanceof \Generator) {
                 $result = new Coroutine($result);
+            } elseif ($result instanceof ReactPromise) {
+                $result = adapt($result);
             }
 
             if ($result instanceof Promise) {

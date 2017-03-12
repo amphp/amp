@@ -111,6 +111,10 @@ abstract class Driver {
                 $callback = $watcher->callback;
                 $result = $callback($watcher->id, $watcher->data);
 
+                if ($result === null) {
+                    continue;
+                }
+
                 if ($result instanceof \Generator) {
                     $result = new Coroutine($result);
                 } elseif ($result instanceof ReactPromise) {
