@@ -5,8 +5,8 @@ namespace Amp\Internal;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Promise;
-use function Amp\adapt;
 use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\adapt;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
