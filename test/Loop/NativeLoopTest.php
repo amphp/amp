@@ -2,13 +2,12 @@
 
 namespace Amp\Test\Loop;
 
-use Amp\Loop\NativeLoop;
-use Amp\Test\LoopTest;
+use Amp\Loop\NativeDriver;
 
-class NativeLoopLoopTest extends LoopTest {
+class NativeDriverTest extends DriverTest {
     public function getFactory(): callable {
         return function () {
-            return new NativeLoop;
+            return new NativeDriver;
         };
     }
 }

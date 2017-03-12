@@ -1,10 +1,11 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Loop;
 
 use Amp\Loop\Driver;
+use PHPUnit\Framework\TestCase;
 
-class LoopStateTest extends \PHPUnit\Framework\TestCase {
+class DriverStateTest extends TestCase {
     /** @var Driver */
     private $loop;
 

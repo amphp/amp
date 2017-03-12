@@ -7,7 +7,7 @@ use Amp\Promise;
 use Amp\Internal\Watcher;
 use function Amp\rethrow;
 
-class EventLoop extends Driver {
+class EventDriver extends Driver {
     /** @var \Event[]|null */
     private static $activeSignals;
     /** @var \EventBase */

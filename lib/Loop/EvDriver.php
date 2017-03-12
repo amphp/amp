@@ -7,7 +7,7 @@ use Amp\Promise;
 use Amp\Internal\Watcher;
 use function Amp\rethrow;
 
-class EvLoop extends Driver {
+class EvDriver extends Driver {
     /** @var \EvSignal[]|null */
     private static $activeSignals;
     /** @var \EvLoop */

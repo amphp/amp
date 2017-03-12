@@ -2,16 +2,15 @@
 
 namespace Amp\Test\Loop;
 
-use Amp\Loop\UvLoop;
-use Amp\Test\LoopTest;
+use Amp\Loop\UvDriver;
 
 /**
  * @requires extension uv
  */
-class UvLoopLoopTest extends LoopTest {
+class UvDriverTest extends DriverTest {
     public function getFactory(): callable {
         return function () {
-            return new UvLoop;
+            return new UvDriver;
         };
     }
 }

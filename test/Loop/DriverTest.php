@@ -1,9 +1,11 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Loop;
 
 use Amp\Loop\Driver;
+use Amp\Loop\InvalidWatcherException;
 use Amp\Loop\UnsupportedFeatureException;
+use PHPUnit\Framework\TestCase;
 
 if (!defined("SIGUSR1")) {
     define("SIGUSR1", 30);
@@ -16,7 +18,7 @@ if (!defined("PHP_INT_MIN")) {
     define("PHP_INT_MIN", ~PHP_INT_MAX);
 }
 
-abstract class LoopTest extends \PHPUnit\Framework\TestCase {
+abstract class DriverTest extends TestCase {
     /**
      * The DriverFactory to run this test on
      *
@@ -681,7 +683,7 @@ abstract class LoopTest extends \PHPUnit\Framework\TestCase {
     function testExceptionOnEnableNonexistentWatcher() {
         try {
             $this->loop->enable("nonexistentWatcher");
-        } catch (Loop\InvalidWatcherException $e) {
+        } catch (InvalidWatcherException $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }
@@ -699,7 +701,7 @@ abstract class LoopTest extends \PHPUnit\Framework\TestCase {
     function testExceptionOnReferenceNonexistentWatcher() {
         try {
             $this->loop->reference("nonexistentWatcher");
-        } catch (Loop\InvalidWatcherException $e) {
+        } catch (InvalidWatcherException $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }
@@ -709,7 +711,7 @@ abstract class LoopTest extends \PHPUnit\Framework\TestCase {
     function testExceptionOnUnreferenceNonexistentWatcher() {
         try {
             $this->loop->unreference("nonexistentWatcher");
-        } catch (Loop\InvalidWatcherException $e) {
+        } catch (InvalidWatcherException $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }

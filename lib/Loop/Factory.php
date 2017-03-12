@@ -9,18 +9,18 @@ class Factory {
      * @return Driver
      */
     public function create(): Driver {
-        if (UvLoop::supported()) {
-            return new UvLoop;
+        if (UvDriver::supported()) {
+            return new UvDriver;
         }
 
-        if (EvLoop::supported()) {
-            return new EvLoop;
+        if (EvDriver::supported()) {
+            return new EvDriver;
         }
 
-        if (EventLoop::supported()) {
-            return new EventLoop;
+        if (EventDriver::supported()) {
+            return new EventDriver;
         }
 
-        return new NativeLoop;
+        return new NativeDriver;
     }
 }

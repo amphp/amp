@@ -7,7 +7,7 @@ use Amp\Promise;
 use Amp\Internal\Watcher;
 use function Amp\rethrow;
 
-class NativeLoop extends Driver {
+class NativeDriver extends Driver {
     /** @var resource[] */
     private $readStreams = [];
 

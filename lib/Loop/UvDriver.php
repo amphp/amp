@@ -7,7 +7,7 @@ use Amp\Promise;
 use Amp\Internal\Watcher;
 use function Amp\rethrow;
 
-class UvLoop extends Driver {
+class UvDriver extends Driver {
     /** @var resource A uv_loop resource created with uv_loop_new() */
     private $handle;
 

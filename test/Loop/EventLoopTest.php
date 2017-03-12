@@ -2,16 +2,15 @@
 
 namespace Amp\Test\Loop;
 
-use Amp\Loop\EventLoop;
-use Amp\Test\LoopTest;
+use Amp\Loop\EventDriver;
 
 /**
  * @requires extension event
  */
-class EventLoopLoopTest extends LoopTest {
+class EventDriverTest extends DriverTest {
     public function getFactory(): callable {
         return function () {
-            return new EventLoop;
+            return new EventDriver;
         };
     }
 }
