@@ -2,8 +2,11 @@
 
 namespace Amp\Internal;
 
-use Amp\{ Deferred, Success };
-use AsyncInterop\{ Promise, Promise\ErrorHandler };
+use Amp\Deferred;
+use Amp\Loop;
+use Amp\Promise;
+use Amp\Success;
+use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
@@ -38,13 +41,17 @@ trait Producer {
      *
      * @param mixed $value
      *
-     * @return \AsyncInterop\Promise
+     * @return \Amp\Promise
      *
      * @throws \Error If the stream has resolved.
      */
     private function emit($value): Promise {
         if ($this->resolved) {
             throw new \Error("Streams cannot emit values after calling resolve");
+        }
+
+        if ($value instanceof ReactPromise) {
+            $value = adapt($value);
         }
 
         if ($value instanceof Promise) {
@@ -74,11 +81,16 @@ trait Producer {
         foreach ($this->listeners as $onNext) {
             try {
                 $result = $onNext($value);
+                if ($result instanceof ReactPromise) {
+                    $result = adapt($result);
+                }
                 if ($result instanceof Promise) {
                     $promises[] = $result;
                 }
             } catch (\Throwable $e) {
-                ErrorHandler::notify($e);
+                Loop::defer(function () use ($e) {
+                    throw $e;
+                });
             }
         }
 
@@ -90,7 +102,9 @@ trait Producer {
         $count = \count($promises);
         $f = static function ($e) use ($deferred, $value, &$count) {
             if ($e) {
-                ErrorHandler::notify($e);
+                Loop::defer(function () use ($e) {
+                    throw $e;
+                });
             }
             if (!--$count) {
                 $deferred->resolve($value);

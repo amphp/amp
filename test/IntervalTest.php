@@ -4,9 +4,9 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Pause;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
-class IntervalTest extends \PHPUnit_Framework_TestCase {
+class IntervalTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
 
     public function testInterval() {
@@ -29,7 +29,7 @@ class IntervalTest extends \PHPUnit_Framework_TestCase {
     public function testSlowConsumer() {
         $invoked = 0;
         $count = 5;
-        Loop::execute(function () use (&$invoked, $count) {
+        Loop::run(function () use (&$invoked, $count) {
             $stream = Amp\interval(self::TIMEOUT, $count);
 
             $stream->listen(function () use (&$invoked) {
@@ -46,6 +46,6 @@ class IntervalTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage The number of times to emit must be a positive value
      */
     public function testInvalidCount() {
-        $stream = Amp\interval(self::TIMEOUT, -1);
+        Amp\interval(self::TIMEOUT, -1);
     }
 }

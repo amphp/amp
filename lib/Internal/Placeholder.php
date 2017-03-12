@@ -3,11 +3,14 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use AsyncInterop\{ Promise, Promise\ErrorHandler };
+use Amp\Loop;
+use Amp\Promise;
+use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\adapt;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \AsyncInterop\Promise.
+ * the available classes implementing \Amp\Promise.
  *
  * @internal
  */
@@ -34,7 +37,9 @@ trait Placeholder {
             try {
                 $onResolved(null, $this->result);
             } catch (\Throwable $exception) {
-                ErrorHandler::notify($exception);
+                Loop::defer(function () use ($exception) {
+                    throw $exception;
+                });
             }
             return;
         }
@@ -61,6 +66,10 @@ trait Placeholder {
             throw new \Error("Promise has already been resolved");
         }
 
+        if ($value instanceof ReactPromise) {
+            $value = adapt($value);
+        }
+
         $this->resolved = true;
         $this->result = $value;
 
@@ -79,7 +88,9 @@ trait Placeholder {
         try {
             $onResolved(null, $this->result);
         } catch (\Throwable $exception) {
-            ErrorHandler::notify($exception);
+            Loop::defer(function () use ($exception) {
+                throw $exception;
+            });
         }
     }
 

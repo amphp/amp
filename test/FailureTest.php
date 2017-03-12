@@ -3,9 +3,8 @@
 namespace Amp\Test;
 
 use Amp\Failure;
-use AsyncInterop\Loop;
 
-class FailureTest extends \PHPUnit_Framework_TestCase {
+class FailureTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */
@@ -28,30 +27,5 @@ class FailureTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $reason);
-    }
-
-    /**
-     * @depends testWhen
-     */
-    public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
-        Loop::execute(function () use (&$invoked) {
-            $invoked = 0;
-            $expected = new \Exception;
-
-            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                ++$invoked;
-                $this->assertSame($expected, $exception);
-            });
-
-            $callback = function () use ($expected) {
-                throw $expected;
-            };
-
-            $success = new Failure(new \Exception);
-
-            $success->when($callback);
-        });
-
-        $this->assertSame(1, $invoked);
     }
 }

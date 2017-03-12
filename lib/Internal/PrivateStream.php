@@ -14,7 +14,7 @@ final class PrivateStream implements Stream {
     use CallableMaker, Producer;
 
     /**
-     * @param callable(callable $emit, callable $complete, callable $fail): void $producer
+     * @param callable (callable $emit, callable $complete, callable $fail): void $producer
      */
     public function __construct(callable $producer) {
         $producer(

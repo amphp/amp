@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 /**
  * Defines an asynchronous stream iterator that is designed to be used within a coroutine.
  */
@@ -12,7 +10,7 @@ interface Iterator {
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has resolved.
      * If the stream fails, the returned promise will fail with the same exception.
      *
-     * @return \AsyncInterop\Promise<bool>
+     * @return \Amp\Promise<bool>
      *
      * @throws \Error If the prior promise returned from this method has not resolved.
      * @throws \Throwable The exception used to fail the stream.

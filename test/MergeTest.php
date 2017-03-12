@@ -4,9 +4,9 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Producer;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
-class MergeTest extends \PHPUnit_Framework_TestCase {
+class MergeTest extends \PHPUnit\Framework\TestCase {
     public function getStreams() {
         return [
             [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], [1, 4, 2, 5, 3, 6]],
@@ -22,7 +22,7 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
      * @param array $expected
      */
     public function testMerge(array $streams, array $expected) {
-        Loop::execute(function () use ($streams, $expected) {
+        Loop::run(function () use ($streams, $expected) {
             $stream = Amp\merge($streams);
 
             Amp\each($stream, function ($value) use ($expected) {
@@ -37,7 +37,7 @@ class MergeTest extends \PHPUnit_Framework_TestCase {
      */
     public function testMergeWithFailedStream() {
         $exception = new \Exception;
-        Loop::execute(function () use (&$reason, $exception) {
+        Loop::run(function () use (&$reason, $exception) {
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(1); // Emit once before failing.
                 throw $exception;

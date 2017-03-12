@@ -3,10 +3,13 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, MultiReasonException, Pause, Success };
-use AsyncInterop\Loop;
+use Amp\Failure;
+use Amp\MultiReasonException;
+use Amp\Pause;
+use Amp\Success;
+use Amp\Loop;
 
-class SomeTest extends \PHPUnit_Framework_TestCase {
+class SomeTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \Error
      * @expectedExceptionMessage No promises provided
@@ -55,7 +58,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testPendingAwatiablesArray() {
-        Loop::execute(function () use (&$result) {
+        Loop::run(function () use (&$result) {
             $promises = [
                 new Pause(20, 1),
                 new Pause(30, 2),
@@ -75,7 +78,7 @@ class SomeTest extends \PHPUnit_Framework_TestCase {
     public function testArrayKeysPreserved() {
         $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
-        Loop::execute(function () use (&$result) {
+        Loop::run(function () use (&$result) {
             $promises = [
                 'one'   => new Pause(20, 1),
                 'two'   => new Pause(30, 2),

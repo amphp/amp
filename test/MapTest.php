@@ -3,10 +3,14 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Deferred, Failure, Pause, Success };
-use AsyncInterop\{ Loop, Promise };
+use Amp\Deferred;
+use Amp\Failure;
+use Amp\Loop;
+use Amp\Pause;
+use Amp\Success;
+use Amp\Promise;
 
-class MapTest extends \PHPUnit_Framework_TestCase {
+class MapTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {
         $values = [];
         $invoked = false;
@@ -20,7 +24,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testSuccessfulPromisesArray() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
 
             $count = 0;
@@ -39,7 +43,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             }
 
             $this->assertSame(\count($promises), $count);
-        }));
+        });
     }
 
     public function testPendingPromisesArray() {
@@ -76,7 +80,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testFailedPromisesArray() {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $exception = new \Exception;
             $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];;
 
@@ -95,7 +99,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
             }
 
             $this->assertSame(0, $count);
-        }));
+        });
     }
 
     /**
@@ -103,7 +107,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
      */
     public function testCallbackThrowingExceptionRejectsPromises()
     {
-        Loop::execute(Amp\wrap(function () {
+        Loop::run(function () {
             $promises = [new Success(1), new Success(2), new Success(3)];;
             $exception = new \Exception;
 
@@ -124,7 +128,7 @@ class MapTest extends \PHPUnit_Framework_TestCase {
                     $this->assertSame($exception, $reason);
                 }
             }
-        }));
+        });
     }
 
     /**

@@ -5,7 +5,7 @@ namespace Amp;
 class InvalidYieldError extends \Error {
     /**
      * @param \Generator $generator
-     * @param string $prefix
+     * @param string     $prefix
      */
     public function __construct(\Generator $generator, string $prefix) {
         $yielded = $generator->current();

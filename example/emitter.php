@@ -3,10 +3,14 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\{ Coroutine, Emitter, Listener, Pause, Stream, Loop\NativeLoop };
-use AsyncInterop\Loop;
+use Amp\Coroutine;
+use Amp\Emitter;
+use Amp\Listener;
+use Amp\Pause;
+use Amp\Stream;
+use Amp\Loop;
 
-Loop::execute(Amp\wrap(function () {
+Loop::run(function () {
     try {
         $emitter = new Emitter;
 
@@ -40,7 +44,7 @@ Loop::execute(Amp\wrap(function () {
 
         yield new Coroutine($generator($stream));
 
-    } catch (\Exception $exception) {
+    } catch (\Throwable $exception) {
         printf("Exception: %s\n", $exception);
     }
-}), $loop = new NativeLoop());
+});

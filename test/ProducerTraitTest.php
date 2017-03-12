@@ -2,8 +2,11 @@
 
 namespace Amp\Test;
 
-use Amp\{ Deferred, Failure, Success };
-use AsyncInterop\{ Loop, Promise };
+use Amp\Deferred;
+use Amp\Failure;
+use Amp\Loop;
+use Amp\Success;
+use Amp\Promise;
 
 class Producer {
     use \Amp\Internal\Producer {
@@ -13,7 +16,7 @@ class Producer {
     }
 }
 
-class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
+class ProducerTraitTest extends \PHPUnit\Framework\TestCase {
     /** @var \Amp\Test\Producer */
     private $producer;
 
@@ -89,10 +92,6 @@ class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
         $invoked = false;
         $value = 1;
         $deferred = new Deferred;
-
-        $callback = function ($emitted) use (&$invoked) {
-            $invoked = true;
-        };
 
         $callback = function ($emitted) use (&$invoked, $value) {
             $invoked = true;
@@ -194,7 +193,7 @@ class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
 
         try {
-            Loop::execute(function () use ($exception) {
+            Loop::run(function () use ($exception) {
                 $this->producer->listen(function () use ($exception) {
                     throw $exception;
                 });
@@ -228,7 +227,7 @@ class ProducerTraitTest extends \PHPUnit_Framework_TestCase {
         $promise = new Failure($exception);
 
         try {
-            Loop::execute(function () use ($exception, $promise) {
+            Loop::run(function () use ($exception, $promise) {
                 $this->producer->listen(function () use ($promise) {
                     return $promise;
                 });

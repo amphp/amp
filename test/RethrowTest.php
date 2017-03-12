@@ -4,14 +4,14 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Failure;
-use AsyncInterop\Loop;
+use Amp\Loop;
 
-class RethrowTest extends \PHPUnit_Framework_TestCase {
+class RethrowTest extends \PHPUnit\Framework\TestCase {
     public function testWaitOnPendingPromise() {
         $exception = new \Exception;
 
         try {
-            Loop::execute(function () use ($exception) {
+            Loop::run(function () use ($exception) {
                 $promise = new Failure($exception);
 
                 Amp\rethrow($promise);

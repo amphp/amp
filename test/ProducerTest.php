@@ -3,10 +3,12 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Deferred, Producer, Pause };
-use AsyncInterop\Loop;
+use Amp\Deferred;
+use Amp\Producer;
+use Amp\Pause;
+use Amp\Loop;
 
-class ProducerTest extends \PHPUnit_Framework_TestCase {
+class ProducerTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 100;
 
     /**
@@ -14,12 +16,12 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage The callable did not return a Generator
      */
     public function testNonGeneratorCallable() {
-        $producer = new Producer(function () {});
+        new Producer(function () {});
     }
 
     public function testEmit() {
         $invoked = false;
-        Loop::execute(Amp\wrap(function () use (&$invoked) {
+        Loop::run(Amp\wrap(function () use (&$invoked) {
             $value = 1;
 
             $producer = new Producer(function (callable $emit) use ($value) {
@@ -48,7 +50,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitSuccessfulPromise() {
         $invoked = false;
-        Loop::execute(Amp\wrap(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $deferred = new Deferred();
 
             $producer = new Producer(function (callable $emit) use ($deferred) {
@@ -65,7 +67,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
             $producer->listen($callback);
 
             $deferred->resolve($value);
-        }));
+        });
 
         $this->assertTrue($invoked);
     }
@@ -75,7 +77,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitFailedPromise() {
         $exception = new \Exception;
-        Loop::execute(Amp\wrap(function () use ($exception) {
+        Loop::run(function () use ($exception) {
             $deferred = new Deferred();
 
             $producer = new Producer(function (callable $emit) use ($deferred) {
@@ -87,7 +89,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
             $producer->when(function ($reason) use ($exception) {
                 $this->assertSame($reason, $exception);
             });
-        }));
+        });
     }
 
     /**
@@ -95,7 +97,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
      */
     public function testEmitBackPressure() {
         $emits = 3;
-        Loop::execute(Amp\wrap(function () use (&$time, $emits) {
+        Loop::run(function () use (&$time, $emits) {
             $producer = new Producer(function (callable $emit) use (&$time, $emits) {
                 $time = microtime(true);
                 for ($i = 0; $i < $emits; ++$i) {
@@ -107,7 +109,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
             $producer->listen(function () {
                 return new Pause(self::TIMEOUT);
             });
-        }));
+        });
 
         $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
     }
@@ -119,7 +121,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
 
         try {
-            Loop::execute(Amp\wrap(function () use ($exception) {
+            Loop::run(function () use ($exception) {
                 $producer = new Producer(function (callable $emit) {
                     yield $emit(1);
                     yield $emit(2);
@@ -128,7 +130,7 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
                 $producer->listen(function () use ($exception) {
                     throw $exception;
                 });
-            }));
+            });
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
@@ -141,14 +143,14 @@ class ProducerTest extends \PHPUnit_Framework_TestCase {
         $exception = new \Exception;
 
         try {
-            Loop::execute(Amp\wrap(function () use ($exception) {
+            Loop::run(function () use ($exception) {
                 $producer = new Producer(function (callable $emit) use ($exception) {
                     yield $emit(1);
                     throw $exception;
                 });
 
                 Amp\wait($producer);
-            }));
+            });
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }

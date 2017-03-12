@@ -2,7 +2,8 @@
 
 namespace Amp\Test;
 
-use AsyncInterop\{ Loop, Promise };
+use Amp\Loop;
+use Amp\Promise;
 
 class Placeholder {
     use \Amp\Internal\Placeholder {
@@ -11,7 +12,7 @@ class Placeholder {
     }
 }
 
-class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
+class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     /** @var \Amp\Test\Placeholder */
     private $placeholder;
 
@@ -104,7 +105,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
      * @depends testWhenOnSuccess
      */
     public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
 
@@ -129,7 +130,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
      * @depends testWhenAfterSuccess
      */
     public function testWhenThrowingForwardsToLoopHandlerAfterSuccess() {
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
 
@@ -235,7 +236,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
      * @depends testWhenOnSuccess
      */
     public function testWhenThrowingForwardsToLoopHandlerOnFail() {
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
 
@@ -260,7 +261,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
      * @depends testWhenOnSuccess
      */
     public function testWhenThrowingForwardsToLoopHandlerAfterFail() {
-        Loop::execute(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
 
@@ -319,7 +320,7 @@ class PlaceholderTraitTest extends \PHPUnit_Framework_TestCase {
      * @expectedExceptionMessage Promise has already been resolved
      */
     public function testResolveAgainWithinWhenCallback() {
-        Loop::execute(function () {
+        Loop::run(function () {
             $this->placeholder->when(function () {
                 $this->placeholder->resolve();
             });

@@ -3,13 +3,15 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Producer, Stream, Emitter };
-use AsyncInterop\Loop;
+use Amp\Producer;
+use Amp\Stream;
+use Amp\Emitter;
+use Amp\Loop;
 
-class FilterTest extends \PHPUnit_Framework_TestCase {
+class FilterTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
-        Loop::execute(function () use (&$invoked){
+        Loop::run(function () use (&$invoked){
             $emitter = new Emitter;
 
             $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {
@@ -29,7 +31,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
         $values = [1, 2, 3];
         $results = [];
         $expected = [1, 3];
-        Loop::execute(function () use (&$results, &$result, &$count, $values) {
+        Loop::run(function () use (&$results, &$result, &$count, $values) {
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -60,7 +62,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
     public function testCallbackThrows() {
         $values = [1, 2, 3];
         $exception = new \Exception;
-        Loop::execute(function () use (&$reason, $values, $exception) {
+        Loop::run(function () use (&$reason, $values, $exception) {
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -88,7 +90,7 @@ class FilterTest extends \PHPUnit_Framework_TestCase {
     public function testStreamFails() {
         $invoked = false;
         $exception = new \Exception;
-        Loop::execute(function () use (&$invoked, &$reason, &$exception){
+        Loop::run(function () use (&$invoked, &$reason, &$exception){
             $emitter = new Emitter;
 
             $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {

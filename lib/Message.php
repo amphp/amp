@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use AsyncInterop\Promise;
-
 /**
  * Creates a buffered message from a Stream. The message can be consumed in chunks using the advance() and getCurrent()
  * methods or it may be buffered and accessed in its entirety by waiting for the promise to resolve.
@@ -27,8 +25,8 @@ class Message implements Iterator, Promise {
 
     const LISTENING = 0;
     const BUFFERING = 1;
-    const WAITING   = 2;
-    const COMPLETE  = 4;
+    const WAITING = 2;
+    const COMPLETE = 4;
 
     /** @var \Amp\Listener|null */
     private $listener;
@@ -45,7 +43,7 @@ class Message implements Iterator, Promise {
     public function __construct(Stream $stream) {
         $this->listener = new Listener($stream);
 
-        $stream->when(function($exception, $value) {
+        $stream->when(function ($exception, $value) {
             if ($exception) {
                 $this->fail($exception);
                 return;
@@ -63,7 +61,7 @@ class Message implements Iterator, Promise {
      * Returns a promise that resolves with true when more data in the message is available or false if the message is
      * complete.
      *
-     * @return \AsyncInterop\Promise<bool>
+     * @return \Amp\Promise<bool>
      *
      * @throws \Error If the message has resolved.
      */

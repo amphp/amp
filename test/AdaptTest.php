@@ -3,11 +3,12 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Success };
-use AsyncInterop\Promise;
+use Amp\Failure;
+use Amp\Success;
+use Amp\Promise;
 
 class PromiseMock {
-    /** @var \AsyncInterop\Promise */
+    /** @var \Amp\Promise */
     private $promise;
 
     public function __construct(Promise $promise) {
@@ -30,7 +31,7 @@ class PromiseMock {
     }
 }
 
-class AdaptTest extends \PHPUnit_Framework_TestCase {
+class AdaptTest extends \PHPUnit\Framework\TestCase {
     public function testThenCalled() {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()

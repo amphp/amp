@@ -1,12 +1,14 @@
 #!/usr/bin/env php
 <?php
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-use Amp\{ Coroutine, Emitter, Pause, Loop\NativeLoop };
-use AsyncInterop\Loop;
+use Amp\Coroutine;
+use Amp\Emitter;
+use Amp\Pause;
+use Amp\Loop;
 
-Loop::execute(Amp\wrap(function () {
+Loop::run(function () {
     try {
         $emitter = new Emitter;
 
@@ -17,7 +19,7 @@ Loop::execute(Amp\wrap(function () {
             return new Pause(500); // Artificial back-pressure on stream.
         });
 
-        $stream->when(function ($exception, $value) {
+        $stream->when(function (Throwable $exception = null, $value) {
             if ($exception) {
                 printf("Stream failed: %s\n", $exception->getMessage());
                 return;
@@ -45,4 +47,4 @@ Loop::execute(Amp\wrap(function () {
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
-}), $loop = new NativeLoop());
+});

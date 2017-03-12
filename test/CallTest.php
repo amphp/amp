@@ -3,10 +3,11 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Coroutine, Success };
-use AsyncInterop\Promise;
+use Amp\Coroutine;
+use Amp\Success;
+use Amp\Promise;
 
-class CallTest extends \PHPUnit_Framework_TestCase {
+class CallTest extends \PHPUnit\Framework\TestCase {
     public function testCallWithFunctionReturningPromise() {
         $value = 1;
         $promise = Amp\call(function ($value) {

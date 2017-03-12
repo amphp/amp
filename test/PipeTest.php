@@ -3,10 +3,11 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\{ Failure, Success };
-use AsyncInterop\Promise;
+use Amp\Failure;
+use Amp\Success;
+use Amp\Promise;
 
-class PipeTest extends \PHPUnit_Framework_TestCase {
+class PipeTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromise() {
         $invoked = false;
         $callback = function ($value) use (&$invoked) {

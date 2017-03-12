@@ -2,13 +2,13 @@
 
 namespace Amp;
 
-use AsyncInterop\{ Loop, Promise };
+use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
  * calls rethrow() on the returned promises (or the coroutine created).
  *
- * @param callable(...$args): \Generator|\AsyncInterop\Promise|mixed $callback
+ * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
  *
  * @return callable(...$args): void
  */
@@ -18,6 +18,8 @@ function wrap(callable $callback): callable {
 
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
+        } elseif ($result instanceof ReactPromise) {
+            $result = adapt($result);
         }
 
         if ($result instanceof Promise) {
@@ -33,7 +35,7 @@ function wrap(callable $callback): callable {
  *
  * @param callable(mixed ...$args): mixed $worker
  *
- * @return callable(mixed ...$args): \AsyncInterop\Promise
+ * @return callable(mixed ...$args): \Amp\Promise
  */
 function coroutine(callable $worker): callable {
     return function (...$args) use ($worker): Promise {
@@ -45,6 +47,8 @@ function coroutine(callable $worker): callable {
 
         if ($result instanceof \Generator) {
             return new Coroutine($result);
+        } elseif ($result instanceof ReactPromise) {
+            $result = adapt($result);
         }
 
         if (!$result instanceof Promise) {
@@ -73,6 +77,8 @@ function call(callable $functor, ...$args): Promise {
 
     if ($result instanceof \Generator) {
         return new Coroutine($result);
+    } elseif ($result instanceof ReactPromise) {
+        $result = adapt($result);
     }
 
     if (!$result instanceof Promise) {
@@ -85,7 +91,7 @@ function call(callable $functor, ...$args): Promise {
 /**
  * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  */
 function rethrow(Promise $promise) {
     $promise->when(function ($exception) {
@@ -98,7 +104,7 @@ function rethrow(Promise $promise) {
 /**
  * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  *
  * @return mixed Promise success value.
  *
@@ -106,14 +112,14 @@ function rethrow(Promise $promise) {
  */
 function wait(Promise $promise) {
     $resolved = false;
-    Loop::execute(function () use (&$resolved, &$value, &$exception, $promise) {
+    Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
         $promise->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
             Loop::stop();
             $resolved = true;
             $exception = $e;
             $value = $v;
         });
-    }, Loop::get());
+    });
 
     if (!$resolved) {
         throw new \Error("Loop stopped without resolving promise");
@@ -129,10 +135,10 @@ function wait(Promise $promise) {
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  * @param callable(mixed $value): mixed $functor
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function pipe(Promise $promise, callable $functor): Promise {
     $deferred = new Deferred;
@@ -154,12 +160,12 @@ function pipe(Promise $promise, callable $functor): Promise {
 }
 
 /**
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
  * @param callable(\Throwable $exception): mixed $functor
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function capture(Promise $promise, string $className, callable $functor): Promise {
     $deferred = new Deferred;
@@ -191,10 +197,10 @@ function capture(Promise $promise, string $className, callable $functor): Promis
  * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
  * \Amp\TimeoutException.
  *
- * @param \AsyncInterop\Promise $promise
+ * @param \Amp\Promise $promise
  * @param int $timeout Timeout in milliseconds.
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function timeout(Promise $promise, int $timeout): Promise {
     $deferred = new Deferred;
@@ -223,19 +229,26 @@ function timeout(Promise $promise, int $timeout): Promise {
 }
 
 /**
- * Adapts any object with a then(callable $onFulfilled, callable $onRejected) method to a promise usable by
- * components depending on placeholders implementing Promise.
+ * Adapts any object with a done(callable $onFulfilled, callable $onRejected) or then(callable $onFulfilled,
+ * callable $onRejected) method to a promise usable by components depending on placeholders implementing
+ * \AsyncInterop\Promise.
  *
- * @param object $thenable Object with a then() method.
+ * @param object $promise Object with a done() or then() method.
  *
- * @return \AsyncInterop\Promise Promise resolved by the $thenable object.
+ * @return \Amp\Promise Promise resolved by the $thenable object.
  *
  * @throws \Error If the provided object does not have a then() method.
  */
-function adapt($thenable): Promise {
+function adapt($promise): Promise {
     $deferred = new Deferred;
 
-    $thenable->then([$deferred, 'resolve'], [$deferred, 'fail']);
+    if (\method_exists($promise, 'done')) {
+        $promise->done([$deferred, 'resolve'], [$deferred, 'fail']);
+    } elseif (\method_exists($promise, 'then')) {
+        $promise->then([$deferred, 'resolve'], [$deferred, 'fail']);
+    } else {
+        throw new \Error("Object must have a 'then' or 'done' method");
+    }
 
     return $deferred->promise();
 }
@@ -256,12 +269,16 @@ function lift(callable $worker): callable {
     /**
      * @param mixed ...$args Promises or values.
      *
-     * @return \AsyncInterop\Promise
+     * @return \Amp\Promise
      */
     return function (...$args) use ($worker): Promise {
         foreach ($args as $key => $arg) {
             if (!$arg instanceof Promise) {
-                $args[$key] = new Success($arg);
+                if ($arg instanceof ReactPromise) {
+                    $args[$key] = adapt($arg);
+                } else {
+                    $args[$key] = new Success($arg);
+                }
             }
         }
 
@@ -286,7 +303,7 @@ function lift(callable $worker): callable {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -302,7 +319,9 @@ function any(array $promises): Promise {
     $values = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -328,7 +347,7 @@ function any(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If a non-Promise is in the array.
  */
@@ -344,7 +363,9 @@ function all(array $promises): Promise {
     $values = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -374,7 +395,7 @@ function all(array $promises): Promise {
  *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  *
  * @throws \Error If the array is empty or a non-Promise is in the array.
  */
@@ -390,7 +411,9 @@ function first(array $promises): Promise {
     $exceptions = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -419,10 +442,10 @@ function first(array $promises): Promise {
  * Resolves with a two-item array delineating successful and failed Promise results.
  *
  * The returned promise will only fail if ALL of the promises fail.
-
+ *
  * @param Promise[] $promises
  *
- * @return \AsyncInterop\Promise
+ * @return \Amp\Promise
  */
 function some(array $promises): Promise {
     if (empty($promises)) {
@@ -436,7 +459,9 @@ function some(array $promises): Promise {
     $exceptions = [];
 
     foreach ($promises as $key => $promise) {
-        if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
             throw new \Error("Non-promise provided");
         }
 
@@ -471,12 +496,12 @@ function some(array $promises): Promise {
  * @param callable(mixed $value): mixed $callback
  * @param Promise[] ...$promises
  *
- * @return \AsyncInterop\Promise[] Array of promises resolved with the result of the mapped function.
+ * @return \Amp\Promise[] Array of promises resolved with the result of the mapped function.
  */
 function map(callable $callback, array ...$promises): array {
     foreach ($promises as $promiseSet) {
         foreach ($promiseSet as $promise) {
-            if (!$promise instanceof Promise) {
+            if (!$promise instanceof Promise && !$promise instanceof ReactPromise) {
                 throw new \Error("Non-promise provided");
             }
         }

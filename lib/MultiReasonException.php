@@ -8,7 +8,7 @@ class MultiReasonException extends \Exception {
 
     /**
      * @param \Throwable[] $reasons Array of exceptions rejecting the promise.
-     * @param string|null $message
+     * @param string|null  $message
      */
     public function __construct(array $reasons, string $message = null) {
         parent::__construct($message ?: "Multiple errors encountered");

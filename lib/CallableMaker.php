@@ -7,10 +7,10 @@ if (\PHP_VERSION_ID < 70100) {
     trait CallableMaker {
         /** @var \ReflectionClass */
         private static $__reflectionClass;
-        
+
         /** @var \ReflectionMethod[] */
         private static $__reflectionMethods = [];
-        
+
         /**
          * Creates a callable from a protected or private instance method that may be invoked by methods requiring a
          * publicly invokable callback.
@@ -28,10 +28,10 @@ if (\PHP_VERSION_ID < 70100) {
                 }
                 self::$__reflectionMethods[$method] = self::$__reflectionClass->getMethod($method);
             }
-            
+
             return self::$__reflectionMethods[$method]->getClosure($this);
         }
-        
+
         /**
          * Creates a callable from a protected or private static method that may be invoked by methods requiring a
          * publicly invokable callback.
@@ -49,7 +49,7 @@ if (\PHP_VERSION_ID < 70100) {
                 }
                 self::$__reflectionMethods[$method] = self::$__reflectionClass->getMethod($method);
             }
-            
+
             return self::$__reflectionMethods[$method]->getClosure();
         }
     }
@@ -61,7 +61,7 @@ if (\PHP_VERSION_ID < 70100) {
         private function callableFromInstanceMethod(string $method): callable {
             return \Closure::fromCallable([$this, $method]);
         }
-    
+
         /**
          * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
