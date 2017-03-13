@@ -62,6 +62,38 @@ class CoroutineTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame($value, $yielded);
     }
 
+    public function testYieldPromiseArray() {
+        Loop::run(function () {
+            $value = 1;
+
+            $generator = function () use (&$yielded, $value) {
+                list($yielded) = yield [
+                    new Success($value)
+                ];
+            };
+
+            yield new Coroutine($generator());
+
+            $this->assertSame($value, $yielded);
+        });
+    }
+
+    public function testYieldNonPromiseArray() {
+        $this->expectException(InvalidYieldError::class);
+
+        Loop::run(function () {
+            $value = 1;
+
+            $generator = function () use (&$yielded, $value) {
+                list($yielded) = yield [
+                    $value
+                ];
+            };
+
+            yield new Coroutine($generator());
+        });
+    }
+
     /**
      * @depends testYieldFailedPromise
      */
