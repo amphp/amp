@@ -10,4 +10,8 @@ class NativeDriverTest extends DriverTest {
             return new NativeDriver;
         };
     }
+
+    public function testHandle() {
+        $this->assertNull($this->loop->getHandle());
+    }
 }

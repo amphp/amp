@@ -15,13 +15,8 @@ class InvalidWatcherException extends \Exception {
      * @param string      $watcherId The watcher identifier.
      * @param string|null $message The exception message.
      */
-    public function __construct($watcherId, $message = null) {
+    public function __construct(string $watcherId, string $message) {
         $this->watcherId = $watcherId;
-
-        if ($message === null) {
-            $message = "An invalid watcher identifier has been used: '{$watcherId}'";
-        }
-
         parent::__construct($message);
     }
 
