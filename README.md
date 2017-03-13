@@ -7,7 +7,7 @@
 
 `amphp/amp` is a non-blocking concurrency framework for PHP. It provides an event loop, promises and streams as a base for asynchronous programming.
 
- Promises in combination with generators are used to build coroutines, which allow writing asynchronous code just like synchronous code, without any callbacks.
+Promises in combination with generators are used to build coroutines, which allow writing asynchronous code just like synchronous code, without any callbacks.
 
 ## Installation
 
@@ -47,4 +47,4 @@ If you discover any security related issues, please email [`bobwei9@hotmail.com`
 
 ## License
 
-The MIT License (MIT). Please see [LICENSE](./LICENSE) for more information.
+The MIT License (MIT). Please see [`LICENSE`](./LICENSE) for more information.
