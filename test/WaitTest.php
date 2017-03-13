@@ -8,6 +8,7 @@ use Amp\Failure;
 use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
+use function React\Promise\resolve;
 
 class WaitTest extends \PHPUnit\Framework\TestCase {
     public function testWaitOnSuccessfulPromise() {
@@ -58,5 +59,18 @@ class WaitTest extends \PHPUnit\Framework\TestCase {
         $promise = new Deferred;
 
         $result = Amp\wait($promise->promise());
+    }
+
+    /**
+     * @depends testWaitOnSuccessfulPromise
+     */
+    public function testReactPromise() {
+        $value = 1;
+
+        $promise = resolve($value);
+
+        $result = Amp\wait($promise);
+
+        $this->assertSame($value, $result);
     }
 }

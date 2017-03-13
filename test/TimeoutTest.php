@@ -8,6 +8,7 @@ use Amp\Loop;
 use Amp\Pause;
 use Amp\Success;
 use Amp\Promise;
+use function React\Promise\resolve;
 
 class TimeoutTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromise() {
@@ -88,5 +89,27 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         });
 
         $this->assertInstanceOf(Amp\TimeoutException::class, $reason);
+    }
+
+    /**
+     * @depends testSuccessfulPromise
+     */
+    public function testReactPromise() {
+        Loop::run(function () {
+            $value = 1;
+
+            $promise = resolve($value);
+
+            $promise = Amp\timeout($promise, 100);
+            $this->assertInstanceOf(Promise::class, $promise);
+
+            $callback = function ($exception, $value) use (&$result) {
+                $result = $value;
+            };
+
+            $promise->when($callback);
+
+            $this->assertSame($value, $result);
+        });
     }
 }
