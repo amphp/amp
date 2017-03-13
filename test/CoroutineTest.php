@@ -114,10 +114,7 @@ class CoroutineTest extends \PHPUnit\Framework\TestCase {
 
         new Coroutine($generator());
 
-        if ($fail) {
-            $this->fail("Failed promise reason not thrown into generator");
-        }
-
+        $this->assertFalse($fail);
     }
 
     public function testInvalidYield() {
@@ -447,6 +444,7 @@ class CoroutineTest extends \PHPUnit\Framework\TestCase {
                 $invoked = true;
             });
         });
+        $this->assertTrue($invoked);
     }
 
     /**

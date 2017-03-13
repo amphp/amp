@@ -3,33 +3,38 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Producer;
 use Amp\Loop;
+use Amp\Producer;
+use Amp\Stream;
 
 class MergeTest extends \PHPUnit\Framework\TestCase {
-    public function getStreams() {
+    public function getArrays() {
         return [
-            [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], [1, 4, 2, 5, 3, 6]],
-            [[Amp\stream(\range(1, 5)), Amp\stream(\range(6, 8))], [1, 6, 2, 7, 3, 8, 4, 5]],
-            [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
+            [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
+            [[\range(1, 5), \range(6, 8)], [1, 6, 2, 7, 3, 8, 4, 5]],
+            [[\range(1, 4), \range(5, 10)], [1, 5, 2, 6, 3, 7, 4, 8, 9, 10]],
         ];
     }
 
     /**
-     * @dataProvider getStreams
+     * @dataProvider getArrays
      *
      * @param array $streams
      * @param array $expected
      */
     public function testMerge(array $streams, array $expected) {
-        Loop::run(function () use ($streams, $expected) {
-            $stream = Amp\merge($streams);
+        $streams = \array_map(function (array $stream): Stream {
+            return Amp\stream($stream);
+        }, $streams);
 
-            Amp\each($stream, function ($value) use ($expected) {
-                static $i = 0;
-                $this->assertSame($expected[$i++], $value);
-            });
+        $stream = Amp\merge($streams);
+
+        Amp\each($stream, function ($value) use ($expected) {
+            static $i = 0;
+            $this->assertSame($expected[$i++], $value);
         });
+
+        Loop::run();
     }
 
     /**

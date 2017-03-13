@@ -48,11 +48,11 @@ abstract class DriverTest extends TestCase {
     }
 
     function testEmptyLoop() {
-        $this->loop->run();
+        $this->assertNull($this->loop->run());
     }
 
     function testStopWorksEvenIfNotCurrentlyRunning() {
-        $this->loop->stop();
+        $this->assertNull($this->loop->stop());
     }
 
     // Note: The running nesting is important for being able to continue actually still running loops (i.e. running flag set, if the driver has one) inside register_shutdown_function() for example
@@ -116,12 +116,14 @@ abstract class DriverTest extends TestCase {
     }
 
     function testDeferWatcherUnrefRunResult() {
-        $this->start(function (Driver $loop) {
-            $watcher = $loop->defer(function () {
-                $this->fail("Unreferenced defer watcher should not keep loop running");
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
+            $watcher = $loop->defer(function () use (&$invoked) {
+                $invoked = true;
             });
             $loop->unreference($watcher);
         });
+        $this->assertFalse($invoked);
     }
 
     function testOnceWatcherUnrefRunResult() {
@@ -148,21 +150,25 @@ abstract class DriverTest extends TestCase {
     }
 
     function testOnReadableWatcherUnrefRunResult() {
-        $this->start(function (Driver $loop) {
-            $watcher = $loop->onReadable(STDIN, function () {
-                // empty
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
+            $watcher = $loop->onReadable(STDIN, function () use (&$invoked) {
+                $invoked = true;
             });
             $loop->unreference($watcher);
         });
+        $this->assertFalse($invoked);
     }
 
     function testOnWritableWatcherKeepAliveRunResult() {
-        $this->start(function (Driver $loop) {
-            $watcher = $loop->onWritable(STDOUT, function () {
-                // empty
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
+            $watcher = $loop->onWritable(STDOUT, function () use (&$invoked) {
+                $invoked = true;
             });
             $loop->unreference($watcher);
         });
+        $this->assertFalse($invoked);
     }
 
     /** @depends checkForSignalCapability */
@@ -292,14 +298,18 @@ abstract class DriverTest extends TestCase {
             $this->checkForSignalCapability();
         }
 
-        $this->start(function (Driver $loop) use ($type, $args) {
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked, $type, $args) {
             $func = [$loop, $type];
             $watcherId = \call_user_func_array($func, $args);
             $loop->disable($watcherId);
-            $loop->defer(function () use ($loop, $watcherId) {
+            $loop->defer(function () use (&$invoked, $loop, $watcherId) {
                 $loop->cancel($watcherId);
+                $invoked = true;
             });
+            $this->assertFalse($invoked);
         });
+        $this->assertTrue($invoked);
     }
 
     /** @dataProvider provideRegistrationArgs */

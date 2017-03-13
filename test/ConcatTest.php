@@ -3,33 +3,38 @@
 namespace Amp\Test;
 
 use Amp;
-use Amp\Producer;
 use Amp\Loop;
+use Amp\Producer;
+use Amp\Stream;
 
 class ConcatTest extends \PHPUnit\Framework\TestCase {
-    public function getStreams() {
+    public function getArrays() {
         return [
-            [[Amp\stream(\range(1, 3)), Amp\stream(\range(4, 6))], \range(1, 6)],
-            [[Amp\stream(\range(1, 5)), Amp\stream(\range(6, 8))], \range(1, 8)],
-            [[Amp\stream(\range(1, 4)), Amp\stream(\range(5, 10))], \range(1, 10)],
+            [[\range(1, 3), \range(4, 6)], \range(1, 6)],
+            [[\range(1, 5), \range(6, 8)], \range(1, 8)],
+            [[\range(1, 4), \range(5, 10)], \range(1, 10)],
         ];
     }
 
     /**
-     * @dataProvider getStreams
+     * @dataProvider getArrays
      *
      * @param array $streams
      * @param array $expected
      */
     public function testConcat(array $streams, array $expected) {
-        Loop::run(function () use ($streams, $expected) {
-            $stream = Amp\concat($streams);
+        $streams = \array_map(function (array $stream): Stream {
+            return Amp\stream($stream);
+        }, $streams);
 
-            Amp\each($stream, function ($value) use ($expected) {
-                static $i = 0;
-                $this->assertSame($expected[$i++], $value);
-            });
+        $stream = Amp\concat($streams);
+
+        Amp\each($stream, function ($value) use ($expected) {
+            static $i = 0;
+            $this->assertSame($expected[$i++], $value);
         });
+
+        Loop::run();
     }
 
     /**
