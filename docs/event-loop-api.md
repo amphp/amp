@@ -2,7 +2,9 @@
 
 ## `Loop::run()`
 
-The primary way an application interacts with the event reactor is to schedule events for execution and then simply let the program run. Once `Amp\Loop::run()` is invoked the event loop will run indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. Long-running programs generally execute entirely inside the confines of a single `Amp\Loop::run()` call.
+The primary way an application interacts with the event reactor is to schedule events for execution and then simply let the program run. Once `Loop::run()` is invoked the event loop will run indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. Long-running programs generally execute entirely inside the confines of a single `Amp\Loop::run()` call.
+
+`Loop::run()` accepts an optional callback as first parameter. Passing such a callback is equivalent to calling `Loop::defer($callback)` and `Loop::run()` afterwards.
 
 ## `Loop::stop()`
 
