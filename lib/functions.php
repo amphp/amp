@@ -91,9 +91,19 @@ function call(callable $functor, ...$args): Promise {
 /**
  * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
  *
- * @param \Amp\Promise $promise
+ * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
+ *
+ * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
  */
-function rethrow(Promise $promise) {
+function rethrow($promise) {
+    if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } else {
+            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+        }
+    }
+
     $promise->when(function ($exception) {
         if ($exception) {
             throw $exception;
@@ -104,13 +114,22 @@ function rethrow(Promise $promise) {
 /**
  * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
  *
- * @param \Amp\Promise $promise
+ * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
  *
  * @return mixed Promise success value.
  *
+ * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
  * @throws \Throwable Promise failure reason.
  */
-function wait(Promise $promise) {
+function wait($promise) {
+    if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } else {
+            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+        }
+    }
+
     $resolved = false;
     Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
         $promise->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
@@ -135,12 +154,22 @@ function wait(Promise $promise) {
 /**
  * Pipe the promised value through the specified functor once it resolves.
  *
- * @param \Amp\Promise $promise
+ * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
  * @param callable(mixed $value): mixed $functor
  *
  * @return \Amp\Promise
+ *
+ * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
  */
-function pipe(Promise $promise, callable $functor): Promise {
+function pipe($promise, callable $functor): Promise {
+    if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } else {
+            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+        }
+    }
+
     $deferred = new Deferred;
 
     $promise->when(function ($exception, $value) use ($deferred, $functor) {
@@ -160,14 +189,24 @@ function pipe(Promise $promise, callable $functor): Promise {
 }
 
 /**
- * @param \Amp\Promise $promise
+ * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
  * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
  *     is an instance of the given exception class name.
  * @param callable(\Throwable $exception): mixed $functor
  *
  * @return \Amp\Promise
+ *
+ * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
  */
-function capture(Promise $promise, string $className, callable $functor): Promise {
+function capture($promise, string $className, callable $functor): Promise {
+    if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } else {
+            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+        }
+    }
+
     $deferred = new Deferred;
 
     $promise->when(function ($exception, $value) use ($deferred, $className, $functor) {
@@ -197,12 +236,22 @@ function capture(Promise $promise, string $className, callable $functor): Promis
  * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
  * \Amp\TimeoutException.
  *
- * @param \Amp\Promise $promise
+ * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
  * @param int $timeout Timeout in milliseconds.
  *
  * @return \Amp\Promise
+ *
+ * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
  */
-function timeout(Promise $promise, int $timeout): Promise {
+function timeout($promise, int $timeout): Promise {
+    if (!$promise instanceof Promise) {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } else {
+            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+        }
+    }
+
     $deferred = new Deferred;
     $resolved = false;
 

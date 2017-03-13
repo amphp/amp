@@ -6,6 +6,7 @@ use Amp;
 use Amp\Failure;
 use Amp\Success;
 use Amp\Promise;
+use function React\Promise\resolve;
 
 class PipeTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromise() {
@@ -80,5 +81,32 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
 
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
+    }
+
+    /**
+     * @depends testSuccessfulPromise
+     */
+    public function testReactPromise() {
+        $invoked = false;
+        $callback = function ($value) use (&$invoked) {
+            $invoked = true;
+            return $value + 1;
+        };
+
+        $value = 1;
+
+        $promise = resolve($value);
+
+        $promise = Amp\pipe($promise, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
+
+        $callback = function ($exception, $value) use (&$result) {
+            $result = $value;
+        };
+
+        $promise->when($callback);
+
+        $this->assertTrue($invoked);
+        $this->assertSame($value + 1, $result);
     }
 }

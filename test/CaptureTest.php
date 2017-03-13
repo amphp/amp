@@ -6,6 +6,7 @@ use Amp;
 use Amp\Failure;
 use Amp\Success;
 use Amp\Promise;
+use function React\Promise\reject;
 
 class CaptureTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromise() {
@@ -109,5 +110,34 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $this->assertFalse($invoked);
         $this->assertSame($exception, $reason);
+    }
+
+    /**
+     * @depends testFailedPromise
+     */
+    public function testReactPromise() {
+        $invoked = false;
+        $callback = function ($exception) use (&$invoked, &$reason) {
+            $invoked = true;
+            $reason = $exception;
+            return -1;
+        };
+
+        $exception = new \Exception;
+
+        $promise = reject($exception);
+
+        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $this->assertInstanceOf(Promise::class, $promise);
+
+        $callback = function ($exception, $value) use (&$result) {
+            $result = $value;
+        };
+
+        $promise->when($callback);
+
+        $this->assertTrue($invoked);
+        $this->assertSame($exception, $reason);
+        $this->assertSame(-1, $result);
     }
 }
