@@ -31,7 +31,7 @@ Extensions are only needed if your app necessitates a high numbers of concurrent
 
 ## Documentation
 
-Documentation is bundled within this repository in the [`./docs`](./docs) repository.
+Documentation is bundled within this repository in the [`./docs`](./docs) directory.
 
 ## Versioning
 
