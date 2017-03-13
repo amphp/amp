@@ -26,6 +26,8 @@ Amp exposes several ways to schedule timer watchers. Let's look at some details 
 ```php
 <?php // using Loop::defer()
 
+use Amp\Loop;
+
 Loop::run(function () {
 	echo "line 1\n";
 	Loop::defer(function () {
@@ -51,6 +53,8 @@ Loop::run(function () {
 ```php
 <?php // using delay()
 
+use Amp\Loop;
+
 Loop::run(function () {
 	// event loop will stop in three seconds
 	Loop::delay($msDelay = 3000, "Amp\Loop::stop");
@@ -69,6 +73,8 @@ Loop::run(function () {
 
 ```php
 <?php // using repeat()
+
+use Amp\Loop;
 
 Loop::run(function () {
 	Loop::repeat($msInterval = 100, function ($watcherId) {
@@ -106,6 +112,8 @@ A common usage pattern for reacting to readable data looks something like this e
 
 ```php
 <?php
+
+use Amp\Loop;
 
 const IO_GRANULARITY = 32768;
 
@@ -148,6 +156,8 @@ A simple disable example:
 ```php
 <?php
 
+use Amp\Loop;
+
 // Register a watcher we'll disable
 $watcherIdToDisable = Loop::delay($msDelay = 1000, function () {
     echo "I'll never execute in one second because: disable()\n";
@@ -171,6 +181,8 @@ After our second watcher callback executes the event loop exits because there ar
 ```php
 <?php
 
+use Amp\Loop;
+
 // Register a watcher
 $myWatcherId = Loop::repeat($msInterval = 1000, function() {
     echo "tick\n";
@@ -192,6 +204,8 @@ For a slightly more complex use case, let's look at a common scenario where a se
 
 ```php
 <?php
+
+use Amp\Loop;
 
 class Server {
     private $clients = [];
@@ -251,6 +265,9 @@ It's important to *always* cancel persistent watchers once you're finished with 
 
 ```php
 <?php
+
+use Amp\Loop;
+
 Loop::run(function() {
     $myWatcherId = Loop::repeat($msInterval = 1000, function () {
         echo "tick\n";
@@ -258,7 +275,7 @@ Loop::run(function() {
 
     // Cancel $myWatcherId in five seconds and exit the event loop
     Loop::delay($msDelay = 5000, function () use ($myWatcherId) {
-        Amp\cancel($myWatcherId);
+        Loop::cancel($myWatcherId);
     });
 });
 ```
@@ -269,6 +286,8 @@ Loop::run(function() {
 
 ```php
 <?php
+
+use Amp\Loop;
 
 Loop::run(function () {
     // Let's tick off output once per second so we can see activity.
@@ -308,7 +327,11 @@ It is always safe to cancel a watcher from within its own callback. For example:
 
 ```php
 <?php
+
+use Amp\Loop;
+
 $increment = 0;
+
 Loop::repeat($msDelay = 50, function ($watcherId) use (&$increment) {
     echo "tick\n";
     if (++$increment >= 3) {
@@ -327,6 +350,8 @@ A standard pattern in this area is to initialize writability watchers in a disab
 
 ```php
 <?php
+
+use Amp\Loop;
 
 $watcherId = Loop::onWritable(STDOUT, function () {});
 Loop::disable($watcherId);

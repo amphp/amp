@@ -74,6 +74,8 @@ While an application can and often does take place entirely inside the confines 
 ```php
 <?php
 
+use Amp\Loop;
+
 $myText = null;
 
 function onInput($watcherId, $stream) {
