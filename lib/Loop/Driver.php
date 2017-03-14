@@ -582,7 +582,9 @@ abstract class Driver {
      * @return array
      */
     public function __debugInfo() {
+        // @codeCoverageIgnoreStart
         return $this->getInfo();
+        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -639,7 +641,9 @@ abstract class Driver {
                     break;
 
                 default:
+                    // @codeCoverageIgnoreStart
                     throw new \DomainException("Unknown watcher type");
+                    // @codeCoverageIgnoreEnd
             }
 
             if ($watcher->enabled) {
