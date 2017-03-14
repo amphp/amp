@@ -42,7 +42,6 @@ class NativeDriver extends Driver {
      * {@inheritdoc}
      *
      * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
-     * @throws \RuntimeException If creating the backend signal handler fails.
      */
     public function onSignal(int $signo, callable $callback, $data = null): string {
         if (!$this->signalHandling) {
