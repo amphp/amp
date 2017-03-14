@@ -140,4 +140,9 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame($exception, $reason);
         $this->assertSame(-1, $result);
     }
+
+    public function testNonPromise() {
+        $this->expectException(Amp\UnionTypeError::class);
+        Amp\capture(42, \Error::class, function () {});
+    }
 }
