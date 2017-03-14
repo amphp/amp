@@ -6,8 +6,10 @@ use Amp;
 use Amp\Coroutine;
 use Amp\Success;
 use Amp\Promise;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
-class CallTest extends \PHPUnit\Framework\TestCase {
+class CallTest extends TestCase {
     public function testCallWithFunctionReturningPromise() {
         $value = 1;
         $promise = Amp\call(function ($value) {
@@ -57,6 +59,23 @@ class CallTest extends \PHPUnit\Framework\TestCase {
 
         $this->assertSame($exception, $reason);
         $this->assertNull($result);
+    }
+
+    public function testCallWithFunctionReturningReactPromise() {
+        $value = 1;
+        $promise = Amp\call(function ($value) {
+            return new FulfilledReactPromise($value);
+        }, $value);
+
+        $this->assertInstanceOf(Promise::class, $promise);
+
+        $promise->when(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertNull($reason);
+        $this->assertSame($value, $result);
     }
 
     public function testCallWithGeneratorFunction() {

@@ -8,9 +8,10 @@ use Amp\Failure;
 use Amp\Pause;
 use Amp\Success;
 use Amp\Loop;
+use PHPUnit\Framework\TestCase;
 use function React\Promise\resolve;
 
-class WaitTest extends \PHPUnit\Framework\TestCase {
+class WaitTest extends TestCase {
     public function testWaitOnSuccessfulPromise() {
         $value = 1;
 
@@ -72,5 +73,10 @@ class WaitTest extends \PHPUnit\Framework\TestCase {
         $result = Amp\wait($promise);
 
         $this->assertSame($value, $result);
+    }
+
+    public function testNonPromise() {
+        $this->expectException(Amp\UnionTypeError::class);
+        Amp\wait(42);
     }
 }

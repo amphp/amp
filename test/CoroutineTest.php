@@ -10,9 +10,11 @@ use Amp\Loop;
 use Amp\Pause;
 use Amp\Success;
 use Amp\Promise;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
 
-class CoroutineTest extends \PHPUnit\Framework\TestCase {
+class CoroutineTest extends TestCase {
     const TIMEOUT = 100;
 
     public function testYieldSuccessfulPromise() {
@@ -551,6 +553,25 @@ class CoroutineTest extends \PHPUnit\Framework\TestCase {
     public function testCoroutineFunctionWithSuccessReturnCallback() {
         $callable = Amp\coroutine(function () {
             return new Success(42);
+        });
+
+        /** @var Promise $promise */
+        $promise = $callable();
+
+        $this->assertInstanceOf(Promise::class, $promise);
+
+        $promise->when(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertNull($reason);
+        $this->assertSame(42, $result);
+    }
+
+    public function testCoroutineFunctionWithReactPromise() {
+        $callable = Amp\coroutine(function () {
+            return new FulfilledReactPromise(42);
         });
 
         /** @var Promise $promise */

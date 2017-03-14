@@ -109,4 +109,9 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
         $this->assertSame($value + 1, $result);
     }
+
+    public function testNonPromise() {
+        $this->expectException(Amp\UnionTypeError::class);
+        Amp\pipe(42, function () {});
+    }
 }

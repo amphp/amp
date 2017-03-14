@@ -45,4 +45,9 @@ class RethrowTest extends TestCase {
 
         $this->fail('Failed promise reason should be thrown from loop');
     }
+
+    public function testNonPromise() {
+        $this->expectException(Amp\UnionTypeError::class);
+        Amp\rethrow(42);
+    }
 }

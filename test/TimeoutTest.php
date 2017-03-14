@@ -112,4 +112,9 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($value, $result);
         });
     }
+
+    public function testNonPromise() {
+        $this->expectException(Amp\UnionTypeError::class);
+        Amp\timeout(42, 42);
+    }
 }
