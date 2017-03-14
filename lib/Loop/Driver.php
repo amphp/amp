@@ -6,7 +6,6 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\adapt;
 use function Amp\rethrow;
 
 /**
@@ -100,16 +99,15 @@ abstract class Driver {
         $this->activate($this->enableQueue);
         $this->enableQueue = [];
 
-        try {
-            foreach ($this->deferQueue as $watcher) {
-                if (!isset($this->deferQueue[$watcher->id])) {
-                    continue; // Watcher disabled by another defer watcher.
-                }
+        foreach ($this->deferQueue as $watcher) {
+            if (!isset($this->deferQueue[$watcher->id])) {
+                continue; // Watcher disabled by another defer watcher.
+            }
 
-                unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
+            unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
 
-                $callback = $watcher->callback;
-                $result = $callback($watcher->id, $watcher->data);
+            try {
+                $result = ($watcher->callback)($watcher->id, $watcher->data);
 
                 if ($result === null) {
                     continue;
@@ -117,25 +115,17 @@ abstract class Driver {
 
                 if ($result instanceof \Generator) {
                     $result = new Coroutine($result);
-                } elseif ($result instanceof ReactPromise) {
-                    $result = adapt($result);
                 }
 
-                if ($result instanceof Promise) {
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
                     rethrow($result);
                 }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
             }
-
-            $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
-
-        } catch (\Throwable $exception) {
-            if (null === $this->errorHandler) {
-                throw $exception;
-            }
-
-            $errorHandler = $this->errorHandler;
-            $errorHandler($exception);
         }
+
+        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
     }
 
     /**
@@ -557,6 +547,21 @@ abstract class Driver {
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
         return $previous;
+    }
+
+    /**
+     * Invokes the error handler with the given exception.
+     *
+     * @param \Throwable $exception The exception thrown from a watcher callback.
+     *
+     * @throws \Throwable If no error handler has been set.
+     */
+    protected function error(\Throwable $exception) {
+        if ($this->errorHandler === null) {
+            throw $exception;
+        }
+
+        ($this->errorHandler)($exception);
     }
 
     /**

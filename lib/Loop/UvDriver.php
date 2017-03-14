@@ -6,7 +6,6 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\adapt;
 use function Amp\rethrow;
 
 class UvDriver extends Driver {
@@ -58,21 +57,22 @@ class UvDriver extends Driver {
             $watchers = $this->watchers[(int) $event];
 
             foreach ($watchers as $watcher) {
-                $callback = $watcher->callback;
-                $result = $callback($watcher->id, $resource, $watcher->data);
+                try {
+                    $result = ($watcher->callback)($watcher->id, $resource, $watcher->data);
 
-                if ($result === null) {
-                    return;
-                }
+                    if ($result === null) {
+                        return;
+                    }
 
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                } elseif ($result instanceof ReactPromise) {
-                    $result = adapt($result);
-                }
+                    if ($result instanceof \Generator) {
+                        $result = new Coroutine($result);
+                    }
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                    if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        rethrow($result);
+                    }
+                } catch (\Throwable $exception) {
+                    $this->error($exception);
                 }
             }
         };
@@ -84,42 +84,44 @@ class UvDriver extends Driver {
                 $this->cancel($watcher->id);
             }
 
-            $callback = $watcher->callback;
-            $result = $callback($watcher->id, $watcher->data);
+            try {
+                $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-            if ($result === null) {
-                return;
-            }
+                if ($result === null) {
+                    return;
+                }
 
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            } elseif ($result instanceof ReactPromise) {
-                $result = adapt($result);
-            }
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
 
-            if ($result instanceof Promise) {
-                rethrow($result);
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    rethrow($result);
+                }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
             }
         };
 
         $this->signalCallback = function ($event, $signo) {
             $watcher = $this->watchers[(int) $event];
 
-            $callback = $watcher->callback;
-            $result = $callback($watcher->id, $signo, $watcher->data);
+            try {
+                $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
 
-            if ($result === null) {
-                return;
-            }
+                if ($result === null) {
+                    return;
+                }
 
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            } elseif ($result instanceof ReactPromise) {
-                $result = adapt($result);
-            }
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
 
-            if ($result instanceof Promise) {
-                rethrow($result);
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    rethrow($result);
+                }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
             }
         };
     }

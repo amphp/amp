@@ -6,7 +6,6 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\adapt;
 use function Amp\rethrow;
 
 class NativeDriver extends Driver {
@@ -92,18 +91,19 @@ class NativeDriver extends Driver {
                     $this->cancel($id);
                 }
 
-                // Execute the timer.
-                $callback = $watcher->callback;
-                $result = $callback($id, $watcher->data);
+                try {
+                    // Execute the timer.
+                    $result = ($watcher->callback)($id, $watcher->data);
 
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                } elseif ($result instanceof ReactPromise) {
-                    $result = adapt($result);
-                }
+                    if ($result instanceof \Generator) {
+                        $result = new Coroutine($result);
+                    }
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                    if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        rethrow($result);
+                    }
+                } catch (\Throwable $exception) {
+                    $this->error($exception);
                 }
             }
         }
@@ -133,62 +133,68 @@ class NativeDriver extends Driver {
             $except = null;
 
             // Error reporting suppressed since stream_select() emits an E_WARNING if it is interrupted by a signal.
-            $count = @\stream_select($read, $write, $except, $seconds, $microseconds);
+            if (!@\stream_select($read, $write, $except, $seconds, $microseconds)) {
+                return;
+            }
 
-            if ($count) {
-                foreach ($read as $stream) {
-                    $streamId = (int) $stream;
-                    if (isset($this->readWatchers[$streamId])) {
-                        foreach ($this->readWatchers[$streamId] as $watcher) {
-                            if (!isset($this->readWatchers[$streamId][$watcher->id])) {
-                                continue; // Watcher disabled by another IO watcher.
-                            }
-
-                            $callback = $watcher->callback;
-                            $result = $callback($watcher->id, $stream, $watcher->data);
-
-                            if ($result === null) {
-                                continue;
-                            }
-
-                            if ($result instanceof \Generator) {
-                                $result = new Coroutine($result);
-                            } elseif ($result instanceof ReactPromise) {
-                                $result = adapt($result);
-                            }
-
-                            if ($result instanceof Promise) {
-                                rethrow($result);
-                            }
-                        }
-                    }
+            foreach ($read as $stream) {
+                $streamId = (int) $stream;
+                if (!isset($this->readWatchers[$streamId])) {
+                    continue; // All read watchers disabled.
                 }
 
-                foreach ($write as $stream) {
-                    $streamId = (int) $stream;
-                    if (isset($this->writeWatchers[$streamId])) {
-                        foreach ($this->writeWatchers[$streamId] as $watcher) {
-                            if (!isset($this->writeWatchers[$streamId][$watcher->id])) {
-                                continue; // Watcher disabled by another IO watcher.
-                            }
+                foreach ($this->readWatchers[$streamId] as $watcher) {
+                    if (!isset($this->readWatchers[$streamId][$watcher->id])) {
+                        continue; // Watcher disabled by another IO watcher.
+                    }
 
-                            $callback = $watcher->callback;
-                            $result = $callback($watcher->id, $stream, $watcher->data);
+                    try {
+                        $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
 
-                            if ($result === null) {
-                                continue;
-                            }
-
-                            if ($result instanceof \Generator) {
-                                $result = new Coroutine($result);
-                            } elseif ($result instanceof ReactPromise) {
-                                $result = adapt($result);
-                            }
-
-                            if ($result instanceof Promise) {
-                                rethrow($result);
-                            }
+                        if ($result === null) {
+                            continue;
                         }
+
+                        if ($result instanceof \Generator) {
+                            $result = new Coroutine($result);
+                        }
+
+                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                            rethrow($result);
+                        }
+                    } catch (\Throwable $exception) {
+                        $this->error($exception);
+                    }
+                }
+            }
+
+            foreach ($write as $stream) {
+                $streamId = (int) $stream;
+                if (!isset($this->writeWatchers[$streamId])) {
+                    continue; // All write watchers disabled.
+                }
+
+                foreach ($this->writeWatchers[$streamId] as $watcher) {
+                    if (!isset($this->writeWatchers[$streamId][$watcher->id])) {
+                        continue; // Watcher disabled by another IO watcher.
+                    }
+
+                    try {
+                        $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
+
+                        if ($result === null) {
+                            continue;
+                        }
+
+                        if ($result instanceof \Generator) {
+                            $result = new Coroutine($result);
+                        }
+
+                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                            rethrow($result);
+                        }
+                    } catch (\Throwable $exception) {
+                        $this->error($exception);
                     }
                 }
             }
@@ -319,21 +325,22 @@ class NativeDriver extends Driver {
                 continue;
             }
 
-            $callback = $watcher->callback;
-            $result = $callback($watcher->id, $signo, $watcher->data);
+            try {
+                $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
 
-            if ($result === null) {
-                continue;
-            }
+                if ($result === null) {
+                    continue;
+                }
 
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            } elseif ($result instanceof ReactPromise) {
-                $result = adapt($result);
-            }
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
 
-            if ($result instanceof Promise) {
-                rethrow($result);
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    rethrow($result);
+                }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
             }
         }
     }
