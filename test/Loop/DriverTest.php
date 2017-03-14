@@ -2,6 +2,8 @@
 
 namespace Amp\Test\Loop;
 
+use Amp\Coroutine;
+use Amp\Failure;
 use Amp\Loop;
 use Amp\Loop\Driver;
 use Amp\Loop\InvalidWatcherError;
@@ -95,7 +97,8 @@ abstract class DriverTest extends TestCase {
     /** This MUST NOT have a "test" prefix, otherwise it's executed as test and marked as risky. */
     function checkForSignalCapability() {
         try {
-            $watcher = $this->loop->onSignal(SIGUSR1, function () {});
+            $watcher = $this->loop->onSignal(SIGUSR1, function () {
+            });
             $this->loop->cancel($watcher);
         } catch (UnsupportedFeatureException $e) {
             $this->markTestSkipped("The loop is not capable of handling signals properly. Skipping.");
@@ -1281,14 +1284,88 @@ abstract class DriverTest extends TestCase {
         ];
     }
 
-    function testDeferRethrowsReactPromise() {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("rethrow test");
+    function testRethrowsFromCallbacks() {
+        $promises = [
+            new Failure(new \Exception("rethrow test")),
+            new RejectedReactPromise(new \Exception("rethrow test")),
+            new Coroutine((function () {
+                if (false) {
+                    yield;
+                }
 
-        $this->loop->defer(function () {
-            return new RejectedReactPromise(new \Exception("rethrow test"));
-        });
+                throw new \Exception("rethrow test");
+            })()),
+            /* FIXME: Re-enable test. (function () {
+                if (false) {
+                    yield;
+                }
 
-        $this->loop->run();
+                throw new \Exception("rethrow test");
+            })(), */
+            null,
+        ];
+
+        $data = [];
+
+        foreach ($promises as $promise) {
+            foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
+                if ($watcher === "onSignal") {
+                    $this->checkForSignalCapability();
+                }
+
+                try {
+                    $args = [];
+
+                    fputs(STDERR, get_class(Loop::get()) . " " . $watcher);
+
+                    switch ($watcher) {
+                        case "onSignal":
+                            $args[] = SIGUSR1;
+                            break;
+
+                        case "onWritable":
+                            $args[] = STDOUT;
+                            break;
+
+                        case "onReadable":
+                            $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                            fwrite($ends[0], "trigger readability watcher");
+                            $args[] = $ends[1];
+                            break;
+
+                        case "delay":
+                        case "repeat":
+                            $args[] = 5;
+                            break;
+                    }
+
+                    if ($promise === null) {
+                        $args[] = function ($watcherId) {
+                            $this->loop->cancel($watcherId);
+                            throw new \Exception("rethrow test");
+                        };
+                    } else {
+                        $args[] = function ($watcherId) use ($promise) {
+                            $this->loop->cancel($watcherId);
+                            return $promise;
+                        };
+                    }
+
+                    call_user_func_array([$this->loop, $watcher], $args);
+
+                    if ($watcher == "onSignal") {
+                        $this->loop->delay(100, function () {
+                            \posix_kill(\getmypid(), \SIGUSR1);
+                        });
+                    }
+
+                    $this->loop->run();
+
+                    $this->fail("Didn't throw expected exception.");
+                } catch (\Exception $e) {
+                    $this->assertSame("rethrow test", $e->getMessage());
+                }
+            }
+        }
     }
 }
