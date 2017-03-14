@@ -181,4 +181,22 @@ class ProducerTest extends TestCase {
             $this->assertSame($exception, $caught);
         }
     }
+
+    public function testListenAfterResolve() {
+        $invoked = false;
+
+        Loop::run(function () use (&$invoked) {
+            $producer = new Producer(function (callable $emit) use (&$invoked) {
+                yield $emit(1);
+            });
+
+            yield $producer;
+
+            $producer->listen(function () use (&$invoked) {
+                $invoked = true;
+            });
+        });
+
+        $this->assertFalse($invoked);
+    }
 }
