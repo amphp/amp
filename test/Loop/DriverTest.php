@@ -171,14 +171,20 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    /** @depends checkForSignalCapability */
     function testOnSignalWatcherKeepAliveRunResult() {
-        $this->start(function (Driver $loop) {
+        $this->checkForSignalCapability();
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->onSignal(SIGUSR1, function () {
                 // empty
             });
+            $watcher = $loop->delay(100, function () use (&$invoked, $loop, $watcher) {
+                $invoked = true;
+                $loop->unreference($watcher);
+            });
             $loop->unreference($watcher);
         });
+        $this->assertTrue($invoked);
     }
 
     function testUnreferencedDeferWatcherStillExecutes() {
@@ -249,9 +255,6 @@ abstract class DriverTest extends TestCase {
     function testWeakTypes($type, $args) {
         if ($type == "onSignal") {
             $this->checkForSignalCapability();
-            if (!\extension_loaded("posix")) {
-                $this->markTestSkipped("ext/posix required to test signal handlers");
-            }
         }
 
         $this->start(function (Driver $loop) use ($type, $args, &$invoked) {
@@ -452,9 +455,6 @@ abstract class DriverTest extends TestCase {
 
         if ($type === "onSignal") {
             $this->checkForSignalCapability();
-            if (!\extension_loaded("posix")) {
-                $this->markTestSkipped("ext/posix required to test signal handlers");
-            }
         }
 
         $this->start(function (Driver $loop) use ($type, $args, $runs) {
@@ -657,11 +657,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends checkForSignalCapability */
     function testSignalExecutionOrder() {
-        if (!\extension_loaded("posix")) {
-            $this->markTestSkipped("ext/posix required to test signal handlers");
-        }
+        $this->checkForSignalCapability();
 
         $this->expectOutputString("122222");
         $this->start(function (Driver $loop) {
@@ -997,11 +994,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends checkForSignalCapability */
     function testOnSignalWatcher() {
-        if (!\extension_loaded("posix")) {
-            $this->markTestSkipped("ext/posix required to test signal handlers");
-        }
+        $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
         $this->start(function (Driver $loop) {
@@ -1019,11 +1013,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends checkForSignalCapability */
     function testInitiallyDisabledOnSignalWatcher() {
-        if (!\extension_loaded("posix")) {
-            $this->markTestSkipped("ext/posix required to test signal handlers");
-        }
+        $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
         $this->start(function (Driver $loop) {
@@ -1047,11 +1038,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @depends checkForSignalCapability */
     function testNestedLoopSignalDispatch() {
-        if (!\extension_loaded("posix")) {
-            $this->markTestSkipped("ext/posix required to test signal handlers");
-        }
+        $this->checkForSignalCapability();
 
         $this->expectOutputString("inner SIGUSR2\nouter SIGUSR1\n");
         $this->start(function (Driver $loop) {
