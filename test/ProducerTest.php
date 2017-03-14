@@ -113,7 +113,7 @@ class ProducerTest extends TestCase {
             });
         });
 
-        $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
+        $this->assertGreaterThan(self::TIMEOUT * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 
     /**
@@ -137,7 +137,7 @@ class ProducerTest extends TestCase {
             });
         });
 
-        $this->assertGreaterThan(self::TIMEOUT * $emits, $time * 1000);
+        $this->assertGreaterThan(self::TIMEOUT * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 
     /**
