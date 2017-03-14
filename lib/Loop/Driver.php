@@ -200,7 +200,7 @@ abstract class Driver {
      */
     public function delay(int $delay, callable $callback, $data = null): string {
         if ($delay < 0) {
-            throw new \InvalidArgumentException("Delay must be greater than or equal to zero");
+            throw new \Error("Delay must be greater than or equal to zero");
         }
 
         $watcher = new Watcher;
@@ -234,7 +234,7 @@ abstract class Driver {
      */
     public function repeat(int $interval, callable $callback, $data = null): string {
         if ($interval < 0) {
-            throw new \InvalidArgumentException("Interval must be greater than or equal to zero");
+            throw new \Error("Interval must be greater than or equal to zero");
         }
 
         $watcher = new Watcher;
