@@ -2,6 +2,7 @@
 
 namespace Amp\Loop;
 
+// @codeCoverageIgnoreStart
 class DriverFactory {
     /**
      * Creates a new loop instance and chooses the best available driver.
@@ -24,3 +25,4 @@ class DriverFactory {
         return new NativeDriver;
     }
 }
+// @codeCoverageIgnoreEnd
