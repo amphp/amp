@@ -96,6 +96,40 @@ class CoroutineTest extends TestCase {
         });
     }
 
+    public function testYieldPromiseArrayAfterPendingPromise() {
+        Loop::run(function () {
+            $value = 1;
+
+            $generator = function () use (&$yielded, $value) {
+                yield new Pause(10);
+                list($yielded) = yield [
+                    new Success($value)
+                ];
+            };
+
+            yield new Coroutine($generator());
+
+            $this->assertSame($value, $yielded);
+        });
+    }
+
+    public function testYieldNonPromiseArrayAfterPendingPromise() {
+        $this->expectException(InvalidYieldError::class);
+
+        Loop::run(function () {
+            $value = 1;
+
+            $generator = function () use (&$yielded, $value) {
+                yield new Pause(10);
+                list($yielded) = yield [
+                    $value
+                ];
+            };
+
+            yield new Coroutine($generator());
+        });
+    }
+
     /**
      * @depends testYieldFailedPromise
      */
