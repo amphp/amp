@@ -4,7 +4,7 @@ namespace Amp\Test\Loop;
 
 use Amp\Loop;
 use Amp\Loop\Driver;
-use Amp\Loop\InvalidWatcherException;
+use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
 use PHPUnit\Framework\TestCase;
 use React\Promise\RejectedPromise as RejectedReactPromise;
@@ -695,11 +695,11 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherException */
+    /** @expectedException \Amp\Loop\InvalidWatcherError */
     function testExceptionOnEnableNonexistentWatcher() {
         try {
             $this->loop->enable("nonexistentWatcher");
-        } catch (InvalidWatcherException $e) {
+        } catch (InvalidWatcherError $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }
@@ -719,27 +719,27 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue(true);
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherException */
+    /** @expectedException \Amp\Loop\InvalidWatcherError */
     function testExceptionOnReferenceNonexistentWatcher() {
         try {
             $this->loop->reference("nonexistentWatcher");
-        } catch (InvalidWatcherException $e) {
+        } catch (InvalidWatcherError $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherException */
+    /** @expectedException \Amp\Loop\InvalidWatcherError */
     function testExceptionOnUnreferenceNonexistentWatcher() {
         try {
             $this->loop->unreference("nonexistentWatcher");
-        } catch (InvalidWatcherException $e) {
+        } catch (InvalidWatcherError $e) {
             $this->assertEquals("nonexistentWatcher", $e->getWatcherId());
             throw $e;
         }
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherException */
+    /** @expectedException \Amp\Loop\InvalidWatcherError */
     function testWatcherInvalidityOnDefer() {
         $this->start(function (Driver $loop) {
             $loop->defer(function ($watcher) use ($loop) {
@@ -748,7 +748,7 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherException */
+    /** @expectedException \Amp\Loop\InvalidWatcherError */
     function testWatcherInvalidityOnDelay() {
         $this->start(function (Driver $loop) {
             $loop->delay($msDelay = 0, function ($watcher) use ($loop) {
