@@ -220,7 +220,9 @@ class EventDriver extends Driver {
                         break;
 
                     default:
-                        throw new \DomainException("Unknown watcher type");
+                        // @codeCoverageIgnoreStart
+                        throw new \Error("Unknown watcher type");
+                        // @codeCoverageIgnoreEnd
                 }
             }
 

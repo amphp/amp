@@ -642,7 +642,7 @@ abstract class Driver {
 
                 default:
                     // @codeCoverageIgnoreStart
-                    throw new \DomainException("Unknown watcher type");
+                    throw new \Error("Unknown watcher type");
                     // @codeCoverageIgnoreEnd
             }
 
