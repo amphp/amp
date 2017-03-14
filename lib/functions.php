@@ -18,11 +18,9 @@ function wrap(callable $callback): callable {
 
         if ($result instanceof \Generator) {
             $result = new Coroutine($result);
-        } elseif ($result instanceof ReactPromise) {
-            $result = adapt($result);
         }
 
-        if ($result instanceof Promise) {
+        if ($result instanceof Promise || $result instanceof ReactPromise) {
             rethrow($result);
         }
     };
@@ -47,15 +45,17 @@ function coroutine(callable $worker): callable {
 
         if ($result instanceof \Generator) {
             return new Coroutine($result);
-        } elseif ($result instanceof ReactPromise) {
-            $result = adapt($result);
         }
 
-        if (!$result instanceof Promise) {
-            return new Success($result);
+        if ($result instanceof Promise) {
+            return $result;
         }
 
-        return $result;
+        if ($result instanceof ReactPromise) {
+            return adapt($result);
+        }
+
+        return new Success($result);
     };
 }
 
@@ -77,15 +77,17 @@ function call(callable $functor, ...$args): Promise {
 
     if ($result instanceof \Generator) {
         return new Coroutine($result);
-    } elseif ($result instanceof ReactPromise) {
-        $result = adapt($result);
     }
 
-    if (!$result instanceof Promise) {
-        return new Success($result);
+    if ($result instanceof Promise) {
+        return $result;
     }
 
-    return $result;
+    if ($result instanceof ReactPromise) {
+        return adapt($result);
+    }
+
+    return new Success($result);
 }
 
 /**
