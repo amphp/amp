@@ -360,11 +360,11 @@ abstract class Driver {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public function enable(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
-            throw new InvalidWatcherException($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
+            throw new InvalidWatcherError($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
         }
 
         $watcher = $this->watchers[$watcherId];
@@ -466,11 +466,11 @@ abstract class Driver {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public function reference(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
-            throw new InvalidWatcherException($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
+            throw new InvalidWatcherError($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
         }
 
         $this->watchers[$watcherId]->referenced = true;
@@ -486,11 +486,11 @@ abstract class Driver {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public function unreference(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
-            throw new InvalidWatcherException($watcherId, "Cannot unreference an invalid watcher identifier: '{$watcherId}'");
+            throw new InvalidWatcherError($watcherId, "Cannot unreference an invalid watcher identifier: '{$watcherId}'");
         }
 
         $this->watchers[$watcherId]->referenced = false;
