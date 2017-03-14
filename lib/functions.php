@@ -102,7 +102,7 @@ function rethrow($promise) {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } else {
-            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
     }
 
@@ -128,7 +128,7 @@ function wait($promise) {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } else {
-            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
     }
 
@@ -168,7 +168,7 @@ function pipe($promise, callable $functor): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } else {
-            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
     }
 
@@ -205,7 +205,7 @@ function capture($promise, string $className, callable $functor): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } else {
-            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
     }
 
@@ -250,7 +250,7 @@ function timeout($promise, int $timeout): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } else {
-            throw new \TypeError("Must provide an instance of %s or %s", Promise::class, ReactPromise::class);
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
     }
 
@@ -373,7 +373,7 @@ function any(array $promises): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } elseif (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
 
         $promise->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
@@ -417,7 +417,7 @@ function all(array $promises): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } elseif (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
 
         $promise->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
@@ -465,7 +465,7 @@ function first(array $promises): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } elseif (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
 
         $promise->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
@@ -513,7 +513,7 @@ function some(array $promises): Promise {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
         } elseif (!$promise instanceof Promise) {
-            throw new \Error("Non-promise provided");
+            throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
         }
 
         $promise->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
@@ -553,7 +553,7 @@ function map(callable $callback, array ...$promises): array {
     foreach ($promises as $promiseSet) {
         foreach ($promiseSet as $promise) {
             if (!$promise instanceof Promise && !$promise instanceof ReactPromise) {
-                throw new \Error("Non-promise provided");
+                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
     }
@@ -573,7 +573,7 @@ function map(callable $callback, array ...$promises): array {
  */
 function stream(/* iterable */ $iterable): Stream {
     if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
-        throw new \TypeError("Must provide an array or instance of Traversable");
+        throw new UnionTypeError(["array", "Traversable"], $iterable);
     }
 
     return new Producer(function (callable $emit) use ($iterable) {
@@ -634,7 +634,7 @@ function merge(array $streams): Stream {
 
     foreach ($streams as $stream) {
         if (!$stream instanceof Stream) {
-            throw new \Error("Non-stream provided");
+            throw new UnionTypeError([Stream::class], $stream);
         }
         $stream->listen(function ($value) use (&$pending, $emitter) {
             if ($pending) {
@@ -670,7 +670,7 @@ function merge(array $streams): Stream {
 function concat(array $streams): Stream {
     foreach ($streams as $stream) {
         if (!$stream instanceof Stream) {
-            throw new \Error("Non-stream provided");
+            throw new UnionTypeError([Stream::class], $stream);
         }
     }
 

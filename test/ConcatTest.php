@@ -67,8 +67,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Non-stream provided
+     * @expectedException \Amp\UnionTypeError
      */
     public function testNonStream() {
         Amp\concat([1]);

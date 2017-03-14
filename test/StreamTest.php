@@ -91,8 +91,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \TypeError
-     * @expectedExceptionMessage Must provide an array or instance of Traversable
+     * @expectedException \Amp\UnionTypeError
      * @dataProvider provideInvalidStreamArguments
      */
     public function testInvalid($arg) {

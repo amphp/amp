@@ -66,7 +66,7 @@ final class Coroutine implements Promise {
                     if (\is_array($yielded)) {
                         try {
                             $yielded = all($yielded);
-                        } catch (\Error $e) {
+                        } catch (UnionTypeError $e) {
                             throw new InvalidYieldError(
                                 $this->generator,
                                 \sprintf(
@@ -110,7 +110,7 @@ final class Coroutine implements Promise {
                 if (\is_array($yielded)) {
                     try {
                         $yielded = all($yielded);
-                    } catch (\Error $e) {
+                    } catch (UnionTypeError $e) {
                         throw new InvalidYieldError(
                             $this->generator,
                             \sprintf(

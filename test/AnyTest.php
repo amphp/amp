@@ -100,8 +100,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Non-promise provided
+     * @expectedException \Amp\UnionTypeError
      */
     public function testNonPromise() {
         Amp\any([1]);

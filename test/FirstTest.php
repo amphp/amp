@@ -76,8 +76,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Non-promise provided
+     * @expectedException \Amp\UnionTypeError
      */
     public function testNonPromise() {
         Amp\first([1]);
