@@ -190,8 +190,8 @@ function pipe($promise, callable $functor): Promise {
 
 /**
  * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
- * @param string $className Exception class name to capture. Given callback will only be invoked if the failure reason
- *     is an instance of the given exception class name.
+ * @param string $className Throwable class name to capture. Given callback will only be invoked if the failure reason
+ *     is an instance of the given throwable class name.
  * @param callable(\Throwable $exception): mixed $functor
  *
  * @return \Amp\Promise

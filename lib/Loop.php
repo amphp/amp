@@ -4,7 +4,7 @@ namespace Amp;
 
 use Amp\Loop\Driver;
 use Amp\Loop\DriverFactory;
-use Amp\Loop\InvalidWatcherException;
+use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
 
 /**
@@ -204,7 +204,7 @@ final class Loop {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public static function enable(string $watcherId) {
         self::$driver->enable($watcherId);
@@ -251,7 +251,7 @@ final class Loop {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public static function reference(string $watcherId) {
         self::$driver->reference($watcherId);
@@ -267,7 +267,7 @@ final class Loop {
      *
      * @return void
      *
-     * @throws InvalidWatcherException If the watcher identifier is invalid.
+     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public static function unreference(string $watcherId) {
         self::$driver->unreference($watcherId);
@@ -311,10 +311,10 @@ final class Loop {
      *
      * Subsequent calls to this method will overwrite the previous handler.
      *
-     * @param callable(\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
+     * @param callable(\Throwable $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
-     * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
+     * @return callable(\Throwable $error)|null The previous handler, `null` if there was none.
      */
     public static function setErrorHandler(callable $callback = null) {
         return self::$driver->setErrorHandler($callback);
