@@ -8,6 +8,7 @@ use Amp\Loop;
 use Amp\Loop\Driver;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
+use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
@@ -1285,30 +1286,29 @@ abstract class DriverTest extends TestCase {
     }
 
     function testRethrowsFromCallbacks() {
-        $promises = [
-            new Failure(new \Exception("rethrow test")),
-            new RejectedReactPromise(new \Exception("rethrow test")),
-            new Coroutine((function () {
-                if (false) {
-                    yield;
-                }
+        foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
+            $promises = [
+                new Failure(new \Exception("rethrow test")),
+                new RejectedReactPromise(new \Exception("rethrow test")),
+                new Coroutine((function () {
+                    if (false) {
+                        yield;
+                    }
 
-                throw new \Exception("rethrow test");
-            })()),
-            /* FIXME: Re-enable test. (function () {
-                if (false) {
-                    yield;
-                }
+                    throw new \Exception("rethrow test");
+                })()),
+                (function () {
+                    if (false) {
+                        yield;
+                    }
 
-                throw new \Exception("rethrow test");
-            })(), */
-            null,
-        ];
+                    throw new \Exception("rethrow test");
+                })(),
+                null,
+            ];
 
-        $data = [];
+            foreach ($promises as $promise) {
 
-        foreach ($promises as $promise) {
-            foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
                 if ($watcher === "onSignal") {
                     $this->checkForSignalCapability();
                 }
@@ -1363,6 +1363,7 @@ abstract class DriverTest extends TestCase {
 
                     $this->fail("Didn't throw expected exception.");
                 } catch (\Exception $e) {
+                    var_dump((string) $e);
                     $this->assertSame("rethrow test", $e->getMessage());
                 }
             }
