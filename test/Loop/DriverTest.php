@@ -1316,8 +1316,6 @@ abstract class DriverTest extends TestCase {
                 try {
                     $args = [];
 
-                    fputs(STDERR, get_class(Loop::get()) . " " . $watcher);
-
                     switch ($watcher) {
                         case "onSignal":
                             $args[] = SIGUSR1;
@@ -1363,7 +1361,6 @@ abstract class DriverTest extends TestCase {
 
                     $this->fail("Didn't throw expected exception.");
                 } catch (\Exception $e) {
-                    var_dump((string) $e);
                     $this->assertSame("rethrow test", $e->getMessage());
                 }
             }
