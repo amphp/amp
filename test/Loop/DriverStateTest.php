@@ -2,6 +2,7 @@
 
 namespace Amp\Test\Loop;
 
+use Amp\Loop;
 use Amp\Loop\Driver;
 use PHPUnit\Framework\TestCase;
 
@@ -25,6 +26,15 @@ class DriverStateTest extends TestCase {
     public function getsPreviouslySetValue($value) {
         $this->loop->setState("foobar", $value);
         $this->assertSame($value, $this->loop->getState("foobar"));
+    }
+
+    /**
+     * @test
+     * @dataProvider provideValues
+     */
+    public function getsPreviouslySetValueViaAccessor($value) {
+        Loop::setState("foobar", $value);
+        $this->assertSame($value, Loop::getState("foobar"));
     }
 
     public function provideValues() {
