@@ -85,9 +85,9 @@ class EvDriver extends Driver {
             /** @var \Amp\Internal\Watcher $watcher */
             $watcher = $event->data;
 
-            $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
-
             try {
+                $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
+
                 if ($result === null) {
                     return;
                 }
