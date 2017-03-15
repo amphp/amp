@@ -17,4 +17,8 @@ class EvDriverTest extends DriverTest {
     public function testHandle() {
         $this->assertInstanceOf(\EvLoop::class, $this->loop->getHandle());
     }
+
+    public function testSupported() {
+        $this->assertTrue(EvDriver::isSupported());
+    }
 }

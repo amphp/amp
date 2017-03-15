@@ -17,4 +17,8 @@ class UvDriverTest extends DriverTest {
     public function testHandle() {
         $this->assertTrue(\is_resource($this->loop->getHandle()));
     }
+
+    public function testSupported() {
+        $this->assertTrue(UvDriver::isSupported());
+    }
 }

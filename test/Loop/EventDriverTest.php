@@ -17,4 +17,8 @@ class EventDriverTest extends DriverTest {
     public function testHandle() {
         $this->assertInstanceOf(\EventBase::class, $this->loop->getHandle());
     }
+
+    public function testSupported() {
+        $this->assertTrue(EventDriver::isSupported());
+    }
 }
