@@ -6,7 +6,7 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\rethrow;
+use function Amp\Promise\rethrow;
 
 class UvDriver extends Driver {
     /** @var resource A uv_loop resource created with uv_loop_new() */

@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Loop;
 use Amp\Producer;
 use Amp\Stream;
@@ -24,12 +23,12 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      */
     public function testConcat(array $streams, array $expected) {
         $streams = \array_map(function (array $stream): Stream {
-            return Amp\stream($stream);
+            return Stream\fromIterable($stream);
         }, $streams);
 
-        $stream = Amp\concat($streams);
+        $stream = Stream\concat($streams);
 
-        Amp\each($stream, function ($value) use ($expected) {
+        Stream\map($stream, function ($value) use ($expected) {
             static $i = 0;
             $this->assertSame($expected[$i++], $value);
         });
@@ -49,7 +48,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream = Amp\concat([Amp\stream(\range(1, 5)), $producer, Amp\stream(\range(7, 10))]);
+            $stream = Stream\concat([Stream\fromIterable(\range(1, 5)), $producer, Stream\fromIterable(\range(7, 10))]);
 
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
@@ -70,6 +69,6 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Amp\UnionTypeError
      */
     public function testNonStream() {
-        Amp\concat([1]);
+        Stream\concat([1]);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Success;
 use Amp\Promise;
@@ -20,7 +19,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Success($value);
 
-        $promise = Amp\pipe($promise, $callback);
+        $promise = Promise\pipe($promise, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
@@ -44,7 +43,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Failure($exception);
 
-        $promise = Amp\pipe($promise, $callback);
+        $promise = Promise\pipe($promise, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$reason) {
@@ -71,7 +70,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Success($value);
 
-        $promise = Amp\pipe($promise, $callback);
+        $promise = Promise\pipe($promise, $callback);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
@@ -97,7 +96,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
 
         $promise = resolve($value);
 
-        $promise = Amp\pipe($promise, $callback);
+        $promise = Promise\pipe($promise, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
@@ -111,7 +110,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(Amp\UnionTypeError::class);
-        Amp\pipe(42, function () {});
+        $this->expectException(\Amp\UnionTypeError::class);
+        Promise\pipe(42, function () {});
     }
 }

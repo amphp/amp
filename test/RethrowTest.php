@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\Promise;
 use PHPUnit\Framework\TestCase;
 use function React\Promise\reject;
 
@@ -16,7 +16,7 @@ class RethrowTest extends TestCase {
             Loop::run(function () use ($exception) {
                 $promise = new Failure($exception);
 
-                Amp\rethrow($promise);
+                Promise\rethrow($promise);
             });
         } catch (\Exception $reason) {
             $this->assertSame($exception, $reason);
@@ -36,7 +36,7 @@ class RethrowTest extends TestCase {
             Loop::run(function () use ($exception) {
                 $promise = reject($exception);
 
-                Amp\rethrow($promise);
+                Promise\rethrow($promise);
             });
         } catch (\Exception $reason) {
             $this->assertSame($exception, $reason);
@@ -47,7 +47,7 @@ class RethrowTest extends TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(Amp\UnionTypeError::class);
-        Amp\rethrow(42);
+        $this->expectException(\Amp\UnionTypeError::class);
+        Promise\rethrow(42);
     }
 }

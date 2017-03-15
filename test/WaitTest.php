@@ -2,10 +2,10 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Deferred;
 use Amp\Failure;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Success;
 use Amp\Loop;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +17,7 @@ class WaitTest extends TestCase {
 
         $promise = new Success($value);
 
-        $result = Amp\wait($promise);
+        $result = Promise\wait($promise);
 
         $this->assertSame($value, $result);
     }
@@ -28,7 +28,7 @@ class WaitTest extends TestCase {
         $promise = new Failure($exception);
 
         try {
-            $result = Amp\wait($promise);
+            $result = Promise\wait($promise);
         } catch (\Exception $e) {
             $this->assertSame($exception, $e);
             return;
@@ -46,7 +46,7 @@ class WaitTest extends TestCase {
 
             $promise = new Pause(100, $value);
 
-            $result = Amp\wait($promise);
+            $result = Promise\wait($promise);
 
             $this->assertSame($value, $result);
         });
@@ -59,7 +59,7 @@ class WaitTest extends TestCase {
     public function testPromiseWithNoResolutionPathThrowsException() {
         $promise = new Deferred;
 
-        $result = Amp\wait($promise->promise());
+        $result = Promise\wait($promise->promise());
     }
 
     /**
@@ -70,13 +70,13 @@ class WaitTest extends TestCase {
 
         $promise = resolve($value);
 
-        $result = Amp\wait($promise);
+        $result = Promise\wait($promise);
 
         $this->assertSame($value, $result);
     }
 
     public function testNonPromise() {
-        $this->expectException(Amp\UnionTypeError::class);
-        Amp\wait(42);
+        $this->expectException(\Amp\UnionTypeError::class);
+        Promise\wait(42);
     }
 }

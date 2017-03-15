@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Pause;
@@ -17,7 +16,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
 
             $promise = new Success($value);
 
-            $promise = Amp\timeout($promise, 100);
+            $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$result) {
@@ -36,7 +35,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
 
             $promise = new Failure($exception);
 
-            $promise = Amp\timeout($promise, 100);
+            $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$reason) {
@@ -58,7 +57,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$result, $value) {
             $promise = new Pause(50, $value);
 
-            $promise = Amp\timeout($promise, 100);
+            $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$result) {
@@ -78,7 +77,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$reason) {
             $promise = new Pause(200);
 
-            $promise = Amp\timeout($promise, 100);
+            $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$reason) {
@@ -88,7 +87,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
             $promise->when($callback);
         });
 
-        $this->assertInstanceOf(Amp\TimeoutException::class, $reason);
+        $this->assertInstanceOf(\Amp\TimeoutException::class, $reason);
     }
 
     /**
@@ -100,7 +99,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
 
             $promise = resolve($value);
 
-            $promise = Amp\timeout($promise, 100);
+            $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$result) {
@@ -114,7 +113,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(Amp\UnionTypeError::class);
-        Amp\timeout(42, 42);
+        $this->expectException(\Amp\UnionTypeError::class);
+        Promise\timeout(42, 42);
     }
 }

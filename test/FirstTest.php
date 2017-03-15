@@ -6,6 +6,7 @@ use Amp;
 use Amp\Failure;
 use Amp\MultiReasonException;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Success;
 use Amp\Loop;
 
@@ -15,7 +16,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
      * @expectedExceptionMessage No promises provided
      */
     public function testEmptyArray() {
-        Amp\first([]);
+        Promise\first([]);
     }
 
     public function testSuccessfulPromisesArray() {
@@ -25,7 +26,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\first($promises)->when($callback);
+        Promise\first($promises)->when($callback);
 
         $this->assertSame(1, $result);
     }
@@ -38,7 +39,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
             $reason = $exception;
         };
 
-        Amp\first($promises)->when($callback);
+        Promise\first($promises)->when($callback);
 
         $this->assertInstanceOf(MultiReasonException::class, $reason);
         $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
@@ -52,7 +53,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\first($promises)->when($callback);
+        Promise\first($promises)->when($callback);
 
         $this->assertSame(3, $result);
     }
@@ -69,7 +70,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\first($promises)->when($callback);
+            Promise\first($promises)->when($callback);
         });
 
         $this->assertSame(3, $result);
@@ -79,6 +80,6 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Amp\UnionTypeError
      */
     public function testNonPromise() {
-        Amp\first([1]);
+        Promise\first([1]);
     }
 }

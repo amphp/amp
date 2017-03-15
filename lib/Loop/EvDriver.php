@@ -6,7 +6,7 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\rethrow;
+use function Amp\Promise\rethrow;
 
 class EvDriver extends Driver {
     /** @var \EvSignal[]|null */

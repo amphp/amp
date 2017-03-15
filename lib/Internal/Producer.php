@@ -7,7 +7,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\adapt;
+use function Amp\Promise\adapt;
 
 /**
  * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of

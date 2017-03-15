@@ -6,7 +6,7 @@ use Amp\Coroutine;
 use Amp\Promise;
 use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\rethrow;
+use function Amp\Promise\rethrow;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.

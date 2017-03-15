@@ -65,7 +65,7 @@ final class Coroutine implements Promise {
 
                     if (\is_array($yielded)) {
                         try {
-                            $yielded = all($yielded);
+                            $yielded = Promise\all($yielded);
                         } catch (UnionTypeError $e) {
                             throw new InvalidYieldError(
                                 $this->generator,
@@ -77,7 +77,7 @@ final class Coroutine implements Promise {
                             );
                         }
                     } else if ($yielded instanceof ReactPromise) {
-                        $yielded = adapt($yielded);
+                        $yielded = Promise\adapt($yielded);
                     } else {
                         throw new InvalidYieldError(
                             $this->generator,
@@ -109,7 +109,7 @@ final class Coroutine implements Promise {
 
                 if (\is_array($yielded)) {
                     try {
-                        $yielded = all($yielded);
+                        $yielded = Promise\all($yielded);
                     } catch (UnionTypeError $e) {
                         throw new InvalidYieldError(
                             $this->generator,
@@ -121,7 +121,7 @@ final class Coroutine implements Promise {
                         );
                     }
                 } else if ($yielded instanceof ReactPromise) {
-                    $yielded = adapt($yielded);
+                    $yielded = Promise\adapt($yielded);
                 } else {
                     throw new InvalidYieldError(
                         $this->generator,

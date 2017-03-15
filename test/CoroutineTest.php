@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Coroutine;
 use Amp\Failure;
 use Amp\InvalidYieldError;
@@ -504,7 +503,7 @@ class CoroutineTest extends TestCase {
     }
 
     public function testCoroutineFunction() {
-        $callable = Amp\coroutine(function () {
+        $callable = \Amp\coroutine(function () {
             yield;
         });
 
@@ -517,7 +516,7 @@ class CoroutineTest extends TestCase {
     public function testCoroutineFunctionWithCallbackReturningPromise() {
         $value = 1;
         $promise = new Success($value);
-        $callable = Amp\coroutine(function ($value) {
+        $callable = \Amp\coroutine(function ($value) {
             return $value;
         });
 
@@ -540,7 +539,7 @@ class CoroutineTest extends TestCase {
      */
     public function testCoroutineFunctionWithNonGeneratorCallback() {
         $value = 1;
-        $callable = Amp\coroutine(function ($value) {
+        $callable = \Amp\coroutine(function ($value) {
             return $value;
         });
 
@@ -563,7 +562,7 @@ class CoroutineTest extends TestCase {
      */
     public function testCoroutineFunctionWithThrowingCallback() {
         $exception = new \Exception;
-        $callable = Amp\coroutine(function () use ($exception) {
+        $callable = \Amp\coroutine(function () use ($exception) {
             throw $exception;
         });
 
@@ -585,7 +584,7 @@ class CoroutineTest extends TestCase {
      * @depends testCoroutineFunction
      */
     public function testCoroutineFunctionWithSuccessReturnCallback() {
-        $callable = Amp\coroutine(function () {
+        $callable = \Amp\coroutine(function () {
             return new Success(42);
         });
 
@@ -604,7 +603,7 @@ class CoroutineTest extends TestCase {
     }
 
     public function testCoroutineFunctionWithReactPromise() {
-        $callable = Amp\coroutine(function () {
+        $callable = \Amp\coroutine(function () {
             return new FulfilledReactPromise(42);
         });
 

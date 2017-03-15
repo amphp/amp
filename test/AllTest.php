@@ -2,8 +2,8 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Success;
 use Amp\Loop;
 
@@ -13,7 +13,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\all([])->when($callback);
+        Promise\all([])->when($callback);
 
         $this->assertSame([], $result);
     }
@@ -25,7 +25,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\all($promises)->when($callback);
+        Promise\all($promises)->when($callback);
 
         $this->assertSame([1, 2, 3], $result);
     }
@@ -42,7 +42,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\all($promises)->when($callback);
+            Promise\all($promises)->when($callback);
         });
 
         $this->assertEquals([1, 2, 3], $result);
@@ -62,7 +62,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\all($promises)->when($callback);
+            Promise\all($promises)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -72,6 +72,6 @@ class AllTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Amp\UnionTypeError
      */
     public function testNonPromise() {
-        Amp\all([1]);
+        Promise\all([1]);
     }
 }

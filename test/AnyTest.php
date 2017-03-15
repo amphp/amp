@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Success;
 use Amp\Loop;
 
@@ -14,7 +14,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\any([])->when($callback);
+        Promise\any([])->when($callback);
 
         $this->assertSame([[], []], $result);
     }
@@ -26,7 +26,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\any($promises)->when($callback);
+        Promise\any($promises)->when($callback);
 
         $this->assertEquals([[], [1, 2, 3]], $result);
     }
@@ -39,7 +39,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\any($promises)->when($callback);
+        Promise\any($promises)->when($callback);
 
         $this->assertEquals([[$exception, $exception, $exception], []], $result);
     }
@@ -52,7 +52,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\any($promises)->when($callback);
+        Promise\any($promises)->when($callback);
 
         $this->assertEquals([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
@@ -69,7 +69,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\any($promises)->when($callback);
+            Promise\any($promises)->when($callback);
         });
 
         $this->assertEquals([[], [1, 2, 3]], $result);
@@ -93,7 +93,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\any($promises)->when($callback);
+            Promise\any($promises)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -103,6 +103,6 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Amp\UnionTypeError
      */
     public function testNonPromise() {
-        Amp\any([1]);
+        Promise\any([1]);
     }
 }

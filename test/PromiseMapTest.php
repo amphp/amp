@@ -2,20 +2,19 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Deferred;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Pause;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 
-class MapTest extends \PHPUnit\Framework\TestCase {
+class PromiseMapTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {
         $values = [];
         $invoked = false;
 
-        $result = Amp\map(function () use (&$invoked) {
+        $result = Promise\map(function () use (&$invoked) {
             $invoked = true;
         }, $values);
 
@@ -33,13 +32,13 @@ class MapTest extends \PHPUnit\Framework\TestCase {
                 return $value - 1;
             };
 
-            $result = Amp\map($callback, $promises);
+            $result = Promise\map($callback, $promises);
 
             $this->assertTrue(\is_array($result));
 
             foreach ($result as $key => $promise) {
                 $this->assertInstanceOf(Promise::class, $promise);
-                $this->assertSame($key, Amp\wait($promise));
+                $this->assertSame($key, Promise\wait($promise));
             }
 
             $this->assertSame(\count($promises), $count);
@@ -63,7 +62,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
             return $value - 1;
         };
 
-        $result = Amp\map($callback, $promises);
+        $result = Promise\map($callback, $promises);
 
         $this->assertTrue(\is_array($result));
 
@@ -73,7 +72,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
 
         foreach ($result as $key => $promise) {
             $this->assertInstanceOf(Promise::class, $promise);
-            $this->assertSame($key, Amp\wait($promise));
+            $this->assertSame($key, Promise\wait($promise));
         }
 
         $this->assertSame(\count($promises), $count);
@@ -90,7 +89,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
                 return $value - 1;
             };
 
-            $result = Amp\map($callback, $promises);
+            $result = Promise\map($callback, $promises);
 
             $this->assertTrue(\is_array($result));
 
@@ -115,7 +114,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             };
 
-            $result = Amp\map($callback, $promises);
+            $result = Promise\map($callback, $promises);
 
             foreach ($result as $key => $promise) {
                 $this->assertInstanceOf(Promise::class, $promise);
@@ -123,7 +122,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
 
             foreach ($result as $key => $promise) {
                 try {
-                    Amp\wait($promise);
+                    Promise\wait($promise);
                 } catch (\Exception $reason) {
                     $this->assertSame($exception, $reason);
                 }
@@ -144,7 +143,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
             return $value1 + $value2;
         };
 
-        $result = Amp\map($callback, $promises1, $promises2);
+        $result = Promise\map($callback, $promises1, $promises2);
 
         foreach ($result as $key => $promise) {
             $this->assertInstanceOf(Promise::class, $promise);
@@ -152,7 +151,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
 
         foreach ($result as $promise) {
             $this->assertInstanceOf(Promise::class, $promise);
-            $this->assertSame(4, Amp\wait($promise));
+            $this->assertSame(4, Promise\wait($promise));
         }
 
         $this->assertSame(3, $count);
@@ -173,10 +172,10 @@ class MapTest extends \PHPUnit\Framework\TestCase {
             return $value1 + $value2;
         };
 
-        $result = Amp\map($callback, $promises1, $promises2);
+        $result = Promise\map($callback, $promises1, $promises2);
 
         foreach ($result as $promise) {
-            $this->assertSame(4, Amp\wait($promise));
+            $this->assertSame(4, Promise\wait($promise));
         }
 
         $this->assertSame(3, $count);

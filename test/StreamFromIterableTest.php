@@ -2,17 +2,17 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Pause;
+use Amp\Stream;
 use Amp\Success;
 use Amp\Loop;
 
-class StreamTest extends \PHPUnit\Framework\TestCase {
+class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testSuccessfulPromises() {
         $results = [];
         Loop::run(function () use (&$results) {
-            $stream = Amp\stream([new Success(1), new Success(2), new Success(3)]);
+            $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
@@ -25,7 +25,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
     public function testFailedPromises() {
         $exception = new \Exception;
         Loop::run(function () use (&$reason, $exception) {
-            $stream = Amp\stream([new Failure($exception), new Failure($exception)]);
+            $stream = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
 
             $callback = function ($exception, $value) use (&$reason) {
                 $reason = $exception;
@@ -41,7 +41,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
         $exception = new \Exception;
         $results = [];
         Loop::run(function () use (&$results, &$reason, $exception) {
-            $stream = Amp\stream([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+            $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
@@ -61,7 +61,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
     public function testPendingPromises() {
         $results = [];
         Loop::run(function () use (&$results) {
-            $stream = Amp\stream([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
+            $stream = Stream\fromIterable([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
 
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
@@ -80,7 +80,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
                 }
             })();
 
-            $stream = Amp\stream($generator);
+            $stream = Stream\fromIterable($generator);
 
             $stream->listen(function ($value) use (&$results) {
                 $results[] = $value;
@@ -95,7 +95,7 @@ class StreamTest extends \PHPUnit\Framework\TestCase {
      * @dataProvider provideInvalidStreamArguments
      */
     public function testInvalid($arg) {
-        Amp\stream($arg);
+        Stream\fromIterable($arg);
     }
 
     public function provideInvalidStreamArguments() {

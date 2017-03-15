@@ -8,13 +8,13 @@ use Amp\Stream;
 use Amp\Emitter;
 use Amp\Loop;
 
-class EachTest extends \PHPUnit\Framework\TestCase {
+class StreamMapTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
         Loop::run(function () use (&$invoked){
             $emitter = new Emitter;
 
-            $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {
+            $stream = Stream\map($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
@@ -39,7 +39,7 @@ class EachTest extends \PHPUnit\Framework\TestCase {
                 return $final;
             });
 
-            $stream = Amp\each($producer, function ($value) use (&$count) {
+            $stream = Stream\map($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
             }, function ($value) use (&$invoked) {
@@ -73,7 +73,7 @@ class EachTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Amp\each($producer, function () use ($exception) {
+            $stream = Stream\map($producer, function () use ($exception) {
                 throw $exception;
             });
 
@@ -106,7 +106,7 @@ class EachTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Amp\each($producer, function ($value) use (&$count) {
+            $stream = Stream\map($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
             }, function ($value) use ($exception) {
@@ -135,7 +135,7 @@ class EachTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked, &$reason, &$exception){
             $emitter = new Emitter;
 
-            $stream = Amp\each($emitter->stream(), function ($value) use (&$invoked) {
+            $stream = Stream\map($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 

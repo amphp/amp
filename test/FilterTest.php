@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Producer;
 use Amp\Stream;
 use Amp\Emitter;
@@ -14,7 +13,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked){
             $emitter = new Emitter;
 
-            $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {
+            $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
@@ -38,7 +37,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Amp\filter($producer, function ($value) use (&$count) {
+            $stream = Stream\filter($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value & 1;
             });
@@ -69,7 +68,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Amp\filter($producer, function () use ($exception) {
+            $stream = Stream\filter($producer, function () use ($exception) {
                 throw $exception;
             });
 
@@ -93,7 +92,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked, &$reason, &$exception){
             $emitter = new Emitter;
 
-            $stream = Amp\filter($emitter->stream(), function ($value) use (&$invoked) {
+            $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 

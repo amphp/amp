@@ -175,7 +175,7 @@ class ProducerTest extends TestCase {
                     throw $exception;
                 });
 
-                Amp\wait($producer);
+                Amp\Promise\wait($producer);
             });
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);

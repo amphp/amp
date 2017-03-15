@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Success;
 use Amp\Promise;
@@ -20,7 +19,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Success($value);
 
-        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $promise = Promise\capture($promise, \Exception::class, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
@@ -45,7 +44,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Failure($exception);
 
-        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $promise = Promise\capture($promise, \Exception::class, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
@@ -73,7 +72,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Failure($exception);
 
-        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $promise = Promise\capture($promise, \Exception::class, $callback);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
@@ -100,7 +99,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new Failure($exception);
 
-        $promise = Amp\capture($promise, \RuntimeException::class, $callback);
+        $promise = Promise\capture($promise, \RuntimeException::class, $callback);
 
         $callback = function ($exception, $value) use (&$reason) {
             $reason = $exception;
@@ -127,7 +126,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
 
         $promise = reject($exception);
 
-        $promise = Amp\capture($promise, \Exception::class, $callback);
+        $promise = Promise\capture($promise, \Exception::class, $callback);
         $this->assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
@@ -142,7 +141,7 @@ class CaptureTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(Amp\UnionTypeError::class);
-        Amp\capture(42, \Error::class, function () {});
+        $this->expectException(\Amp\UnionTypeError::class);
+        Promise\capture(42, \Error::class, function () {});
     }
 }

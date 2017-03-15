@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\Success;
 use Amp\Promise;
@@ -48,7 +47,7 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
                 })
             );
 
-        $promise = Amp\adapt($mock);
+        $promise = Promise\adapt($mock);
 
         $this->assertInstanceOf(Promise::class, $promise);
     }
@@ -61,7 +60,7 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new PromiseMock(new Success($value));
 
-        $promise = Amp\adapt($promise);
+        $promise = Promise\adapt($promise);
 
         $promise->when(function ($exception, $value) use (&$result) {
             $result = $value;
@@ -78,7 +77,7 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
 
         $promise = new PromiseMock(new Failure($exception));
 
-        $promise = Amp\adapt($promise);
+        $promise = Promise\adapt($promise);
 
         $promise->when(function ($exception, $value) use (&$reason) {
             $reason = $exception;
@@ -91,13 +90,13 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Error
      */
     public function testScalarValue() {
-        Amp\adapt(1);
+        Promise\adapt(1);
     }
 
     /**
      * @expectedException \Error
      */
     public function testNonThenableObject() {
-        Amp\adapt(new \stdClass);
+        Promise\adapt(new \stdClass);
     }
 }

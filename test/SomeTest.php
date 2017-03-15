@@ -2,20 +2,16 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\MultiReasonException;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Success;
 use Amp\Loop;
 
 class SomeTest extends \PHPUnit\Framework\TestCase {
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage No promises provided
-     */
     public function testEmptyArray() {
-        Amp\some([]);
+        $this->assertSame([[], []], Promise\wait(Promise\some([])));
     }
 
     public function testSuccessfulPromisesArray() {
@@ -25,7 +21,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\some($promises)->when($callback);
+        Promise\some($promises)->when($callback);
 
         $this->assertSame([[], [1, 2, 3]], $result);
     }
@@ -38,7 +34,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             $reason = $exception;
         };
 
-        Amp\some($promises)->when($callback);
+        Promise\some($promises)->when($callback);
 
         $this->assertInstanceOf(MultiReasonException::class, $reason);
         $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
@@ -52,7 +48,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Amp\some($promises)->when($callback);
+        Promise\some($promises)->when($callback);
 
         $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], $result);
     }
@@ -69,7 +65,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\some($promises)->when($callback);
+            Promise\some($promises)->when($callback);
         });
 
         $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
@@ -89,7 +85,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Amp\some($promises)->when($callback);
+            Promise\some($promises)->when($callback);
         });
 
         $this->assertEquals($expected, $result);
@@ -99,6 +95,6 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Error
      */
     public function testNonPromise() {
-        Amp\some([1]);
+        Promise\some([1]);
     }
 }

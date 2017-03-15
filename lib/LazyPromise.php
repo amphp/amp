@@ -35,7 +35,7 @@ class LazyPromise implements Promise {
                 $this->promise = $provider();
 
                 if ($this->promise instanceof ReactPromise) {
-                    $this->promise = adapt($this->promise);
+                    $this->promise = Promise\adapt($this->promise);
                 }
 
                 if (!$this->promise instanceof Promise) {

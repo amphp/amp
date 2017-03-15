@@ -2,8 +2,9 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Pause;
+use Amp\Promise;
+use Amp\Stream;
 use Amp\Loop;
 
 class IntervalTest extends \PHPUnit\Framework\TestCase {
@@ -11,14 +12,14 @@ class IntervalTest extends \PHPUnit\Framework\TestCase {
 
     public function testInterval() {
         $count = 3;
-        $stream = Amp\interval(self::TIMEOUT, $count);
+        $stream = Stream\interval(self::TIMEOUT, $count);
 
         $i = 0;
-        $stream = Amp\each($stream, function ($value) use (&$i) {
+        $stream = Stream\map($stream, function ($value) use (&$i) {
             $this->assertSame(++$i, $value);
         });
 
-        Amp\wait($stream);
+        Promise\wait($stream);
 
         $this->assertSame($count, $i);
     }
@@ -30,7 +31,7 @@ class IntervalTest extends \PHPUnit\Framework\TestCase {
         $invoked = 0;
         $count = 5;
         Loop::run(function () use (&$invoked, $count) {
-            $stream = Amp\interval(self::TIMEOUT, $count);
+            $stream = Stream\interval(self::TIMEOUT, $count);
 
             $stream->listen(function () use (&$invoked) {
                 ++$invoked;
@@ -46,6 +47,6 @@ class IntervalTest extends \PHPUnit\Framework\TestCase {
      * @expectedExceptionMessage The number of times to emit must be a positive value
      */
     public function testInvalidCount() {
-        Amp\interval(self::TIMEOUT, -1);
+        Stream\interval(self::TIMEOUT, -1);
     }
 }
