@@ -59,7 +59,7 @@ use Amp\Loop;
 
 Loop::run(function () {
 	// event loop will stop in three seconds
-	Loop::delay($msDelay = 3000, "Amp\Loop::stop");
+	Loop::delay($msDelay = 3000, "Amp\\Loop::stop");
 });
 ```
 
@@ -306,6 +306,20 @@ Loop::run(function () {
 ```
 
 As should be clear from the above example, signal watchers may be enabled, disabled and canceled like any other event.
+
+## Referencing Watchers
+
+Watchers can either be referenced or unreferenced. An unreferenced watcher doesn't keep the loop alive. All watchers are referenced by default.
+
+One example to use unreferenced watchers is when using signal watchers. Generally, if all watchers are gone and only the signal watcher still exists, you want to exit the loop as you're not actively waiting for that event to happen.
+
+### `Loop::reference()`
+
+Marks a watcher as referenced. Takes the `$watcherId` as first and only argument.
+
+### `Loop::unreference()`
+
+Marks a watcher as unreferenced. Takes the `$watcherId` as first and only argument.
 
 ## Event Loop Addenda
 
