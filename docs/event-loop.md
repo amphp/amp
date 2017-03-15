@@ -6,7 +6,7 @@ For performance that scales out to high volume we require more advanced capabili
 
 ## Global Accessor
 
-Amp uses a global accessor for the event loop as there's only event loop for each application. It doesn't make sense to have two loops running at the same time, as they would just have to schedule each other in a busy waiting manner to operate correctly.
+Amp uses a global accessor for the event loop as there's only one event loop for each application. It doesn't make sense to have two loops running at the same time, as they would just have to schedule each other in a busy waiting manner to operate correctly.
 
 The event loop should be accessed through the methods provided by `Amp\Loop`. On the first use of the accessor, Amp will automatically setup the best available driver, see next section.
 
@@ -20,7 +20,7 @@ Amp offers different event loop implementations based on various backends. All i
 | ------------------------- | ------------------------------------------------------ |
 | `Amp\Loop\NativeDriver`     | –                                                    |
 | `Amp\Loop\EvDriver`         | [`pecl/ev`](https://pecl.php.net/package/ev)             |
-| `Amp\Loop\EventDriver`      | [`pecl/libevent`](https://pecl.php.net/package/libevent) |
+| `Amp\Loop\EventDriver`      | [`pecl/event`](https://pecl.php.net/package/event) |
 | `Amp\Loop\UvDriver`         | [`php-uv`](https://github.com/bwoebi/php-uv)             |
 
 It's not important to choose one implementation for your application. Amp will automatically select the best available driver. It's perfectly fine to have one of the extensions in production while relying on the `NativeDriver` locally for development.
@@ -50,7 +50,7 @@ echo "-- before Loop::run()\n";
 
 Loop::run(function() {
     Loop::repeat($msInterval = 1000, "tick");
-    Loop::delay($msDelay = 5000, "Amp\Loop::stop");
+    Loop::delay($msDelay = 5000, "Amp\\Loop::stop");
 });
 
 echo "-- after Loop::run()\n";
@@ -69,7 +69,7 @@ tick
 
 This output demonstrates that what happens inside the event loop's run loop is like its own separate program. Your script will not continue past the point of `Loop::run()` unless there are no more scheduled events or `Loop::stop()` is invoked.
 
-While an application can and often does take place entirely inside the confines of the run loop, we can also use the reactor to do things like the following example which imposes a short-lived timeout for interactive console input:
+While an application can and often does take place entirely inside the confines of the run loop, we can also use the event loop to do things like the following example which imposes a short-lived timeout for interactive console input:
 
 ```php
 <?php
@@ -96,7 +96,7 @@ Loop::run(function () {
     Loop::onReadable(STDIN, "onInput");
 
     // Impose a 5-second timeout if nothing is input
-    Loop::delay($msDelay = 5000, "Amp\Loop::stop");
+    Loop::delay($msDelay = 5000, "Amp\\Loop::stop");
 });
 
 var_dump($myText); // whatever you input on the CLI

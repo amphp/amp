@@ -1,14 +1,16 @@
 # Event Loop API
 
+This document describes the [`Amp\Loop`](../lib/Loop.php) accessor. You might want to also read the documentation contained in the source file, it's extensively documented and doesn't contain much distracting code.
+
 ## `Loop::run()`
 
-The primary way an application interacts with the event reactor is to schedule events for execution and then simply let the program run. Once `Loop::run()` is invoked the event loop will run indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. Long-running programs generally execute entirely inside the confines of a single `Amp\Loop::run()` call.
+The primary way an application interacts with the event loop is to schedule events for execution and then simply let the program run. Once `Loop::run()` is invoked the event loop will run indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. Long-running programs generally execute entirely inside the confines of a single `Loop::run()` call.
 
 `Loop::run()` accepts an optional callback as first parameter. Passing such a callback is equivalent to calling `Loop::defer($callback)` and `Loop::run()` afterwards.
 
 ## `Loop::stop()`
 
-The event loop can be stopped at any time while running. When `Amp\Loop::stop()` is invoked the event loop will return control to the userland script at the end of the current tick of the event loop. This method may be used to yield control from the event loop even if events or watchable IO streams are still pending.
+The event loop can be stopped at any time while running. When `Loop::stop()` is invoked the event loop will return control to the userland script at the end of the current tick of the event loop. This method may be used to yield control from the event loop even if events or watchable IO streams are still pending.
 
 ## Timer Watchers
 
