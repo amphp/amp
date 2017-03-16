@@ -4,10 +4,11 @@ namespace Amp;
 
 class InvalidYieldError extends \Error {
     /**
-     * @param \Generator $generator
-     * @param string     $prefix
+     * @param \Generator      $generator
+     * @param string          $prefix
+     * @param \Throwable|null $previous
      */
-    public function __construct(\Generator $generator, string $prefix) {
+    public function __construct(\Generator $generator, string $prefix, \Throwable $previous = null) {
         $yielded = $generator->current();
         $prefix .= \sprintf(
             "; %s yielded at key %s",
@@ -16,7 +17,7 @@ class InvalidYieldError extends \Error {
         );
 
         if (!$generator->valid()) {
-            parent::__construct($prefix);
+            parent::__construct($prefix, 0, $previous);
             return;
         }
 
@@ -31,6 +32,6 @@ class InvalidYieldError extends \Error {
             $prefix,
             $reflGen->getExecutingLine(),
             $reflGen->getExecutingFile()
-        ));
+        ), 0, $previous);
     }
 }

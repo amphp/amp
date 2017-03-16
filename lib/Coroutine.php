@@ -63,31 +63,7 @@ final class Coroutine implements Promise {
                         return;
                     }
 
-                    if (\is_array($yielded)) {
-                        try {
-                            $yielded = Promise\all($yielded);
-                        } catch (UnionTypeError $e) {
-                            throw new InvalidYieldError(
-                                $this->generator,
-                                \sprintf(
-                                    "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
-                                    Promise::class,
-                                    ReactPromise::class
-                                )
-                            );
-                        }
-                    } else if ($yielded instanceof ReactPromise) {
-                        $yielded = Promise\adapt($yielded);
-                    } else {
-                        throw new InvalidYieldError(
-                            $this->generator,
-                            \sprintf(
-                                "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
-                                Promise::class,
-                                ReactPromise::class
-                            )
-                        );
-                    }
+                    $yielded = $this->transform($yielded);
                 }
 
                 ++$this->depth;
@@ -107,31 +83,7 @@ final class Coroutine implements Promise {
                     return;
                 }
 
-                if (\is_array($yielded)) {
-                    try {
-                        $yielded = Promise\all($yielded);
-                    } catch (UnionTypeError $e) {
-                        throw new InvalidYieldError(
-                            $this->generator,
-                            \sprintf(
-                                "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
-                                Promise::class,
-                                ReactPromise::class
-                            )
-                        );
-                    }
-                } else if ($yielded instanceof ReactPromise) {
-                    $yielded = Promise\adapt($yielded);
-                } else {
-                    throw new InvalidYieldError(
-                        $this->generator,
-                        \sprintf(
-                            "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
-                            Promise::class,
-                            ReactPromise::class
-                        )
-                    );
-                }
+                $yielded = $this->transform($yielded);
             }
 
             ++$this->depth;
@@ -140,6 +92,42 @@ final class Coroutine implements Promise {
         } catch (\Throwable $exception) {
             $this->dispose($exception);
         }
+    }
+
+    /**
+     * Attempts to transform the non-promise yielded from the generator into a promise, otherwise throws an instance
+     * of \Amp\InvalidYieldError.
+     *
+     * @param mixed $yielded Non-promise yielded from generator.
+     *
+     * @return \Amp\Promise
+     *
+     * @throws \Amp\InvalidYieldError If the value could not be converted to a promise.
+     */
+    private function transform($yielded): Promise {
+        try {
+            if (\is_array($yielded)) {
+                return Promise\all($yielded);
+            }
+
+            if ($yielded instanceof ReactPromise) {
+                return Promise\adapt($yielded);
+            }
+
+            // No match, continue to throwing error below.
+        } catch (\Throwable $exception) {
+            // Conversion to promise failed, fall-through to throwing error below.
+        }
+
+        throw new InvalidYieldError(
+            $this->generator,
+            \sprintf(
+                "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
+                Promise::class,
+                ReactPromise::class
+            ),
+            $exception ?? null
+        );
     }
 
     /**
