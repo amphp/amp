@@ -260,7 +260,11 @@ class NativeDriver extends Driver {
                 case Watcher::SIGNAL:
                     if (!isset($this->signalWatchers[$watcher->value])) {
                         if (!@\pcntl_signal($watcher->value, [$this, 'handleSignal'])) {
-                            throw new \RuntimeException("Failed to register signal handler");
+                            $message = "Failed to register signal handler";
+                            if ($error = \error_get_last()) {
+                                $message .= \sprintf("; Errno: %d; %s", $error["type"], $error["message"]);
+                            }
+                            throw new \Error($message);
                         }
                     }
 
