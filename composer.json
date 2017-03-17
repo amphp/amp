@@ -38,7 +38,7 @@
         "amphp/phpunit-util": "dev-master",
         "react/promise": "^2",
         "friendsofphp/php-cs-fixer": "~1.9",
-        "phpunit/phpunit": "^6"
+        "phpunit/phpunit": "^6.0.9"
     },
     "autoload": {
         "psr-4": {
