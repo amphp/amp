@@ -87,15 +87,15 @@ Here's a simple example of an async value producer `asyncMultiply()` creating a 
 use Amp\Loop;
 
 function asyncMultiply($x, $y) {
-	// Create a new promisor
-	$deferred = new Amp\Deferred;
+    // Create a new promisor
+    $deferred = new Amp\Deferred;
 
-	// Resolve the async result one second from now
-	Loop::delay($msDelay = 1000, function () use ($deferred, $x, $y) {
-		$deferred->resolve($x * $y);
-	});
+    // Resolve the async result one second from now
+    Loop::delay($msDelay = 1000, function () use ($deferred, $x, $y) {
+        $deferred->resolve($x * $y);
+    });
 
-	return $deferred->promise();
+    return $deferred->promise();
 }
 
 $promise = asyncMultiply(6, 7);

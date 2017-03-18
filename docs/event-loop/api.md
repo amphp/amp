@@ -31,11 +31,11 @@ Amp exposes several ways to schedule timer watchers. Let's look at some details 
 use Amp\Loop;
 
 Loop::run(function () {
-	echo "line 1\n";
-	Loop::defer(function () {
-		echo "line 3\n";
-	});
-	echo "line 2\n";
+    echo "line 1\n";
+    Loop::defer(function () {
+        echo "line 3\n";
+    });
+    echo "line 2\n";
 });
 ```
 
@@ -58,8 +58,8 @@ Loop::run(function () {
 use Amp\Loop;
 
 Loop::run(function () {
-	// event loop will stop in three seconds
-	Loop::delay($msDelay = 3000, "Amp\\Loop::stop");
+    // event loop will stop in three seconds
+    Loop::delay($msDelay = 3000, "Amp\\Loop::stop");
 });
 ```
 
@@ -79,14 +79,14 @@ Loop::run(function () {
 use Amp\Loop;
 
 Loop::run(function () {
-	Loop::repeat($msInterval = 100, function ($watcherId) {
-		static $i = 0;
-		if ($i++ < 3) {
-			echo "tick\n";
-		} else {
-			Loop::cancel($watcherId);
-		}
-	});
+    Loop::repeat($msInterval = 100, function ($watcherId) {
+        static $i = 0;
+        if ($i++ < 3) {
+            echo "tick\n";
+        } else {
+            Loop::cancel($watcherId);
+        }
+    });
 });
 ```
 
