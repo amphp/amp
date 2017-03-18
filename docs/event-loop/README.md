@@ -106,4 +106,4 @@ var_dump($myText); // whatever you input on the CLI
 
 Obviously we could have simply used `fgets(STDIN)` synchronously in this example. We're just demonstrating that it's possible to move in and out of the event loop to mix synchronous tasks with non-blocking tasks as needed.
 
-Continue with the [Event Loop API](./event-loop-api.md).
+Continue with the [Event Loop API](./api.md).
