@@ -499,8 +499,11 @@ abstract class Driver {
     /**
      * Stores information in the loop bound registry.
      *
-     * This can be used to store loop bound information. Stored information is package private. Packages MUST NOT
-     * retrieve the stored state of other packages. Packages MUST use the following prefix for keys: `vendor.package.`
+     * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages. Packages
+     * MUST use their namespace as prefix for keys. They may do so by using `SomeClass::class` as key.
+     *
+     * If packages want to expose loop bound state to consumers other than the package, they SHOULD provide a dedicated
+     * interface for that purpose instead of sharing the storage key.
      *
      * @param string $key The namespaced storage key.
      * @param mixed  $value The value to be stored.
@@ -519,7 +522,10 @@ abstract class Driver {
      * Gets information stored bound to the loop.
      *
      * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages. Packages
-     * MUST use the following prefix for keys: `vendor.package.`
+     * MUST use their namespace as prefix for keys. They may do so by using `SomeClass::class` as key.
+     *
+     * If packages want to expose loop bound state to consumers other than the package, they SHOULD provide a dedicated
+     * interface for that purpose instead of sharing the storage key.
      *
      * @param string $key The namespaced storage key.
      *
