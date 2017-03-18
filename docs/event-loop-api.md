@@ -2,13 +2,13 @@
 
 This document describes the [`Amp\Loop`](../lib/Loop.php) accessor. You might want to also read the documentation contained in the source file, it's extensively documented and doesn't contain much distracting code.
 
-## `Loop::run()`
+## `run()`
 
 The primary way an application interacts with the event loop is to schedule events for execution and then simply let the program run. Once `Loop::run()` is invoked the event loop will run indefinitely until there are no watchable timer events, IO streams or signals remaining to watch. Long-running programs generally execute entirely inside the confines of a single `Loop::run()` call.
 
 `Loop::run()` accepts an optional callback as first parameter. Passing such a callback is equivalent to calling `Loop::defer($callback)` and `Loop::run()` afterwards.
 
-## `Loop::stop()`
+## `stop()`
 
 The event loop can be stopped at any time while running. When `Loop::stop()` is invoked the event loop will return control to the userland script at the end of the current tick of the event loop. This method may be used to yield control from the event loop even if events or watchable IO streams are still pending.
 
@@ -16,7 +16,7 @@ The event loop can be stopped at any time while running. When `Loop::stop()` is 
 
 Amp exposes several ways to schedule timer watchers. Let's look at some details for each function.
 
-### `Loop::defer()`
+### `defer()`
 
  - Schedules a callback to execute in the next iteration of the event loop
  - This method guarantees a clean call stack to avoid starvation of other events in the current iteration of the loop. An `defer` callback is *always* executed in the next tick of the event loop.
@@ -43,7 +43,7 @@ Loop::run(function () {
 
 `function (string $watcherId, mixed $cbData = null)`
 
-### `Loop::delay()`
+### `delay()`
 
  - Schedules a callback to execute after a delay of `n` milliseconds
  - A "delay" watcher is also automatically garbage collected by the reactor after execution and applications should not manually cancel it unless they wish to discard the watcher entirely prior to execution.
@@ -67,7 +67,7 @@ Loop::run(function () {
 
 `function (string $watcherId, mixed $cbData = null)`
 
-### `Loop::repeat()`
+### `repeat()`
 
  - Schedules a callback to repeatedly execute every `n` milliseconds.
  - Like all other watchers, `repeat` timers may be disabled/re-enabled at any time.
@@ -103,7 +103,7 @@ There are two types of IO watchers:
  - Readability watchers
  - Writability watchers
 
-### `Loop::onReadable()`
+### `onReadable()`
 
 Watchers registered via `Loop::onReadable()` trigger their callbacks in the following situations:
 
@@ -141,7 +141,7 @@ In the above example we've done a few very simple things:
  - When we read data from the stream in our triggered callback we pass that to a stateful parser that does something domain-specific when certain conditions are met.
  - If the `fread()` call indicates that the socket connection is dead we clean up any resources we've allocated for the storage of this stream. This process should always include calling `Loop::cancel()` on any event loop watchers we registered in relation to the stream.
 
-### `Loop::onWritable()`
+### `onWritable()`
 
  - Streams are essentially *"always"* writable. The only time they aren't is when their respective write buffers are full.
 
@@ -151,7 +151,7 @@ A common usage pattern for reacting to writability involves initializing a writa
 
 All watchers, regardless of type, can be temporarily disabled and enabled in addition to being cleared via `Loop::cancel()`. This allows for advanced capabilities such as disabling the acceptance of new socket clients in server applications when simultaneity limits are reached. In general, the performance characteristics of watcher reuse via pause/resume are favorable by comparison to repeatedly canceling and re-registering watchers.
 
-### `Loop::disable()`
+### `disable()`
 
 A simple disable example:
 
@@ -176,7 +176,7 @@ Loop::run();
 
 After our second watcher callback executes the event loop exits because there are no longer any enabled watchers registered to process.
 
-### `Loop::enable()`
+### `enable()`
 
 `enable()` is the diametric analog of the `disable()` example demonstrated above:
 
@@ -261,7 +261,7 @@ class Server {
 }
 ```
 
-### `Loop::cancel()`
+### `cancel()`
 
 It's important to *always* cancel persistent watchers once you're finished with them or you'll create memory leaks in your application. This functionality works in exactly the same way as  the above `enable` / `disable` examples:
 
@@ -282,7 +282,7 @@ Loop::run(function() {
 });
 ```
 
-## `Loop::onSignal()`
+## `onSignal()`
 
 `Loop::onSignal()` can be used to react to signals sent to the process.
 
@@ -313,11 +313,11 @@ Watchers can either be referenced or unreferenced. An unreferenced watcher doesn
 
 One example to use unreferenced watchers is when using signal watchers. Generally, if all watchers are gone and only the signal watcher still exists, you want to exit the loop as you're not actively waiting for that event to happen.
 
-### `Loop::reference()`
+### `reference()`
 
 Marks a watcher as referenced. Takes the `$watcherId` as first and only argument.
 
-### `Loop::unreference()`
+### `unreference()`
 
 Marks a watcher as unreferenced. Takes the `$watcherId` as first and only argument.
 
