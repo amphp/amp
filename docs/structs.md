@@ -13,15 +13,14 @@ Let's try some examples with anonymous classes to demonstrate the advantages of 
 the following code will not error; although, the typo will likely create some unexpected behavior:
 
 ```php
-$clazz = new class {
+$obj = new class {
     public $foo = null;
 };
 
-$clazzy = new $clazz();
-$clazzy->fooo = "bar";
+$obj->fooo = "bar";
 ```
 
-If you were to access the `$foo` property of the `$clazzy` object after the above code, you might expect the value
+If you were to access the `$foo` property of the `$obj` object after the above code, you might expect the value
 to be `"bar"` when it would actually be `NULL`.
 
 When a class uses the `\Amp\Struct` trait, an `\Error` will be thrown when attempting to access a property not defined
@@ -29,13 +28,13 @@ in the class definition. For example, the code below will throw an `\Error` with
 diagnose the issue.
 
 ```php
-$clazz = new class {
-    use \Amp\Struct;
+$obj = new class {
+    use Amp\Struct;
+
     public $foo = null;
 };
 
-$clazzy = new $clazz();
-$clazzy->fooo = "bar";
+$obj->fooo = "bar";
 ```
 
 The message for the thrown `\Error` will be similar to:
