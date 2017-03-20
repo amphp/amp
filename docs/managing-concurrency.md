@@ -13,7 +13,7 @@ The basic unit of concurrency in Amp applications is the `Amp\Promise`. These ob
 >
 > Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators to "synchronize" concurrent task execution.
 >
-> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\adapt` can be used to adapt any object having a `then` or `done` method. 
+> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\adapt` can be used to adapt any object having a `then` or `done` method.
 
 ### The Promise API
 
@@ -104,73 +104,6 @@ var_dump($result); // int(42)
 ```
 
 ## Combinators
-
-### `all()`
-
-The `all()` functor combines an array of promise objects into a single promise that will resolve
-when all promises in the group resolve. If any one of the `Amp\Promise` instances fails the
-combinator's `Promise` will fail. Otherwise the resulting `Promise` succeeds with an array matching
-keys from the input array to their resolved values.
-
-The `all()` combinator is extremely powerful because it allows us to concurrently execute many
-asynchronous operations at the same time. Let's look at a simple example using the Amp HTTP client
-([Artax](https://github.com/amphp/artax)) to retrieve multiple HTTP resources concurrently:
-
-```php
-<?php
-
-use Amp\Loop;
-use function Amp\all;
-
-Loop::run(function () {
-    $httpClient = new Amp\Artax\Client;
-    $promiseArray = $httpClient->requestMulti([
-        "google"    => "http://www.google.com",
-        "news"      => "http://news.google.com",
-        "bing"      => "http://www.bing.com",
-        "yahoo"     => "https://www.yahoo.com",
-    ]);
-
-    try {
-        // magic combinator sauce to flatten the promise
-        // array into a single promise
-        $responses = yield all($promiseArray);
-
-        foreach ($responses as $key => $response) {
-            printf(
-                "%s | HTTP/%s %d %s\n",
-                $key,
-                $response->getProtocol(),
-                $response->getStatus(),
-                $response->getReason()
-            );
-        }
-    } catch (Amp\MultiReasonException $e) {
-        // If any one of the requests fails the combo
-        // promise returned by Amp\all() will fail and
-        // be thrown back into our generator here.
-        echo $e->getMessage(), "\n";
-    }
-
-    Loop::stop();
-});
-```
-
-### `some()`
-
-The `some()` functor is the same as `all()` except that it tolerates individual failures. As long
-as at least one promise in the passed array the combined promise will succeed. The successful
-resolution value is an array of the form `[$arrayOfErrors, $arrayOfSuccesses]`. The individual keys
-in the component arrays are preserved from the promise array passed to the functor for evaluation.
-
-### `any()`
-
-The `any()` functor is the same as `some()` except that it tolerates all failures. It will succeed even if all promises failed.
-
-### `first()`
-
-Resolves with the first successful result. The resulting Promise will only fail if all
-promises in the group fail or if the promise array is empty.
 
 ### `map()`
 
