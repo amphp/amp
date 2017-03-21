@@ -14,7 +14,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$results) {
             $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
         });
@@ -43,7 +43,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$results, &$reason, $exception) {
             $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
 
@@ -63,7 +63,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$results) {
             $stream = Stream\fromIterable([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
         });
@@ -82,7 +82,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
 
             $stream = Stream\fromIterable($generator);
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
         });

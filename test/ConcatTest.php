@@ -50,7 +50,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
 
             $stream = Stream\concat([Stream\fromIterable(\range(1, 5)), $producer, Stream\fromIterable(\range(7, 10))]);
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
 

@@ -14,7 +14,7 @@ Loop::run(function () {
 
         $stream = $emitter->stream();
 
-        $stream->listen(function ($value) {
+        $stream->onEmit(function ($value) {
             printf("Stream emitted %d\n", $value);
             return new Pause(500); // Artificial back-pressure on stream.
         });

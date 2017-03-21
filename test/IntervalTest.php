@@ -33,7 +33,7 @@ class IntervalTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked, $count) {
             $stream = Stream\interval(self::TIMEOUT, $count);
 
-            $stream->listen(function () use (&$invoked) {
+            $stream->onEmit(function () use (&$invoked) {
                 ++$invoked;
                 return new Pause(self::TIMEOUT * 2);
             });

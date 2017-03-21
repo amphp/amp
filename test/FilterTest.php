@@ -42,7 +42,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 return $value & 1;
             });
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
 
@@ -72,7 +72,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream->listen(function ($value) use (&$results) {
+            $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
             });
 

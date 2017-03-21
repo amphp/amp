@@ -35,7 +35,7 @@ class ProducerTraitTest extends TestCase {
             $this->assertSame($emitted, $value);
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $promise = $this->producer->emit($value);
 
         $this->assertInstanceOf(Promise::class, $promise);
@@ -55,7 +55,7 @@ class ProducerTraitTest extends TestCase {
             $this->assertSame($emitted, $value);
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $this->producer->emit($promise);
 
         $this->assertTrue($invoked);
@@ -73,7 +73,7 @@ class ProducerTraitTest extends TestCase {
             $invoked = true;
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $this->producer->emit($promise);
 
         $this->assertFalse($invoked);
@@ -100,7 +100,7 @@ class ProducerTraitTest extends TestCase {
             $this->assertSame($emitted, $value);
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $this->producer->emit($deferred->promise());
 
         $this->assertFalse($invoked);
@@ -123,7 +123,7 @@ class ProducerTraitTest extends TestCase {
             $this->assertSame($emitted, $value);
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $this->producer->emit($promise);
 
         $this->assertTrue($invoked);
@@ -141,7 +141,7 @@ class ProducerTraitTest extends TestCase {
             $result = $emitted;
         };
 
-        $this->producer->listen($callback);
+        $this->producer->onEmit($callback);
         $this->producer->emit($deferred->promise());
 
         $this->assertFalse($invoked);
@@ -215,7 +215,7 @@ class ProducerTraitTest extends TestCase {
 
         try {
             Loop::run(function () use ($exception) {
-                $this->producer->listen(function () use ($exception) {
+                $this->producer->onEmit(function () use ($exception) {
                     throw $exception;
                 });
 
@@ -231,7 +231,7 @@ class ProducerTraitTest extends TestCase {
         $value = 1;
         $promise = new Success($value);
 
-        $this->producer->listen(function () use ($promise) {
+        $this->producer->onEmit(function () use ($promise) {
             return $promise;
         });
 
@@ -249,7 +249,7 @@ class ProducerTraitTest extends TestCase {
 
         try {
             Loop::run(function () use ($exception, $promise) {
-                $this->producer->listen(function () use ($promise) {
+                $this->producer->onEmit(function () use ($promise) {
                     return $promise;
                 });
 
