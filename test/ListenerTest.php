@@ -213,7 +213,7 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
         unset($listener);
 
         $invoked = false;
-        $promise->when(function () use (&$invoked) {
+        $promise->onResolve(function () use (&$invoked) {
             $invoked = true;
         });
 
@@ -231,7 +231,7 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
         $promise = $emitter->emit(2);
 
         $invoked = false;
-        $promise->when(function () use (&$invoked) {
+        $promise->onResolve(function () use (&$invoked) {
             $invoked = true;
         });
 
@@ -244,7 +244,7 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
         $listener = new Listener($emitter->stream());
 
         $promise = $listener->advance();
-        $promise->when(function ($exception, $value) use (&$reason) {
+        $promise->onResolve(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
 

@@ -14,7 +14,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\any([])->when($callback);
+        Promise\any([])->onResolve($callback);
 
         $this->assertSame([[], []], $result);
     }
@@ -26,7 +26,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\any($promises)->when($callback);
+        Promise\any($promises)->onResolve($callback);
 
         $this->assertEquals([[], [1, 2, 3]], $result);
     }
@@ -39,7 +39,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\any($promises)->when($callback);
+        Promise\any($promises)->onResolve($callback);
 
         $this->assertEquals([[$exception, $exception, $exception], []], $result);
     }
@@ -52,7 +52,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\any($promises)->when($callback);
+        Promise\any($promises)->onResolve($callback);
 
         $this->assertEquals([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
@@ -69,7 +69,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Promise\any($promises)->when($callback);
+            Promise\any($promises)->onResolve($callback);
         });
 
         $this->assertEquals([[], [1, 2, 3]], $result);
@@ -93,7 +93,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Promise\any($promises)->when($callback);
+            Promise\any($promises)->onResolve($callback);
         });
 
         $this->assertEquals($expected, $result);

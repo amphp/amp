@@ -13,7 +13,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\all([])->when($callback);
+        Promise\all([])->onResolve($callback);
 
         $this->assertSame([], $result);
     }
@@ -25,7 +25,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        Promise\all($promises)->when($callback);
+        Promise\all($promises)->onResolve($callback);
 
         $this->assertSame([1, 2, 3], $result);
     }
@@ -42,7 +42,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Promise\all($promises)->when($callback);
+            Promise\all($promises)->onResolve($callback);
         });
 
         $this->assertEquals([1, 2, 3], $result);
@@ -62,7 +62,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            Promise\all($promises)->when($callback);
+            Promise\all($promises)->onResolve($callback);
         });
 
         $this->assertEquals($expected, $result);

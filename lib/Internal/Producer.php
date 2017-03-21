@@ -57,7 +57,7 @@ trait Producer {
 
         if ($value instanceof Promise) {
             $deferred = new Deferred;
-            $value->when(function ($e, $v) use ($deferred) {
+            $value->onResolve(function ($e, $v) use ($deferred) {
                 if ($this->resolved) {
                     $deferred->fail(
                         new \Error("The stream was resolved before the promise result could be emitted")
@@ -113,7 +113,7 @@ trait Producer {
         };
 
         foreach ($promises as $promise) {
-            $promise->when($f);
+            $promise->onResolve($f);
         }
 
         return $deferred->promise();

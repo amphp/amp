@@ -14,7 +14,7 @@ The basic unit of concurrency in Amp applications is the `Amp\Promise`. These ob
 
 ```php
 interface Promise {
-    public function when(callable $onResolve);
+    public function onResolve(callable $onResolve);
 }
 ```
 
@@ -23,15 +23,15 @@ In its simplest form the `Amp\Promise` aggregates callbacks for dealing with com
 
 | Method    | Callback Signature                                        |
 | --------- | ----------------------------------------------------------|
-| when      | `function ($error = null, $result = null)` |
+| onResolve | `function ($error = null, $result = null)` |
 
-`Amp\Promise::when()` accepts an error-first callback. This callback is responsible for reacting to the eventual result of the computation represented by the promise placeholder. For example:
+`Amp\Promise::onResolve()` accepts an error-first callback. This callback is responsible for reacting to the eventual result of the computation represented by the promise placeholder. For example:
 
 ```php
 <?php
 
 $promise = someFunctionThatReturnsAPromise();
-$promise->when(function (Throwable $error = null, $result = null) {
+$promise->onResolve(function (Throwable $error = null, $result = null) {
     if ($error) {
         printf(
             "Something went wrong:\n%s\n",
@@ -66,11 +66,11 @@ Returns the corresponding `Promise` instance. `Deferred` and `Promise` are separ
 
 #### `resolve()`
 
-Resolves the promise with the first parameter as value, otherwise `null`. If a `Amp\Promise` is passed, the resolution will wait until the passed promise has been resolved. Invokes all registered `Promise::when()` callbacks.
+Resolves the promise with the first parameter as value, otherwise `null`. If a `Amp\Promise` is passed, the resolution will wait until the passed promise has been resolved. Invokes all registered `Promise::onResolve()` callbacks.
 
 #### `fail()`
 
-Makes the promise fail. Invokes all registered `Promise::when()` callbacks with the passed `Throwable` as `$error` argument.
+Makes the promise fail. Invokes all registered `Promise::onResolve()` callbacks with the passed `Throwable` as `$error` argument.
 
 Here's a simple example of an async value producer `asyncMultiply()` creating a deferred and returning the associated promise to its API consumer.
 

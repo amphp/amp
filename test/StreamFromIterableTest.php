@@ -31,7 +31,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertSame($exception, $reason);
@@ -51,7 +51,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertSame(\range(1, 2), $results);

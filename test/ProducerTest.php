@@ -39,7 +39,7 @@ class ProducerTest extends TestCase {
 
             $producer->listen($callback);
 
-            $producer->when(function ($exception, $result) use ($value) {
+            $producer->onResolve(function ($exception, $result) use ($value) {
                 $this->assertSame($result, $value);
             });
         }));
@@ -88,7 +88,7 @@ class ProducerTest extends TestCase {
 
             $deferred->fail($exception);
 
-            $producer->when(function ($reason) use ($exception) {
+            $producer->onResolve(function ($reason) use ($exception) {
                 $this->assertSame($reason, $exception);
             });
         });

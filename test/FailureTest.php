@@ -23,7 +23,7 @@ class FailureTest extends \PHPUnit\Framework\TestCase {
 
         $success = new Failure($exception);
 
-        $success->when($callback);
+        $success->onResolve($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $reason);

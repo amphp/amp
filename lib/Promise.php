@@ -16,5 +16,5 @@ interface Promise {
      *
      * @return mixed Return type and value are unspecified.
      */
-    public function when(callable $onResolved);
+    public function onResolve(callable $onResolved);
 }

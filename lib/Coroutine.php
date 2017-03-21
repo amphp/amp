@@ -25,7 +25,7 @@ final class Coroutine implements Promise {
     private $generator;
 
     /** @var callable(\Throwable|null $exception, mixed $value): void */
-    private $when;
+    private $onResolve;
 
     /** @var int */
     private $depth = 0;
@@ -40,10 +40,10 @@ final class Coroutine implements Promise {
          * @param \Throwable|null $exception Exception to be thrown into the generator.
          * @param mixed           $value Value to be sent into the generator.
          */
-        $this->when = function ($exception, $value) {
+        $this->onResolve = function ($exception, $value) {
             if ($this->depth > self::MAX_CONTINUATION_DEPTH) { // Defer continuation to avoid blowing up call stack.
                 Loop::defer(function () use ($exception, $value) {
-                    ($this->when)($exception, $value);
+                    ($this->onResolve)($exception, $value);
                 });
                 return;
             }
@@ -67,7 +67,7 @@ final class Coroutine implements Promise {
                 }
 
                 ++$this->depth;
-                $yielded->when($this->when);
+                $yielded->onResolve($this->onResolve);
                 --$this->depth;
             } catch (\Throwable $exception) {
                 $this->dispose($exception);
@@ -87,7 +87,7 @@ final class Coroutine implements Promise {
             }
 
             ++$this->depth;
-            $yielded->when($this->when);
+            $yielded->onResolve($this->onResolve);
             --$this->depth;
         } catch (\Throwable $exception) {
             $this->dispose($exception);

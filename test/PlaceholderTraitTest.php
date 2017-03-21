@@ -29,7 +29,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->placeholder->resolve($value);
 
@@ -49,9 +49,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->placeholder->resolve($value);
 
@@ -73,7 +73,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
         $this->placeholder->resolve($value);
 
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -93,9 +93,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
         $this->placeholder->resolve($value);
 
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($value, $result);
@@ -118,7 +118,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
                 throw $expected;
             };
 
-            $this->placeholder->when($callback);
+            $this->placeholder->onResolve($callback);
 
             $this->placeholder->resolve($expected);
         });
@@ -145,7 +145,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
             $this->placeholder->resolve($expected);
 
-            $this->placeholder->when($callback);
+            $this->placeholder->onResolve($callback);
         });
 
         $this->assertSame(1, $invoked);
@@ -160,7 +160,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
             $result = $exception;
         };
 
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->placeholder->fail($exception);
 
@@ -180,9 +180,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
             $result = $exception;
         };
 
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->placeholder->fail($exception);
 
@@ -204,7 +204,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
         $this->placeholder->fail($exception);
 
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $result);
@@ -224,9 +224,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
         $this->placeholder->fail($exception);
 
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
-        $this->placeholder->when($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
 
         $this->assertSame(3, $invoked);
         $this->assertSame($exception, $result);
@@ -249,7 +249,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
                 throw $expected;
             };
 
-            $this->placeholder->when($callback);
+            $this->placeholder->onResolve($callback);
 
             $this->placeholder->fail(new \Exception);
         });
@@ -276,7 +276,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
             $this->placeholder->fail(new \Exception);
 
-            $this->placeholder->when($callback);
+            $this->placeholder->onResolve($callback);
         });
 
         $this->assertSame(1, $invoked);
@@ -286,22 +286,22 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
         $promise->expects($this->once())
-            ->method("when")
+            ->method("onResolve")
             ->with($this->callback("is_callable"));
 
         $this->placeholder->resolve($promise);
 
-        $this->placeholder->when(function () {});
+        $this->placeholder->onResolve(function () {});
     }
 
     public function testResolveWithPromiseAfterWhen() {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
         $promise->expects($this->once())
-            ->method("when")
+            ->method("onResolve")
             ->with($this->callback("is_callable"));
 
-        $this->placeholder->when(function () {});
+        $this->placeholder->onResolve(function () {});
 
         $this->placeholder->resolve($promise);
     }
@@ -321,7 +321,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
      */
     public function testResolveAgainWithinWhenCallback() {
         Loop::run(function () {
-            $this->placeholder->when(function () {
+            $this->placeholder->onResolve(function () {
                 $this->placeholder->resolve();
             });
 

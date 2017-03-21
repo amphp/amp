@@ -25,7 +25,7 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
 
         $success = new Success($value);
 
-        $success->when($callback);
+        $success->onResolve($callback);
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -50,7 +50,7 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
 
             $success = new Success;
 
-            $success->when($callback);
+            $success->onResolve($callback);
         });
 
         $this->assertSame(1, $invoked);

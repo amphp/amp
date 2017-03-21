@@ -26,7 +26,7 @@ class DeferredTest extends \PHPUnit\Framework\TestCase {
         $promise = $this->deferred->promise();
 
         $invoked = false;
-        $promise->when(function ($exception, $value) use (&$invoked, &$result) {
+        $promise->onResolve(function ($exception, $value) use (&$invoked, &$result) {
             $invoked = true;
             $result = $value;
         });
@@ -45,7 +45,7 @@ class DeferredTest extends \PHPUnit\Framework\TestCase {
         $promise = $this->deferred->promise();
 
         $invoked = false;
-        $promise->when(function ($exception, $value) use (&$invoked, &$result) {
+        $promise->onResolve(function ($exception, $value) use (&$invoked, &$result) {
             $invoked = true;
             $result = $exception;
         });

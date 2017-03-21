@@ -5,9 +5,9 @@ namespace Amp;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. when() is called on
- * the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails with
- * that exception.
+ * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. onResolve() is called
+ * on the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails
+ * with that exception.
  */
 class LazyPromise implements Promise {
     /** @var callable|null */
@@ -26,7 +26,7 @@ class LazyPromise implements Promise {
     /**
      * {@inheritdoc}
      */
-    public function when(callable $onResolved) {
+    public function onResolve(callable $onResolved) {
         if ($this->promise === null) {
             $provider = $this->promisor;
             $this->promisor = null;
@@ -46,6 +46,6 @@ class LazyPromise implements Promise {
             }
         }
 
-        $this->promise->when($onResolved);
+        $this->promise->onResolve($onResolved);
     }
 }

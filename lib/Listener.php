@@ -68,7 +68,7 @@ class Listener implements Iterator {
         $result = &$this->result;
         $error = &$this->exception;
 
-        $this->stream->when(static function ($exception, $value) use (&$waiting, &$result, &$error, &$resolved) {
+        $this->stream->onResolve(static function ($exception, $value) use (&$waiting, &$result, &$error, &$resolved) {
             $resolved = true;
 
             if ($exception) {
