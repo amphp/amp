@@ -27,7 +27,7 @@ class LazyPromiseTest extends TestCase {
             return $value;
         });
 
-        $lazy->when(function ($exception, $value) use (&$result) {
+        $lazy->onResolve(function ($exception, $value) use (&$result) {
             $result = $value;
         });
 
@@ -44,7 +44,7 @@ class LazyPromiseTest extends TestCase {
             return $promise;
         });
 
-        $lazy->when(function ($exception, $value) use (&$result) {
+        $lazy->onResolve(function ($exception, $value) use (&$result) {
             $result = $value;
         });
 
@@ -61,7 +61,7 @@ class LazyPromiseTest extends TestCase {
             return $promise;
         });
 
-        $lazy->when(function ($exception, $value) use (&$reason) {
+        $lazy->onResolve(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
 
@@ -77,7 +77,7 @@ class LazyPromiseTest extends TestCase {
             throw $exception;
         });
 
-        $lazy->when(function ($exception, $value) use (&$reason) {
+        $lazy->onResolve(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
 
@@ -94,7 +94,7 @@ class LazyPromiseTest extends TestCase {
             return $promise;
         });
 
-        $lazy->when(function ($exception, $value) use (&$result) {
+        $lazy->onResolve(function ($exception, $value) use (&$result) {
             $result = $value;
         });
 
@@ -111,7 +111,7 @@ class LazyPromiseTest extends TestCase {
             return $promise;
         });
 
-        $lazy->when(function ($exception, $value) use (&$reason) {
+        $lazy->onResolve(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });
 

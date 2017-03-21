@@ -50,7 +50,7 @@ class StreamMapTest extends \PHPUnit\Framework\TestCase {
                 $results[] = $value;
             });
 
-            $stream->when(function ($exception, $value) use (&$result) {
+            $stream->onResolve(function ($exception, $value) use (&$result) {
                 $result = $value;
             });
         });
@@ -85,7 +85,7 @@ class StreamMapTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertSame($exception, $reason);
@@ -121,7 +121,7 @@ class StreamMapTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertSame(\count($values), $count);
@@ -145,7 +145,7 @@ class StreamMapTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertFalse($invoked);

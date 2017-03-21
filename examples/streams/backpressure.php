@@ -19,7 +19,7 @@ Loop::run(function () {
             return new Pause(500); // Artificial back-pressure on stream.
         });
 
-        $stream->when(function (Throwable $exception = null, $value) {
+        $stream->onResolve(function (Throwable $exception = null, $value) {
             if ($exception) {
                 printf("Stream failed: %s\n", $exception->getMessage());
                 return;

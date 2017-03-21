@@ -53,7 +53,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
                 $reason = $exception;
             };
 
-            $stream->when($callback);
+            $stream->onResolve($callback);
         });
 
         $this->assertSame($exception, $reason);

@@ -78,7 +78,7 @@ class ProducerTraitTest extends TestCase {
 
         $this->assertFalse($invoked);
 
-        $this->producer->when(function ($exception) use (&$invoked, &$reason) {
+        $this->producer->onResolve(function ($exception) use (&$invoked, &$reason) {
             $invoked = true;
             $reason = $exception;
         });
@@ -178,7 +178,7 @@ class ProducerTraitTest extends TestCase {
         $this->producer->resolve();
         $deferred->resolve();
 
-        $promise->when(function ($exception) use (&$invoked, &$reason) {
+        $promise->onResolve(function ($exception) use (&$invoked, &$reason) {
             $invoked = true;
             $reason = $exception;
         });
@@ -201,7 +201,7 @@ class ProducerTraitTest extends TestCase {
         $this->producer->resolve();
         $deferred->fail(new \Exception);
 
-        $promise->when(function ($exception) use (&$invoked, &$reason) {
+        $promise->onResolve(function ($exception) use (&$invoked, &$reason) {
             $invoked = true;
             $reason = $exception;
         });
@@ -236,7 +236,7 @@ class ProducerTraitTest extends TestCase {
         });
 
         $promise = $this->producer->emit(1);
-        $promise->when(function () use (&$invoked) {
+        $promise->onResolve(function () use (&$invoked) {
             $invoked = true;
         });
 
@@ -254,7 +254,7 @@ class ProducerTraitTest extends TestCase {
                 });
 
                 $promise = $this->producer->emit(1);
-                $promise->when(function () use (&$invoked) {
+                $promise->onResolve(function () use (&$invoked) {
                     $invoked = true;
                 });
 

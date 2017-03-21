@@ -43,7 +43,7 @@ class Message implements Iterator, Promise {
     public function __construct(Stream $stream) {
         $this->listener = new Listener($stream);
 
-        $stream->when(function ($exception, $value) {
+        $stream->onResolve(function ($exception, $value) {
             if ($exception) {
                 $this->fail($exception);
                 return;

@@ -19,7 +19,7 @@ final class Failure implements Stream {
     /**
      * {@inheritdoc}
      */
-    public function when(callable $onResolved) {
+    public function onResolve(callable $onResolved) {
         try {
             $onResolved($this->exception, null);
         } catch (\Throwable $exception) {

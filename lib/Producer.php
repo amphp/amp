@@ -19,7 +19,7 @@ final class Producer implements Stream {
 
         Loop::defer(function () use ($result) {
             $coroutine = new Coroutine($result);
-            $coroutine->when(function ($exception, $value) {
+            $coroutine->onResolve(function ($exception, $value) {
                 if ($this->resolved) {
                     return;
                 }

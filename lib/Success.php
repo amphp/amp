@@ -28,7 +28,7 @@ final class Success implements Stream {
     /**
      * {@inheritdoc}
      */
-    public function when(callable $onResolved) {
+    public function onResolve(callable $onResolved) {
         try {
             $onResolved(null, $this->value);
         } catch (\Throwable $exception) {

@@ -18,7 +18,7 @@ class PauseTest extends \PHPUnit\Framework\TestCase {
                 $result = $value;
             };
 
-            $promise->when($callback);
+            $promise->onResolve($callback);
         });
 
         $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (microtime(true) - $start) * 1000);
@@ -39,7 +39,7 @@ class PauseTest extends \PHPUnit\Framework\TestCase {
                 $invoked = true;
             };
 
-            $promise->when($callback);
+            $promise->onResolve($callback);
         });
 
         $this->assertLessThanOrEqual($time - 1 /* 1ms grace period */, (microtime(true) - $start) * 1000);
@@ -64,7 +64,7 @@ class PauseTest extends \PHPUnit\Framework\TestCase {
                 $invoked = true;
             };
 
-            $promise->when($callback);
+            $promise->onResolve($callback);
         });
 
         $this->assertGreaterThanOrEqual($time, (microtime(true) - $start) * 1000);

@@ -158,7 +158,7 @@ namespace Amp\Promise {
             }
         }
 
-        $promise->when(function ($exception) {
+        $promise->onResolve(function ($exception) {
             if ($exception) {
                 throw $exception;
             }
@@ -186,7 +186,7 @@ namespace Amp\Promise {
 
         $resolved = false;
         Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
-            $promise->when(function ($e, $v) use (&$resolved, &$value, &$exception) {
+            $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
                 Loop::stop();
                 $resolved = true;
                 $exception = $e;
@@ -226,7 +226,7 @@ namespace Amp\Promise {
 
         $deferred = new Deferred;
 
-        $promise->when(function ($exception, $value) use ($deferred, $functor) {
+        $promise->onResolve(function ($exception, $value) use ($deferred, $functor) {
             if ($exception) {
                 $deferred->fail($exception);
                 return;
@@ -263,7 +263,7 @@ namespace Amp\Promise {
 
         $deferred = new Deferred;
 
-        $promise->when(function ($exception, $value) use ($deferred, $className, $functor) {
+        $promise->onResolve(function ($exception, $value) use ($deferred, $className, $functor) {
             if (!$exception) {
                 $deferred->resolve($value);
                 return;
@@ -317,7 +317,7 @@ namespace Amp\Promise {
         });
         Loop::unreference($watcher);
 
-        $promise->when(function () use (&$resolved, $promise, $deferred, $watcher) {
+        $promise->onResolve(function () use (&$resolved, $promise, $deferred, $watcher) {
             Loop::cancel($watcher);
 
             if ($resolved) {
@@ -388,7 +388,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->when(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
+            $promise->onResolve(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
                 if ($error) {
                     $errors[$key] = $error;
                 } else {
@@ -432,7 +432,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->when(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
                 if ($resolved) {
                     return;
                 }
@@ -480,7 +480,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->when(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
                 if ($resolved) {
                     return;
                 }
@@ -528,7 +528,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->when(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
                 if ($exception) {
                     $exceptions[$key] = $exception;
                 } else {
@@ -668,7 +668,7 @@ namespace Amp\Stream {
             });
         }
 
-        Promise\all($streams)->when(function ($exception, array $values = null) use (&$pending, $emitter) {
+        Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$pending, $emitter) {
             $pending = false;
 
             if ($exception) {
@@ -730,7 +730,7 @@ namespace Amp\Stream {
             $promise = Promise\all($previous);
         }
 
-        $promise->when(function ($exception, array $values = null) use ($emitter) {
+        $promise->onResolve(function ($exception, array $values = null) use ($emitter) {
             if ($exception) {
                 $emitter->fail($exception);
                 return;

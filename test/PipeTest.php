@@ -26,7 +26,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        $promise->when($callback);
+        $promise->onResolve($callback);
 
         $this->assertTrue($invoked);
         $this->assertSame($value + 1, $result);
@@ -50,7 +50,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
             $reason = $exception;
         };
 
-        $promise->when($callback);
+        $promise->onResolve($callback);
 
         $this->assertFalse($invoked);
         $this->assertSame($exception, $reason);
@@ -76,7 +76,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
             $reason = $exception;
         };
 
-        $promise->when($callback);
+        $promise->onResolve($callback);
 
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
@@ -103,7 +103,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
             $result = $value;
         };
 
-        $promise->when($callback);
+        $promise->onResolve($callback);
 
         $this->assertTrue($invoked);
         $this->assertSame($value + 1, $result);
