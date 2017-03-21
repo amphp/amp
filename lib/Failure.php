@@ -32,6 +32,6 @@ final class Failure implements Stream {
     /**
      * {@inheritdoc}
      */
-    public function listen(callable $onNext) {
+    public function onEmit(callable $onEmit) {
     }
 }

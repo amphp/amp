@@ -12,10 +12,10 @@ interface Stream extends Promise {
      * Registers a callback to be invoked each time value is emitted from the stream. If the function returns an
      * promise, back-pressure is applied to the promise until the returned promise is resolved.
      *
-     * Exceptions thrown from $onNext (or failures of promises returned from $onNext) will fail the returned
+     * Exceptions thrown from $onEmit (or failures of promises returned from $onNext) will fail the returned
      * Subscriber with the thrown exception.
      *
-     * @param callable $onNext Function invoked each time a value is emitted from the stream.
+     * @param callable $onEmit Function invoked each time a value is emitted from the stream.
      */
-    public function listen(callable $onNext);
+    public function onEmit(callable $onEmit);
 }

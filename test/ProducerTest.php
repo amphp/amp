@@ -37,7 +37,7 @@ class ProducerTest extends TestCase {
                 $this->assertSame($emitted, $value);
             };
 
-            $producer->listen($callback);
+            $producer->onEmit($callback);
 
             $producer->onResolve(function ($exception, $result) use ($value) {
                 $this->assertSame($result, $value);
@@ -66,7 +66,7 @@ class ProducerTest extends TestCase {
                 $this->assertSame($emitted, $value);
             };
 
-            $producer->listen($callback);
+            $producer->onEmit($callback);
 
             $deferred->resolve($value);
         });
@@ -108,7 +108,7 @@ class ProducerTest extends TestCase {
                 $time = microtime(true) - $time;
             });
 
-            $producer->listen(function () {
+            $producer->onEmit(function () {
                 return new Pause(self::TIMEOUT);
             });
         });
@@ -130,7 +130,7 @@ class ProducerTest extends TestCase {
                 $time = microtime(true) - $time;
             });
 
-            $producer->listen(function () {
+            $producer->onEmit(function () {
                 return new ReactPromise(function ($resolve) {
                     Loop::delay(self::TIMEOUT, $resolve);
                 });
@@ -153,7 +153,7 @@ class ProducerTest extends TestCase {
                     yield $emit(2);
                 });
 
-                $producer->listen(function () use ($exception) {
+                $producer->onEmit(function () use ($exception) {
                     throw $exception;
                 });
             });
@@ -192,7 +192,7 @@ class ProducerTest extends TestCase {
 
             yield $producer;
 
-            $producer->listen(function () use (&$invoked) {
+            $producer->onEmit(function () use (&$invoked) {
                 $invoked = true;
             });
         });

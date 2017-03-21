@@ -48,7 +48,7 @@ class Listener implements Iterator {
         $backPressure = &$this->backPressure;
         $resolved = &$this->resolved;
 
-        $this->stream->listen(static function ($value) use (&$waiting, &$values, &$backPressure, &$resolved) {
+        $this->stream->onEmit(static function ($value) use (&$waiting, &$values, &$backPressure, &$resolved) {
             $values[] = $value;
             $backPressure[] = $pressure = new Deferred;
 

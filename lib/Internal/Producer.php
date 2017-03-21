@@ -26,14 +26,14 @@ trait Producer {
     private $listeners = [];
 
     /**
-     * @param callable $onNext
+     * @param callable $onEmit
      */
-    public function listen(callable $onNext) {
+    public function onEmit(callable $onEmit) {
         if ($this->resolved) {
             return;
         }
 
-        $this->listeners[] = $onNext;
+        $this->listeners[] = $onEmit;
     }
 
     /**
@@ -79,9 +79,9 @@ trait Producer {
 
         $promises = [];
 
-        foreach ($this->listeners as $onNext) {
+        foreach ($this->listeners as $onEmit) {
             try {
-                $result = $onNext($value);
+                $result = $onEmit($value);
                 if ($result instanceof ReactPromise) {
                     $result = adapt($result);
                 }

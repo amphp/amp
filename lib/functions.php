@@ -609,21 +609,21 @@ namespace Amp\Stream {
 
     /**
      * @param \Amp\Stream $stream
-     * @param callable (mixed $value): mixed $onNext
-     * @param callable (mixed $value): mixed|null $onComplete
+     * @param callable (mixed $value): mixed $onEmit
+     * @param callable (mixed $value): mixed|null $onResolve
      *
      * @return \Amp\Stream
      */
-    function map(Stream $stream, callable $onNext, callable $onComplete = null): Stream {
+    function map(Stream $stream, callable $onEmit, callable $onResolve = null): Stream {
         $listener = new Listener($stream);
-        return new Producer(function (callable $emit) use ($listener, $onNext, $onComplete) {
+        return new Producer(function (callable $emit) use ($listener, $onEmit, $onResolve) {
             while (yield $listener->advance()) {
-                yield $emit($onNext($listener->getCurrent()));
+                yield $emit($onEmit($listener->getCurrent()));
             }
-            if ($onComplete === null) {
+            if ($onResolve === null) {
                 return $listener->getResult();
             }
-            return $onComplete($listener->getResult());
+            return $onResolve($listener->getResult());
         });
     }
 
@@ -660,7 +660,7 @@ namespace Amp\Stream {
             if (!$stream instanceof Stream) {
                 throw new UnionTypeError([Stream::class], $stream);
             }
-            $stream->listen(function ($value) use (&$pending, $emitter) {
+            $stream->onEmit(function ($value) use (&$pending, $emitter) {
                 if ($pending) {
                     return $emitter->emit($value);
                 }
@@ -723,7 +723,7 @@ namespace Amp\Stream {
 
                 yield $emitter->emit($value);
             };
-            $subscriptions[] = $stream->listen(function ($value) use ($generator) {
+            $subscriptions[] = $stream->onEmit(function ($value) use ($generator) {
                 return new Coroutine($generator($value));
             });
             $previous[] = $stream;
