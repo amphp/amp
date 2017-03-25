@@ -52,7 +52,7 @@ install:
   - composer show
 
 script:
-  - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
+  - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml --verbose
   - php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
