@@ -8,8 +8,9 @@ use Amp\Loop;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
+use PHPUnit\Framework\TestCase;
 
-class PromiseMapTest extends \PHPUnit\Framework\TestCase {
+class PromiseMapTest extends TestCase {
     public function testEmptyArray() {
         $values = [];
         $invoked = false;

@@ -29,7 +29,7 @@ install:
     make install;
     popd;
     echo "extension=uv.so" >> "$(php -r 'echo php_ini_loaded_file();')";
-    
+
   - curl -LS https://pecl.php.net/get/ev | tar -xz;
     pushd ev-*;
     phpize;
@@ -48,7 +48,7 @@ install:
     popd;
     echo "extension=event.so" >> "$(php -r 'echo php_ini_loaded_file();')";
 
-  - composer update -n --prefer-source
+  - composer update -n --prefer-dist
   - composer show
 
 script:
@@ -60,7 +60,7 @@ script:
 after_script:
   - composer require satooshi/php-coveralls dev-master
   - php vendor/bin/coveralls -v
-  
+
 cache:
   directories:
-    - $HOME/.composer/cache
+    - $HOME/.composer/cache/files
