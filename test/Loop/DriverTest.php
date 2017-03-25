@@ -1026,7 +1026,7 @@ abstract class DriverTest extends TestCase {
 
         $this->expectOutputString("caught SIGUSR1");
         $this->start(function (Driver $loop) {
-            $stop = $loop->delay($msDelay = 10, function () use ($loop) {
+            $stop = $loop->delay($msDelay = 100, function () use ($loop) {
                 echo "ERROR: manual stop";
                 $loop->stop();
             });
