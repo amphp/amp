@@ -570,6 +570,10 @@ abstract class DriverTest extends TestCase {
         });
     }
 
+    /**
+     * The first number of each tuple indicates the tick in which the watcher is supposed to execute, the second digit
+     * indicates the order within the tick.
+     */
     function testExecutionOrderGuarantees() {
         $this->expectOutputString("01 02 03 04 " . str_repeat("05 ", 8) . "10 11 12 " . str_repeat("13 ", 4) . "20 " . str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) use (&$ticks) {
@@ -584,9 +588,9 @@ abstract class DriverTest extends TestCase {
                 };
             };
 
-            $loop->onWritable(STDIN, $f(0, 5));
-            $writ1 = $loop->onWritable(STDIN, $f(0, 5));
-            $writ2 = $loop->onWritable(STDIN, $f(0, 5));
+            $loop->onWritable(STDOUT, $f(0, 5));
+            $writ1 = $loop->onWritable(STDOUT, $f(0, 5));
+            $writ2 = $loop->onWritable(STDOUT, $f(0, 5));
 
             $loop->delay($msDelay = 0, $f(0, 5));
             $del1 = $loop->delay($msDelay = 0, $f(0, 5));
@@ -601,18 +605,18 @@ abstract class DriverTest extends TestCase {
             $loop->disable($del1);
             $loop->disable($del2);
 
-            $writ3 = $loop->onWritable(STDIN, $f());
+            $writ3 = $loop->onWritable(STDOUT, $f());
             $loop->cancel($writ3);
             $loop->disable($writ1);
             $loop->disable($writ2);
             $loop->enable($writ1);
-            $writ4 = $loop->onWritable(STDIN, $f(1, 3));
-            $loop->onWritable(STDIN, $f(0, 5));
+            $writ4 = $loop->onWritable(STDOUT, $f(1, 3));
+            $loop->onWritable(STDOUT, $f(0, 5));
             $loop->enable($writ2);
             $loop->disable($writ4);
             $loop->defer(function () use ($loop, $writ4, $f) {
                 $loop->enable($writ4);
-                $loop->onWritable(STDIN, $f(1, 3));
+                $loop->onWritable(STDOUT, $f(1, 3));
             });
 
             $loop->enable($del1);
@@ -621,7 +625,7 @@ abstract class DriverTest extends TestCase {
             $loop->disable($del4);
             $loop->defer(function () use ($loop, $del4, $f) {
                 $loop->enable($del4);
-                $loop->onWritable(STDIN, $f(1, 3));
+                $loop->onWritable(STDOUT, $f(1, 3));
             });
 
             $loop->delay($msDelay = 1000, $f(4, 1));

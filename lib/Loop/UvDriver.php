@@ -61,7 +61,7 @@ class UvDriver extends Driver {
                     $result = ($watcher->callback)($watcher->id, $resource, $watcher->data);
 
                     if ($result === null) {
-                        return;
+                        continue;
                     }
 
                     if ($result instanceof \Generator) {
