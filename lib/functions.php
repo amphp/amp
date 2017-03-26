@@ -438,7 +438,7 @@ namespace Amp\Promise {
      * The returned promise will only fail if the given number of required promises fail.
      *
      * @param \Amp\Promise[] $promises Array of only promises.
-     * @param int $required Number of promises that must fail for the returned promise to fail.
+     * @param int $required Number of promises that must succeed for the returned promise to succeed.
      *
      * @return \Amp\Promise
      *
