@@ -8,7 +8,7 @@ use Amp\Stream;
 use Amp\Emitter;
 use Amp\Loop;
 
-class StreamMapTest extends \PHPUnit\Framework\TestCase {
+class MapTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
         Loop::run(function () use (&$invoked){

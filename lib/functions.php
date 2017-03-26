@@ -89,46 +89,6 @@ namespace Amp {
 
         return new Success($result);
     }
-
-    /**
-     * Wraps the given callable $worker in a promise aware function that has the same number of arguments as $worker,
-     * but those arguments may be promises for the future argument value or just values. The returned function will
-     * return a promise for the return value of $worker and will never throw. The $worker function will not be called
-     * until each promise given as an argument is fulfilled. If any promise provided as an argument fails, the
-     * promise returned by the returned function will be failed for the same reason. The promise succeeds with
-     * the return value of $worker or failed if $worker throws.
-     *
-     * @param callable $worker
-     *
-     * @return callable
-     */
-    function lift(callable $worker): callable {
-        /**
-         * @param mixed ...$args Promises or values.
-         *
-         * @return \Amp\Promise
-         */
-        return function (...$args) use ($worker): Promise {
-            foreach ($args as $key => $arg) {
-                if (!$arg instanceof Promise) {
-                    if ($arg instanceof ReactPromise) {
-                        $args[$key] = Promise\adapt($arg);
-                    } else {
-                        $args[$key] = new Success($arg);
-                    }
-                }
-            }
-
-            if (1 === \count($args)) {
-                return Promise\pipe($args[0], $worker);
-            }
-
-            return Promise\pipe(Promise\all($args), function (array $args) use ($worker) {
-                \ksort($args); // Needed to ensure correct argument order.
-                return $worker(...$args);
-            });
-        };
-    }
 }
 
 namespace Amp\Promise {
@@ -371,36 +331,7 @@ namespace Amp\Promise {
      * @throws \Error If a non-Promise is in the array.
      */
     function any(array $promises): Promise {
-        if (empty($promises)) {
-            return new Success([[], []]);
-        }
-
-        $deferred = new Deferred;
-
-        $pending = \count($promises);
-        $errors = [];
-        $values = [];
-
-        foreach ($promises as $key => $promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } elseif (!$promise instanceof Promise) {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
-            }
-
-            $promise->onResolve(function ($error, $value) use (&$pending, &$errors, &$values, $key, $deferred) {
-                if ($error) {
-                    $errors[$key] = $error;
-                } else {
-                    $values[$key] = $value;
-                }
-
-                if (--$pending === 0) {
-                    $deferred->resolve([$errors, $values]);
-                }
-            });
-        }
-        return $deferred->promise();
+        return some($promises, 0);
     }
 
     /**
@@ -408,7 +339,7 @@ namespace Amp\Promise {
      * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
      * the array of promises.
      *
-     * @param Promise[] $promises
+     * @param \Amp\Promise[] $promises Array of only promises.
      *
      * @return \Amp\Promise
      *
@@ -456,7 +387,7 @@ namespace Amp\Promise {
     /**
      * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
      *
-     * @param Promise[] $promises
+     * @param \Amp\Promise[] $promises Array of only promises.
      *
      * @return \Amp\Promise
      *
@@ -504,13 +435,16 @@ namespace Amp\Promise {
     /**
      * Resolves with a two-item array delineating successful and failed Promise results.
      *
-     * The returned promise will only fail if ALL of the promises fail.
+     * The returned promise will only fail if the given number of required promises fail.
      *
-     * @param Promise[] $promises
+     * @param \Amp\Promise[] $promises Array of only promises.
+     * @param int $required Number of promises that must fail for the returned promise to fail.
      *
      * @return \Amp\Promise
+     *
+     * @throws \Error If a non-Promise is in the array.
      */
-    function some(array $promises): Promise {
+    function some(array $promises, int $required = 1): Promise {
         if (empty($promises)) {
             return new Success([[], []]);
         }
@@ -528,7 +462,9 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$values, &$exceptions, &$pending, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (
+                &$values, &$exceptions, &$pending, $key, $required, $deferred
+            ) {
                 if ($exception) {
                     $exceptions[$key] = $exception;
                 } else {
@@ -536,7 +472,7 @@ namespace Amp\Promise {
                 }
 
                 if (0 === --$pending) {
-                    if (empty($values)) {
+                    if (\count($values) < $required) {
                         $deferred->fail(new MultiReasonException($exceptions));
                         return;
                     }
@@ -547,30 +483,6 @@ namespace Amp\Promise {
         }
 
         return $deferred->promise();
-    }
-
-    /**
-     * Maps the callback to each promise as it succeeds. Returns an array of promises resolved by the return
-     * callback value of the callback function. The callback may return promises or throw exceptions to fail
-     * promises in the array. If a promise in the passed array fails, the callback will not be called and the
-     * promise in the array fails for the same reason. Tip: Use all() or any() to determine when all
-     * promises in the array have been resolved.
-     *
-     * @param callable (mixed $value): mixed $callback
-     * @param Promise[] ...$promises
-     *
-     * @return \Amp\Promise[] Array of promises resolved with the result of the mapped function.
-     */
-    function map(callable $callback, array ...$promises): array {
-        foreach ($promises as $promiseSet) {
-            foreach ($promiseSet as $promise) {
-                if (!$promise instanceof Promise && !$promise instanceof ReactPromise) {
-                    throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
-                }
-            }
-        }
-
-        return \array_map(\Amp\lift($callback), ...$promises);
     }
 }
 
