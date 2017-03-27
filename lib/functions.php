@@ -445,11 +445,19 @@ namespace Amp\Promise {
      * @throws \Error If a non-Promise is in the array.
      */
     function some(array $promises, int $required = 1): Promise {
-        if (empty($promises)) {
-            return new Success([[], []]);
+        if ($required < 0) {
+            throw new \Error("Number of promises required must be non-negative");
         }
 
         $pending = \count($promises);
+
+        if ($required > $pending) {
+            throw new \Error("Too few promises provided");
+        }
+
+        if (empty($promises)) {
+            return new Success([[], []]);
+        }
 
         $deferred = new Deferred;
         $values = [];

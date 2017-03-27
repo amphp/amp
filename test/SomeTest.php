@@ -11,7 +11,23 @@ use Amp\Loop;
 
 class SomeTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {
-        $this->assertSame([[], []], Promise\wait(Promise\some([])));
+        $this->assertSame([[], []], Promise\wait(Promise\some([], 0)));
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage Too few promises provided
+     */
+    public function testEmptyArrayWithNonZeroRequired() {
+        Promise\some([], 1);
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage non-negative
+     */
+    public function testInvalidRequiredNumberOfPromises() {
+        Promise\some([], -1);
     }
 
     public function testSuccessfulPromisesArray() {
