@@ -2,12 +2,12 @@
 
 namespace Amp\Internal;
 
+use Amp\Coroutine;
 use Amp\Deferred;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\adapt;
 
 /**
  * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
@@ -52,7 +52,7 @@ trait Producer {
         }
 
         if ($value instanceof ReactPromise) {
-            $value = adapt($value);
+            $value = Promise\adapt($value);
         }
 
         if ($value instanceof Promise) {
@@ -82,8 +82,13 @@ trait Producer {
         foreach ($this->listeners as $onEmit) {
             try {
                 $result = $onEmit($value);
-                if ($result instanceof ReactPromise) {
-                    $result = adapt($result);
+                if ($result === null) {
+                    continue;
+                }
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                } elseif ($result instanceof ReactPromise) {
+                    $result = Promise\adapt($result);
                 }
                 if ($result instanceof Promise) {
                     $promises[] = $result;

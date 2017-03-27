@@ -34,11 +34,11 @@ class LazyPromise implements Promise {
             try {
                 $this->promise = $provider();
 
-                if ($this->promise instanceof ReactPromise) {
+                if ($this->promise instanceof \Generator) {
+                    $this->promise = new Coroutine($this->promise);
+                } elseif ($this->promise instanceof ReactPromise) {
                     $this->promise = Promise\adapt($this->promise);
-                }
-
-                if (!$this->promise instanceof Promise) {
+                } elseif (!$this->promise instanceof Promise) {
                     $this->promise = new Success($this->promise);
                 }
             } catch (\Throwable $exception) {

@@ -227,7 +227,7 @@ class ProducerTraitTest extends TestCase {
     }
 
     public function testSubscriberReturnsSuccessfulPromise() {
-        $invoked = true;
+        $invoked = false;
         $value = 1;
         $promise = new Success($value);
 
@@ -263,5 +263,18 @@ class ProducerTraitTest extends TestCase {
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
+    }
+
+    public function testSubscriberReturnsGenerator() {
+        $invoked = false;
+        $this->producer->onEmit(function ($value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $this->producer->emit(1);
+
+        $this->assertTrue($invoked);
     }
 }

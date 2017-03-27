@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use React\Promise\PromiseInterface as ReactPromise;
+
 /**
  * Creates a failed stream (which is also a promise) using the given exception.
  */
@@ -21,7 +23,19 @@ final class Failure implements Stream {
      */
     public function onResolve(callable $onResolved) {
         try {
-            $onResolved($this->exception, null);
+            $result = $onResolved($this->exception, null);
+
+            if ($result === null) {
+                return;
+            }
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise || $result instanceof ReactPromise) {
+                Promise\rethrow($result);
+            }
         } catch (\Throwable $exception) {
             Loop::defer(function () use ($exception) {
                 throw $exception;

@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Loop;
 use Amp\Success;
 use Amp\Promise;
+use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class SuccessTest extends \PHPUnit\Framework\TestCase {
     /**
@@ -14,7 +15,7 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
         $failure = new Success($this->getMockBuilder(Promise::class)->getMock());
     }
 
-    public function testWhen() {
+    public function testOnResolve() {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -32,9 +33,9 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhen
+     * @depends testOnResolve
      */
-    public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
+    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess() {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -54,5 +55,31 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
         });
 
         $this->assertSame(1, $invoked);
+    }
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage Success
+     */
+    public function testOnResolveWithReactPromise() {
+        Loop::run(function () {
+            $success = new Success;
+            $success->onResolve(function ($exception, $value) {
+                return new RejectedReactPromise(new \Exception("Success"));
+            });
+        });
+    }
+
+    public function testOnResolveWithGenerator() {
+        $value = 1;
+        $success = new Success($value);
+        $invoked = false;
+        $success->onResolve(function ($exception, $value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $this->assertTrue($invoked);
     }
 }

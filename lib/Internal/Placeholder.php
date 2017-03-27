@@ -2,11 +2,11 @@
 
 namespace Amp\Internal;
 
+use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\adapt;
 
 /**
  * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -35,7 +35,19 @@ trait Placeholder {
             }
 
             try {
-                $onResolved(null, $this->result);
+                $result = $onResolved(null, $this->result);
+
+                if ($result === null) {
+                    return;
+                }
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    Promise\rethrow($result);
+                }
             } catch (\Throwable $exception) {
                 Loop::defer(function () use ($exception) {
                     throw $exception;
@@ -67,7 +79,7 @@ trait Placeholder {
         }
 
         if ($value instanceof ReactPromise) {
-            $value = adapt($value);
+            $value = Promise\adapt($value);
         }
 
         $this->resolved = true;
@@ -86,7 +98,19 @@ trait Placeholder {
         }
 
         try {
-            $onResolved(null, $this->result);
+            $result = $onResolved(null, $this->result);
+
+            if ($result === null) {
+                return;
+            }
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise || $result instanceof ReactPromise) {
+                Promise\rethrow($result);
+            }
         } catch (\Throwable $exception) {
             Loop::defer(function () use ($exception) {
                 throw $exception;

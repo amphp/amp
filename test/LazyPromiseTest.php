@@ -118,4 +118,21 @@ class LazyPromiseTest extends TestCase {
         $this->assertTrue($invoked);
         $this->assertSame($exception, $reason);
     }
+
+    public function testPromisorReturningGenerator() {
+        $invoked = false;
+        $value = 1;
+        $lazy = new LazyPromise(function () use (&$invoked, $value) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $lazy->onResolve(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+
+        $this->assertTrue($invoked);
+        $this->assertSame($value, $result);
+    }
 }

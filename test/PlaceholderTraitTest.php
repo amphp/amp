@@ -20,7 +20,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
         $this->placeholder = new Placeholder;
     }
 
-    public function testWhenOnSuccess() {
+    public function testOnResolveOnSuccess() {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -38,9 +38,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnSuccess
+     * @depends testOnResolveOnSuccess
      */
-    public function testMultipleWhensOnSuccess() {
+    public function testMultipleOnResolvesOnSuccess() {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -60,9 +60,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnSuccess
+     * @depends testOnResolveOnSuccess
      */
-    public function testWhenAfterSuccess() {
+    public function testOnResolveAfterSuccess() {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -80,9 +80,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenAfterSuccess
+     * @depends testOnResolveAfterSuccess
      */
-    public function testMultipleWhenAfterSuccess() {
+    public function testMultipleOnResolveAfterSuccess() {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -102,9 +102,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnSuccess
+     * @depends testOnResolveOnSuccess
      */
-    public function testWhenThrowingForwardsToLoopHandlerOnSuccess() {
+    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess() {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -127,9 +127,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenAfterSuccess
+     * @depends testOnResolveAfterSuccess
      */
-    public function testWhenThrowingForwardsToLoopHandlerAfterSuccess() {
+    public function testOnResolveThrowingForwardsToLoopHandlerAfterSuccess() {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -151,7 +151,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testWhenOnFail() {
+    public function testOnResolveOnFail() {
         $exception = new \Exception;
 
         $invoked = 0;
@@ -169,9 +169,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnFail
+     * @depends testOnResolveOnFail
      */
-    public function testMultipleWhensOnFail() {
+    public function testMultipleOnResolvesOnFail() {
         $exception = new \Exception;
 
         $invoked = 0;
@@ -191,9 +191,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnFail
+     * @depends testOnResolveOnFail
      */
-    public function testWhenAfterFail() {
+    public function testOnResolveAfterFail() {
         $exception = new \Exception;
 
         $invoked = 0;
@@ -211,9 +211,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenAfterFail
+     * @depends testOnResolveAfterFail
      */
-    public function testMultipleWhensAfterFail() {
+    public function testMultipleOnResolvesAfterFail() {
         $exception = new \Exception;
 
         $invoked = 0;
@@ -233,9 +233,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnSuccess
+     * @depends testOnResolveOnSuccess
      */
-    public function testWhenThrowingForwardsToLoopHandlerOnFail() {
+    public function testOnResolveThrowingForwardsToLoopHandlerOnFail() {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -258,9 +258,9 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @depends testWhenOnSuccess
+     * @depends testOnResolveOnSuccess
      */
-    public function testWhenThrowingForwardsToLoopHandlerAfterFail() {
+    public function testOnResolveThrowingForwardsToLoopHandlerAfterFail() {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -282,7 +282,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testResolveWithPromiseBeforeWhen() {
+    public function testResolveWithPromiseBeforeOnResolve() {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
         $promise->expects($this->once())
@@ -294,7 +294,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
         $this->placeholder->onResolve(function () {});
     }
 
-    public function testResolveWithPromiseAfterWhen() {
+    public function testResolveWithPromiseAfterOnResolve() {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
         $promise->expects($this->once())
@@ -319,7 +319,7 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Promise has already been resolved
      */
-    public function testResolveAgainWithinWhenCallback() {
+    public function testResolveAgainWithinOnResolveCallback() {
         Loop::run(function () {
             $this->placeholder->onResolve(function () {
                 $this->placeholder->resolve();
@@ -327,5 +327,34 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase {
 
             $this->placeholder->resolve();
         });
+    }
+
+    public function testOnResolveWithGenerator() {
+        $invoked = false;
+        $this->placeholder->onResolve(function ($exception, $value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $this->placeholder->resolve(1);
+
+        $this->assertTrue($invoked);
+    }
+
+    /**
+     * @depends testOnResolveWithGenerator
+     */
+    public function testOnResolveWithGeneratorAfterResolve() {
+        $this->placeholder->resolve(1);
+
+        $invoked = false;
+        $this->placeholder->onResolve(function ($exception, $value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $this->assertTrue($invoked);
     }
 }

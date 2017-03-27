@@ -3,6 +3,7 @@
 namespace Amp\Test;
 
 use Amp\Loop;
+use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class Promise implements \Amp\Promise {
     use \Amp\Internal\Placeholder {
@@ -74,7 +75,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     }
 
     /** @dataProvider provideSuccessValues */
-    function testWhenOnSucceededPromise($value) {
+    function testOnResolveOnSucceededPromise($value) {
         list($promise, $succeeder) = $this->promise();
         $succeeder($value);
         $promise->onResolve(function($e, $v) use (&$invoked, $value) {
@@ -85,7 +86,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testSuccessAllWhensExecuted() {
+    function testSuccessAllOnResolvesExecuted() {
         list($promise, $succeeder) = $this->promise();
         $invoked = 0;
 
@@ -126,7 +127,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testWhenOnExceptionFailedPromise() {
+    function testOnResolveOnExceptionFailedPromise() {
         list($promise, , $failer) = $this->promise();
         $failer(new \RuntimeException);
         $promise->onResolve(function ($e) use (&$invoked) {
@@ -136,7 +137,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testFailureAllWhensExecuted() {
+    function testFailureAllOnResolvesExecuted() {
         list($promise, , $failer) = $this->promise();
         $invoked = 0;
 
@@ -177,7 +178,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    function testWhenOnErrorFailedPromise() {
+    function testOnResolveOnErrorFailedPromise() {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
         }
@@ -247,7 +248,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    function testThrowingInCallbackContinuesOtherWhens() {
+    function testThrowingInCallbackContinuesOtherOnResolves() {
         Loop::run(function () {
             $invoked = 0;
 
@@ -329,7 +330,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals(2, $invoked);
     }
 
-    public function testWhenQueueUnrolling() {
+    public function testResolvedQueueUnrolling() {
         $count = 50;
         $invoked = false;
 
@@ -360,5 +361,82 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $last->resolve();
 
         $this->assertTrue($invoked);
+    }
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage Success
+     */
+    public function testOnResolveWithReactPromise() {
+        Loop::run(function () {
+            $promise = new Promise;
+            $promise->onResolve(function ($exception, $value) {
+                return new RejectedReactPromise(new \Exception("Success"));
+            });
+            $promise->resolve();
+        });
+    }
+
+    /**
+     * @depends testOnResolveWithReactPromise
+     * @expectedException \Exception
+     * @expectedExceptionMessage Success
+     */
+    public function testOnResolveWithReactPromiseAfterResolve() {
+        Loop::run(function () {
+            $promise = new Promise;
+            $promise->resolve();
+            $promise->onResolve(function ($exception, $value) {
+                return new RejectedReactPromise(new \Exception("Success"));
+            });
+        });
+    }
+
+    public function testOnResolveWithGenerator() {
+        $promise = new Promise;
+        $invoked = false;
+        $promise->onResolve(function ($exception, $value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $promise->resolve(1);
+
+        $this->assertTrue($invoked);
+    }
+
+    /**
+     * @depends testOnResolveWithGenerator
+     */
+    public function testOnResolveWithGeneratorAfterResolve() {
+        $promise = new Promise;
+        $invoked = false;
+        $promise->resolve(1);
+        $promise->onResolve(function ($exception, $value) use (&$invoked) {
+            $invoked = true;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        });
+
+        $this->assertTrue($invoked);
+    }
+
+    public function testOnResolveWithGeneratorWithMultipleCallbacks() {
+        $promise = new Promise;
+        $invoked = 0;
+        $callback = function ($exception, $value) use (&$invoked) {
+            ++$invoked;
+            return $value;
+            yield; // Unreachable, but makes function a generator.
+        };
+
+        $promise->onResolve($callback);
+        $promise->onResolve($callback);
+        $promise->onResolve($callback);
+
+        $promise->resolve(1);
+
+        $this->assertSame(3, $invoked);
     }
 }

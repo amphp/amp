@@ -30,7 +30,19 @@ final class Success implements Stream {
      */
     public function onResolve(callable $onResolved) {
         try {
-            $onResolved(null, $this->value);
+            $result = $onResolved(null, $this->value);
+
+            if ($result === null) {
+                return;
+            }
+
+            if ($result instanceof \Generator) {
+                $result = new Coroutine($result);
+            }
+
+            if ($result instanceof Promise || $result instanceof ReactPromise) {
+                Promise\rethrow($result);
+            }
         } catch (\Throwable $exception) {
             Loop::defer(function () use ($exception) {
                 throw $exception;
