@@ -72,7 +72,7 @@ abstract class DriverTest extends TestCase {
             }
             $loop->defer(function () use ($loop) {
                 $loop->run();
-                echo 4;
+                echo 5;
                 $loop->defer(function () use ($loop) {
                     echo 6;
                     $loop->stop();
@@ -80,13 +80,12 @@ abstract class DriverTest extends TestCase {
                         $this->fail("A loop stopped at all levels must not execute further defers");
                     });
                 });
+                $loop->run();
             });
             $loop->defer(function () use ($loop) {
                 echo 2;
-                $loop->stop();
-                $loop->stop();
                 $loop->defer(function () use ($loop) {
-                    echo 5;
+                    echo 4;
                 });
             });
             $loop->defer(function () use ($loop) {

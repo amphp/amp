@@ -39,8 +39,8 @@ abstract class Driver {
     /** @var callable|null */
     private $errorHandler;
 
-    /** @var int */
-    private $running = 0;
+    /** @var bool */
+    private $running = false;
 
     /** @var array */
     private $registry = [];
@@ -61,18 +61,17 @@ abstract class Driver {
      * @return void
      */
     public function run() {
-        $previous = $this->running;
-        ++$this->running;
+        $this->running = true;
 
         try {
-            while ($this->running > $previous) {
+            while ($this->running) {
                 if ($this->isEmpty()) {
                     return;
                 }
                 $this->tick();
             }
         } finally {
-            $this->running = $previous;
+            $this->stop();
         }
     }
 
@@ -151,7 +150,7 @@ abstract class Driver {
      * @return void
      */
     public function stop() {
-        --$this->running > 0 ?: $this->running = 0;
+        $this->running = false;
     }
 
     /**
