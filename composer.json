@@ -45,7 +45,8 @@
             "Amp\\": "lib/"
         },
         "files": [
-            "lib/functions.php"
+            "lib/functions.php",
+            "lib/Internal/functions.php"
         ]
     },
     "autoload-dev": {

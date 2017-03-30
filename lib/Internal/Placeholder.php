@@ -24,6 +24,9 @@ trait Placeholder {
     /** @var callable|\Amp\Internal\ResolutionQueue|null */
     private $onResolved;
 
+    /** @var null|array */
+    private $resolutionTrace;
+
     /**
      * @inheritdoc
      */
@@ -75,8 +78,27 @@ trait Placeholder {
      */
     private function resolve($value = null) {
         if ($this->resolved) {
-            throw new \Error("Promise has already been resolved");
+            $message = "Promise has already been resolved";
+
+            if (isset($this->resolutionTrace)) {
+                $trace = formatStacktrace($this->resolutionTrace);
+                $message .= ". Previous resolution trace:\n\n{$trace}\n\n";
+            } else {
+                $message .= ", define const AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION = true and enable assertions for a stacktrace of the previous resolution.";
+            }
+
+            throw new \Error($message);
         }
+
+        assert((function () {
+            if (\defined("AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION") && AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION) {
+                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+                array_shift($trace); // remove current closure
+                $this->resolutionTrace = $trace;
+            }
+
+            return true;
+        })());
 
         if ($value instanceof ReactPromise) {
             $value = Promise\adapt($value);
