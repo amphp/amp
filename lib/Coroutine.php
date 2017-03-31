@@ -14,13 +14,6 @@ use React\Promise\PromiseInterface as ReactPromise;
 final class Coroutine implements Promise {
     use Internal\Placeholder;
 
-    /**
-     * Maximum number of immediate coroutine continuations before deferring next continuation to the loop.
-     *
-     * @internal
-     */
-    const MAX_CONTINUATION_DEPTH = 3;
-
     /** @var \Generator */
     private $generator;
 
@@ -41,13 +34,6 @@ final class Coroutine implements Promise {
          * @param mixed           $value Value to be sent into the generator.
          */
         $this->onResolve = function ($exception, $value) {
-            if ($this->depth > self::MAX_CONTINUATION_DEPTH) { // Defer continuation to avoid blowing up call stack.
-                Loop::defer(function () use ($exception, $value) {
-                    ($this->onResolve)($exception, $value);
-                });
-                return;
-            }
-
             try {
                 if ($exception) {
                     // Throw exception at current execution point.
@@ -66,9 +52,7 @@ final class Coroutine implements Promise {
                     $yielded = $this->transform($yielded);
                 }
 
-                ++$this->depth;
                 $yielded->onResolve($this->onResolve);
-                --$this->depth;
             } catch (\Throwable $exception) {
                 $this->dispose($exception);
             }
@@ -86,9 +70,7 @@ final class Coroutine implements Promise {
                 $yielded = $this->transform($yielded);
             }
 
-            ++$this->depth;
             $yielded->onResolve($this->onResolve);
-            --$this->depth;
         } catch (\Throwable $exception) {
             $this->dispose($exception);
         }

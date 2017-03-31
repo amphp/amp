@@ -432,59 +432,6 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldSuccessfulPromise
      */
-    public function testYieldConsecutiveSucceeded() {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $count = 1000;
-            $promise = new Success;
-
-            $generator = function () use ($count, $promise) {
-                for ($i = 0; $i < $count; ++$i) {
-                    yield $promise;
-                }
-            };
-
-            $coroutine = new Coroutine($generator());
-
-            $coroutine->onResolve(function () use (&$invoked) {
-                $invoked = true;
-            });
-        });
-
-        $this->assertTrue($invoked);
-    }
-
-    /**
-     * @depends testYieldFailedPromise
-     */
-    public function testYieldConsecutiveFailed() {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $count = 1000;
-            $promise = new Failure(new \Exception);
-
-            $generator = function () use ($count, $promise) {
-                for ($i = 0; $i < $count; ++$i) {
-                    try {
-                        yield $promise;
-                    } catch (\Exception $exception) {
-                        // Ignore and continue.
-                    }
-                }
-            };
-
-            $coroutine = new Coroutine($generator());
-
-            $coroutine->onResolve(function () use (&$invoked) {
-                $invoked = true;
-            });
-        });
-        $this->assertTrue($invoked);
-    }
-
-    /**
-     * @depends testYieldSuccessfulPromise
-     */
     public function testFastInvalidGenerator() {
         $generator = function () {
             if (false) {
