@@ -37,24 +37,28 @@ class UvDriver extends Driver {
         $this->handle = \uv_loop_new();
 
         $this->ioCallback = function ($event, $status, $events, $resource) {
+            $watchers = $this->watchers[(int) $event];
+
             switch ($status) {
                 case 0: // OK
                     break;
 
-                // If $status is a severe error, stop the poll and throw an exception.
+                // If $status is a severe error, disable all related watchers and notify the loop error handler.
                 case \UV::EACCES:
                 case \UV::EBADF:
                 case \UV::EINVAL:
                 case \UV::ENOTSOCK:
-                    throw new \RuntimeException(
+                    foreach ($watchers as $watcher) {
+                        $this->disable($watcher);
+                    }
+                    $this->error(new \Error(
                         \sprintf("UV_%s: %s", \uv_err_name($status), \ucfirst(\uv_strerror($status)))
-                    );
+                    ));
+                    return;
 
                 default: // Ignore other (probably) trivial warnings and continuing polling.
                     return;
             }
-
-            $watchers = $this->watchers[(int) $event];
 
             foreach ($watchers as $watcher) {
                 try {
