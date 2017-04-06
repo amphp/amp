@@ -20,9 +20,6 @@ final class Coroutine implements Promise {
     /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $onResolve;
 
-    /** @var int */
-    private $depth = 0;
-
     /**
      * @param \Generator $generator
      */
@@ -46,6 +43,7 @@ final class Coroutine implements Promise {
                 if (!$yielded instanceof Promise) {
                     if (!$this->generator->valid()) {
                         $this->resolve($this->generator->getReturn());
+                        $this->onResolve = null;
                         return;
                     }
 
@@ -64,6 +62,7 @@ final class Coroutine implements Promise {
             if (!$yielded instanceof Promise) {
                 if (!$this->generator->valid()) {
                     $this->resolve($this->generator->getReturn());
+                    $this->onResolve = null;
                     return;
                 }
 
@@ -135,5 +134,6 @@ final class Coroutine implements Promise {
         }
 
         $this->fail($exception);
+        $this->onResolve = null;
     }
 }
