@@ -112,7 +112,7 @@ namespace Amp\Promise {
     function rethrow($promise) {
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
-                $promise = Promise\adapt($promise);
+                $promise = adapt($promise);
             } else {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
@@ -267,28 +267,32 @@ namespace Amp\Promise {
         }
 
         $deferred = new Deferred;
-        $resolved = false;
+        $result = $deferred->promise();
 
-        $watcher = Loop::delay($timeout, function () use (&$resolved, $deferred) {
-            if (!$resolved) {
-                $resolved = true;
-                $deferred->fail(new TimeoutException);
-            }
-        });
-        Loop::unreference($watcher);
-
-        $promise->onResolve(function () use (&$resolved, $promise, $deferred, $watcher) {
-            Loop::cancel($watcher);
-
-            if ($resolved) {
+        $watcher = Loop::delay($timeout, function () use (&$deferred) {
+            if ($deferred === null) {
                 return;
             }
 
-            $resolved = true;
-            $deferred->resolve($promise);
+            $temp = $deferred;
+            $deferred = null;
+            $temp->fail(new TimeoutException);
+        });
+        Loop::unreference($watcher);
+
+        $promise->onResolve(function () use (&$deferred, $promise, $watcher) {
+            Loop::cancel($watcher);
+
+            if ($deferred === null) {
+                return;
+            }
+
+            $temp = $deferred;
+            $deferred = null;
+            $temp->resolve($promise);
         });
 
-        return $deferred->promise();
+        return $result;
     }
 
     /**
@@ -351,37 +355,41 @@ namespace Amp\Promise {
         }
 
         $deferred = new Deferred;
+        $result = $deferred->promise();
 
         $pending = \count($promises);
-        $resolved = false;
         $values = [];
 
         foreach ($promises as $key => $promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
+                $deferred = null;
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$values, &$pending, &$resolved, $key, $deferred) {
-                if ($resolved) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key) {
+                if ($deferred === null) {
                     return;
                 }
 
                 if ($exception) {
-                    $resolved = true;
-                    $deferred->fail($exception);
+                    $temp = $deferred;
+                    $deferred = null;
+                    $temp->fail($exception);
                     return;
                 }
 
                 $values[$key] = $value;
                 if (0 === --$pending) {
-                    $deferred->resolve($values);
+                    $temp = $deferred;
+                    $deferred = null;
+                    $temp->resolve($values);
                 }
             });
         }
 
-        return $deferred->promise();
+        return $result;
     }
 
     /**
@@ -399,37 +407,41 @@ namespace Amp\Promise {
         }
 
         $deferred = new Deferred;
+        $result = $deferred->promise();
 
         $pending = \count($promises);
-        $resolved = false;
         $exceptions = [];
 
         foreach ($promises as $key => $promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
+                $deferred = null;
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
-                if ($resolved) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
+                if ($deferred === null) {
                     return;
                 }
 
                 if (!$exception) {
-                    $resolved = true;
-                    $deferred->resolve($value);
+                    $temp = $deferred;
+                    $deferred = null;
+                    $temp->resolve($value);
                     return;
                 }
 
                 $exceptions[$key] = $exception;
                 if (0 === --$pending) {
-                    $deferred->fail(new MultiReasonException($exceptions));
+                    $temp = $deferred;
+                    $deferred = null;
+                    $temp->fail(new MultiReasonException($exceptions));
                 }
             });
         }
 
-        return $deferred->promise();
+        return $result;
     }
 
     /**
@@ -460,6 +472,7 @@ namespace Amp\Promise {
         }
 
         $deferred = new Deferred;
+        $result = $deferred->promise();
         $values = [];
         $exceptions = [];
 
@@ -467,12 +480,17 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
+                $deferred = null;
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
             $promise->onResolve(function ($exception, $value) use (
-                &$values, &$exceptions, &$pending, $key, $required, $deferred
+                &$deferred, &$values, &$exceptions, &$pending, $key, $required
             ) {
+                if ($deferred === null) {
+                    return;
+                }
+
                 if ($exception) {
                     $exceptions[$key] = $exception;
                 } else {
@@ -490,7 +508,7 @@ namespace Amp\Promise {
             });
         }
 
-        return $deferred->promise();
+        return $result;
     }
 }
 
@@ -574,32 +592,34 @@ namespace Amp\Stream {
      */
     function merge(array $streams): Stream {
         $emitter = new Emitter;
-        $pending = true;
+        $result = $emitter->stream();
 
         foreach ($streams as $stream) {
             if (!$stream instanceof Stream) {
+                $emitter = null;
                 throw new UnionTypeError([Stream::class], $stream);
             }
-            $stream->onEmit(function ($value) use (&$pending, $emitter) {
-                if ($pending) {
+            $stream->onEmit(function ($value) use (&$emitter) {
+                if ($emitter !== null) {
                     return $emitter->emit($value);
                 }
                 return null;
             });
         }
 
-        Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$pending, $emitter) {
-            $pending = false;
+        Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$emitter) {
+            $temp = $emitter;
+            $emitter = null;
 
             if ($exception) {
-                $emitter->fail($exception);
+                $temp->fail($exception);
                 return;
             }
 
-            $emitter->resolve($values);
+            $temp->resolve($values);
         });
 
-        return $emitter->stream();
+        return $result;
     }
 
     /**
