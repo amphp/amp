@@ -267,7 +267,6 @@ namespace Amp\Promise {
         }
 
         $deferred = new Deferred;
-        $result = $deferred->promise();
 
         $watcher = Loop::delay($timeout, function () use (&$deferred) {
             $temp = $deferred; // prevent double resolve
@@ -283,7 +282,7 @@ namespace Amp\Promise {
             }
         });
 
-        return $result;
+        return $deferred->promise();
     }
 
     /**
@@ -358,7 +357,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$values, &$pending, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key) {
                 if ($pending === 0) {
                     return;
                 }
@@ -366,6 +365,7 @@ namespace Amp\Promise {
                 if ($exception) {
                     $pending = 0;
                     $deferred->fail($exception);
+                    $deferred = null;
                     return;
                 }
 
@@ -406,7 +406,7 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$exceptions, &$pending, &$resolved, $key, $deferred) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
                 if ($pending === 0) {
                     return;
                 }
@@ -414,6 +414,7 @@ namespace Amp\Promise {
                 if (!$exception) {
                     $pending = 0;
                     $deferred->resolve($value);
+                    $deferred = null;
                     return;
                 }
 
