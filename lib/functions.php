@@ -270,26 +270,16 @@ namespace Amp\Promise {
         $result = $deferred->promise();
 
         $watcher = Loop::delay($timeout, function () use (&$deferred) {
-            if ($deferred === null) {
-                return;
-            }
-
-            $temp = $deferred;
+            $deferred->fail(new TimeoutException);
             $deferred = null;
-            $temp->fail(new TimeoutException);
         });
         Loop::unreference($watcher);
 
         $promise->onResolve(function () use (&$deferred, $promise, $watcher) {
-            Loop::cancel($watcher);
-
-            if ($deferred === null) {
-                return;
+            if ($deferred !== null) {
+                Loop::cancel($watcher);
+                $deferred->resolve($promise);
             }
-
-            $temp = $deferred;
-            $deferred = null;
-            $temp->resolve($promise);
         });
 
         return $result;
@@ -374,17 +364,14 @@ namespace Amp\Promise {
                 }
 
                 if ($exception) {
-                    $temp = $deferred;
+                    $deferred->fail($exception);
                     $deferred = null;
-                    $temp->fail($exception);
                     return;
                 }
 
                 $values[$key] = $value;
                 if (0 === --$pending) {
-                    $temp = $deferred;
-                    $deferred = null;
-                    $temp->resolve($values);
+                    $deferred->resolve($values);
                 }
             });
         }
@@ -426,17 +413,14 @@ namespace Amp\Promise {
                 }
 
                 if (!$exception) {
-                    $temp = $deferred;
+                    $deferred->resolve($value);
                     $deferred = null;
-                    $temp->resolve($value);
                     return;
                 }
 
                 $exceptions[$key] = $exception;
                 if (0 === --$pending) {
-                    $temp = $deferred;
-                    $deferred = null;
-                    $temp->fail(new MultiReasonException($exceptions));
+                    $deferred->fail(new MultiReasonException($exceptions));
                 }
             });
         }
@@ -596,27 +580,22 @@ namespace Amp\Stream {
 
         foreach ($streams as $stream) {
             if (!$stream instanceof Stream) {
-                $emitter = null;
                 throw new UnionTypeError([Stream::class], $stream);
             }
             $stream->onEmit(function ($value) use (&$emitter) {
                 if ($emitter !== null) {
                     return $emitter->emit($value);
                 }
-                return null;
             });
         }
 
         Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$emitter) {
-            $temp = $emitter;
-            $emitter = null;
-
             if ($exception) {
-                $temp->fail($exception);
-                return;
+                $emitter->fail($exception);
+                $emitter = null;
+            } else {
+                $emitter->resolve($values);
             }
-
-            $temp->resolve($values);
         });
 
         return $result;
