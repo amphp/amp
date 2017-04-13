@@ -2,7 +2,11 @@
 
 namespace Amp\Internal;
 
+use Amp\Struct;
+
 class Watcher {
+    use Struct;
+
     const DEFER = 0b00000001;
     const TIMER = 0b00000110;
     const DELAY = 0b00000010;
@@ -35,7 +39,7 @@ class Watcher {
     public $data;
 
     /**
-     * Watcher-dependent value storage. Stream for IO watchers, signo for signal watchers, interval for timers.
+     * Watcher-dependent value storage. Stream for IO watchers, signal number for signal watchers, interval for timers.
      *
      * @var mixed
      */
