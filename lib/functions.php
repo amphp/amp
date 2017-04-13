@@ -27,8 +27,8 @@ namespace Amp {
 
     /**
      * Returns a new function that wraps $worker in a promise/coroutine-aware function that automatically upgrades
-     * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws, a failed
-     * promise is returned.
+     * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws,
+     * a failed promise is returned.
      *
      * @param callable (mixed ...$args): mixed $worker
      *
@@ -202,8 +202,8 @@ namespace Amp\Promise {
 
     /**
      * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
-     * @param string $className Throwable class name to capture. Given callback will only be invoked if the failure reason
-     *     is an instance of the given throwable class name.
+     * @param string $className Throwable class name to capture. Given callback will only be invoked if the failure
+     *     reason is an instance of the given throwable class name.
      * @param callable (\Throwable $exception): mixed $functor
      *
      * @return \Amp\Promise
@@ -404,19 +404,19 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
+            $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
                 if ($pending === 0) {
                     return;
                 }
 
-                if (!$exception) {
+                if (!$error) {
                     $pending = 0;
                     $deferred->resolve($value);
                     $deferred = null;
                     return;
                 }
 
-                $exceptions[$key] = $exception;
+                $exceptions[$key] = $error;
                 if (0 === --$pending) {
                     $deferred->fail(new MultiReasonException($exceptions));
                 }
@@ -500,8 +500,8 @@ namespace Amp\Stream {
     use Amp\UnionTypeError;
 
     /**
-     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any promise
-     * fails, the stream will fail with the same reason.
+     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
+     * promise fails, the stream will fail with the same reason.
      *
      * @param array|\Traversable $iterable Elements to emit.
      * @param int $delay Delay between element emissions.
