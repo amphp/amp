@@ -4,12 +4,13 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Producer;
-use Amp\Listener;
+use Amp\StreamIterator;
 use Amp\Pause;
 use Amp\Emitter;
 use Amp\Loop;
+use PHPUnit\Framework\TestCase;
 
-class ListenerTest extends \PHPUnit\Framework\TestCase {
+class StreamIteratorTest extends TestCase {
     const TIMEOUT = 10;
 
     public function testSingleEmittingStream() {
@@ -20,13 +21,13 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
                 return $value;
             });
 
-            $listener = new Listener($stream);
+            $streamIterator = new StreamIterator($stream);
 
-            while (yield $listener->advance()) {
-                $this->assertSame($listener->getCurrent(), $value);
+            while (yield $streamIterator->advance()) {
+                $this->assertSame($streamIterator->getCurrent(), $value);
             }
 
-            $this->assertSame($listener->getResult(), $value);
+            $this->assertSame($streamIterator->getResult(), $value);
         });
     }
 
@@ -39,7 +40,7 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
 
             $emitter = new Emitter;
 
-            $listener = new Listener($emitter->stream());
+            $streamIterator = new StreamIterator($emitter->stream());
 
             for ($i = 0; $i < $count; ++$i) {
                 $promises[] = $emitter->emit($i);
@@ -47,12 +48,12 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
 
             $emitter->resolve($i);
 
-            for ($i = 0; yield $listener->advance(); ++$i) {
-                $this->assertSame($listener->getCurrent(), $i);
+            for ($i = 0; yield $streamIterator->advance(); ++$i) {
+                $this->assertSame($streamIterator->getCurrent(), $i);
             }
 
             $this->assertSame($count, $i);
-            $this->assertSame($listener->getResult(), $i);
+            $this->assertSame($streamIterator->getResult(), $i);
         });
     }
 
@@ -70,14 +71,14 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
                 return $i;
             });
 
-            $listener = new Listener($stream);
+            $streamIterator = new StreamIterator($stream);
 
-            for ($i = 0; yield $listener->advance(); ++$i) {
-                $this->assertSame($listener->getCurrent(), $i);
+            for ($i = 0; yield $streamIterator->advance(); ++$i) {
+                $this->assertSame($streamIterator->getCurrent(), $i);
             }
 
             $this->assertSame($count, $i);
-            $this->assertSame($listener->getResult(), $i);
+            $this->assertSame($streamIterator->getResult(), $i);
         });
     }
 
@@ -91,15 +92,15 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
 
             $emitter = new Emitter;
 
-            $listener = new Listener($emitter->stream());
+            $streamIterator = new StreamIterator($emitter->stream());
 
             for ($i = 0; $i < $count; ++$i) {
                 $promises[] = $emitter->emit($i);
             }
 
             $value = null;
-            if (yield $listener->advance()) {
-                $value = $listener->getCurrent();
+            if (yield $streamIterator->advance()) {
+                $value = $streamIterator->getCurrent();
             }
 
             $this->assertSame(reset($expected), $value);
@@ -107,7 +108,7 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
 
             $emitter->resolve($i);
 
-            $values = $listener->drain();
+            $values = $streamIterator->drain();
 
             $this->assertSame($expected, $values);
         });
@@ -120,9 +121,9 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
     public function testDrainBeforeResolution() {
         $emitter = new Emitter;
 
-        $listener = new Listener($emitter->stream());
+        $streamIterator = new StreamIterator($emitter->stream());
 
-        $listener->drain();
+        $streamIterator->drain();
     }
 
     public function testFailingStream() {
@@ -131,20 +132,20 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
 
             $emitter = new Emitter;
 
-            $listener = new Listener($emitter->stream());
+            $streamIterator = new StreamIterator($emitter->stream());
 
             $emitter->fail($exception);
 
             try {
-                while (yield $listener->advance());
-                $this->fail("Listener::advance() should throw stream failure reason");
+                while (yield $streamIterator->advance());
+                $this->fail("StreamIterator::advance() should throw stream failure reason");
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
 
             try {
-                $result = $listener->getResult();
-                $this->fail("Listener::getResult() should throw stream failure reason");
+                $streamIterator->getResult();
+                $this->fail("StreamIterator::getResult() should throw stream failure reason");
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
@@ -156,13 +157,9 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
      * @expectedExceptionMessage Promise returned from advance() must resolve before calling this method
      */
     public function testGetCurrentBeforeAdvanceResolves() {
-        $emitter = new Emitter;
-
-        $listener = new Listener($emitter->stream());
-
-        $promise = $listener->advance();
-
-        $listener->getCurrent();
+        $streamIterator = new StreamIterator((new Emitter)->stream());
+        $streamIterator->advance();
+        $streamIterator->getCurrent();
     }
 
     /**
@@ -171,12 +168,10 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
      */
     public function testGetCurrentAfterResolution() {
         $emitter = new Emitter;
-
-        $listener = new Listener($emitter->stream());
+        $streamIterator = new StreamIterator($emitter->stream());
 
         $emitter->resolve();
-
-        $listener->getCurrent();
+        $streamIterator->getCurrent();
     }
 
     /**
@@ -185,11 +180,8 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
      */
     public function testGetResultBeforeResolution() {
         Loop::run(Amp\wrap(function () {
-            $emitter = new Emitter;
-
-            $listener = new Listener($emitter->stream());
-
-            $listener->getResult();
+            $streamIterator = new StreamIterator((new Emitter)->stream());
+            $streamIterator->getResult();
         }));
     }
 
@@ -199,18 +191,18 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
      */
     public function testConsecutiveAdvanceCalls() {
         $emitter = new Emitter;
-        $listener = new Listener($emitter->stream());
-        $listener->advance();
-        $listener->advance();
+        $streamIterator = new StreamIterator($emitter->stream());
+        $streamIterator->advance();
+        $streamIterator->advance();
     }
 
-    public function testListenerDestroyedAfterEmits() {
+    public function testStreamIteratorDestroyedAfterEmits() {
         $emitter = new Emitter;
-        $listener = new Listener($emitter->stream());
+        $streamIterator = new StreamIterator($emitter->stream());
 
         $promise = $emitter->emit(1);
 
-        unset($listener);
+        unset($streamIterator);
 
         $invoked = false;
         $promise->onResolve(function () use (&$invoked) {
@@ -220,13 +212,13 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testListenerDestroyedThenStreamEmits() {
+    public function testStreamIteratorDestroyedThenStreamEmits() {
         $emitter = new Emitter;
-        $listener = new Listener($emitter->stream());
+        $streamIterator = new StreamIterator($emitter->stream());
 
         $emitter->emit(1);
 
-        unset($listener);
+        unset($streamIterator);
 
         $promise = $emitter->emit(2);
 
@@ -238,12 +230,12 @@ class ListenerTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testStreamFailsWhenListenerWaiting() {
+    public function testStreamFailsWhenStreamIteratorWaiting() {
         $exception = new \Exception;
         $emitter = new Emitter;
-        $listener = new Listener($emitter->stream());
+        $streamIterator = new StreamIterator($emitter->stream());
 
-        $promise = $listener->advance();
+        $promise = $streamIterator->advance();
         $promise->onResolve(function ($exception, $value) use (&$reason) {
             $reason = $exception;
         });

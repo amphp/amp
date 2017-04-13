@@ -491,7 +491,7 @@ namespace Amp\Promise {
 namespace Amp\Stream {
     use Amp\Coroutine;
     use Amp\Emitter;
-    use Amp\Listener;
+    use Amp\StreamIterator;
     use Amp\Loop;
     use Amp\Pause;
     use Amp\Producer;
@@ -534,15 +534,15 @@ namespace Amp\Stream {
      * @return \Amp\Stream
      */
     function map(Stream $stream, callable $onEmit, callable $onResolve = null): Stream {
-        $listener = new Listener($stream);
-        return new Producer(function (callable $emit) use ($listener, $onEmit, $onResolve) {
-            while (yield $listener->advance()) {
-                yield $emit($onEmit($listener->getCurrent()));
+        $streamIterator = new StreamIterator($stream);
+        return new Producer(function (callable $emit) use ($streamIterator, $onEmit, $onResolve) {
+            while (yield $streamIterator->advance()) {
+                yield $emit($onEmit($streamIterator->getCurrent()));
             }
             if ($onResolve === null) {
-                return $listener->getResult();
+                return $streamIterator->getResult();
             }
-            return $onResolve($listener->getResult());
+            return $onResolve($streamIterator->getResult());
         });
     }
 
@@ -553,14 +553,14 @@ namespace Amp\Stream {
      * @return \Amp\Stream
      */
     function filter(Stream $stream, callable $filter): Stream {
-        $listener = new Listener($stream);
-        return new Producer(function (callable $emit) use ($listener, $filter) {
-            while (yield $listener->advance()) {
-                if ($filter($listener->getCurrent())) {
-                    yield $emit($listener->getCurrent());
+        $streamIterator = new StreamIterator($stream);
+        return new Producer(function (callable $emit) use ($streamIterator, $filter) {
+            while (yield $streamIterator->advance()) {
+                if ($filter($streamIterator->getCurrent())) {
+                    yield $emit($streamIterator->getCurrent());
                 }
             }
-            return $listener->getResult();
+            return $streamIterator->getResult();
         });
     }
 

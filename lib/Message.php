@@ -28,8 +28,8 @@ class Message implements Iterator, Promise {
     const WAITING = 2;
     const COMPLETE = 4;
 
-    /** @var \Amp\Listener|null */
-    private $listener;
+    /** @var \Amp\StreamIterator|null */
+    private $streamIterator;
 
     /** @var int */
     private $status = self::LISTENING;
@@ -41,7 +41,7 @@ class Message implements Iterator, Promise {
      * @param \Amp\Stream $stream Stream that only emits strings.
      */
     public function __construct(Stream $stream) {
-        $this->listener = new Listener($stream);
+        $this->streamIterator = new StreamIterator($stream);
 
         $stream->onResolve(function ($exception, $value) {
             if ($exception) {
@@ -49,8 +49,8 @@ class Message implements Iterator, Promise {
                 return;
             }
 
-            $result = \implode($this->listener->drain());
-            $this->listener = null;
+            $result = \implode($this->streamIterator->drain());
+            $this->streamIterator = null;
             $this->status = \strlen($result) ? self::BUFFERING : self::WAITING;
             $this->value = $value;
             $this->resolve($result);
@@ -66,8 +66,8 @@ class Message implements Iterator, Promise {
      * @throws \Error If the message has resolved.
      */
     public function advance(): Promise {
-        if ($this->listener) {
-            return $this->listener->advance();
+        if ($this->streamIterator) {
+            return $this->streamIterator->advance();
         }
 
         switch ($this->status) {
@@ -90,8 +90,8 @@ class Message implements Iterator, Promise {
      * @throws \Error If the message has resolved.
      */
     public function getCurrent(): string {
-        if ($this->listener) {
-            return $this->listener->getCurrent();
+        if ($this->streamIterator) {
+            return $this->streamIterator->getCurrent();
         }
 
         switch ($this->status) {
@@ -109,8 +109,8 @@ class Message implements Iterator, Promise {
      * @throws \Error If the message has not resolved.
      */
     public function getResult() {
-        if ($this->listener) {
-            return $this->listener->getResult();
+        if ($this->streamIterator) {
+            return $this->streamIterator->getResult();
         }
 
         return $this->value;

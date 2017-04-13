@@ -4,7 +4,7 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Coroutine;
-use Amp\Listener;
+use Amp\StreamIterator;
 use Amp\Pause;
 use Amp\Producer;
 use Amp\Stream;
@@ -27,7 +27,7 @@ Loop::run(function () {
         });
 
         $generator = function (Stream $stream) {
-            $listener = new Listener($stream);
+            $listener = new StreamIterator($stream);
 
             while (yield $listener->advance()) {
                 printf("Stream emitted %d\n", $listener->getCurrent());

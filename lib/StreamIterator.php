@@ -6,13 +6,13 @@ namespace Amp;
  * Asynchronous iterator that can be used within a coroutine to iterate over the emitted values from an Stream.
  *
  * Example:
- * $listener = new Listener($stream); // $stream is an instance of \Amp\Stream
- * while (yield $listener->advance()) {
- *     $emitted = $listener->getCurrent();
+ * $streamIterator = new StreamIterator($stream); // $stream is an instance of \Amp\Stream
+ * while (yield $streamIterator->advance()) {
+ *     $emitted = $streamIterator->getCurrent();
  * }
- * $result = $listener->getResult();
+ * $result = $streamIterator->getResult();
  */
-class Listener implements Iterator {
+class StreamIterator implements Iterator {
     /** @var \Amp\Stream */
     private $stream;
 
@@ -176,7 +176,7 @@ class Listener implements Iterator {
     }
 
     /**
-     * Returns an array of values that were not consumed by the listener before the Stream completed.
+     * Returns an array of values that were not consumed by the iterator before the Stream completed.
      *
      * @return array Unconsumed emitted values.
      *
