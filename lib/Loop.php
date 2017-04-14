@@ -361,7 +361,7 @@ final class Loop {
     }
 }
 
-// Default factory, don't move this a file loaded by the composer "files" autoload mechanism, otherwise custom
+// Default factory, don't move this to a file loaded by the composer "files" autoload mechanism, otherwise custom
 // implementations might have issues setting a default loop, because it's overridden by us then.
 
 // @codeCoverageIgnoreStart

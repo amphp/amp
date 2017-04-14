@@ -81,22 +81,13 @@ try {
     } else {
         production: // PHP 7 production environment (zend.assertions=0)
         /**
-         * An optimized version of Emitter for production environments that is itself the stream.
+         * An optimized version of Emitter for production environments that is itself the stream. Eval is used to
+         * prevent IDEs and other tools from reporting multiple definitions.
          */
-        final class Emitter implements Stream {
-            use Internal\Producer {
-                emit as public;
-                resolve as public;
-                fail as public;
-            }
-
-            /**
-             * @return \Amp\Stream
-             */
-            public function stream(): Stream {
-                return $this;
-            }
-        }
+        eval('final class Emitter implements Stream {
+            use Internal\Producer { emit as public; resolve as public; fail as public; }
+            public function stream(): Stream { return $this; }
+        }');
     }
 } catch (\AssertionError $exception) {
     goto development; // zend.assertions=1 and assert.exception=1, use development definition.

@@ -1,7 +1,6 @@
 <?php
 
 namespace Amp {
-
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
@@ -28,8 +27,8 @@ namespace Amp {
 
     /**
      * Returns a new function that wraps $worker in a promise/coroutine-aware function that automatically upgrades
-     * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws, a failed
-     * promise is returned.
+     * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws,
+     * a failed promise is returned.
      *
      * @param callable (mixed ...$args): mixed $worker
      *
@@ -92,7 +91,6 @@ namespace Amp {
 }
 
 namespace Amp\Promise {
-
     use Amp\Loop;
     use Amp\Deferred;
     use Amp\MultiReasonException;
@@ -204,8 +202,8 @@ namespace Amp\Promise {
 
     /**
      * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
-     * @param string $className Throwable class name to capture. Given callback will only be invoked if the failure reason
-     *     is an instance of the given throwable class name.
+     * @param string $className Throwable class name to capture. Given callback will only be invoked if the failure
+     *     reason is an instance of the given throwable class name.
      * @param callable (\Throwable $exception): mixed $functor
      *
      * @return \Amp\Promise
@@ -406,19 +404,19 @@ namespace Amp\Promise {
                 throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
+            $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
                 if ($pending === 0) {
                     return;
                 }
 
-                if (!$exception) {
+                if (!$error) {
                     $pending = 0;
                     $deferred->resolve($value);
                     $deferred = null;
                     return;
                 }
 
-                $exceptions[$key] = $exception;
+                $exceptions[$key] = $error;
                 if (0 === --$pending) {
                     $deferred->fail(new MultiReasonException($exceptions));
                 }
@@ -491,33 +489,38 @@ namespace Amp\Promise {
 }
 
 namespace Amp\Stream {
-
     use Amp\Coroutine;
     use Amp\Emitter;
-    use Amp\Listener;
+    use Amp\StreamIterator;
     use Amp\Loop;
+    use Amp\Pause;
     use Amp\Producer;
     use Amp\Promise;
     use Amp\Stream;
     use Amp\UnionTypeError;
 
     /**
-     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any promise
-     * fails, the stream will fail with the same reason.
+     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
+     * promise fails, the stream will fail with the same reason.
      *
-     * @param array|\Traversable $iterable
+     * @param array|\Traversable $iterable Elements to emit.
+     * @param int $delay Delay between element emissions.
      *
      * @return \Amp\Stream
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
-    function fromIterable(/* iterable */ $iterable): Stream {
+    function fromIterable(/* iterable */ $iterable, int $delay = 0): Stream {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw new UnionTypeError(["array", "Traversable"], $iterable);
         }
 
-        return new Producer(function (callable $emit) use ($iterable) {
+        return new Producer(function (callable $emit) use ($iterable, $delay) {
             foreach ($iterable as $value) {
+                if ($delay) {
+                    yield new Pause($delay);
+                }
+
                 yield $emit($value);
             }
         });
@@ -531,15 +534,15 @@ namespace Amp\Stream {
      * @return \Amp\Stream
      */
     function map(Stream $stream, callable $onEmit, callable $onResolve = null): Stream {
-        $listener = new Listener($stream);
-        return new Producer(function (callable $emit) use ($listener, $onEmit, $onResolve) {
-            while (yield $listener->advance()) {
-                yield $emit($onEmit($listener->getCurrent()));
+        $streamIterator = new StreamIterator($stream);
+        return new Producer(function (callable $emit) use ($streamIterator, $onEmit, $onResolve) {
+            while (yield $streamIterator->advance()) {
+                yield $emit($onEmit($streamIterator->getCurrent()));
             }
             if ($onResolve === null) {
-                return $listener->getResult();
+                return $streamIterator->getResult();
             }
-            return $onResolve($listener->getResult());
+            return $onResolve($streamIterator->getResult());
         });
     }
 
@@ -550,14 +553,14 @@ namespace Amp\Stream {
      * @return \Amp\Stream
      */
     function filter(Stream $stream, callable $filter): Stream {
-        $listener = new Listener($stream);
-        return new Producer(function (callable $emit) use ($listener, $filter) {
-            while (yield $listener->advance()) {
-                if ($filter($listener->getCurrent())) {
-                    yield $emit($listener->getCurrent());
+        $streamIterator = new StreamIterator($stream);
+        return new Producer(function (callable $emit) use ($streamIterator, $filter) {
+            while (yield $streamIterator->advance()) {
+                if ($filter($streamIterator->getCurrent())) {
+                    yield $emit($streamIterator->getCurrent());
                 }
             }
-            return $listener->getResult();
+            return $streamIterator->getResult();
         });
     }
 
@@ -650,36 +653,6 @@ namespace Amp\Stream {
             }
 
             $emitter->resolve($values);
-        });
-
-        return $emitter->stream();
-    }
-
-    /**
-     * Returns a stream that emits a value every $interval milliseconds after (up to $count times). The value emitted
-     * is an integer of the number of times the stream emitted a value.
-     *
-     * @param int $interval Time interval between emitted values in milliseconds.
-     * @param int $count Number of values to emit. PHP_INT_MAX by default.
-     *
-     * @return \Amp\Stream
-     *
-     * @throws \Error If the number of times to emit is not a positive value.
-     */
-    function interval(int $interval, int $count = PHP_INT_MAX): Stream {
-        if (0 >= $count) {
-            throw new \Error("The number of times to emit must be a positive value");
-        }
-
-        $emitter = new Emitter;
-
-        Loop::repeat($interval, function ($watcher) use (&$i, $emitter, $count) {
-            $emitter->emit(++$i);
-
-            if ($i === $count) {
-                Loop::cancel($watcher);
-                $emitter->resolve();
-            }
         });
 
         return $emitter->stream();

@@ -62,21 +62,13 @@ try {
     } else {
         production: // PHP 7 production environment (zend.assertions=0)
         /**
-         * An optimized version of Deferred for production environments that is itself the promise.
+         * An optimized version of Deferred for production environments that is itself the promise. Eval is used to
+         * prevent IDEs and other tools from reporting multiple definitions.
          */
-        final class Deferred implements Promise {
-            use Internal\Placeholder {
-                resolve as public;
-                fail as public;
-            }
-
-            /**
-             * @return \Amp\Promise
-             */
-            public function promise(): Promise {
-                return $this;
-            }
-        }
+        eval('final class Deferred implements Promise {
+            use Internal\Placeholder { resolve as public; fail as public; }
+            public function promise(): Promise { return $this; }
+        }');
     }
 } catch (\AssertionError $exception) {
     goto development; // zend.assertions=1 and assert.exception=1, use development definition.

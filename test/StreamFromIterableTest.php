@@ -4,11 +4,14 @@ namespace Amp\Test;
 
 use Amp\Failure;
 use Amp\Pause;
+use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
 use Amp\Loop;
 
 class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
+    const TIMEOUT = 10;
+
     public function testSuccessfulPromises() {
         $results = [];
         Loop::run(function () use (&$results) {
@@ -107,5 +110,37 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
             [true],
             ["string"],
         ];
+    }
+
+    public function testInterval() {
+        $count = 3;
+        $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
+
+        $i = 0;
+        $stream = Stream\map($stream, function ($value) use (&$i) {
+            $this->assertSame(++$i, $value);
+        });
+
+        Promise\wait($stream);
+
+        $this->assertSame($count, $i);
+    }
+
+    /**
+     * @depends testInterval
+     */
+    public function testSlowConsumer() {
+        $invoked = 0;
+        $count = 5;
+        Loop::run(function () use (&$invoked, $count) {
+            $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
+
+            $stream->onEmit(function () use (&$invoked) {
+                ++$invoked;
+                return new Pause(self::TIMEOUT * 2);
+            });
+        });
+
+        $this->assertSame($count, $invoked);
     }
 }
