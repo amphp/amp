@@ -65,7 +65,8 @@ try {
          * An optimized version of Deferred for production environments that is itself the promise. Eval is used to
          * prevent IDEs and other tools from reporting multiple definitions.
          */
-        eval('final class Deferred implements Promise {
+        eval('namespace Amp;
+        final class Deferred implements Promise {
             use Internal\Placeholder { resolve as public; fail as public; }
             public function promise(): Promise { return $this; }
         }');
