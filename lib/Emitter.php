@@ -84,7 +84,8 @@ try {
          * An optimized version of Emitter for production environments that is itself the stream. Eval is used to
          * prevent IDEs and other tools from reporting multiple definitions.
          */
-        eval('final class Emitter implements Stream {
+        eval('namespace Amp;
+        final class Emitter implements Stream {
             use Internal\Producer { emit as public; resolve as public; fail as public; }
             public function stream(): Stream { return $this; }
         }');
