@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
@@ -12,13 +11,13 @@ class NativeDriver extends Driver {
     /** @var resource[] */
     private $readStreams = [];
 
-    /** @var \Amp\Internal\Watcher[][] */
+    /** @var \Amp\Loop\Watcher[][] */
     private $readWatchers = [];
 
     /** @var resource[] */
     private $writeStreams = [];
 
-    /** @var \Amp\Internal\Watcher[][] */
+    /** @var \Amp\Loop\Watcher[][] */
     private $writeWatchers = [];
 
     /** @var int[] */
@@ -27,7 +26,7 @@ class NativeDriver extends Driver {
     /** @var \SplPriorityQueue */
     private $timerQueue;
 
-    /** @var \Amp\Internal\Watcher[][] */
+    /** @var \Amp\Loop\Watcher[][] */
     private $signalWatchers = [];
 
     /** @var bool */

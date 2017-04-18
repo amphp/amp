@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
@@ -24,16 +23,16 @@ abstract class Driver {
     /** @var string */
     private $nextId = "a";
 
-    /** @var \Amp\Internal\Watcher[] */
+    /** @var \Amp\Loop\Watcher[] */
     private $watchers = [];
 
-    /** @var \Amp\Internal\Watcher[] */
+    /** @var \Amp\Loop\Watcher[] */
     private $enableQueue = [];
 
-    /** @var \Amp\Internal\Watcher[] */
+    /** @var \Amp\Loop\Watcher[] */
     private $deferQueue = [];
 
-    /** @var \Amp\Internal\Watcher[] */
+    /** @var \Amp\Loop\Watcher[] */
     private $nextTickQueue = [];
 
     /** @var callable|null */
@@ -130,7 +129,7 @@ abstract class Driver {
     /**
      * Activates (enables) all the given watchers.
      *
-     * @param \Amp\Internal\Watcher[] $watchers
+     * @param \Amp\Loop\Watcher[] $watchers
      */
     abstract protected function activate(array $watchers);
 
@@ -451,7 +450,7 @@ abstract class Driver {
     /**
      * Deactivates (disables) the given watcher.
      *
-     * @param \Amp\Internal\Watcher $watcher
+     * @param \Amp\Loop\Watcher $watcher
      */
     abstract protected function deactivate(Watcher $watcher);
 

@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
@@ -32,7 +31,7 @@ class EvDriver extends Driver {
         }
 
         $this->ioCallback = function (\EvIO $event) {
-            /** @var \Amp\Internal\Watcher $watcher */
+            /** @var \Amp\Loop\Watcher $watcher */
             $watcher = $event->data;
 
             try {
@@ -55,7 +54,7 @@ class EvDriver extends Driver {
         };
 
         $this->timerCallback = function (\EvTimer $event) {
-            /** @var \Amp\Internal\Watcher $watcher */
+            /** @var \Amp\Loop\Watcher $watcher */
             $watcher = $event->data;
 
             if ($watcher->type & Watcher::DELAY) {
@@ -82,7 +81,7 @@ class EvDriver extends Driver {
         };
 
         $this->signalCallback = function (\EvSignal $event) {
-            /** @var \Amp\Internal\Watcher $watcher */
+            /** @var \Amp\Loop\Watcher $watcher */
             $watcher = $event->data;
 
             try {

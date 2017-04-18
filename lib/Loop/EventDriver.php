@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 

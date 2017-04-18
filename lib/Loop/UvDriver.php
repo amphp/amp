@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use Amp\Internal\Watcher;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
@@ -15,7 +14,7 @@ class UvDriver extends Driver {
     /** @var resource[] */
     private $events = [];
 
-    /** @var \Amp\Internal\Watcher[]|\Amp\Internal\Watcher[][] */
+    /** @var \Amp\Loop\Watcher[]|\Amp\Loop\Watcher[][] */
     private $watchers = [];
 
     /** @var resource[] */

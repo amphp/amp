@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Internal;
+namespace Amp\Loop;
 
 use Amp\Struct;
 
