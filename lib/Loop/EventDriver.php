@@ -22,9 +22,12 @@ class EventDriver extends Driver {
     private $signalCallback;
     /** @var \Event[] */
     private $signals = [];
+    /** @var int Internal timestamp for now. */
+    private $now;
 
     public function __construct() {
         $this->handle = new \EventBase;
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
@@ -53,6 +56,8 @@ class EventDriver extends Driver {
         $this->timerCallback = function ($resource, $what, Watcher $watcher) {
             if ($watcher->type & Watcher::DELAY) {
                 $this->cancel($watcher->id);
+            } else {
+                $this->events[$watcher->id]->add($watcher->value / self::MILLISEC_PER_SEC);
             }
 
             try {
@@ -202,7 +207,7 @@ class EventDriver extends Driver {
                         $this->events[$id] = new \Event(
                             $this->handle,
                             -1,
-                            \Event::TIMEOUT | \Event::PERSIST,
+                            \Event::TIMEOUT,
                             $this->timerCallback,
                             $watcher
                         );
@@ -228,18 +233,21 @@ class EventDriver extends Driver {
             switch ($watcher->type) {
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $this->events[$id]->add($watcher->value / self::MILLISEC_PER_SEC);
+                    $interval = $watcher->value - ($diff ?? ($diff = (int) (\microtime(true) * self::MILLISEC_PER_SEC) - $this->now));
+                    $this->events[$id]->add($interval > 0 ? $interval / self::MILLISEC_PER_SEC : 0);
                     break;
 
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
-                // No break
+                    // No break
 
                 default:
                     $this->events[$id]->add();
                     break;
             }
         }
+
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
 
     /**
