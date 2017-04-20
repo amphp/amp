@@ -91,7 +91,11 @@ abstract class Driver {
      * Executes a single tick of the event loop.
      */
     private function tick() {
-        $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        if (empty($this->deferQueue)) {
+            $this->deferQueue = $this->nextTickQueue;
+        } else {
+            $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        }
         $this->nextTickQueue = [];
 
         $this->activate($this->enableQueue);
