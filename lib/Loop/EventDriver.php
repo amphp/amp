@@ -179,6 +179,8 @@ class EventDriver extends Driver {
      * {@inheritdoc}
      */
     protected function activate(array $watchers) {
+        $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+
         foreach ($watchers as $watcher) {
             if (!isset($this->events[$id = $watcher->id])) {
                 switch ($watcher->type) {
@@ -233,7 +235,7 @@ class EventDriver extends Driver {
             switch ($watcher->type) {
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $interval = $watcher->value - ($diff ?? ($diff = (int) (\microtime(true) * self::MILLISEC_PER_SEC) - $this->now));
+                    $interval = $watcher->value - ($now - $this->now);
                     $this->events[$id]->add($interval > 0 ? $interval / self::MILLISEC_PER_SEC : 0);
                     break;
 
@@ -247,7 +249,7 @@ class EventDriver extends Driver {
             }
         }
 
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now = $now;
     }
 
     /**

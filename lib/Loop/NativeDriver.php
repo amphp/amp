@@ -239,6 +239,8 @@ class NativeDriver extends Driver {
      * {@inheritdoc}
      */
     protected function activate(array $watchers) {
+        $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+
         foreach ($watchers as $watcher) {
             switch ($watcher->type) {
                 case Watcher::READABLE:
@@ -281,7 +283,7 @@ class NativeDriver extends Driver {
             }
         }
 
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now = $now;
     }
 
     /**
