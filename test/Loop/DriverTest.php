@@ -1382,7 +1382,6 @@ abstract class DriverTest extends TestCase {
         $watcher2 = $this->loop->onReadable($sockets[0], function ($watcher) use (&$invoked, $watcher1) {
             $invoked += 10;
             $this->loop->disable($watcher);
-            $this->loop->enable($watcher1);
         });
         $watcher3 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked) {
             $invoked += 100;
@@ -1391,6 +1390,10 @@ abstract class DriverTest extends TestCase {
         $watcher4 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked, $watcher3) {
             $invoked += 1000;
             $this->loop->disable($watcher);
+        });
+
+        $this->loop->delay(100, function () use ($watcher1, $watcher3) {
+            $this->loop->enable($watcher1);
             $this->loop->enable($watcher3);
         });
 
@@ -1398,8 +1401,13 @@ abstract class DriverTest extends TestCase {
 
         $this->assertSame(1212, $invoked);
 
-        $this->loop->enable($watcher2);
-        $this->loop->enable($watcher4);
+        $this->loop->enable($watcher1);
+        $this->loop->enable($watcher3);
+
+        $this->loop->delay(100, function () use ($watcher2, $watcher4) {
+            $this->loop->enable($watcher2);
+            $this->loop->enable($watcher4);
+        });
 
         $this->loop->run();
 
