@@ -7,13 +7,13 @@ use Amp\Struct;
 class Watcher {
     use Struct;
 
-    const DEFER = 0b00000001;
-    const TIMER = 0b00000110;
-    const DELAY = 0b00000010;
-    const REPEAT = 0b00000100;
-    const IO = 0b00011000;
-    const READABLE = 0b00001000;
-    const WRITABLE = 0b00010000;
+    const IO = 0b00000011;
+    const READABLE = 0b00000001;
+    const WRITABLE = 0b00000010;
+    const DEFER = 0b00000100;
+    const TIMER = 0b00011000;
+    const DELAY = 0b00001000;
+    const REPEAT = 0b00010000;
     const SIGNAL = 0b00100000;
 
     /** @var int */
