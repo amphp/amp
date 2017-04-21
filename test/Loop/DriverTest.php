@@ -1370,6 +1370,42 @@ abstract class DriverTest extends TestCase {
         }
     }
 
+    public function testMultipleWatchersOnSameDescriptor() {
+        $sockets = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        \fwrite($sockets[1], "testing");
+
+        $invoked = 0;
+        $watcher1 = $this->loop->onReadable($sockets[0], function ($watcher) use (&$invoked) {
+            $invoked += 1;
+            $this->loop->disable($watcher);
+        });
+        $watcher2 = $this->loop->onReadable($sockets[0], function ($watcher) use (&$invoked, $watcher1) {
+            $invoked += 10;
+            $this->loop->disable($watcher);
+            $this->loop->enable($watcher1);
+        });
+        $watcher3 = $this->loop->onWritable($sockets[1], function ($watcher) use (&$invoked) {
+            $invoked += 100;
+            $this->loop->disable($watcher);
+        });
+        $watcher4 = $this->loop->onWritable($sockets[1], function ($watcher) use (&$invoked, $watcher3) {
+            $invoked += 1000;
+            $this->loop->disable($watcher);
+            $this->loop->enable($watcher3);
+        });
+
+        $this->loop->run();
+
+        $this->assertSame(1212, $invoked);
+
+        $this->loop->enable($watcher2);
+        $this->loop->enable($watcher4);
+
+        $this->loop->run();
+
+        $this->assertSame(2323, $invoked);
+    }
+
     public function testTimerIntervalCountedWhenNotRunning() {
         \usleep(501000); // 501ms instead of 500ms to allow for variations in timing.
         $start = \microtime(true);
