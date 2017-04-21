@@ -1384,11 +1384,11 @@ abstract class DriverTest extends TestCase {
             $this->loop->disable($watcher);
             $this->loop->enable($watcher1);
         });
-        $watcher3 = $this->loop->onWritable($sockets[1], function ($watcher) use (&$invoked) {
+        $watcher3 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked) {
             $invoked += 100;
             $this->loop->disable($watcher);
         });
-        $watcher4 = $this->loop->onWritable($sockets[1], function ($watcher) use (&$invoked, $watcher3) {
+        $watcher4 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked, $watcher3) {
             $invoked += 1000;
             $this->loop->disable($watcher);
             $this->loop->enable($watcher3);
