@@ -1413,7 +1413,7 @@ abstract class DriverTest extends TestCase {
     }
 
     public function testTimerIntervalCountedWhenNotRunning() {
-        \usleep(501000); // 501ms instead of 500ms to allow for variations in timing.
+        \usleep(502000); // 502ms instead of 500ms to allow for variations in timing.
         $start = \microtime(true);
         $this->loop->delay(1000, function () use ($start) {
             $this->assertLessThan(0.5, \microtime(true) - $start);
