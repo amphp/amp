@@ -60,7 +60,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Amp\UnionTypeError
+     * @expectedException \TypeError
      */
     public function testNonStream() {
         Stream\merge([1]);

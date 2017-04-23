@@ -94,7 +94,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Amp\UnionTypeError
+     * @expectedException \TypeError
      * @dataProvider provideInvalidStreamArguments
      */
     public function testInvalid($arg) {

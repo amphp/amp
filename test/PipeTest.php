@@ -110,7 +110,7 @@ class PipeTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(\Amp\UnionTypeError::class);
+        $this->expectException(\TypeError::class);
         Promise\pipe(42, function () {});
     }
 }

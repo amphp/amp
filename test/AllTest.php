@@ -69,7 +69,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
     }
 
     /**
-     * @expectedException \Amp\UnionTypeError
+     * @expectedException \TypeError
      */
     public function testNonPromise() {
         Promise\all([1]);

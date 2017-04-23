@@ -47,7 +47,7 @@ class RethrowTest extends TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(\Amp\UnionTypeError::class);
+        $this->expectException(\TypeError::class);
         Promise\rethrow(42);
     }
 }
