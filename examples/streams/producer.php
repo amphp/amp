@@ -4,11 +4,11 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Coroutine;
-use Amp\StreamIterator;
+use Amp\Loop;
 use Amp\Pause;
 use Amp\Producer;
 use Amp\Stream;
-use Amp\Loop;
+use Amp\StreamIterator;
 
 Loop::run(function () {
     try {

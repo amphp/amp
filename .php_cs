@@ -25,9 +25,9 @@ return Symfony\CS\Config\Config::create()
         "extra_empty_lines",
         "duplicate_semicolon",
     ])
-	->finder(
-		Symfony\CS\Finder\DefaultFinder::create()
-			->in(__DIR__ . "/lib")
-			->in(__DIR__ . "/test")
-	)
-;
+    ->finder(
+        Symfony\CS\Finder\DefaultFinder::create()
+            ->in(__DIR__ . "/examples")
+            ->in(__DIR__ . "/lib")
+            ->in(__DIR__ . "/test")
+    );

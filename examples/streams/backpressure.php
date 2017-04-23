@@ -5,8 +5,8 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Coroutine;
 use Amp\Emitter;
-use Amp\Pause;
 use Amp\Loop;
+use Amp\Pause;
 
 Loop::run(function () {
     try {
