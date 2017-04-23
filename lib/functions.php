@@ -5,56 +5,36 @@ namespace Amp {
 
     /**
      * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
-     * calls rethrow() on the returned promises (or the coroutine created).
+     * calls `rethrow()` on the returned promises (or the coroutine created).
      *
-     * @param callable (...$args): \Generator|\Amp\Promise|mixed $callback
+     * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller. Errors are
+     * automatically handled by `rethrow()`.
+     *
+     * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
      *
      * @return callable(...$args): void
      */
     function wrap(callable $callback): callable {
         return function (...$args) use ($callback) {
-            $result = $callback(...$args);
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
-
-            if ($result instanceof Promise || $result instanceof ReactPromise) {
-                Promise\rethrow($result);
-            }
+            Promise\rethrow(call($callback, ...$args));
         };
     }
 
     /**
      * Returns a new function that wraps $worker in a promise/coroutine-aware function that automatically upgrades
-     * Generators to coroutines. The returned function always returns a promise when invoked. If $worker throws,
+     * Generators to coroutines. The returned function always returns a promise when invoked. If $callback throws,
      * a failed promise is returned.
      *
-     * @param callable (mixed ...$args): mixed $worker
+     * Use this function to create a coroutine-aware callable for a promise-aware callback caller. Errors have to be
+     * handled by the caller.
+     *
+     * @param callable(mixed ...$args): mixed $callback
      *
      * @return callable(mixed ...$args): \Amp\Promise
      */
-    function coroutine(callable $worker): callable {
-        return function (...$args) use ($worker): Promise {
-            try {
-                $result = $worker(...$args);
-            } catch (\Throwable $exception) {
-                return new Failure($exception);
-            }
-
-            if ($result instanceof \Generator) {
-                return new Coroutine($result);
-            }
-
-            if ($result instanceof Promise) {
-                return $result;
-            }
-
-            if ($result instanceof ReactPromise) {
-                return Promise\adapt($result);
-            }
-
-            return new Success($result);
+    function coroutine(callable $callback): callable {
+        return function (...$args) use ($callback): Promise {
+            return call($callback, ...$args);
         };
     }
 
@@ -62,14 +42,14 @@ namespace Amp {
      * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
      * coroutine. If the function throws, a failed promise will be returned.
      *
-     * @param callable (mixed ...$args): mixed $functor
+     * @param callable(mixed ...$args): mixed $callback
      * @param array ...$args Arguments to pass to the function.
      *
      * @return \Amp\Promise
      */
-    function call(callable $functor, ...$args): Promise {
+    function call(callable $callback, ...$args): Promise {
         try {
-            $result = $functor(...$args);
+            $result = $callback(...$args);
         } catch (\Throwable $exception) {
             return new Failure($exception);
         }
