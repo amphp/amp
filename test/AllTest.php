@@ -2,10 +2,10 @@
 
 namespace Amp\Test;
 
+use Amp\Loop;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
-use Amp\Loop;
 
 class AllTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {

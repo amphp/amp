@@ -5,8 +5,8 @@ namespace Amp\Test;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Pause;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 use function React\Promise\resolve;
 
 class TimeoutTest extends \PHPUnit\Framework\TestCase {

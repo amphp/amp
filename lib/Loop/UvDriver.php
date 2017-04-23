@@ -255,8 +255,8 @@ class UvDriver extends Driver {
                 unset($this->watchers[$eventId][$id]);
 
                 if (empty($this->watchers[$eventId])) {
-                    unset($this->watchers[$eventId]);
-                    unset($this->io[(int) $watcher->value]);
+                    unset($this->watchers[$eventId], $this->io[(int) $watcher->value]);
+
                     if (\uv_is_active($event)) {
                         \uv_poll_stop($event);
                     }

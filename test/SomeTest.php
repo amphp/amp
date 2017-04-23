@@ -3,11 +3,11 @@
 namespace Amp\Test;
 
 use Amp\Failure;
+use Amp\Loop;
 use Amp\MultiReasonException;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
-use Amp\Loop;
 
 class SomeTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {

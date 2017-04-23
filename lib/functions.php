@@ -74,8 +74,8 @@ namespace Amp {
 }
 
 namespace Amp\Promise {
-    use Amp\Loop;
     use Amp\Deferred;
+    use Amp\Loop;
     use Amp\MultiReasonException;
     use Amp\Promise;
     use Amp\Success;
@@ -474,12 +474,12 @@ namespace Amp\Promise {
 namespace Amp\Stream {
     use Amp\Coroutine;
     use Amp\Emitter;
-    use Amp\StreamIterator;
     use Amp\Loop;
     use Amp\Pause;
     use Amp\Producer;
     use Amp\Promise;
     use Amp\Stream;
+    use Amp\StreamIterator;
     use Amp\UnionTypeError;
 
     /**

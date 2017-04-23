@@ -124,7 +124,6 @@ trait Producer {
         return $deferred->promise();
     }
 
-
     /**
      * Resolves the stream with the given value.
      *

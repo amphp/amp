@@ -2,10 +2,10 @@
 
 namespace Amp\Test;
 
-use Amp\Producer;
-use Amp\Stream;
 use Amp\Emitter;
 use Amp\Loop;
+use Amp\Producer;
+use Amp\Stream;
 
 class FilterTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {

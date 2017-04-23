@@ -3,10 +3,10 @@
 namespace Amp\Test;
 
 use Amp\Failure;
+use Amp\Loop;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
-use Amp\Loop;
 
 class AnyTest extends \PHPUnit\Framework\TestCase {
     public function testEmptyArray() {

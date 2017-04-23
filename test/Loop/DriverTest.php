@@ -8,7 +8,6 @@ use Amp\Loop;
 use Amp\Loop\Driver;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
-use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
@@ -230,7 +229,6 @@ abstract class DriverTest extends TestCase {
             echo 1;
         });
     }
-
 
     function provideRegistrationArgs() {
         $args = [
