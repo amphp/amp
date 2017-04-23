@@ -6,7 +6,7 @@ use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
- *  object implementing \Amp\Promise).
+ * object implementing `Amp\Promise`).
  */
 final class Success implements Stream {
     /** @var mixed */

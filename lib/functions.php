@@ -80,8 +80,8 @@ namespace Amp\Promise {
     use Amp\Promise;
     use Amp\Success;
     use Amp\TimeoutException;
-    use Amp\UnionTypeError;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\Internal\createTypeError;
 
     /**
      * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
@@ -95,7 +95,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } else {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
 
@@ -121,7 +121,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } else {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
 
@@ -161,7 +161,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } else {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
 
@@ -198,7 +198,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } else {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
 
@@ -243,7 +243,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } else {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
         }
 
@@ -335,7 +335,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
             $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key) {
@@ -384,7 +384,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
             $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
@@ -445,7 +445,7 @@ namespace Amp\Promise {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
             } elseif (!$promise instanceof Promise) {
-                throw new UnionTypeError([Promise::class, ReactPromise::class], $promise);
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
             $promise->onResolve(function ($exception, $value) use (
@@ -474,13 +474,12 @@ namespace Amp\Promise {
 namespace Amp\Stream {
     use Amp\Coroutine;
     use Amp\Emitter;
-    use Amp\Loop;
     use Amp\Pause;
     use Amp\Producer;
     use Amp\Promise;
     use Amp\Stream;
     use Amp\StreamIterator;
-    use Amp\UnionTypeError;
+    use function Amp\Internal\createTypeError;
 
     /**
      * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
@@ -495,7 +494,7 @@ namespace Amp\Stream {
      */
     function fromIterable(/* iterable */ $iterable, int $delay = 0): Stream {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
-            throw new UnionTypeError(["array", "Traversable"], $iterable);
+            throw createTypeError(["array", "Traversable"], $iterable);
         }
 
         return new Producer(function (callable $emit) use ($iterable, $delay) {
@@ -560,7 +559,7 @@ namespace Amp\Stream {
 
         foreach ($streams as $stream) {
             if (!$stream instanceof Stream) {
-                throw new UnionTypeError([Stream::class], $stream);
+                throw createTypeError([Stream::class], $stream);
             }
             $stream->onEmit(function ($value) use (&$emitter) {
                 if ($emitter !== null) {
@@ -593,7 +592,7 @@ namespace Amp\Stream {
     function concat(array $streams): Stream {
         foreach ($streams as $stream) {
             if (!$stream instanceof Stream) {
-                throw new UnionTypeError([Stream::class], $stream);
+                throw createTypeError([Stream::class], $stream);
             }
         }
 

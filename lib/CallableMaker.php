@@ -12,10 +12,8 @@ if (\PHP_VERSION_ID < 70100) {
         private static $__reflectionMethods = [];
 
         /**
-         * Creates a callable from a protected or private instance method that may be invoked by methods requiring a
+         * Creates a callable from a protected or private instance method that may be invoked by callers requiring a
          * publicly invokable callback.
-         *
-         * @TODO Once 7.1 is required, this method will no longer be necessary. Use \Closure::fromCallable() instead.
          *
          * @param string $method Instance method name.
          *
@@ -35,8 +33,6 @@ if (\PHP_VERSION_ID < 70100) {
         /**
          * Creates a callable from a protected or private static method that may be invoked by methods requiring a
          * publicly invokable callback.
-         *
-         * @TODO Once 7.1 is required, this method will no longer be necessary. Use \Closure::fromCallable() instead.
          *
          * @param string $method Static method name.
          *
