@@ -4,35 +4,38 @@ namespace Amp {
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
-     * Wraps the callback in a promise/coroutine-aware function that automatically upgrades Generators to coroutines and
-     * calls `rethrow()` on the returned promises (or the coroutine created).
+     * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
+     * Generators as coroutines. The returned function always returns void when invoked. Errors are forwarded to the
+     * loop error handler using `Amp\Promise\rethrow()`.
      *
-     * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller. Errors are
-     * automatically handled by `rethrow()`.
+     * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller.
      *
      * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
      *
      * @return callable(...$args): void
+     *
+     * @see createCallable()
      */
-    function wrap(callable $callback): callable {
+    function createRunnable(callable $callback): callable {
         return function (...$args) use ($callback) {
             Promise\rethrow(call($callback, ...$args));
         };
     }
 
     /**
-     * Returns a new function that wraps $worker in a promise/coroutine-aware function that automatically upgrades
-     * Generators to coroutines. The returned function always returns a promise when invoked. If $callback throws,
-     * a failed promise is returned.
+     * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
+     * Generators as coroutines. The returned function always returns a promise when invoked. Errors have to be handled
+     * by the callback caller or they will go unnoticed.
      *
-     * Use this function to create a coroutine-aware callable for a promise-aware callback caller. Errors have to be
-     * handled by the caller.
+     * Use this function to create a coroutine-aware callable for a promise-aware callback caller.
      *
      * @param callable(mixed ...$args): mixed $callback
      *
      * @return callable(mixed ...$args): \Amp\Promise
+     *
+     * @see createRunnable()
      */
-    function coroutine(callable $callback): callable {
+    function createCallable(callable $callback): callable {
         return function (...$args) use ($callback): Promise {
             return call($callback, ...$args);
         };
