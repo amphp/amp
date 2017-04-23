@@ -84,9 +84,12 @@ namespace Amp\Promise {
     use function Amp\Internal\createTypeError;
 
     /**
-     * Registers a callback that will forward the failure reason to the Loop error handler if the promise fails.
+     * Registers a callback that will forward the failure reason to the event loop's error handler if the promise fails.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
+     * Use this function if you neither return the promise nor handle a possible error yourself to prevent errors from
+     * going entirely unnoticed.
+     *
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to register the handler on.
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
@@ -109,11 +112,15 @@ namespace Amp\Promise {
     /**
      * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
+     * Use this function only in synchronous contexts to wait for an asynchronous operation. Use coroutines and yield to
+     * await promise resolution in a fully asynchronous application instead.
+     *
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to wait for.
      *
      * @return mixed Promise success value.
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     * @throws \Error If the event loop stopped without the $promise being resolved.
      * @throws \Throwable Promise failure reason.
      */
     function wait($promise) {
@@ -147,7 +154,7 @@ namespace Amp\Promise {
     }
 
     /**
-     * Pipe the promised value through the specified functor once it resolves.
+     * Pipes the promised value through the specified functor once it resolves.
      *
      * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
      * @param callable (mixed $value): mixed $functor
@@ -226,12 +233,12 @@ namespace Amp\Promise {
     }
 
     /**
-     * Create an artificial timeout for any Promise.
+     * Creates an artificial timeout for any `Promise`.
      *
      * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
-     * \Amp\TimeoutException.
+     * `Amp\TimeoutException`.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
      * @param int $timeout Timeout in milliseconds.
      *
      * @return \Amp\Promise
@@ -486,7 +493,7 @@ namespace Amp\Stream {
      * promise fails, the stream will fail with the same reason.
      *
      * @param array|\Traversable $iterable Elements to emit.
-     * @param int $delay Delay between element emissions.
+     * @param int $delay Delay between element emissions in milliseconds.
      *
      * @return \Amp\Stream
      *
