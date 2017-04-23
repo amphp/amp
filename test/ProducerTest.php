@@ -23,7 +23,7 @@ class ProducerTest extends TestCase {
 
     public function testEmit() {
         $invoked = false;
-        Loop::run(Amp\wrap(function () use (&$invoked) {
+        Loop::run(function () use (&$invoked) {
             $value = 1;
 
             $producer = new Producer(function (callable $emit) use ($value) {
@@ -42,7 +42,7 @@ class ProducerTest extends TestCase {
             $producer->onResolve(function ($exception, $result) use ($value) {
                 $this->assertSame($result, $value);
             });
-        }));
+        });
 
         $this->assertTrue($invoked);
     }

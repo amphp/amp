@@ -179,10 +179,10 @@ class StreamIteratorTest extends TestCase {
      * @expectedExceptionMessage The stream has not resolved
      */
     public function testGetResultBeforeResolution() {
-        Loop::run(Amp\wrap(function () {
+        Loop::run(function () {
             $streamIterator = new StreamIterator((new Emitter)->stream());
             $streamIterator->getResult();
-        }));
+        });
     }
 
     /**
