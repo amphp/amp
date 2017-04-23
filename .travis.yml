@@ -13,41 +13,9 @@ matrix:
   fast_finish: true
 
 install:
-  - git clone https://github.com/libuv/libuv;
-    pushd libuv;
-    git checkout $(git describe --tags);
-    ./autogen.sh;
-    ./configure --prefix=$(dirname `pwd`)/libuv-install;
-    make;
-    make install;
-    popd;
-    git clone https://github.com/bwoebi/php-uv.git;
-    pushd php-uv;
-    phpize;
-    ./configure --with-uv=$(dirname `pwd`)/libuv-install;
-    make;
-    make install;
-    popd;
-    echo "extension=uv.so" >> "$(php -r 'echo php_ini_loaded_file();')";
-
-  - curl -LS https://pecl.php.net/get/ev | tar -xz;
-    pushd ev-*;
-    phpize;
-    ./configure;
-    make;
-    make install;
-    popd;
-    echo "extension=ev.so" >> "$(php -r 'echo php_ini_loaded_file();')";
-
-  - curl -LS https://pecl.php.net/get/event | tar -xz;
-    pushd event-*;
-    phpize;
-    ./configure --with-event-core --with-event-extra --with-event-pthreads;
-    make;
-    make install;
-    popd;
-    echo "extension=event.so" >> "$(php -r 'echo php_ini_loaded_file();')";
-
+  - travis/install-uv.sh
+  - travis/install-ev.sh
+  - travis/install-event.sh
   - composer update -n --prefer-dist
   - composer show
 
