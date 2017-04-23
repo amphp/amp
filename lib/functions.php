@@ -133,17 +133,22 @@ namespace Amp\Promise {
         }
 
         $resolved = false;
-        Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
-            $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
-                Loop::stop();
-                $resolved = true;
-                $exception = $e;
-                $value = $v;
+
+        try {
+            Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
+                $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
+                    Loop::stop();
+                    $resolved = true;
+                    $exception = $e;
+                    $value = $v;
+                });
             });
-        });
+        } catch (\Throwable $throwable) {
+            throw new \Error("Loop exceptionally stopped without resolving the promise", 0, $throwable);
+        }
 
         if (!$resolved) {
-            throw new \Error("Loop stopped without resolving promise");
+            throw new \Error("Loop stopped without resolving the promise");
         }
 
         if ($exception) {
