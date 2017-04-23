@@ -2,8 +2,8 @@
 
 namespace Amp\Test;
 
-use Amp\Pause;
 use Amp\Loop;
+use Amp\Pause;
 
 class PauseTest extends \PHPUnit\Framework\TestCase {
     public function testPause() {

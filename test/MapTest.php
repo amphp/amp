@@ -2,11 +2,10 @@
 
 namespace Amp\Test;
 
-use Amp;
-use Amp\Producer;
-use Amp\Stream;
 use Amp\Emitter;
 use Amp\Loop;
+use Amp\Producer;
+use Amp\Stream;
 
 class MapTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {

@@ -2,7 +2,6 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Failure;
 use Amp\LazyPromise;
 use Amp\Success;

@@ -4,10 +4,10 @@ namespace Amp\Test;
 
 use Amp\Deferred;
 use Amp\Failure;
+use Amp\Loop;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
-use Amp\Loop;
 use PHPUnit\Framework\TestCase;
 use function React\Promise\resolve;
 

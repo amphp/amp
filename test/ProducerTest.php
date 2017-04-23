@@ -4,9 +4,9 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Deferred;
-use Amp\Producer;
-use Amp\Pause;
 use Amp\Loop;
+use Amp\Pause;
+use Amp\Producer;
 use PHPUnit\Framework\TestCase;
 use React\Promise\Promise as ReactPromise;
 

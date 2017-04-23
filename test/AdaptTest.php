@@ -3,8 +3,8 @@
 namespace Amp\Test;
 
 use Amp\Failure;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 
 class PromiseMock {
     /** @var \Amp\Promise */

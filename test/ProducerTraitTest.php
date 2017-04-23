@@ -5,8 +5,8 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Failure;
 use Amp\Loop;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 

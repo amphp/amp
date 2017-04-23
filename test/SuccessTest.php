@@ -3,8 +3,8 @@
 namespace Amp\Test;
 
 use Amp\Loop;
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class SuccessTest extends \PHPUnit\Framework\TestCase {

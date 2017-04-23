@@ -2,12 +2,11 @@
 
 namespace Amp\Test;
 
-use Amp;
-use Amp\Producer;
-use Amp\StreamIterator;
-use Amp\Pause;
 use Amp\Emitter;
 use Amp\Loop;
+use Amp\Pause;
+use Amp\Producer;
+use Amp\StreamIterator;
 use PHPUnit\Framework\TestCase;
 
 class StreamIteratorTest extends TestCase {

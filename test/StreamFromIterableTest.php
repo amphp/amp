@@ -3,11 +3,11 @@
 namespace Amp\Test;
 
 use Amp\Failure;
+use Amp\Loop;
 use Amp\Pause;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
-use Amp\Loop;
 
 class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
