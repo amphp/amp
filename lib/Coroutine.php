@@ -77,7 +77,7 @@ final class Coroutine implements Promise {
 
     /**
      * Attempts to transform the non-promise yielded from the generator into a promise, otherwise throws an instance
-     * of \Amp\InvalidYieldError.
+     * of `Amp\InvalidYieldError`.
      *
      * @param mixed $yielded Non-promise yielded from generator.
      *

@@ -2,11 +2,16 @@
 
 namespace Amp;
 
+/**
+ * Thrown if a promise doesn't resolve within a specified timeout.
+ *
+ * @see \Amp\Promise\timeout()
+ */
 class TimeoutException extends \Exception {
     /**
-     * @param string|null $message
+     * @param string|null $message Exception message.
      */
-    public function __construct(string $message = null) {
-        parent::__construct($message ?: "Operation timed out");
+    public function __construct(string $message = "Operation timed out") {
+        parent::__construct($message);
     }
 }
