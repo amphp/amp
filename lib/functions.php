@@ -6,7 +6,7 @@ namespace Amp {
     /**
      * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
      * Generators as coroutines. The returned function always returns void when invoked. Errors are forwarded to the
-     * loop error handler using `Amp\Promise\rethrow()`.
+     * loop's error handler using `Amp\Promise\rethrow()`.
      *
      * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller.
      *
@@ -14,9 +14,9 @@ namespace Amp {
      *
      * @return callable(...$args): void
      *
-     * @see createCallable()
+     * @see coroutine()
      */
-    function createRunnable(callable $callback): callable {
+    function asyncCoroutine(callable $callback): callable {
         return function (...$args) use ($callback) {
             Promise\rethrow(call($callback, ...$args));
         };
@@ -33,9 +33,9 @@ namespace Amp {
      *
      * @return callable(mixed ...$args): \Amp\Promise
      *
-     * @see createRunnable()
+     * @see asyncCoroutine()
      */
-    function createCallable(callable $callback): callable {
+    function coroutine(callable $callback): callable {
         return function (...$args) use ($callback): Promise {
             return call($callback, ...$args);
         };

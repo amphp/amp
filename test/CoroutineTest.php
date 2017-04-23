@@ -449,8 +449,8 @@ class CoroutineTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testCreateCallableFunction() {
-        $callable = \Amp\createCallable(function () {
+    public function testCoroutineFunction() {
+        $callable = \Amp\coroutine(function () {
             yield;
         });
 
@@ -458,12 +458,12 @@ class CoroutineTest extends TestCase {
     }
 
     /**
-     * @depends testCreateCallableFunction
+     * @depends testCoroutineFunction
      */
-    public function testCreateCallableFunctionWithCallbackReturningPromise() {
+    public function testCoroutineFunctionWithCallbackReturningPromise() {
         $value = 1;
         $promise = new Success($value);
-        $callable = \Amp\createCallable(function ($value) {
+        $callable = \Amp\coroutine(function ($value) {
             return $value;
         });
 
@@ -482,11 +482,11 @@ class CoroutineTest extends TestCase {
     }
 
     /**
-     * @depends testCreateCallableFunction
+     * @depends testCoroutineFunction
      */
-    public function testCreateCallableFunctionWithNonGeneratorCallback() {
+    public function testCoroutineFunctionWithNonGeneratorCallback() {
         $value = 1;
-        $callable = \Amp\createCallable(function ($value) {
+        $callable = \Amp\coroutine(function ($value) {
             return $value;
         });
 
@@ -505,11 +505,11 @@ class CoroutineTest extends TestCase {
     }
 
     /**
-     * @depends testCreateCallableFunction
+     * @depends testCoroutineFunction
      */
-    public function testCreateCallableFunctionWithThrowingCallback() {
+    public function testCoroutineFunctionWithThrowingCallback() {
         $exception = new \Exception;
-        $callable = \Amp\createCallable(function () use ($exception) {
+        $callable = \Amp\coroutine(function () use ($exception) {
             throw $exception;
         });
 
@@ -528,10 +528,10 @@ class CoroutineTest extends TestCase {
     }
 
     /**
-     * @depends testCreateCallableFunction
+     * @depends testCoroutineFunction
      */
-    public function testCreateCallableFunctionWithSuccessReturnCallback() {
-        $callable = \Amp\createCallable(function () {
+    public function testCoroutineFunctionWithSuccessReturnCallback() {
+        $callable = \Amp\coroutine(function () {
             return new Success(42);
         });
 
@@ -549,8 +549,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame(42, $result);
     }
 
-    public function testCreateCallableFunctionWithReactPromise() {
-        $callable = \Amp\createCallable(function () {
+    public function testCoroutineFunctionWithReactPromise() {
+        $callable = \Amp\coroutine(function () {
             return new FulfilledReactPromise(42);
         });
 
