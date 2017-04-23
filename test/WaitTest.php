@@ -54,12 +54,10 @@ class WaitTest extends TestCase {
 
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Loop stopped without resolving promise
+     * @expectedExceptionMessage Loop stopped without resolving the promise
      */
     public function testPromiseWithNoResolutionPathThrowsException() {
-        $promise = new Deferred;
-
-        $result = Promise\wait($promise->promise());
+        Promise\wait((new Deferred)->promise());
     }
 
     /**
@@ -76,7 +74,7 @@ class WaitTest extends TestCase {
     }
 
     public function testNonPromise() {
-        $this->expectException(\Amp\UnionTypeError::class);
+        $this->expectException(\TypeError::class);
         Promise\wait(42);
     }
 }
