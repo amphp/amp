@@ -16,11 +16,12 @@ install:
   - travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
-  - composer update -n --prefer-dist
+  # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
+  - composer update -n --prefer-dist --ignore-platform-reqs
   - composer show
 
 script:
-    # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
+  # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --filter testNoMemoryLeak
   - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml --verbose
   - php vendor/bin/php-cs-fixer --diff --dry-run -v fix
