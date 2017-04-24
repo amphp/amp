@@ -185,6 +185,97 @@ class CoroutineTest extends TestCase {
     }
 
     /**
+     * @depends testInvalidYield
+     */
+    public function testInvalidYieldCatchingThrownError() {
+        $value = 42;
+        $generator = function () use ($value) {
+            try {
+                yield 1;
+            } catch (\Error $error) {
+                // No further yields.
+            }
+
+            return $value;
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        $coroutine->onResolve(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+
+        $this->assertSame($result, $value);
+    }
+
+    /**
+     * @depends testInvalidYieldCatchingThrownError
+     */
+    public function testInvalidYieldCatchingThrownErrorAndYieldingAgain() {
+        $value = 42;
+        $generator = function () use ($value) {
+            try {
+                yield 1;
+            } catch (\Error $error) {
+                return yield new Success($value);
+            }
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        $coroutine->onResolve(function ($exception, $value) use (&$result) {
+            $result = $value;
+        });
+
+        $this->assertSame($result, $value);
+    }
+
+    /**
+     * @depends testInvalidYieldCatchingThrownError
+     */
+    public function testInvalidYieldCatchingThrownErrorAndThrowing() {
+        $exception = new \Exception;
+        $generator = function () use ($exception) {
+            try {
+                yield 1;
+            } catch (\Error $error) {
+                throw $exception;
+            }
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        $coroutine->onResolve(function ($exception) use (&$reason) {
+            $reason = $exception;
+        });
+
+        $this->assertSame($exception, $reason);
+    }
+
+    /**
+     * @depends testInvalidYieldCatchingThrownError
+     */
+    public function testInvalidYieldWithThrowingFinallyBlock() {
+        $exception = new \Exception;
+        $generator = function () use ($exception) {
+            try {
+                yield 1;
+            } finally {
+                throw $exception;
+            }
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        $coroutine->onResolve(function ($exception) use (&$reason) {
+            $reason = $exception;
+        });
+
+        $this->assertSame($exception, $reason);
+        $this->assertInstanceOf(InvalidYieldError::class, $reason->getPrevious());
+    }
+
+    /**
      * @depends testYieldFailedPromise
      */
     public function testCatchingFailedPromiseExceptionWithNoFurtherYields() {
