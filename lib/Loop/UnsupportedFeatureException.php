@@ -8,5 +8,4 @@ namespace Amp\Loop;
  * This might happen if ext-pcntl is missing and the loop driver doesn't support another way to dispatch signals.
  */
 class UnsupportedFeatureException extends \Exception {
-
 }

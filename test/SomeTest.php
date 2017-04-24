@@ -53,7 +53,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
         Promise\some($promises)->onResolve($callback);
 
         $this->assertInstanceOf(MultiReasonException::class, $reason);
-        $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
+        $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
     }
 
     public function testSuccessfulAndFailedPromisesArray() {
@@ -84,7 +84,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             Promise\some($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
+        $this->assertSame([[], [0 => 1, 1 => 2, 2 => 3]], $result);
     }
 
     public function testArrayKeysPreserved() {
@@ -104,7 +104,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             Promise\some($promises)->onResolve($callback);
         });
 
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $result);
     }
 
     /**

@@ -38,7 +38,6 @@ Loop::run(function () {
         };
 
         yield new Coroutine($generator($producer));
-
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }

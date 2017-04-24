@@ -10,7 +10,7 @@ use Amp\Stream;
 class FilterTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
         $invoked = false;
-        Loop::run(function () use (&$invoked){
+        Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
             $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
@@ -89,7 +89,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
     public function testStreamFails() {
         $invoked = false;
         $exception = new \Exception;
-        Loop::run(function () use (&$invoked, &$reason, &$exception){
+        Loop::run(function () use (&$invoked, &$reason, &$exception) {
             $emitter = new Emitter;
 
             $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {

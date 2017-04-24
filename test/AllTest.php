@@ -45,7 +45,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             Promise\all($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([1, 2, 3], $result);
+        $this->assertSame([1, 2, 3], $result);
     }
 
     public function testArrayKeysPreserved() {
@@ -65,7 +65,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
             Promise\all($promises)->onResolve($callback);
         });
 
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $result);
     }
 
     /**

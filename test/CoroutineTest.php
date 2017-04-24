@@ -615,8 +615,7 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineResolvedWithReturn
      */
-    public function testFastReturningGenerator()
-    {
+    public function testFastReturningGenerator() {
         $value = 1;
 
         $generator = function () use ($value) {

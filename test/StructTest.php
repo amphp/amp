@@ -15,7 +15,7 @@ class StructTest extends \PHPUnit\Framework\TestCase {
      */
     public function testSetErrorWithSuggestion() {
         $struct = new StructTestFixture;
-        $struct->callbac = function(){};
+        $struct->callbac = function () {};
     }
 
     /**

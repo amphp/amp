@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * A "safe" struct trait for public property aggregators
+ * A "safe" struct trait for public property aggregators.
  *
  * This trait is intended to make using public properties a little safer by throwing when
  * nonexistent property names are read or written.

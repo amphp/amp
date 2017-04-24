@@ -28,7 +28,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertEquals([[], [1, 2, 3]], $result);
+        $this->assertSame([[], [1, 2, 3]], $result);
     }
 
     public function testFailedPromisesArray() {
@@ -41,7 +41,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertEquals([[$exception, $exception, $exception], []], $result);
+        $this->assertSame([[$exception, $exception, $exception], []], $result);
     }
 
     public function testMixedPromisesArray() {
@@ -54,7 +54,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertEquals([[1 => $exception], [0 => 1, 2 => 3]], $result);
+        $this->assertSame([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
 
     public function testPendingAwatiablesArray() {
@@ -72,7 +72,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             Promise\any($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([[], [1, 2, 3]], $result);
+        $this->assertSame([[], [1, 2, 3]], $result);
     }
 
     /**
@@ -96,7 +96,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
             Promise\any($promises)->onResolve($callback);
         });
 
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $result);
     }
 
     /**

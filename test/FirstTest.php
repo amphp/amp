@@ -41,7 +41,7 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         Promise\first($promises)->onResolve($callback);
 
         $this->assertInstanceOf(MultiReasonException::class, $reason);
-        $this->assertEquals([$exception, $exception, $exception], $reason->getReasons());
+        $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
     }
 
     public function testMixedPromisesArray() {
