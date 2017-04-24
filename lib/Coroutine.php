@@ -52,7 +52,8 @@ final class Coroutine implements Promise {
 
                 $yielded->onResolve($this->onResolve);
             } catch (\Throwable $exception) {
-                $this->dispose($exception);
+                $this->fail($exception);
+                $this->onResolve = null;
             }
         };
 
@@ -71,7 +72,8 @@ final class Coroutine implements Promise {
 
             $yielded->onResolve($this->onResolve);
         } catch (\Throwable $exception) {
-            $this->dispose($exception);
+            $this->fail($exception);
+            $this->onResolve = null;
         }
     }
 
@@ -109,31 +111,5 @@ final class Coroutine implements Promise {
             ),
             $exception ?? null
         );
-    }
-
-    /**
-     * Runs the generator to completion then fails the coroutine with the given exception.
-     *
-     * @param \Throwable $exception
-     */
-    private function dispose(\Throwable $exception) {
-        if ($this->generator->valid()) {
-            try {
-                try {
-                    // Ensure generator has run to completion to avoid throws from finally blocks on destruction.
-                    do {
-                        $this->generator->throw($exception);
-                    } while ($this->generator->valid());
-                } finally {
-                    // Throw from finally to attach any exception thrown from generator as previous exception.
-                    throw $exception;
-                }
-            } catch (\Throwable $exception) {
-                // $exception will be used to fail the coroutine.
-            }
-        }
-
-        $this->fail($exception);
-        $this->onResolve = null;
     }
 }
