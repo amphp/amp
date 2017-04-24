@@ -25,7 +25,6 @@ return PhpCsFixer\Config::create()
         "php_unit_construct" => true,
         "php_unit_dedicate_assert" => true,
         "php_unit_fqcn_annotation" => true,
-        "php_unit_strict" => true,
         "phpdoc_summary" => true,
         "phpdoc_types" => true,
         "psr4" => true,

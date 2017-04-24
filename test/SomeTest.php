@@ -84,7 +84,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             Promise\some($promises)->onResolve($callback);
         });
 
-        $this->assertSame([[], [0 => 1, 1 => 2, 2 => 3]], $result);
+        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
     }
 
     public function testArrayKeysPreserved() {
@@ -104,7 +104,7 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
             Promise\some($promises)->onResolve($callback);
         });
 
-        $this->assertSame($expected, $result);
+        $this->assertEquals($expected, $result);
     }
 
     /**
