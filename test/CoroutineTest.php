@@ -400,8 +400,6 @@ class CoroutineTest extends TestCase {
     }
 
     /**
-     * Note that yielding in a finally block is not recommended.
-     *
      * @depends testYieldPendingPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
