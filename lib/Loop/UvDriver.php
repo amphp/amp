@@ -17,8 +17,11 @@ class UvDriver extends Driver {
     /** @var \Amp\Loop\Watcher[]|\Amp\Loop\Watcher[][] */
     private $watchers = [];
 
-    /** @var resource[] */
+    /** @var int[] */
     private $io = [];
+
+    /** @var resource[] */
+    private $streams = [];
 
     /** @var callable */
     private $ioCallback;
@@ -141,8 +144,12 @@ class UvDriver extends Driver {
         }
 
         $event = $this->events[$watcherId];
+        $eventId = (int) $event;
 
-        if (empty($this->watchers[(int) $event])) {
+        if (empty($this->watchers[$eventId])) {
+            if (isset($this->io[$eventId])) {
+                unset($this->streams[$this->io[$eventId]], $this->io[$eventId]);
+            }
             \uv_close($event);
         }
 
@@ -179,17 +186,18 @@ class UvDriver extends Driver {
                 case Watcher::WRITABLE:
                     $streamId = (int) $watcher->value;
 
-                    if (isset($this->io[$streamId])) {
-                        $event = $this->io[$streamId];
+                    if (isset($this->streams[$streamId])) {
+                        $event = $this->streams[$streamId];
                     } elseif (isset($this->events[$id])) {
-                        $event = $this->io[$streamId] = $this->events[$id];
+                        $event = $this->streams[$streamId] = $this->events[$id];
                     } else {
-                        $event = $this->io[$streamId] = \uv_poll_init_socket($this->handle, $watcher->value);
+                        $event = $this->streams[$streamId] = \uv_poll_init_socket($this->handle, $watcher->value);
                     }
 
                     $eventId = (int) $event;
                     $this->events[$id] = $event;
                     $this->watchers[$eventId][$id] = $watcher;
+                    $this->io[$eventId] = $streamId;
 
                     $flags = 0;
                     foreach ($this->watchers[$eventId] as $watcher) {
@@ -255,7 +263,7 @@ class UvDriver extends Driver {
                 unset($this->watchers[$eventId][$id]);
 
                 if (empty($this->watchers[$eventId])) {
-                    unset($this->watchers[$eventId], $this->io[(int) $watcher->value]);
+                    unset($this->watchers[$eventId]);
 
                     if (\uv_is_active($event)) {
                         \uv_poll_stop($event);
