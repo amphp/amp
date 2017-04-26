@@ -7,26 +7,12 @@ use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
+use Amp\Promise;
 
 Loop::run(function () {
     try {
         $emitter = new Emitter;
-
         $stream = $emitter->stream();
-
-        $stream->onEmit(function ($value) {
-            printf("Stream emitted %d\n", $value);
-            return new Delayed(500); // Artificial back-pressure on stream.
-        });
-
-        $stream->onResolve(function (Throwable $exception = null, $value) {
-            if ($exception) {
-                printf("Stream failed: %s\n", $exception->getMessage());
-                return;
-            }
-
-            printf("Stream result %d\n", $value);
-        });
 
         $generator = function (Emitter $emitter) {
             yield $emitter->emit(new Delayed(500, 1));
@@ -42,7 +28,12 @@ Loop::run(function () {
             $emitter->resolve(11);
         };
 
-        yield new Coroutine($generator($emitter));
+        Promise\rethrow(new Coroutine($generator($emitter)));
+
+        while (yield $stream->advance()) {
+            printf("Stream emitted %d\n", $stream->getCurrent());
+            yield new Pause(500); // Listener consumption takes 500 ms.
+        }
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }

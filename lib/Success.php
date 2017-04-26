@@ -5,10 +5,10 @@ namespace Amp;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Creates a successful stream (which is also a promise) using the given value (which can be any value except another
- * object implementing `Amp\Promise`).
+ * Creates a successful promise using the given value (which can be any value except another object implementing
+ * `Amp\Promise`).
  */
-final class Success implements Stream {
+final class Success implements Promise {
     /** @var mixed */
     private $value;
 
@@ -48,11 +48,5 @@ final class Success implements Stream {
                 throw $exception;
             });
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function onEmit(callable $onEmit) {
     }
 }

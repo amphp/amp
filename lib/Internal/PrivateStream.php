@@ -19,7 +19,7 @@ final class PrivateStream implements Stream {
     public function __construct(callable $producer) {
         $producer(
             $this->callableFromInstanceMethod("emit"),
-            $this->callableFromInstanceMethod("resolve"),
+            $this->callableFromInstanceMethod("complete"),
             $this->callableFromInstanceMethod("fail")
         );
     }
