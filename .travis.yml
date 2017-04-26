@@ -22,7 +22,7 @@ install:
   - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
 
   - mkdir -p coverage/cov coverage/bin
-  - wget -N https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
+  - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
   - chmod +x coverage/bin/phpcov
 
   - composer show
