@@ -484,13 +484,12 @@ namespace Amp\Promise {
 }
 
 namespace Amp\Stream {
-    use Amp\Coroutine;
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Producer;
     use Amp\Promise;
     use Amp\Stream;
-    use Amp\StreamIterator;
+    use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
 
     /**
@@ -523,20 +522,14 @@ namespace Amp\Stream {
     /**
      * @param \Amp\Stream $stream
      * @param callable (mixed $value): mixed $onEmit
-     * @param callable (mixed $value): mixed|null $onResolve
      *
      * @return \Amp\Stream
      */
-    function map(Stream $stream, callable $onEmit, callable $onResolve = null): Stream {
-        $streamIterator = new StreamIterator($stream);
-        return new Producer(function (callable $emit) use ($streamIterator, $onEmit, $onResolve) {
-            while (yield $streamIterator->advance()) {
-                yield $emit($onEmit($streamIterator->getCurrent()));
+    function map(Stream $stream, callable $onEmit): Stream {
+        return new Producer(function (callable $emit) use ($stream, $onEmit) {
+            while (yield $stream->advance()) {
+                yield $emit($onEmit($stream->getCurrent()));
             }
-            if ($onResolve === null) {
-                return $streamIterator->getResult();
-            }
-            return $onResolve($streamIterator->getResult());
         });
     }
 
@@ -547,14 +540,12 @@ namespace Amp\Stream {
      * @return \Amp\Stream
      */
     function filter(Stream $stream, callable $filter): Stream {
-        $streamIterator = new StreamIterator($stream);
-        return new Producer(function (callable $emit) use ($streamIterator, $filter) {
-            while (yield $streamIterator->advance()) {
-                if ($filter($streamIterator->getCurrent())) {
-                    yield $emit($streamIterator->getCurrent());
+        return new Producer(function (callable $emit) use ($stream, $filter) {
+            while (yield $stream->advance()) {
+                if ($filter($stream->getCurrent())) {
+                    yield $emit($stream->getCurrent());
                 }
             }
-            return $streamIterator->getResult();
         });
     }
 
@@ -569,23 +560,26 @@ namespace Amp\Stream {
         $emitter = new Emitter;
         $result = $emitter->stream();
 
+        $coroutine = coroutine(function (Stream $stream) use (&$emitter) {
+            while (yield $stream->advance() && $emitter !== null) {
+                $emitter->emit($stream->getCurrent());
+            }
+        });
+
+        $coroutines = [];
         foreach ($streams as $stream) {
             if (!$stream instanceof Stream) {
                 throw createTypeError([Stream::class], $stream);
             }
-            $stream->onEmit(function ($value) use (&$emitter) {
-                if ($emitter !== null) {
-                    return $emitter->emit($value);
-                }
-            });
+            $coroutines[] = $coroutine($stream);
         }
 
-        Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$emitter) {
+        Promise\all($coroutines)->onResolve(function ($exception) use (&$emitter) {
             if ($exception) {
                 $emitter->fail($exception);
                 $emitter = null;
             } else {
-                $emitter->resolve($values);
+                $emitter->resolve();
             }
         });
 
@@ -613,8 +607,14 @@ namespace Amp\Stream {
         $previous = [];
         $promise = Promise\all($previous);
 
+        $coroutine = coroutine(function (Stream $stream, callable $emit) {
+            while (yield $stream->advance()) {
+                yield $emit($stream->getCurrent());
+            }
+        });
+
         foreach ($streams as $stream) {
-            $generator = function ($value) use ($emitter, $promise) {
+            $emit = coroutine(function ($value) use ($emitter, $promise) {
                 static $pending = true, $failed = false;
 
                 if ($failed) {
@@ -632,10 +632,8 @@ namespace Amp\Stream {
                 }
 
                 yield $emitter->emit($value);
-            };
-            $subscriptions[] = $stream->onEmit(function ($value) use ($generator) {
-                return new Coroutine($generator($value));
             });
+            $subscriptions[] = $coroutine($stream, $emit);
             $previous[] = $stream;
             $promise = Promise\all($previous);
         }
