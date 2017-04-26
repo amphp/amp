@@ -7,8 +7,8 @@ try {
     if (!@\assert(false)) {
         development: // PHP 7 development (zend.assertions=1)
         /**
-         * Deferred is a container for a stream that can emit values using the emit() method and resolved using the
-         * resolve() and fail() methods of this object. The contained stream may be accessed using the stream() method.
+         * Deferred is a container for a stream that can emit values using the emit() method and completed using the
+         * complete() and fail() methods of this object. The contained stream may be accessed using the stream() method.
          * This object should not be part of a public API, but used internally to create and emit values from a stream.
          */
         final class Emitter {
@@ -25,7 +25,7 @@ try {
             /**
              * @var callable
              */
-            private $resolve;
+            private $complete;
 
             /**
              * @var callable
@@ -34,9 +34,9 @@ try {
 
             public function __construct() {
                 $this->stream = new Internal\PrivateStream(
-                    function (callable $emit, callable $resolve, callable $fail) {
+                    function (callable $emit, callable $complete, callable $fail) {
                         $this->emit = $emit;
-                        $this->resolve = $resolve;
+                        $this->complete = $complete;
                         $this->fail = $fail;
                     }
                 );
@@ -61,12 +61,10 @@ try {
             }
 
             /**
-             * Resolves the stream with the given value.
-             *
-             * @param mixed $value
+             * Completes the stream.
              */
-            public function resolve($value = null) {
-                ($this->resolve)($value);
+            public function complete() {
+                ($this->complete)();
             }
 
             /**
@@ -86,7 +84,7 @@ try {
          */
         eval('namespace Amp;
         final class Emitter implements Stream {
-            use Internal\Producer { emit as public; resolve as public; fail as public; }
+            use Internal\Producer { emit as public; complete as public; fail as public; }
             public function stream(): Stream { return $this; }
         }');
     }
