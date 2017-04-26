@@ -446,7 +446,10 @@ abstract class DriverTest extends TestCase {
         $this->assertSame($expected, $info[$type]);
     }
 
-    /** @dataProvider provideRegistrationArgs */
+    /**
+     * @dataProvider provideRegistrationArgs
+     * @group memoryleak
+     */
     public function testNoMemoryLeak($type, $args) {
         if ($this->getTestResultObject()->getCollectCodeCoverageInformation()) {
             $this->markTestSkipped("Cannot run this test with code coverage active [code coverage consumes memory which makes it impossible to rely on memory_get_usage()]");
