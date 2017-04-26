@@ -19,7 +19,7 @@ install:
 
   # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
   - composer update -n --prefer-dist --ignore-platform-reqs
-  - composer require satooshi/php-coveralls dev-master
+  - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
 
   - mkdir -p coverage/cov coverage/bin
   - wget -N https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
