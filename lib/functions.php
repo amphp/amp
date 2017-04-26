@@ -579,7 +579,7 @@ namespace Amp\Stream {
                 $emitter->fail($exception);
                 $emitter = null;
             } else {
-                $emitter->resolve();
+                $emitter->complete();
             }
         });
 
@@ -638,13 +638,13 @@ namespace Amp\Stream {
             $promise = Promise\all($previous);
         }
 
-        $promise->onResolve(function ($exception, array $values = null) use ($emitter) {
+        $promise->onResolve(function ($exception) use ($emitter) {
             if ($exception) {
                 $emitter->fail($exception);
                 return;
             }
 
-            $emitter->resolve($values);
+            $emitter->complete();
         });
 
         return $emitter->stream();
