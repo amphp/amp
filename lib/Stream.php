@@ -3,19 +3,27 @@
 namespace Amp;
 
 /**
- * Represents a set of asynchronous values. A stream is analogous to an asynchronous generator, yielding (emitting)
- * values when they are available, returning a value (success value) when the stream completes or throwing an
- * exception (failure reason).
+ * Defines an asynchronous stream that is designed to be used within a coroutine.
  */
-interface Stream extends Promise {
+interface Stream {
     /**
-     * Registers a callback to be invoked each time value is emitted from the stream. If the function returns an
-     * promise, back-pressure is applied to the promise until the returned promise is resolved.
+     * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has resolved.
+     * If the stream fails, the returned promise will fail with the same exception.
      *
-     * Exceptions thrown from $onEmit (or failures of promises returned from $onNext) will fail the returned
-     * Subscriber with the thrown exception.
+     * @return \Amp\Promise<bool>
      *
-     * @param callable $onEmit Function invoked each time a value is emitted from the stream.
+     * @throws \Error If the prior promise returned from this method has not resolved.
+     * @throws \Throwable The exception used to fail the stream.
      */
-    public function onEmit(callable $onEmit);
+    public function advance(): Promise;
+
+    /**
+     * Gets the last emitted value or throws an exception if the stream has completed.
+     *
+     * @return mixed Value emitted from the stream.
+     *
+     * @throws \Error If the stream has resolved or advance() was not called before calling this method.
+     * @throws \Throwable The exception used to fail the stream.
+     */
+    public function getCurrent();
 }

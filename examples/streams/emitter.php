@@ -31,18 +31,10 @@ Loop::run(function () {
 
         $stream = $emitter->stream();
 
-        $generator = function (Stream $stream) {
-            $listener = new StreamIterator($stream);
-
-            while (yield $listener->advance()) {
-                printf("Stream emitted %d\n", $listener->getCurrent());
-                yield new Pause(100); // Listener consumption takes 100 ms.
-            }
-
-            printf("Stream result %d\n", $listener->getResult());
-        };
-
-        yield new Coroutine($generator($stream));
+        while (yield $stream->advance()) {
+            printf("Stream emitted %d\n", $stream->getCurrent());
+            yield new Pause(100); // Listener consumption takes 100 ms.
+        }
     } catch (\Throwable $exception) {
         printf("Exception: %s\n", $exception);
     }

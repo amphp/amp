@@ -12,7 +12,7 @@ use Amp\StreamIterator;
 
 Loop::run(function () {
     try {
-        $producer = new Producer(function (callable $emit) {
+        $stream = new Producer(function (callable $emit) {
             yield $emit(1);
             yield $emit(new Pause(500, 2));
             yield $emit(3);
@@ -26,18 +26,10 @@ Loop::run(function () {
             return 11;
         });
 
-        $generator = function (Stream $stream) {
-            $listener = new StreamIterator($stream);
-
-            while (yield $listener->advance()) {
-                printf("Stream emitted %d\n", $listener->getCurrent());
-                yield new Pause(100); // Listener consumption takes 100 ms.
-            }
-
-            printf("Stream result %d\n", $listener->getResult());
-        };
-
-        yield new Coroutine($generator($producer));
+        while (yield $stream->advance()) {
+            printf("Stream emitted %d\n", $stream->getCurrent());
+            yield new Pause(100); // Listener consumption takes 100 ms.
+        }
     } catch (\Exception $exception) {
         printf("Exception: %s\n", $exception);
     }
