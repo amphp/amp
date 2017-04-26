@@ -24,7 +24,7 @@ script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --filter testNoMemoryLeak
   - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml --verbose
-  - php vendor/bin/php-cs-fixer --diff --dry-run -v fix
+  - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
   - composer require satooshi/php-coveralls dev-master
