@@ -6,6 +6,7 @@ use Amp\Loop\UvDriver;
 
 /**
  * @requires extension uv
+ * @group uv
  */
 class UvDriverTest extends DriverTest {
     public function getFactory(): callable {

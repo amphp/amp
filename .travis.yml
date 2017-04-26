@@ -23,10 +23,14 @@ install:
 script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --filter testNoMemoryLeak
-  - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml --verbose
+  - phpdbg -qrr vendor/bin/phpunit --verbose --exclude-group uv --coverage-php coverage/cov/main.cov
+  - phpdbg -qrr vendor/bin/phpunit --verbose --group uv --coverage-php coverage/cov/uv.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
+  - wget https://phar.phpunit.de/phpcov.phar
+  - chmod +x phpcov.phar
+  - ./phpcov.phar merge --clover build/logs/clover.xml coverage/cov
   - composer require satooshi/php-coveralls dev-master
   - php vendor/bin/coveralls -v
 
