@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-final class Producer implements Stream {
+final class Producer implements Iterator {
     use CallableMaker, Internal\Producer;
 
     /**

@@ -3,9 +3,9 @@
 namespace Amp\Test;
 
 use Amp\Emitter;
+use Amp\Iterator;
 use Amp\Loop;
 use Amp\Producer;
-use Amp\Stream;
 
 class FilterTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
@@ -13,11 +13,11 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
-            $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->getIterator(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
-            $this->assertInstanceOf(Stream::class, $stream);
+            $this->assertInstanceOf(Iterator::class, $iterator);
 
             $emitter->complete();
         });
@@ -36,13 +36,13 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Stream\filter($producer, function ($value) use (&$count) {
+            $iterator = Iterator\filter($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value & 1;
             });
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
             $this->assertSame(3, $count);
         });
@@ -61,13 +61,13 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 }
             });
 
-            $stream = Stream\filter($producer, function () use ($exception) {
+            $iterator = Iterator\filter($producer, function () use ($exception) {
                 throw $exception;
             });
 
             try {
-                while (yield $stream->advance()) {
-                    $stream->getCurrent();
+                while (yield $iterator->advance()) {
+                    $iterator->getCurrent();
                 }
             } catch (\Exception $reason) {
                 $this->assertSame($reason, $exception);
@@ -82,15 +82,15 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
             $exception = new \Exception;
             $emitter = new Emitter;
 
-            $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->getIterator(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
             $emitter->fail($exception);
 
             try {
-                while (yield $stream->advance()) {
-                    $stream->getCurrent();
+                while (yield $iterator->advance()) {
+                    $iterator->getCurrent();
                 }
             } catch (\Exception $reason) {
                 $this->assertSame($reason, $exception);

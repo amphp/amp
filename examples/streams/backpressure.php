@@ -12,7 +12,7 @@ use Amp\Promise;
 Loop::run(function () {
     try {
         $emitter = new Emitter;
-        $stream = $emitter->stream();
+        $iterator = $emitter->getIterator();
 
         $generator = function (Emitter $emitter) {
             yield $emitter->emit(new Pause(500, 1));
@@ -25,13 +25,13 @@ Loop::run(function () {
             yield $emitter->emit(new Pause(2000, 8));
             yield $emitter->emit(9);
             yield $emitter->emit(10);
-            $emitter->resolve(11);
+            $emitter->complete();
         };
 
         Promise\rethrow(new Coroutine($generator($emitter)));
 
-        while (yield $stream->advance()) {
-            printf("Stream emitted %d\n", $stream->getCurrent());
+        while (yield $iterator->advance()) {
+            printf("Stream emitted %d\n", $iterator->getCurrent());
             yield new Pause(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {

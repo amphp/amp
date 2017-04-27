@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
+use Amp\Iterator;
 use Amp\Loop;
 use Amp\Producer;
-use Amp\Stream;
 
 class ConcatTest extends \PHPUnit\Framework\TestCase {
     public function getArrays() {
@@ -23,11 +23,11 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      */
     public function testConcat(array $streams, array $expected) {
         Loop::run(function () use ($streams, $expected) {
-            $streams = \array_map(function (array $stream): Stream {
-                return Stream\fromIterable($stream);
+            $streams = \array_map(function (array $stream): Iterator {
+                return Iterator\fromIterable($stream);
             }, $streams);
 
-            $stream = Stream\concat($streams);
+            $stream = Iterator\concat($streams);
 
             while (yield $stream->advance()) {
                 $this->assertSame(\array_shift($expected), $stream->getCurrent());
@@ -47,7 +47,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream = Stream\concat([Stream\fromIterable(\range(1, 5)), $producer, Stream\fromIterable(\range(7, 10))]);
+            $stream = Iterator\concat([Iterator\fromIterable(\range(1, 5)), $producer, Iterator\fromIterable(\range(7, 10))]);
 
             try {
                 while (yield $stream->advance()) {
@@ -65,6 +65,6 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \TypeError
      */
     public function testNonStream() {
-        Stream\concat([1]);
+        Iterator\concat([1]);
     }
 }

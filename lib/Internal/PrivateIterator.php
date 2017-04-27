@@ -3,14 +3,14 @@
 namespace Amp\Internal;
 
 use Amp\CallableMaker;
-use Amp\Stream;
+use Amp\Iterator;
 
 /**
- * An stream that cannot externally emit values. Used by Emitter in development mode.
+ * An iterator that cannot externally emit values. Used by Emitter in development mode.
  *
  * @internal
  */
-final class PrivateStream implements Stream {
+final class PrivateIterator implements Iterator {
     use CallableMaker, Producer;
 
     /**

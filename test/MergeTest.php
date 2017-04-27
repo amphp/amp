@@ -2,10 +2,10 @@
 
 namespace Amp\Test;
 
+use Amp\Iterator;
 use Amp\Loop;
 use Amp\Pause;
 use Amp\Producer;
-use Amp\Stream;
 
 class MergeTest extends \PHPUnit\Framework\TestCase {
     public function getArrays() {
@@ -19,19 +19,19 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     /**
      * @dataProvider getArrays
      *
-     * @param array $streams
+     * @param array $iterators
      * @param array $expected
      */
-    public function testMerge(array $streams, array $expected) {
-        Loop::run(function () use ($streams, $expected) {
-            $streams = \array_map(function (array $stream): Stream {
-                return Stream\fromIterable($stream);
-            }, $streams);
+    public function testMerge(array $iterators, array $expected) {
+        Loop::run(function () use ($iterators, $expected) {
+            $iterators = \array_map(function (array $iterator): Iterator {
+                return Iterator\fromIterable($iterator);
+            }, $iterators);
 
-            $stream = Stream\merge($streams);
+            $iterator = Iterator\merge($iterators);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
         });
     }
@@ -41,27 +41,27 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
      */
     public function testMergeWithDelayedEmits() {
         Loop::run(function () {
-            $streams = [];
+            $iterators = [];
             $values1 = [new Pause(10, 1), new Pause(50, 2), new Pause(70, 3)];
             $values2 = [new Pause(20, 4), new Pause(40, 5), new Pause(60, 6)];
             $expected = [1, 4, 5, 2, 6, 3];
 
-            $streams[] = new Producer(function (callable $emit) use ($values1) {
+            $iterators[] = new Producer(function (callable $emit) use ($values1) {
                 foreach ($values1 as $value) {
                     yield $emit($value);
                 }
             });
 
-            $streams[] = new Producer(function (callable $emit) use ($values2) {
+            $iterators[] = new Producer(function (callable $emit) use ($values2) {
                 foreach ($values2 as $value) {
                     yield $emit($value);
                 }
             });
 
-            $stream = Stream\merge($streams);
+            $iterator = Iterator\merge($iterators);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
         });
     }
@@ -77,10 +77,10 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream = Stream\merge([$producer, Stream\fromIterable(\range(1, 5))]);
+            $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
 
             try {
-                while (yield $stream->advance());
+                while (yield $iterator->advance());
             } catch (\Throwable $reason) {
                 $this->assertSame($exception, $reason);
             }
@@ -91,6 +91,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \TypeError
      */
     public function testNonStream() {
-        Stream\merge([1]);
+        Iterator\merge([1]);
     }
 }
