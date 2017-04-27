@@ -84,7 +84,7 @@ try {
          * prevent IDEs and other tools from reporting multiple definitions.
          */
         eval('namespace Amp;
-        final class Emitter implements Stream {
+        final class Emitter implements Iterator {
             use Internal\Producer { emit as public; complete as public; fail as public; }
             public function getIterator(): Iterator { return $this; }
         }');

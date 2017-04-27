@@ -31,7 +31,7 @@ Loop::run(function () {
         Promise\rethrow(new Coroutine($generator($emitter)));
 
         while (yield $iterator->advance()) {
-            printf("Stream emitted %d\n", $iterator->getCurrent());
+            printf("Emitter emitted %d\n", $iterator->getCurrent());
             yield new Pause(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {

@@ -29,7 +29,7 @@ Loop::run(function () {
         $iterator = $emitter->getIterator();
 
         while (yield $iterator->advance()) {
-            printf("Stream emitted %d\n", $iterator->getCurrent());
+            printf("Emitter emitted %d\n", $iterator->getCurrent());
             yield new Pause(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {

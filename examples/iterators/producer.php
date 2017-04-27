@@ -24,7 +24,7 @@ Loop::run(function () {
         });
 
         while (yield $iterator->advance()) {
-            printf("Stream emitted %d\n", $iterator->getCurrent());
+            printf("Producer emitted %d\n", $iterator->getCurrent());
             yield new Pause(100); // Listener consumption takes 100 ms.
         }
     } catch (\Exception $exception) {
