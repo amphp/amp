@@ -73,7 +73,6 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 $this->assertSame($reason, $exception);
             }
         });
-
     }
 
     public function testStreamFails() {
@@ -98,6 +97,5 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
 
             $this->assertFalse($invoked);
         });
-
     }
 }

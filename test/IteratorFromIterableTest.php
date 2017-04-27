@@ -36,7 +36,6 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testMixedPromises() {
-
         Loop::run(function () {
             $exception = new \Exception;
             $expected = \range(1, 2);

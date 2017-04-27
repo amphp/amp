@@ -2,13 +2,11 @@
 
 namespace Amp\Test;
 
-use Amp;
 use Amp\Deferred;
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Producer;
 use PHPUnit\Framework\TestCase;
-use React\Promise\Promise as ReactPromise;
 
 class ProducerTest extends TestCase {
     const TIMEOUT = 100;
