@@ -22,56 +22,35 @@ class ProducerTest extends TestCase {
     }
 
     public function testEmit() {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
+        Loop::run(function () {
             $value = 1;
 
             $producer = new Producer(function (callable $emit) use ($value) {
                 yield $emit($value);
-                return $value;
             });
 
-            $invoked = false;
-            $callback = function ($emitted) use (&$invoked, $value) {
-                $invoked = true;
-                $this->assertSame($emitted, $value);
-            };
-
-            $producer->onEmit($callback);
-
-            $producer->onResolve(function ($exception, $result) use ($value) {
-                $this->assertSame($result, $value);
-            });
+            $this->assertTrue(yield $producer->advance());
+            $this->assertSame($producer->getCurrent(), $value);
         });
-
-        $this->assertTrue($invoked);
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitSuccessfulPromise() {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
+        Loop::run(function () {
             $deferred = new Deferred();
 
             $producer = new Producer(function (callable $emit) use ($deferred) {
-                return yield $emit($deferred->promise());
+                yield $emit($deferred->promise());
             });
 
             $value = 1;
-            $invoked = false;
-            $callback = function ($emitted) use (&$invoked, $value) {
-                $invoked = true;
-                $this->assertSame($emitted, $value);
-            };
-
-            $producer->onEmit($callback);
-
             $deferred->resolve($value);
-        });
 
-        $this->assertTrue($invoked);
+            $this->assertTrue(yield $producer->advance());
+            $this->assertSame($producer->getCurrent(), $value);
+        });
     }
 
     /**
@@ -88,9 +67,11 @@ class ProducerTest extends TestCase {
 
             $deferred->fail($exception);
 
-            $producer->onResolve(function ($reason) use ($exception) {
+            try {
+                yield $producer->advance();
+            } catch (\Exception $reason) {
                 $this->assertSame($reason, $exception);
-            });
+            }
         });
     }
 
@@ -108,58 +89,12 @@ class ProducerTest extends TestCase {
                 $time = microtime(true) - $time;
             });
 
-            $producer->onEmit(function () {
-                return new Pause(self::TIMEOUT);
-            });
+            while (yield $producer->advance()) {
+                yield new Pause(self::TIMEOUT);
+            }
         });
 
         $this->assertGreaterThan(self::TIMEOUT * $emits - 1 /* 1ms grace period */, $time * 1000);
-    }
-
-    /**
-     * @depends testEmit
-     */
-    public function testEmitReactBackPressure() {
-        $emits = 3;
-        Loop::run(function () use (&$time, $emits) {
-            $producer = new Producer(function (callable $emit) use (&$time, $emits) {
-                $time = microtime(true);
-                for ($i = 0; $i < $emits; ++$i) {
-                    yield $emit($i);
-                }
-                $time = microtime(true) - $time;
-            });
-
-            $producer->onEmit(function () {
-                return new ReactPromise(function ($resolve) {
-                    Loop::delay(self::TIMEOUT, $resolve);
-                });
-            });
-        });
-
-        $this->assertGreaterThan(self::TIMEOUT * $emits - 1 /* 1ms grace period */, $time * 1000);
-    }
-
-    /**
-     * @depends testEmit
-     */
-    public function testSubscriberThrows() {
-        $exception = new \Exception;
-
-        try {
-            Loop::run(function () use ($exception) {
-                $producer = new Producer(function (callable $emit) {
-                    yield $emit(1);
-                    yield $emit(2);
-                });
-
-                $producer->onEmit(function () use ($exception) {
-                    throw $exception;
-                });
-            });
-        } catch (\Exception $caught) {
-            $this->assertSame($exception, $caught);
-        }
     }
 
     /**
@@ -175,28 +110,10 @@ class ProducerTest extends TestCase {
                     throw $exception;
                 });
 
-                Amp\Promise\wait($producer);
+                while (yield $producer->advance());
             });
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
-    }
-
-    public function testListenAfterResolve() {
-        $invoked = false;
-
-        Loop::run(function () use (&$invoked) {
-            $producer = new Producer(function (callable $emit) use (&$invoked) {
-                yield $emit(1);
-            });
-
-            yield $producer;
-
-            $producer->onEmit(function () use (&$invoked) {
-                $invoked = true;
-            });
-        });
-
-        $this->assertFalse($invoked);
     }
 }

@@ -19,53 +19,43 @@ class MapTest extends \PHPUnit\Framework\TestCase {
 
             $this->assertInstanceOf(Stream::class, $stream);
 
-            $emitter->resolve();
+            $emitter->complete();
         });
 
         $this->assertFalse($invoked);
     }
 
     public function testValuesEmitted() {
-        $count = 0;
-        $values = [1, 2, 3];
-        $final = 4;
-        $results = [];
-        Loop::run(function () use (&$results, &$result, &$count, $values, $final) {
-            $producer = new Producer(function (callable $emit) use ($values, $final) {
+        Loop::run(function () {
+            $count = 0;
+            $values = [1, 2, 3];
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
-                return $final;
             });
 
             $stream = Stream\map($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
-            }, function ($value) use (&$invoked) {
-                return $value + 1;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($values) + 1, $stream->getCurrent());
+            }
 
-            $stream->onResolve(function ($exception, $value) use (&$result) {
-                $result = $value;
-            });
+            $this->assertSame(3, $count);
         });
-
-        $this->assertSame(\count($values), $count);
-        $this->assertSame(\array_map(function ($value) { return $value + 1; }, $values), $results);
-        $this->assertSame($final + 1, $result);
     }
 
     /**
      * @depends testValuesEmitted
      */
     public function testOnNextCallbackThrows() {
-        $values = [1, 2, 3];
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, $values, $exception) {
+        Loop::run(function () {
+            $values = [1, 2, 3];
+            $exception = new \Exception;
+
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -76,62 +66,20 @@ class MapTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
-        });
-
-        $this->assertSame($exception, $reason);
-    }
-
-    /**
-     * @depends testValuesEmitted
-     */
-    public function testOnCompleteCallbackThrows() {
-        $count = 0;
-        $values = [1, 2, 3];
-        $results = [];
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, &$results, &$count, $values, $exception) {
-            $producer = new Producer(function (callable $emit) use ($values) {
-                foreach ($values as $value) {
-                    yield $emit($value);
+            try {
+                while (yield $stream->advance()) {
+                    $stream->getCurrent();
                 }
-            });
-
-            $stream = Stream\map($producer, function ($value) use (&$count) {
-                ++$count;
-                return $value + 1;
-            }, function ($value) use ($exception) {
-                throw $exception;
-            });
-
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            } catch (\Exception $reason) {
+                $this->assertSame($reason, $exception);
+            }
         });
-
-        $this->assertSame(\count($values), $count);
-        $this->assertSame(\array_map(function ($value) { return $value + 1; }, $values), $results);
-        $this->assertSame($exception, $reason);
     }
 
     public function testStreamFails() {
-        $invoked = false;
-        $exception = new \Exception;
-        Loop::run(function () use (&$invoked, &$reason, &$exception) {
+        Loop::run(function () {
+            $invoked = false;
+            $exception = new \Exception;
             $emitter = new Emitter;
 
             $stream = Stream\map($emitter->stream(), function ($value) use (&$invoked) {
@@ -140,14 +88,15 @@ class MapTest extends \PHPUnit\Framework\TestCase {
 
             $emitter->fail($exception);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
+            try {
+                while (yield $stream->advance()) {
+                    $stream->getCurrent();
+                }
+            } catch (\Exception $reason) {
+                $this->assertSame($reason, $exception);
+            }
 
-            $stream->onResolve($callback);
+            $this->assertFalse($invoked);
         });
-
-        $this->assertFalse($invoked);
-        $this->assertSame($exception, $reason);
     }
 }

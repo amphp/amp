@@ -561,8 +561,8 @@ namespace Amp\Stream {
         $result = $emitter->stream();
 
         $coroutine = coroutine(function (Stream $stream) use (&$emitter) {
-            while (yield $stream->advance() && $emitter !== null) {
-                $emitter->emit($stream->getCurrent());
+            while ((yield $stream->advance()) && $emitter !== null) {
+                yield $emitter->emit($stream->getCurrent());
             }
         });
 
@@ -603,7 +603,6 @@ namespace Amp\Stream {
         }
 
         $emitter = new Emitter;
-        $subscriptions = [];
         $previous = [];
         $promise = Promise\all($previous);
 
@@ -633,8 +632,7 @@ namespace Amp\Stream {
 
                 yield $emitter->emit($value);
             });
-            $subscriptions[] = $coroutine($stream, $emit);
-            $previous[] = $stream;
+            $previous[] = $coroutine($stream, $emit);
             $promise = Promise\all($previous);
         }
 

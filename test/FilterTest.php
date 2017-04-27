@@ -19,18 +19,17 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
 
             $this->assertInstanceOf(Stream::class, $stream);
 
-            $emitter->resolve();
+            $emitter->complete();
         });
 
         $this->assertFalse($invoked);
     }
 
     public function testValuesEmitted() {
-        $count = 0;
-        $values = [1, 2, 3];
-        $results = [];
-        $expected = [1, 3];
-        Loop::run(function () use (&$results, &$result, &$count, $values) {
+        Loop::run(function () {
+            $count = 0;
+            $values = [1, 2, 3];
+            $expected = [1, 3];
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -42,26 +41,20 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 return $value & 1;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $stream->onResolve(function ($exception, $value) use (&$result) {
-                $result = $value;
-            });
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            }
+            $this->assertSame(3, $count);
         });
-
-        $this->assertSame(\count($values), $count);
-        $this->assertSame($expected, $results);
     }
 
     /**
      * @depends testValuesEmitted
      */
     public function testCallbackThrows() {
-        $values = [1, 2, 3];
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, $values, $exception) {
+        Loop::run(function () {
+            $values = [1, 2, 3];
+            $exception = new \Exception;
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
@@ -72,24 +65,21 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            try {
+                while (yield $stream->advance()) {
+                    $stream->getCurrent();
+                }
+            } catch (\Exception $reason) {
+                $this->assertSame($reason, $exception);
+            }
         });
 
-        $this->assertSame($exception, $reason);
     }
 
     public function testStreamFails() {
-        $invoked = false;
-        $exception = new \Exception;
-        Loop::run(function () use (&$invoked, &$reason, &$exception) {
+        Loop::run(function () {
+            $invoked = false;
+            $exception = new \Exception;
             $emitter = new Emitter;
 
             $stream = Stream\filter($emitter->stream(), function ($value) use (&$invoked) {
@@ -98,14 +88,16 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
 
             $emitter->fail($exception);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
+            try {
+                while (yield $stream->advance()) {
+                    $stream->getCurrent();
+                }
+            } catch (\Exception $reason) {
+                $this->assertSame($reason, $exception);
+            }
 
-            $stream->onResolve($callback);
+            $this->assertFalse($invoked);
         });
 
-        $this->assertFalse($invoked);
-        $this->assertSame($exception, $reason);
     }
 }
