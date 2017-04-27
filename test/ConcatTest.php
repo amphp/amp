@@ -22,27 +22,26 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      * @param array $expected
      */
     public function testConcat(array $streams, array $expected) {
-        $streams = \array_map(function (array $stream): Stream {
-            return Stream\fromIterable($stream);
-        }, $streams);
+        Loop::run(function () use ($streams, $expected) {
+            $streams = \array_map(function (array $stream): Stream {
+                return Stream\fromIterable($stream);
+            }, $streams);
 
-        $stream = Stream\concat($streams);
+            $stream = Stream\concat($streams);
 
-        Stream\map($stream, function ($value) use ($expected) {
-            static $i = 0;
-            $this->assertSame($expected[$i++], $value);
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            }
         });
-
-        Loop::run();
     }
 
     /**
      * @depends testConcat
      */
     public function testConcatWithFailedStream() {
-        $exception = new \Exception;
-        $results = [];
-        Loop::run(function () use (&$results, &$reason, $exception) {
+        Loop::run(function () {
+            $exception = new \Exception;
+            $expected = \range(1, 6);
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(6); // Emit once before failing.
                 throw $exception;
@@ -50,19 +49,16 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
 
             $stream = Stream\concat([Stream\fromIterable(\range(1, 5)), $producer, Stream\fromIterable(\range(7, 10))]);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            try {
+                while (yield $stream->advance()) {
+                    $this->assertSame(\array_shift($expected), $stream->getCurrent());
+                }
+            } catch (\Throwable $reason) {
+                $this->assertSame($exception, $reason);
+            }
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            $this->assertEmpty($expected);
         });
-
-        $this->assertSame(\range(1, 6), $results);
-        $this->assertSame($exception, $reason);
     }
 
     /**

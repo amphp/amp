@@ -13,70 +13,62 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
 
     public function testSuccessfulPromises() {
-        $results = [];
-        Loop::run(function () use (&$results) {
+        Loop::run(function () {
+            $expected = \range(1, 3);
             $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            }
         });
-
-        $this->assertSame([1, 2, 3], $results);
     }
 
     public function testFailedPromises() {
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, $exception) {
+        Loop::run(function () {
+            $exception = new \Exception;
             $stream = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            try {
+                yield $stream->advance();
+            } catch (\Exception $reason) {
+                $this->assertSame($exception, $reason);
+            }
         });
-
-        $this->assertSame($exception, $reason);
     }
 
     public function testMixedPromises() {
-        $exception = new \Exception;
-        $results = [];
-        Loop::run(function () use (&$results, &$reason, $exception) {
+
+        Loop::run(function () {
+            $exception = new \Exception;
+            $expected = \range(1, 2);
             $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            try {
+                while (yield $stream->advance()) {
+                    $this->assertSame(\array_shift($expected), $stream->getCurrent());
+                }
+            } catch (\Exception $reason) {
+                $this->assertSame($exception, $reason);
+            }
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            $this->assertEmpty($expected);
         });
-
-        $this->assertSame(\range(1, 2), $results);
-        $this->assertSame($exception, $reason);
     }
 
     public function testPendingPromises() {
-        $results = [];
-        Loop::run(function () use (&$results) {
+        Loop::run(function () {
+            $expected = \range(1, 4);
             $stream = Stream\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            }
         });
-
-        $this->assertSame(\range(1, 4), $results);
     }
 
     public function testTraversable() {
-        $results = [];
-        Loop::run(function () use (&$results) {
+        Loop::run(function () {
+            $expected = \range(1, 4);
             $generator = (function () {
                 foreach (\range(1, 4) as $value) {
                     yield $value;
@@ -85,12 +77,12 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
 
             $stream = Stream\fromIterable($generator);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-        });
+            while (yield $stream->advance()) {
+                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            }
 
-        $this->assertSame(\range(1, 4), $results);
+            $this->assertEmpty($expected);
+        });
     }
 
     /**
@@ -113,34 +105,32 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     }
 
     public function testInterval() {
-        $count = 3;
-        $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
+        Loop::run(function () {
+            $count = 3;
+            $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
 
-        $i = 0;
-        $stream = Stream\map($stream, function ($value) use (&$i) {
-            $this->assertSame(++$i, $value);
+            $i = 0;
+            while (yield $stream->advance()) {
+                $this->assertSame(++$i, $stream->getCurrent());
+            }
+
+            $this->assertSame($count, $i);
         });
-
-        Promise\wait($stream);
-
-        $this->assertSame($count, $i);
     }
 
     /**
      * @depends testInterval
      */
     public function testSlowConsumer() {
-        $invoked = 0;
         $count = 5;
-        Loop::run(function () use (&$invoked, $count) {
+        Loop::run(function () use ($count) {
             $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
 
-            $stream->onEmit(function () use (&$invoked) {
-                ++$invoked;
-                return new Delayed(self::TIMEOUT * 2);
-            });
-        });
+            for ($i = 0; yield $stream->advance(); ++$i) {
+                yield new Delayed(self::TIMEOUT * 2);
+            }
 
-        $this->assertSame($count, $invoked);
+            $this->assertSame($count, $i);
+        });
     }
 }
