@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * Defines an asynchronous stream that is designed to be used within a coroutine.
  */
-interface Stream {
+interface Iterator {
     /**
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the stream has resolved.
      * If the stream fails, the returned promise will fail with the same exception.

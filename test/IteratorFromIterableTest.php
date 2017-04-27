@@ -4,21 +4,20 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Failure;
+use Amp\Iterator;
 use Amp\Loop;
-use Amp\Promise;
-use Amp\Stream;
 use Amp\Success;
 
-class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
+class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
     const TIMEOUT = 10;
 
     public function testSuccessfulPromises() {
         Loop::run(function () {
             $expected = \range(1, 3);
-            $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
+            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
         });
     }
@@ -26,10 +25,10 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testFailedPromises() {
         Loop::run(function () {
             $exception = new \Exception;
-            $stream = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
+            $iterator = Iterator\fromIterable([new Failure($exception), new Failure($exception)]);
 
             try {
-                yield $stream->advance();
+                yield $iterator->advance();
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
@@ -41,11 +40,11 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () {
             $exception = new \Exception;
             $expected = \range(1, 2);
-            $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
             try {
-                while (yield $stream->advance()) {
-                    $this->assertSame(\array_shift($expected), $stream->getCurrent());
+                while (yield $iterator->advance()) {
+                    $this->assertSame(\array_shift($expected), $iterator->getCurrent());
                 }
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
@@ -58,10 +57,10 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testPendingPromises() {
         Loop::run(function () {
             $expected = \range(1, 4);
-            $stream = Stream\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
+            $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
         });
     }
@@ -75,10 +74,10 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
                 }
             })();
 
-            $stream = Stream\fromIterable($generator);
+            $iterator = Iterator\fromIterable($generator);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
 
             $this->assertEmpty($expected);
@@ -90,7 +89,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
      * @dataProvider provideInvalidStreamArguments
      */
     public function testInvalid($arg) {
-        Stream\fromIterable($arg);
+        Iterator\fromIterable($arg);
     }
 
     public function provideInvalidStreamArguments() {
@@ -107,11 +106,11 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testInterval() {
         Loop::run(function () {
             $count = 3;
-            $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
+            $iterator = Iterator\fromIterable(range(1, $count), self::TIMEOUT);
 
             $i = 0;
-            while (yield $stream->advance()) {
-                $this->assertSame(++$i, $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(++$i, $iterator->getCurrent());
             }
 
             $this->assertSame($count, $i);
@@ -124,9 +123,9 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testSlowConsumer() {
         $count = 5;
         Loop::run(function () use ($count) {
-            $stream = Stream\fromIterable(range(1, $count), self::TIMEOUT);
+            $iterator = Iterator\fromIterable(range(1, $count), self::TIMEOUT);
 
-            for ($i = 0; yield $stream->advance(); ++$i) {
+            for ($i = 0; yield $iterator->advance(); ++$i) {
                 yield new Delayed(self::TIMEOUT * 2);
             }
 

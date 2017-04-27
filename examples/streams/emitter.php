@@ -3,12 +3,9 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\Stream;
-use Amp\StreamIterator;
 
 Loop::run(function () {
     try {
@@ -26,13 +23,13 @@ Loop::run(function () {
             $emitter->emit(8);
             $emitter->emit(9);
             $emitter->emit(10);
-            $emitter->resolve(11);
+            $emitter->complete();
         });
 
-        $stream = $emitter->stream();
+        $iterator = $emitter->getIterator();
 
-        while (yield $stream->advance()) {
-            printf("Stream emitted %d\n", $stream->getCurrent());
+        while (yield $iterator->advance()) {
+            printf("Stream emitted %d\n", $iterator->getCurrent());
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {
