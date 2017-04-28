@@ -4,9 +4,9 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Stream;
 use Amp\StreamIterator;
 
@@ -36,7 +36,7 @@ Loop::run(function () {
 
             while (yield $listener->advance()) {
                 printf("Stream emitted %d\n", $listener->getCurrent());
-                yield new Pause(100); // Listener consumption takes 100 ms.
+                yield new Delayed(100); // Listener consumption takes 100 ms.
             }
 
             printf("Stream result %d\n", $listener->getResult());

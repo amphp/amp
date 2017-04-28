@@ -485,8 +485,8 @@ namespace Amp\Promise {
 
 namespace Amp\Stream {
     use Amp\Coroutine;
+    use Amp\Delayed;
     use Amp\Emitter;
-    use Amp\Pause;
     use Amp\Producer;
     use Amp\Promise;
     use Amp\Stream;
@@ -512,7 +512,7 @@ namespace Amp\Stream {
         return new Producer(function (callable $emit) use ($iterable, $delay) {
             foreach ($iterable as $value) {
                 if ($delay) {
-                    yield new Pause($delay);
+                    yield new Delayed($delay);
                 }
 
                 yield $emit($value);

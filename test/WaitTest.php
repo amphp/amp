@@ -3,9 +3,9 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -44,7 +44,7 @@ class WaitTest extends TestCase {
         Loop::run(function () {
             $value = 1;
 
-            $promise = new Pause(100, $value);
+            $promise = new Delayed(100, $value);
 
             $result = Promise\wait($promise);
 
