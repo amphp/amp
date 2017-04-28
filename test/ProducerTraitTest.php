@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -61,14 +62,15 @@ class ProducerTraitTest extends TestCase {
      */
     public function testEmitFailedPromise() {
         Loop::run(function () {
-            $exception = new \Exception;
+            $exception = new TestException;
             $promise = new Failure($exception);
 
             $promise = $this->producer->emit($promise);
 
             try {
                 $this->assertTrue(yield $this->producer->advance());
-            } catch (\Exception $reason) {
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
                 $this->assertSame($reason, $exception);
             }
 

@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Loop;
 use Amp\Pause;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
 use PHPUnit\Framework\TestCase;
 
@@ -55,7 +56,7 @@ class ProducerTest extends TestCase {
      * @depends testEmitSuccessfulPromise
      */
     public function testEmitFailedPromise() {
-        $exception = new \Exception;
+        $exception = new TestException;
         Loop::run(function () use ($exception) {
             $deferred = new Deferred();
 
@@ -67,7 +68,8 @@ class ProducerTest extends TestCase {
 
             try {
                 yield $producer->advance();
-            } catch (\Exception $reason) {
+                $this->fail("Emitting a failed promise should fail the iterator");
+            } catch (TestException $reason) {
                 $this->assertSame($reason, $exception);
             }
         });
@@ -99,7 +101,7 @@ class ProducerTest extends TestCase {
      * @depends testEmit
      */
     public function testProducerCoroutineThrows() {
-        $exception = new \Exception;
+        $exception = new TestException;
 
         try {
             Loop::run(function () use ($exception) {
@@ -109,8 +111,9 @@ class ProducerTest extends TestCase {
                 });
 
                 while (yield $producer->advance());
+                $this->fail("The exception thrown from the coroutine should fail the iterator");
             });
-        } catch (\Exception $caught) {
+        } catch (TestException $caught) {
             $this->assertSame($exception, $caught);
         }
     }
