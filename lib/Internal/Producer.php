@@ -32,8 +32,8 @@ trait Producer {
     /** @var \Amp\Deferred|null */
     private $waiting;
 
-    /** @var \Throwable|null */
-    private $exception;
+    /** @var null|array */
+    private $resolutionTrace;
 
     /**
      * {@inheritdoc}
@@ -132,16 +132,33 @@ trait Producer {
     }
 
     /**
-     * Resolves the stream with the given value.
-     *
-     * @param mixed $value
+     * Completes the iterator.
      *
      * @throws \Error If the stream has already been completed.
      */
     private function complete() {
         if ($this->complete) {
-            throw new \Error("The stream has already completed");
+            $message = "Iterator has already been completed";
+
+            if (isset($this->resolutionTrace)) {
+                $trace = formatStacktrace($this->resolutionTrace);
+                $message .= ". Previous completion trace:\n\n{$trace}\n\n";
+            } else {
+                $message .= ", define const AMP_DEBUG = true and enable assertions for a stacktrace of the previous completion.";
+            }
+
+            throw new \Error($message);
         }
+
+        \assert((function () {
+            if (\defined("AMP_DEBUG") && \AMP_DEBUG) {
+                $trace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+                \array_shift($trace); // remove current closure
+                $this->resolutionTrace = $trace;
+            }
+
+            return true;
+        })());
 
         $this->complete = new Success(false);
 
