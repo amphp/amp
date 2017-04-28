@@ -68,7 +68,7 @@ trait Producer {
      */
     public function getCurrent() {
         if (empty($this->values) && $this->complete) {
-            throw new \Error("The stream has completed");
+            throw new \Error("The iterator has completed");
         }
 
         if (!\array_key_exists($this->position, $this->values)) {
@@ -79,18 +79,18 @@ trait Producer {
     }
 
     /**
-     * Emits a value from the stream. The returned promise is resolved with the emitted value once all listeners
+     * Emits a value from the iterator. The returned promise is resolved with the emitted value once all listeners
      * have been invoked.
      *
      * @param mixed $value
      *
      * @return \Amp\Promise
      *
-     * @throws \Error If the stream has completed.
+     * @throws \Error If the iterator has completed.
      */
     private function emit($value): Promise {
         if ($this->complete) {
-            throw new \Error("Streams cannot emit values after calling complete");
+            throw new \Error("Iterators cannot emit values after calling complete");
         }
 
         if ($value instanceof ReactPromise) {
@@ -102,7 +102,7 @@ trait Producer {
             $value->onResolve(function ($e, $v) use ($deferred) {
                 if ($this->complete) {
                     $deferred->fail(
-                        new \Error("The stream was completed before the promise result could be emitted")
+                        new \Error("The iterator was completed before the promise result could be emitted")
                     );
                     return;
                 }
@@ -134,7 +134,7 @@ trait Producer {
     /**
      * Completes the iterator.
      *
-     * @throws \Error If the stream has already been completed.
+     * @throws \Error If the iterator has already been completed.
      */
     private function complete() {
         if ($this->complete) {

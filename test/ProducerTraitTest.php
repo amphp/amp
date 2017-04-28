@@ -134,7 +134,7 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage Streams cannot emit values after calling complete
+     * @expectedExceptionMessage Iterators cannot emit values after calling complete
      */
     public function testEmitAfterComplete() {
         $this->producer->complete();
@@ -144,7 +144,7 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage The stream was completed before the promise result could be emitted
+     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
     public function testEmitPendingPromiseThenComplete() {
         $invoked = false;
@@ -167,7 +167,7 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage The stream was completed before the promise result could be emitted
+     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
     public function testEmitPendingPromiseThenFail() {
         $invoked = false;
