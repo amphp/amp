@@ -4,6 +4,7 @@ namespace Amp\Test;
 
 use Amp\Iterator;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
 class ConcatTest extends \PHPUnit\Framework\TestCase {
@@ -40,7 +41,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      */
     public function testConcatWithFailedStream() {
         Loop::run(function () {
-            $exception = new \Exception;
+            $exception = new TestException;
             $expected = \range(1, 6);
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(6); // Emit once before failing.
@@ -53,7 +54,8 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
                 while (yield $stream->advance()) {
                     $this->assertSame(\array_shift($expected), $stream->getCurrent());
                 }
-            } catch (\Throwable $reason) {
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
             }
 

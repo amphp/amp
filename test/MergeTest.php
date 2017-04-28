@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Iterator;
 use Amp\Loop;
 use Amp\Pause;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
 class MergeTest extends \PHPUnit\Framework\TestCase {
@@ -71,7 +72,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
      */
     public function testMergeWithFailedStream() {
         Loop::run(function () {
-            $exception = new \Exception;
+            $exception = new TestException;
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(1); // Emit once before failing.
                 throw $exception;
@@ -81,7 +82,8 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
 
             try {
                 while (yield $iterator->advance());
-            } catch (\Throwable $reason) {
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
             }
         });

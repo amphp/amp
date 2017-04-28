@@ -6,6 +6,7 @@ use Amp\Delayed;
 use Amp\Failure;
 use Amp\Iterator;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Success;
 
 class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
@@ -37,7 +38,7 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
 
     public function testMixedPromises() {
         Loop::run(function () {
-            $exception = new \Exception;
+            $exception = new TestException;
             $expected = \range(1, 2);
             $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
@@ -45,7 +46,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
                 while (yield $iterator->advance()) {
                     $this->assertSame(\array_shift($expected), $iterator->getCurrent());
                 }
-            } catch (\Exception $reason) {
+                $this->fail("A failed promise in the iterable should fail the iterator and be thrown from advance()");
+            } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
             }
 
