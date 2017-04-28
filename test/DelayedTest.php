@@ -2,17 +2,17 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Loop;
-use Amp\Pause;
 
-class PauseTest extends \PHPUnit\Framework\TestCase {
-    public function testPause() {
+class DelayedTest extends \PHPUnit\Framework\TestCase {
+    public function testDelayed() {
         $time = 100;
         $value = "test";
         $start = microtime(true);
 
         Loop::run(function () use (&$result, $time, $value) {
-            $promise = new Pause($time, $value);
+            $promise = new Delayed($time, $value);
 
             $callback = function ($exception, $value) use (&$result) {
                 $result = $value;
@@ -32,7 +32,7 @@ class PauseTest extends \PHPUnit\Framework\TestCase {
 
         $invoked = false;
         Loop::run(function () use (&$invoked, $time, $value) {
-            $promise = new Pause($time, $value);
+            $promise = new Delayed($time, $value);
             $promise->unreference();
 
             $callback = function ($exception, $value) use (&$invoked) {
@@ -56,7 +56,7 @@ class PauseTest extends \PHPUnit\Framework\TestCase {
 
         $invoked = false;
         Loop::run(function () use (&$invoked, $time, $value) {
-            $promise = new Pause($time, $value);
+            $promise = new Delayed($time, $value);
             $promise->unreference();
             $promise->reference();
 

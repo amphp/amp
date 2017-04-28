@@ -4,9 +4,9 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\Pause;
 
 Loop::run(function () {
     try {
@@ -16,7 +16,7 @@ Loop::run(function () {
 
         $stream->onEmit(function ($value) {
             printf("Stream emitted %d\n", $value);
-            return new Pause(500); // Artificial back-pressure on stream.
+            return new Delayed(500); // Artificial back-pressure on stream.
         });
 
         $stream->onResolve(function (Throwable $exception = null, $value) {
@@ -29,14 +29,14 @@ Loop::run(function () {
         });
 
         $generator = function (Emitter $emitter) {
-            yield $emitter->emit(new Pause(500, 1));
-            yield $emitter->emit(new Pause(1500, 2));
-            yield $emitter->emit(new Pause(1000, 3));
-            yield $emitter->emit(new Pause(2000, 4));
+            yield $emitter->emit(new Delayed(500, 1));
+            yield $emitter->emit(new Delayed(1500, 2));
+            yield $emitter->emit(new Delayed(1000, 3));
+            yield $emitter->emit(new Delayed(2000, 4));
             yield $emitter->emit(5);
             yield $emitter->emit(6);
             yield $emitter->emit(7);
-            yield $emitter->emit(new Pause(2000, 8));
+            yield $emitter->emit(new Delayed(2000, 8));
             yield $emitter->emit(9);
             yield $emitter->emit(10);
             $emitter->resolve(11);

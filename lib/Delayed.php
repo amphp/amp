@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * Creates a promise that resolves itself with a given value after a number of milliseconds.
  */
-final class Pause implements Promise {
+final class Delayed implements Promise {
     use Internal\Placeholder;
 
     /** @var string Event loop watcher identifier. */

@@ -3,10 +3,10 @@
 namespace Amp\Test;
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\InvalidYieldError;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -54,7 +54,7 @@ class CoroutineTest extends TestCase {
 
         Loop::run(function () use (&$yielded, $value) {
             $generator = function () use (&$yielded, $value) {
-                $yielded = yield new Pause(self::TIMEOUT, $value);
+                $yielded = yield new Delayed(self::TIMEOUT, $value);
             };
 
             new Coroutine($generator());
@@ -100,7 +100,7 @@ class CoroutineTest extends TestCase {
             $value = 1;
 
             $generator = function () use (&$yielded, $value) {
-                yield new Pause(10);
+                yield new Delayed(10);
                 list($yielded) = yield [
                     new Success($value)
                 ];
@@ -119,7 +119,7 @@ class CoroutineTest extends TestCase {
             $value = 1;
 
             $generator = function () use (&$yielded, $value) {
-                yield new Pause(10);
+                yield new Delayed(10);
                 list($yielded) = yield [
                     $value
                 ];
@@ -380,7 +380,7 @@ class CoroutineTest extends TestCase {
             $invoked = false;
             $generator = function () use (&$yielded, &$invoked, $exception, $value) {
                 try {
-                    $yielded = (yield new Pause(self::TIMEOUT, $value));
+                    $yielded = (yield new Delayed(self::TIMEOUT, $value));
                     throw $exception;
                 } finally {
                     $invoked = true;
@@ -412,7 +412,7 @@ class CoroutineTest extends TestCase {
                 try {
                     throw $exception;
                 } finally {
-                    $yielded = yield new Pause(self::TIMEOUT, $value);
+                    $yielded = yield new Delayed(self::TIMEOUT, $value);
                 }
             };
 

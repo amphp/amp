@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Producer;
 use Amp\StreamIterator;
 use PHPUnit\Framework\TestCase;
@@ -64,7 +64,7 @@ class StreamIteratorTest extends TestCase {
             $count = 10;
             $stream = new Producer(function (callable $emit) use ($count) {
                 for ($i = 0; $i < $count; ++$i) {
-                    yield new Pause(self::TIMEOUT);
+                    yield new Delayed(self::TIMEOUT);
                     yield $emit($i);
                 }
                 return $i;

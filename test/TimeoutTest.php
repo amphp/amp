@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
 use function React\Promise\resolve;
@@ -55,7 +55,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         $value = 1;
 
         Loop::run(function () use (&$result, $value) {
-            $promise = new Pause(50, $value);
+            $promise = new Delayed(50, $value);
 
             $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);
@@ -75,7 +75,7 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
      */
     public function testSlowPending() {
         Loop::run(function () use (&$reason) {
-            $promise = new Pause(200);
+            $promise = new Delayed(200);
 
             $promise = Promise\timeout($promise, 100);
             $this->assertInstanceOf(Promise::class, $promise);

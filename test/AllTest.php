@@ -2,8 +2,8 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
 
@@ -33,9 +33,9 @@ class AllTest extends \PHPUnit\Framework\TestCase {
     public function testPendingAwatiablesArray() {
         Loop::run(function () use (&$result) {
             $promises = [
-                new Pause(20, 1),
-                new Pause(30, 2),
-                new Pause(10, 3),
+                new Delayed(20, 1),
+                new Delayed(30, 2),
+                new Delayed(10, 3),
             ];
 
             $callback = function ($exception, $value) use (&$result) {
@@ -53,9 +53,9 @@ class AllTest extends \PHPUnit\Framework\TestCase {
 
         Loop::run(function () use (&$result) {
             $promises = [
-                'one'   => new Pause(20, 1),
-                'two'   => new Pause(30, 2),
-                'three' => new Pause(10, 3),
+                'one'   => new Delayed(20, 1),
+                'two'   => new Delayed(30, 2),
+                'three' => new Delayed(10, 3),
             ];
 
             $callback = function ($exception, $value) use (&$result) {

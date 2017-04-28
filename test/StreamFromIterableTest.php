@@ -2,9 +2,9 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
@@ -64,7 +64,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testPendingPromises() {
         $results = [];
         Loop::run(function () use (&$results) {
-            $stream = Stream\fromIterable([new Pause(30, 1), new Pause(10, 2), new Pause(20, 3), new Success(4)]);
+            $stream = Stream\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
 
             $stream->onEmit(function ($value) use (&$results) {
                 $results[] = $value;
@@ -137,7 +137,7 @@ class StreamFromIterableTest extends \PHPUnit\Framework\TestCase {
 
             $stream->onEmit(function () use (&$invoked) {
                 ++$invoked;
-                return new Pause(self::TIMEOUT * 2);
+                return new Delayed(self::TIMEOUT * 2);
             });
         });
 
