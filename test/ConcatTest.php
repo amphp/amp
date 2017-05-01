@@ -19,19 +19,19 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @dataProvider getArrays
      *
-     * @param array $streams
+     * @param array $iterators
      * @param array $expected
      */
-    public function testConcat(array $streams, array $expected) {
-        Loop::run(function () use ($streams, $expected) {
-            $streams = \array_map(function (array $stream): Iterator {
-                return Iterator\fromIterable($stream);
-            }, $streams);
+    public function testConcat(array $iterators, array $expected) {
+        Loop::run(function () use ($iterators, $expected) {
+            $iterators = \array_map(function (array $iterator): Iterator {
+                return Iterator\fromIterable($iterator);
+            }, $iterators);
 
-            $stream = Iterator\concat($streams);
+            $iterator = Iterator\concat($iterators);
 
-            while (yield $stream->advance()) {
-                $this->assertSame(\array_shift($expected), $stream->getCurrent());
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
         });
     }
@@ -39,7 +39,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedStream() {
+    public function testConcatWithFailedIterator() {
         Loop::run(function () {
             $exception = new TestException;
             $expected = \range(1, 6);
@@ -48,11 +48,11 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
                 throw $exception;
             });
 
-            $stream = Iterator\concat([Iterator\fromIterable(\range(1, 5)), $producer, Iterator\fromIterable(\range(7, 10))]);
+            $iterator = Iterator\concat([Iterator\fromIterable(\range(1, 5)), $producer, Iterator\fromIterable(\range(7, 10))]);
 
             try {
-                while (yield $stream->advance()) {
-                    $this->assertSame(\array_shift($expected), $stream->getCurrent());
+                while (yield $iterator->advance()) {
+                    $this->assertSame(\array_shift($expected), $iterator->getCurrent());
                 }
                 $this->fail("The exception used to fail the iterator should be thrown from advance()");
             } catch (TestException $reason) {
@@ -66,7 +66,7 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonStream() {
+    public function testNonIterator() {
         Iterator\concat([1]);
     }
 }

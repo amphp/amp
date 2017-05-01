@@ -76,7 +76,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testStreamFails() {
+    public function testIteratorFails() {
         Loop::run(function () {
             $invoked = false;
             $exception = new TestException;
