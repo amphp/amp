@@ -8,7 +8,7 @@ try {
         development: // PHP 7 development (zend.assertions=1)
         /**
          * Deferred is a container for an iterator that can emit values using the emit() method and completed using the
-         * complete() and fail() methods of this object. The contained iterator may be accessed using the getIterator()
+         * complete() and fail() methods of this object. The contained iterator may be accessed using the iterate()
          * method. This object should not be part of a public API, but used internally to create and emit values to an
          * iterator.
          */
@@ -46,7 +46,7 @@ try {
             /**
              * @return \Amp\Iterator
              */
-            public function getIterator(): Iterator {
+            public function iterate(): Iterator {
                 return $this->iterator;
             }
 
@@ -86,7 +86,7 @@ try {
         eval('namespace Amp;
         final class Emitter implements Iterator {
             use Internal\Producer { emit as public; complete as public; fail as public; }
-            public function getIterator(): Iterator { return $this; }
+            public function iterate(): Iterator { return $this; }
         }');
     }
 } catch (\AssertionError $exception) {

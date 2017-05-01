@@ -26,7 +26,7 @@ Loop::run(function () {
             $emitter->complete();
         });
 
-        $iterator = $emitter->getIterator();
+        $iterator = $emitter->iterate();
 
         while (yield $iterator->advance()) {
             printf("Emitter emitted %d\n", $iterator->getCurrent());

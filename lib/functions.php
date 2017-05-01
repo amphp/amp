@@ -558,7 +558,7 @@ namespace Amp\Iterator {
      */
     function merge(array $iterators): Iterator {
         $emitter = new Emitter;
-        $result = $emitter->getIterator();
+        $result = $emitter->iterate();
 
         $coroutine = coroutine(function (Iterator $iterator) use (&$emitter) {
             while ((yield $iterator->advance()) && $emitter !== null) {
@@ -645,6 +645,6 @@ namespace Amp\Iterator {
             $emitter->complete();
         });
 
-        return $emitter->getIterator();
+        return $emitter->iterate();
     }
 }
