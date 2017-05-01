@@ -2,9 +2,10 @@
 
 namespace Amp\Test;
 
+use Amp\Iterator;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use Amp\Stream;
 
 class ConcatTest extends \PHPUnit\Framework\TestCase {
     public function getArrays() {
@@ -18,57 +19,54 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @dataProvider getArrays
      *
-     * @param array $streams
+     * @param array $iterators
      * @param array $expected
      */
-    public function testConcat(array $streams, array $expected) {
-        $streams = \array_map(function (array $stream): Stream {
-            return Stream\fromIterable($stream);
-        }, $streams);
+    public function testConcat(array $iterators, array $expected) {
+        Loop::run(function () use ($iterators, $expected) {
+            $iterators = \array_map(function (array $iterator): Iterator {
+                return Iterator\fromIterable($iterator);
+            }, $iterators);
 
-        $stream = Stream\concat($streams);
+            $iterator = Iterator\concat($iterators);
 
-        Stream\map($stream, function ($value) use ($expected) {
-            static $i = 0;
-            $this->assertSame($expected[$i++], $value);
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            }
         });
-
-        Loop::run();
     }
 
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedStream() {
-        $exception = new \Exception;
-        $results = [];
-        Loop::run(function () use (&$results, &$reason, $exception) {
+    public function testConcatWithFailedIterator() {
+        Loop::run(function () {
+            $exception = new TestException;
+            $expected = \range(1, 6);
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(6); // Emit once before failing.
                 throw $exception;
             });
 
-            $stream = Stream\concat([Stream\fromIterable(\range(1, 5)), $producer, Stream\fromIterable(\range(7, 10))]);
+            $iterator = Iterator\concat([Iterator\fromIterable(\range(1, 5)), $producer, Iterator\fromIterable(\range(7, 10))]);
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            try {
+                while (yield $iterator->advance()) {
+                    $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+                }
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
+                $this->assertSame($exception, $reason);
+            }
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            $this->assertEmpty($expected);
         });
-
-        $this->assertSame(\range(1, 6), $results);
-        $this->assertSame($exception, $reason);
     }
 
     /**
      * @expectedException \TypeError
      */
-    public function testNonStream() {
-        Stream\concat([1]);
+    public function testNonIterator() {
+        Iterator\concat([1]);
     }
 }

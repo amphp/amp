@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-final class Producer implements Stream {
+final class Producer implements Iterator {
     use CallableMaker, Internal\Producer;
 
     /**
@@ -17,20 +17,18 @@ final class Producer implements Stream {
             throw new \Error("The callable did not return a Generator");
         }
 
-        Loop::defer(function () use ($result) {
-            $coroutine = new Coroutine($result);
-            $coroutine->onResolve(function ($exception, $value) {
-                if ($this->resolved) {
-                    return;
-                }
+        $coroutine = new Coroutine($result);
+        $coroutine->onResolve(function ($exception) {
+            if ($this->complete) {
+                return;
+            }
 
-                if ($exception) {
-                    $this->fail($exception);
-                    return;
-                }
+            if ($exception) {
+                $this->fail($exception);
+                return;
+            }
 
-                $this->resolve($value);
-            });
+            $this->complete();
         });
     }
 }

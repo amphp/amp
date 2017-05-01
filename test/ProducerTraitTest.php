@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +14,7 @@ use React\Promise\FulfilledPromise as FulfilledReactPromise;
 class Producer {
     use \Amp\Internal\Producer {
         emit as public;
-        resolve as public;
+        complete as public;
         fail as public;
     }
 }
@@ -27,155 +28,131 @@ class ProducerTraitTest extends TestCase {
     }
 
     public function testEmit() {
-        $invoked = false;
-        $value = 1;
+        Loop::run(function () {
+            $value = 1;
 
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
+            $promise = $this->producer->emit($value);
 
-        $this->producer->onEmit($callback);
-        $promise = $this->producer->emit($value);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame($value, $this->producer->getCurrent());
 
-        $this->assertInstanceOf(Promise::class, $promise);
-        $this->assertTrue($invoked);
+            $this->assertInstanceOf(Promise::class, $promise);
+        });
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitSuccessfulPromise() {
-        $invoked = false;
-        $value = 1;
-        $promise = new Success($value);
+        Loop::run(function () {
+            $value = 1;
+            $promise = new Success($value);
 
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
+            $promise = $this->producer->emit($promise);
 
-        $this->producer->onEmit($callback);
-        $this->producer->emit($promise);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame($value, $this->producer->getCurrent());
 
-        $this->assertTrue($invoked);
+            $this->assertInstanceOf(Promise::class, $promise);
+        });
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitFailedPromise() {
-        $invoked = false;
-        $exception = new \Exception;
-        $promise = new Failure($exception);
+        Loop::run(function () {
+            $exception = new TestException;
+            $promise = new Failure($exception);
 
-        $callback = function ($emitted) use (&$invoked) {
-            $invoked = true;
-        };
+            $promise = $this->producer->emit($promise);
 
-        $this->producer->onEmit($callback);
-        $this->producer->emit($promise);
+            try {
+                $this->assertTrue(yield $this->producer->advance());
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
+                $this->assertSame($reason, $exception);
+            }
 
-        $this->assertFalse($invoked);
-
-        $this->producer->onResolve(function ($exception) use (&$invoked, &$reason) {
-            $invoked = true;
-            $reason = $exception;
+            $this->assertInstanceOf(Promise::class, $promise);
         });
-
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $reason);
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitPendingPromise() {
-        $invoked = false;
-        $value = 1;
-        $deferred = new Deferred;
+        Loop::run(function () {
+            $value = 1;
+            $deferred = new Deferred;
 
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
+            $this->producer->emit($deferred->promise());
 
-        $this->producer->onEmit($callback);
-        $this->producer->emit($deferred->promise());
+            $deferred->resolve($value);
 
-        $this->assertFalse($invoked);
-
-        $deferred->resolve($value);
-
-        $this->assertTrue($invoked);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame($value, $this->producer->getCurrent());
+        });
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitSuccessfulReactPromise() {
-        $invoked = false;
-        $value = 1;
-        $promise = new FulfilledReactPromise($value);
+        Loop::run(function () {
+            $value = 1;
+            $promise = new FulfilledReactPromise($value);
 
-        $callback = function ($emitted) use (&$invoked, $value) {
-            $invoked = true;
-            $this->assertSame($emitted, $value);
-        };
+            $this->producer->emit($promise);
 
-        $this->producer->onEmit($callback);
-        $this->producer->emit($promise);
-
-        $this->assertTrue($invoked);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame($value, $this->producer->getCurrent());
+        });
     }
 
     /**
      * @depends testEmit
      */
     public function testEmitPendingPromiseThenNonPromise() {
-        $invoked = false;
-        $deferred = new Deferred;
+        Loop::run(function () {
+            $deferred = new Deferred;
 
-        $callback = function ($emitted) use (&$invoked, &$result) {
-            $invoked = true;
-            $result = $emitted;
-        };
+            $this->producer->emit($deferred->promise());
 
-        $this->producer->onEmit($callback);
-        $this->producer->emit($deferred->promise());
+            $this->producer->emit(2);
 
-        $this->assertFalse($invoked);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame(2, $this->producer->getCurrent());
 
-        $this->producer->emit(2);
-        $this->assertTrue($invoked);
-        $this->assertSame(2, $result);
+            $deferred->resolve(1);
 
-        $deferred->resolve(1);
-        $this->assertSame(1, $result);
+            $this->assertTrue(yield $this->producer->advance());
+            $this->assertSame(1, $this->producer->getCurrent());
+        });
     }
 
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage Streams cannot emit values after calling resolve
+     * @expectedExceptionMessage Iterators cannot emit values after calling complete
      */
-    public function testEmitAfterResolve() {
-        $this->producer->resolve();
+    public function testEmitAfterComplete() {
+        $this->producer->complete();
         $this->producer->emit(1);
     }
 
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage The stream was resolved before the promise result could be emitted
+     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
-    public function testEmitPendingPromiseThenResolve() {
+    public function testEmitPendingPromiseThenComplete() {
         $invoked = false;
         $deferred = new Deferred;
 
         $promise = $this->producer->emit($deferred->promise());
 
-        $this->producer->resolve();
+        $this->producer->complete();
         $deferred->resolve();
 
         $promise->onResolve(function ($exception) use (&$invoked, &$reason) {
@@ -190,7 +167,7 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      * @expectedException \Error
-     * @expectedExceptionMessage The stream was resolved before the promise result could be emitted
+     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
     public function testEmitPendingPromiseThenFail() {
         $invoked = false;
@@ -198,7 +175,7 @@ class ProducerTraitTest extends TestCase {
 
         $promise = $this->producer->emit($deferred->promise());
 
-        $this->producer->resolve();
+        $this->producer->complete();
         $deferred->fail(new \Exception);
 
         $promise->onResolve(function ($exception) use (&$invoked, &$reason) {
@@ -208,73 +185,5 @@ class ProducerTraitTest extends TestCase {
 
         $this->assertTrue($invoked);
         throw $reason;
-    }
-
-    public function testSubscriberThrows() {
-        $exception = new \Exception;
-
-        try {
-            Loop::run(function () use ($exception) {
-                $this->producer->onEmit(function () use ($exception) {
-                    throw $exception;
-                });
-
-                $this->producer->emit(1);
-            });
-        } catch (\Exception $caught) {
-            $this->assertSame($exception, $caught);
-        }
-    }
-
-    public function testSubscriberReturnsSuccessfulPromise() {
-        $invoked = false;
-        $value = 1;
-        $promise = new Success($value);
-
-        $this->producer->onEmit(function () use ($promise) {
-            return $promise;
-        });
-
-        $promise = $this->producer->emit(1);
-        $promise->onResolve(function () use (&$invoked) {
-            $invoked = true;
-        });
-
-        $this->assertTrue($invoked);
-    }
-
-    public function testSubscriberReturnsFailedPromise() {
-        $exception = new \Exception;
-        $promise = new Failure($exception);
-
-        try {
-            Loop::run(function () use ($exception, $promise) {
-                $this->producer->onEmit(function () use ($promise) {
-                    return $promise;
-                });
-
-                $promise = $this->producer->emit(1);
-                $promise->onResolve(function () use (&$invoked) {
-                    $invoked = true;
-                });
-
-                $this->assertTrue($invoked);
-            });
-        } catch (\Exception $caught) {
-            $this->assertSame($exception, $caught);
-        }
-    }
-
-    public function testSubscriberReturnsGenerator() {
-        $invoked = false;
-        $this->producer->onEmit(function ($value) use (&$invoked) {
-            $invoked = true;
-            return $value;
-            yield; // Unreachable, but makes function a generator.
-        });
-
-        $this->producer->emit(1);
-
-        $this->assertTrue($invoked);
     }
 }

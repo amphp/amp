@@ -84,16 +84,16 @@ trait Placeholder {
                 $trace = formatStacktrace($this->resolutionTrace);
                 $message .= ". Previous resolution trace:\n\n{$trace}\n\n";
             } else {
-                $message .= ", define const AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION = true and enable assertions for a stacktrace of the previous resolution.";
+                $message .= ", define const AMP_DEBUG = true and enable assertions for a stacktrace of the previous resolution.";
             }
 
             throw new \Error($message);
         }
 
-        assert((function () {
-            if (\defined("AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION") && AMP_DEBUG_PLACEHOLDER_DOUBLE_RESOLUTION) {
-                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-                array_shift($trace); // remove current closure
+        \assert((function () {
+            if (\defined("AMP_DEBUG") && \AMP_DEBUG) {
+                $trace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+                \array_shift($trace); // remove current closure
                 $this->resolutionTrace = $trace;
             }
 

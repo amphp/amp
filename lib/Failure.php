@@ -5,9 +5,9 @@ namespace Amp;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Creates a failed stream (which is also a promise) using the given exception.
+ * Creates a failed promise using the given exception.
  */
-final class Failure implements Stream {
+final class Failure implements Promise {
     /** @var \Throwable $exception */
     private $exception;
 
@@ -41,11 +41,5 @@ final class Failure implements Stream {
                 throw $exception;
             });
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function onEmit(callable $onEmit) {
     }
 }

@@ -2,53 +2,95 @@
 
 namespace Amp\Internal;
 
-use Amp\Coroutine;
 use Amp\Deferred;
-use Amp\Loop;
+use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \Amp\Stream.
+ * Trait used by Iterator implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Amp\Iterator.
  * Note that it is the responsibility of the user of this trait to ensure that listeners have a chance to listen first
  * before emitting values.
  *
  * @internal
  */
 trait Producer {
-    use Placeholder {
-        resolve as complete;
-    }
+    /** @var \Amp\Promise|null */
+    private $complete;
 
-    /** @var callable[] */
-    private $listeners = [];
+    /** @var mixed[] */
+    private $values = [];
+
+    /** @var \Amp\Deferred[] */
+    private $backPressure = [];
+
+    /** @var int */
+    private $position = -1;
+
+    /** @var \Amp\Deferred|null */
+    private $waiting;
+
+    /** @var null|array */
+    private $resolutionTrace;
 
     /**
-     * @param callable $onEmit
+     * {@inheritdoc}
      */
-    public function onEmit(callable $onEmit) {
-        if ($this->resolved) {
-            return;
+    public function advance(): Promise {
+        if ($this->waiting !== null) {
+            throw new \Error("The prior promise returned must resolve before invoking this method again");
         }
 
-        $this->listeners[] = $onEmit;
+        if (isset($this->backPressure[$this->position])) {
+            $future = $this->backPressure[$this->position];
+            unset($this->values[$this->position], $this->backPressure[$this->position]);
+            $future->resolve();
+        }
+
+        ++$this->position;
+
+        if (\array_key_exists($this->position, $this->values)) {
+            return new Success(true);
+        }
+
+        if ($this->complete) {
+            return $this->complete;
+        }
+
+        $this->waiting = new Deferred;
+        return $this->waiting->promise();
     }
 
     /**
-     * Emits a value from the stream. The returned promise is resolved with the emitted value once all listeners
+     * {@inheritdoc}
+     */
+    public function getCurrent() {
+        if (empty($this->values) && $this->complete) {
+            throw new \Error("The iterator has completed");
+        }
+
+        if (!\array_key_exists($this->position, $this->values)) {
+            throw new \Error("Promise returned from advance() must resolve before calling this method");
+        }
+
+        return $this->values[$this->position];
+    }
+
+    /**
+     * Emits a value from the iterator. The returned promise is resolved with the emitted value once all listeners
      * have been invoked.
      *
      * @param mixed $value
      *
      * @return \Amp\Promise
      *
-     * @throws \Error If the stream has resolved.
+     * @throws \Error If the iterator has completed.
      */
     private function emit($value): Promise {
-        if ($this->resolved) {
-            throw new \Error("Streams cannot emit values after calling resolve");
+        if ($this->complete) {
+            throw new \Error("Iterators cannot emit values after calling complete");
         }
 
         if ($value instanceof ReactPromise) {
@@ -58,9 +100,9 @@ trait Producer {
         if ($value instanceof Promise) {
             $deferred = new Deferred;
             $value->onResolve(function ($e, $v) use ($deferred) {
-                if ($this->resolved) {
+                if ($this->complete) {
                     $deferred->fail(
-                        new \Error("The stream was resolved before the promise result could be emitted")
+                        new \Error("The iterator was completed before the promise result could be emitted")
                     );
                     return;
                 }
@@ -77,62 +119,63 @@ trait Producer {
             return $deferred->promise();
         }
 
-        $promises = [];
+        $this->values[] = $value;
+        $this->backPressure[] = $pressure = new Deferred;
 
-        foreach ($this->listeners as $onEmit) {
-            try {
-                $result = $onEmit($value);
-                if ($result === null) {
-                    continue;
-                }
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                } elseif ($result instanceof ReactPromise) {
-                    $result = Promise\adapt($result);
-                }
-                if ($result instanceof Promise) {
-                    $promises[] = $result;
-                }
-            } catch (\Throwable $e) {
-                Loop::defer(function () use ($e) {
-                    throw $e;
-                });
-            }
+        if ($this->waiting !== null) {
+            $waiting = $this->waiting;
+            $this->waiting = null;
+            $waiting->resolve(true);
         }
 
-        if (!$promises) {
-            return new Success($value);
-        }
-
-        $deferred = new Deferred;
-        $count = \count($promises);
-        $f = static function ($e) use ($deferred, $value, &$count) {
-            if ($e) {
-                Loop::defer(function () use ($e) {
-                    throw $e;
-                });
-            }
-            if (!--$count) {
-                $deferred->resolve($value);
-            }
-        };
-
-        foreach ($promises as $promise) {
-            $promise->onResolve($f);
-        }
-
-        return $deferred->promise();
+        return $pressure->promise();
     }
 
     /**
-     * Resolves the stream with the given value.
+     * Completes the iterator.
      *
-     * @param mixed $value
-     *
-     * @throws \Error If the stream has already been resolved.
+     * @throws \Error If the iterator has already been completed.
      */
-    private function resolve($value = null) {
-        $this->complete($value);
-        $this->listeners = [];
+    private function complete() {
+        if ($this->complete) {
+            $message = "Iterator has already been completed";
+
+            if (isset($this->resolutionTrace)) {
+                $trace = formatStacktrace($this->resolutionTrace);
+                $message .= ". Previous completion trace:\n\n{$trace}\n\n";
+            } else {
+                $message .= ", define const AMP_DEBUG = true and enable assertions for a stacktrace of the previous completion.";
+            }
+
+            throw new \Error($message);
+        }
+
+        \assert((function () {
+            if (\defined("AMP_DEBUG") && \AMP_DEBUG) {
+                $trace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+                \array_shift($trace); // remove current closure
+                $this->resolutionTrace = $trace;
+            }
+
+            return true;
+        })());
+
+        $this->complete = new Success(false);
+
+        if ($this->waiting !== null) {
+            $waiting = $this->waiting;
+            $this->waiting = null;
+            $waiting->resolve($this->complete);
+        }
+    }
+
+    private function fail(\Throwable $exception) {
+        $this->complete = new Failure($exception);
+
+        if ($this->waiting !== null) {
+            $waiting = $this->waiting;
+            $this->waiting = null;
+            $waiting->resolve($this->complete);
+        }
     }
 }

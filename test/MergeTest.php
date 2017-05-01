@@ -2,9 +2,11 @@
 
 namespace Amp\Test;
 
+use Amp\Iterator;
 use Amp\Loop;
+use Amp\Pause;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use Amp\Stream;
 
 class MergeTest extends \PHPUnit\Framework\TestCase {
     public function getArrays() {
@@ -18,51 +20,79 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     /**
      * @dataProvider getArrays
      *
-     * @param array $streams
+     * @param array $iterators
      * @param array $expected
      */
-    public function testMerge(array $streams, array $expected) {
-        $streams = \array_map(function (array $stream): Stream {
-            return Stream\fromIterable($stream);
-        }, $streams);
+    public function testMerge(array $iterators, array $expected) {
+        Loop::run(function () use ($iterators, $expected) {
+            $iterators = \array_map(function (array $iterator): Iterator {
+                return Iterator\fromIterable($iterator);
+            }, $iterators);
 
-        $stream = Stream\merge($streams);
+            $iterator = Iterator\merge($iterators);
 
-        Stream\map($stream, function ($value) use ($expected) {
-            static $i = 0;
-            $this->assertSame($expected[$i++], $value);
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            }
         });
-
-        Loop::run();
     }
 
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedStream() {
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, $exception) {
+    public function testMergeWithDelayedEmits() {
+        Loop::run(function () {
+            $iterators = [];
+            $values1 = [new Pause(10, 1), new Pause(50, 2), new Pause(70, 3)];
+            $values2 = [new Pause(20, 4), new Pause(40, 5), new Pause(60, 6)];
+            $expected = [1, 4, 5, 2, 6, 3];
+
+            $iterators[] = new Producer(function (callable $emit) use ($values1) {
+                foreach ($values1 as $value) {
+                    yield $emit($value);
+                }
+            });
+
+            $iterators[] = new Producer(function (callable $emit) use ($values2) {
+                foreach ($values2 as $value) {
+                    yield $emit($value);
+                }
+            });
+
+            $iterator = Iterator\merge($iterators);
+
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            }
+        });
+    }
+
+    /**
+     * @depends testMerge
+     */
+    public function testMergeWithFailedIterator() {
+        Loop::run(function () {
+            $exception = new TestException;
             $producer = new Producer(function (callable $emit) use ($exception) {
                 yield $emit(1); // Emit once before failing.
                 throw $exception;
             });
 
-            $stream = Stream\merge([$producer, Stream\fromIterable(\range(1, 5))]);
+            $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            try {
+                while (yield $iterator->advance());
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
+                $this->assertSame($exception, $reason);
+            }
         });
-
-        $this->assertSame($exception, $reason);
     }
 
     /**
      * @expectedException \TypeError
      */
-    public function testNonStream() {
-        Stream\merge([1]);
+    public function testNonIterator() {
+        Iterator\merge([1]);
     }
 }

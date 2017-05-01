@@ -3,9 +3,10 @@
 namespace Amp\Test;
 
 use Amp\Emitter;
+use Amp\Iterator;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use Amp\Stream;
 
 class MapTest extends \PHPUnit\Framework\TestCase {
     public function testNoValuesEmitted() {
@@ -13,141 +14,88 @@ class MapTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
-            $stream = Stream\map($emitter->stream(), function ($value) use (&$invoked) {
+            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
-            $this->assertInstanceOf(Stream::class, $stream);
+            $this->assertInstanceOf(Iterator::class, $iterator);
 
-            $emitter->resolve();
+            $emitter->complete();
         });
 
         $this->assertFalse($invoked);
     }
 
     public function testValuesEmitted() {
-        $count = 0;
-        $values = [1, 2, 3];
-        $final = 4;
-        $results = [];
-        Loop::run(function () use (&$results, &$result, &$count, $values, $final) {
-            $producer = new Producer(function (callable $emit) use ($values, $final) {
+        Loop::run(function () {
+            $count = 0;
+            $values = [1, 2, 3];
+            $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
-                return $final;
             });
 
-            $stream = Stream\map($producer, function ($value) use (&$count) {
+            $iterator = Iterator\map($producer, function ($value) use (&$count) {
                 ++$count;
                 return $value + 1;
-            }, function ($value) use (&$invoked) {
-                return $value + 1;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
+            while (yield $iterator->advance()) {
+                $this->assertSame(\array_shift($values) + 1, $iterator->getCurrent());
+            }
 
-            $stream->onResolve(function ($exception, $value) use (&$result) {
-                $result = $value;
-            });
+            $this->assertSame(3, $count);
         });
-
-        $this->assertSame(\count($values), $count);
-        $this->assertSame(\array_map(function ($value) { return $value + 1; }, $values), $results);
-        $this->assertSame($final + 1, $result);
     }
 
     /**
      * @depends testValuesEmitted
      */
     public function testOnNextCallbackThrows() {
-        $values = [1, 2, 3];
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, $values, $exception) {
+        Loop::run(function () {
+            $values = [1, 2, 3];
+            $exception = new TestException;
+
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
 
-            $stream = Stream\map($producer, function () use ($exception) {
+            $iterator = Iterator\map($producer, function () use ($exception) {
                 throw $exception;
             });
 
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
+            try {
+                yield $iterator->advance();
+                $this->fail("The exception thrown from the map callback should be thrown from advance()");
+            } catch (TestException $reason) {
+                $this->assertSame($reason, $exception);
+            }
         });
-
-        $this->assertSame($exception, $reason);
     }
 
-    /**
-     * @depends testValuesEmitted
-     */
-    public function testOnCompleteCallbackThrows() {
-        $count = 0;
-        $values = [1, 2, 3];
-        $results = [];
-        $exception = new \Exception;
-        Loop::run(function () use (&$reason, &$results, &$count, $values, $exception) {
-            $producer = new Producer(function (callable $emit) use ($values) {
-                foreach ($values as $value) {
-                    yield $emit($value);
-                }
-            });
-
-            $stream = Stream\map($producer, function ($value) use (&$count) {
-                ++$count;
-                return $value + 1;
-            }, function ($value) use ($exception) {
-                throw $exception;
-            });
-
-            $stream->onEmit(function ($value) use (&$results) {
-                $results[] = $value;
-            });
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $stream->onResolve($callback);
-        });
-
-        $this->assertSame(\count($values), $count);
-        $this->assertSame(\array_map(function ($value) { return $value + 1; }, $values), $results);
-        $this->assertSame($exception, $reason);
-    }
-
-    public function testStreamFails() {
-        $invoked = false;
-        $exception = new \Exception;
-        Loop::run(function () use (&$invoked, &$reason, &$exception) {
+    public function testIteratorFails() {
+        Loop::run(function () {
+            $invoked = false;
+            $exception = new TestException;
             $emitter = new Emitter;
 
-            $stream = Stream\map($emitter->stream(), function ($value) use (&$invoked) {
+            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
             $emitter->fail($exception);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
+            try {
+                yield $iterator->advance();
+                $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            } catch (TestException $reason) {
+                $this->assertSame($reason, $exception);
+            }
 
-            $stream->onResolve($callback);
+            $this->assertFalse($invoked);
         });
-
-        $this->assertFalse($invoked);
-        $this->assertSame($exception, $reason);
     }
 }

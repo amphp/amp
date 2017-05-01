@@ -483,28 +483,27 @@ namespace Amp\Promise {
     }
 }
 
-namespace Amp\Stream {
-    use Amp\Coroutine;
+namespace Amp\Iterator {
     use Amp\Emitter;
+    use Amp\Iterator;
     use Amp\Pause;
     use Amp\Producer;
     use Amp\Promise;
-    use Amp\Stream;
-    use Amp\StreamIterator;
+    use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
 
     /**
-     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
-     * promise fails, the stream will fail with the same reason.
+     * Creates an iterator from the given iterable, emitting the each value. The iterable may contain promises. If any
+     * promise fails, the iterator will fail with the same reason.
      *
      * @param array|\Traversable $iterable Elements to emit.
      * @param int $delay Delay between element emissions in milliseconds.
      *
-     * @return \Amp\Stream
+     * @return \Amp\Iterator
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
-    function fromIterable(/* iterable */ $iterable, int $delay = 0): Stream {
+    function fromIterable(/* iterable */ $iterable, int $delay = 0): Iterator {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw createTypeError(["array", "Traversable"], $iterable);
         }
@@ -521,71 +520,66 @@ namespace Amp\Stream {
     }
 
     /**
-     * @param \Amp\Stream $stream
+     * @param \Amp\Iterator $iterator
      * @param callable (mixed $value): mixed $onEmit
-     * @param callable (mixed $value): mixed|null $onResolve
      *
-     * @return \Amp\Stream
+     * @return \Amp\Iterator
      */
-    function map(Stream $stream, callable $onEmit, callable $onResolve = null): Stream {
-        $streamIterator = new StreamIterator($stream);
-        return new Producer(function (callable $emit) use ($streamIterator, $onEmit, $onResolve) {
-            while (yield $streamIterator->advance()) {
-                yield $emit($onEmit($streamIterator->getCurrent()));
+    function map(Iterator $iterator, callable $onEmit): Iterator {
+        return new Producer(function (callable $emit) use ($iterator, $onEmit) {
+            while (yield $iterator->advance()) {
+                yield $emit($onEmit($iterator->getCurrent()));
             }
-            if ($onResolve === null) {
-                return $streamIterator->getResult();
-            }
-            return $onResolve($streamIterator->getResult());
         });
     }
 
     /**
-     * @param \Amp\Stream $stream
+     * @param \Amp\Iterator $iterator
      * @param callable (mixed $value): bool $filter
      *
-     * @return \Amp\Stream
+     * @return \Amp\Iterator
      */
-    function filter(Stream $stream, callable $filter): Stream {
-        $streamIterator = new StreamIterator($stream);
-        return new Producer(function (callable $emit) use ($streamIterator, $filter) {
-            while (yield $streamIterator->advance()) {
-                if ($filter($streamIterator->getCurrent())) {
-                    yield $emit($streamIterator->getCurrent());
+    function filter(Iterator $iterator, callable $filter): Iterator {
+        return new Producer(function (callable $emit) use ($iterator, $filter) {
+            while (yield $iterator->advance()) {
+                if ($filter($iterator->getCurrent())) {
+                    yield $emit($iterator->getCurrent());
                 }
             }
-            return $streamIterator->getResult();
         });
     }
 
     /**
-     * Creates a stream that emits values emitted from any stream in the array of streams.
+     * Creates an iterator that emits values emitted from any iterator in the array of iterators.
      *
-     * @param \Amp\Stream[] $streams
+     * @param \Amp\Iterator[] $iterators
      *
-     * @return \Amp\Stream
+     * @return \Amp\Iterator
      */
-    function merge(array $streams): Stream {
+    function merge(array $iterators): Iterator {
         $emitter = new Emitter;
-        $result = $emitter->stream();
+        $result = $emitter->iterate();
 
-        foreach ($streams as $stream) {
-            if (!$stream instanceof Stream) {
-                throw createTypeError([Stream::class], $stream);
+        $coroutine = coroutine(function (Iterator $iterator) use (&$emitter) {
+            while ((yield $iterator->advance()) && $emitter !== null) {
+                yield $emitter->emit($iterator->getCurrent());
             }
-            $stream->onEmit(function ($value) use (&$emitter) {
-                if ($emitter !== null) {
-                    return $emitter->emit($value);
-                }
-            });
+        });
+
+        $coroutines = [];
+        foreach ($iterators as $iterator) {
+            if (!$iterator instanceof Iterator) {
+                throw createTypeError([Iterator::class], $iterator);
+            }
+            $coroutines[] = $coroutine($iterator);
         }
 
-        Promise\all($streams)->onResolve(function ($exception, array $values = null) use (&$emitter) {
+        Promise\all($coroutines)->onResolve(function ($exception) use (&$emitter) {
             if ($exception) {
                 $emitter->fail($exception);
                 $emitter = null;
             } else {
-                $emitter->resolve($values);
+                $emitter->complete();
             }
         });
 
@@ -593,28 +587,33 @@ namespace Amp\Stream {
     }
 
     /**
-     * Concatenates the given streams into a single stream, emitting values from a single stream at a time. The
-     * prior stream must complete before values are emitted from any subsequent stream. Streams are concatenated
+     * Concatenates the given iterators into a single iterator, emitting values from a single iterator at a time. The
+     * prior iterator must complete before values are emitted from any subsequent iterators. Iterators are concatenated
      * in the order given (iteration order of the array).
      *
-     * @param array $streams
+     * @param array $iterators
      *
-     * @return \Amp\Stream
+     * @return \Amp\Iterator
      */
-    function concat(array $streams): Stream {
-        foreach ($streams as $stream) {
-            if (!$stream instanceof Stream) {
-                throw createTypeError([Stream::class], $stream);
+    function concat(array $iterators): Iterator {
+        foreach ($iterators as $iterator) {
+            if (!$iterator instanceof Iterator) {
+                throw createTypeError([Iterator::class], $iterator);
             }
         }
 
         $emitter = new Emitter;
-        $subscriptions = [];
         $previous = [];
         $promise = Promise\all($previous);
 
-        foreach ($streams as $stream) {
-            $generator = function ($value) use ($emitter, $promise) {
+        $coroutine = coroutine(function (Iterator $iterator, callable $emit) {
+            while (yield $iterator->advance()) {
+                yield $emit($iterator->getCurrent());
+            }
+        });
+
+        foreach ($iterators as $iterator) {
+            $emit = coroutine(function ($value) use ($emitter, $promise) {
                 static $pending = true, $failed = false;
 
                 if ($failed) {
@@ -627,28 +626,25 @@ namespace Amp\Stream {
                         $pending = false;
                     } catch (\Throwable $exception) {
                         $failed = true;
-                        return; // Prior stream failed.
+                        return; // Prior iterator failed.
                     }
                 }
 
                 yield $emitter->emit($value);
-            };
-            $subscriptions[] = $stream->onEmit(function ($value) use ($generator) {
-                return new Coroutine($generator($value));
             });
-            $previous[] = $stream;
+            $previous[] = $coroutine($iterator, $emit);
             $promise = Promise\all($previous);
         }
 
-        $promise->onResolve(function ($exception, array $values = null) use ($emitter) {
+        $promise->onResolve(function ($exception) use ($emitter) {
             if ($exception) {
                 $emitter->fail($exception);
                 return;
             }
 
-            $emitter->resolve($values);
+            $emitter->complete();
         });
 
-        return $emitter->stream();
+        return $emitter->iterate();
     }
 }
