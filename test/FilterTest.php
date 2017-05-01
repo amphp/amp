@@ -14,7 +14,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
-            $iterator = Iterator\filter($emitter->getIterator(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
@@ -81,7 +81,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase {
             $exception = new TestException;
             $emitter = new Emitter;
 
-            $iterator = Iterator\filter($emitter->getIterator(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 

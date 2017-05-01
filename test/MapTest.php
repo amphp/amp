@@ -14,7 +14,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
-            $iterator = Iterator\map($emitter->getIterator(), function ($value) use (&$invoked) {
+            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
@@ -82,7 +82,7 @@ class MapTest extends \PHPUnit\Framework\TestCase {
             $exception = new TestException;
             $emitter = new Emitter;
 
-            $iterator = Iterator\map($emitter->getIterator(), function ($value) use (&$invoked) {
+            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 

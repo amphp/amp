@@ -12,7 +12,7 @@ use Amp\Promise;
 Loop::run(function () {
     try {
         $emitter = new Emitter;
-        $iterator = $emitter->getIterator();
+        $iterator = $emitter->iterate();
 
         $generator = function (Emitter $emitter) {
             yield $emitter->emit(new Pause(500, 1));
