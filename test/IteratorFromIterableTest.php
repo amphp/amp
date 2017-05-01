@@ -87,13 +87,13 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
 
     /**
      * @expectedException \TypeError
-     * @dataProvider provideInvalidStreamArguments
+     * @dataProvider provideInvalidIteratorArguments
      */
     public function testInvalid($arg) {
         Iterator\fromIterable($arg);
     }
 
-    public function provideInvalidStreamArguments() {
+    public function provideInvalidIteratorArguments() {
         return [
             [null],
             [new \stdClass],

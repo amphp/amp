@@ -70,7 +70,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedStream() {
+    public function testMergeWithFailedIterator() {
         Loop::run(function () {
             $exception = new TestException;
             $producer = new Producer(function (callable $emit) use ($exception) {
@@ -92,7 +92,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonStream() {
+    public function testNonIterator() {
         Iterator\merge([1]);
     }
 }

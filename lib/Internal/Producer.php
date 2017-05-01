@@ -9,8 +9,8 @@ use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Trait used by Stream implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \Amp\Stream.
+ * Trait used by Iterator implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing \Amp\Iterator.
  * Note that it is the responsibility of the user of this trait to ensure that listeners have a chance to listen first
  * before emitting values.
  *
