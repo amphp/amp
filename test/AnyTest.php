@@ -57,7 +57,7 @@ class AnyTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
 
-    public function testPendingAwatiablesArray() {
+    public function testPendingPromiseArray() {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),

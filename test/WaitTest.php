@@ -6,6 +6,7 @@ use Amp\Deferred;
 use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +58,18 @@ class WaitTest extends TestCase {
      * @expectedExceptionMessage Loop stopped without resolving the promise
      */
     public function testPromiseWithNoResolutionPathThrowsException() {
+        Promise\wait((new Deferred)->promise());
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage Loop exceptionally stopped without resolving the promise
+     */
+    public function testPromiseWithErrorBeforeResolutionThrowsException() {
+        Loop::defer(function () {
+            throw new TestException;
+        });
+
         Promise\wait((new Deferred)->promise());
     }
 

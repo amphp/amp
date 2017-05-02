@@ -141,8 +141,10 @@ trait Producer {
             $message = "Iterator has already been completed";
 
             if (isset($this->resolutionTrace)) {
+                // @codeCoverageIgnoreStart
                 $trace = formatStacktrace($this->resolutionTrace);
                 $message .= ". Previous completion trace:\n\n{$trace}\n\n";
+                // @codeCoverageIgnoreEnd
             } else {
                 $message .= ", define const AMP_DEBUG = true and enable assertions for a stacktrace of the previous completion.";
             }
@@ -152,9 +154,11 @@ trait Producer {
 
         \assert((function () {
             if (\defined("AMP_DEBUG") && \AMP_DEBUG) {
+                // @codeCoverageIgnoreStart
                 $trace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
                 \array_shift($trace); // remove current closure
                 $this->resolutionTrace = $trace;
+                // @codeCoverageIgnoreEnd
             }
 
             return true;

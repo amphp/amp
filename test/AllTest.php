@@ -6,8 +6,10 @@ use Amp\Delayed;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise;
 
-class AllTest extends \PHPUnit\Framework\TestCase {
+class AllTest extends TestCase {
     public function testEmptyArray() {
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
@@ -30,7 +32,7 @@ class AllTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame([1, 2, 3], $result);
     }
 
-    public function testPendingAwatiablesArray() {
+    public function testPendingPromiseArray() {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),
@@ -48,13 +50,30 @@ class AllTest extends \PHPUnit\Framework\TestCase {
         $this->assertEquals([1, 2, 3], $result);
     }
 
+    public function testReactPromiseArray() {
+        Loop::run(function () use (&$result) {
+            $promises = [
+                new Delayed(20, 1),
+                new FulfilledPromise(2),
+            ];
+
+            $callback = function ($exception, $value) use (&$result) {
+                $result = $value;
+            };
+
+            Promise\all($promises)->onResolve($callback);
+        });
+
+        $this->assertEquals([1, 2], $result);
+    }
+
     public function testArrayKeysPreserved() {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
         Loop::run(function () use (&$result) {
             $promises = [
-                'one'   => new Delayed(20, 1),
-                'two'   => new Delayed(30, 2),
+                'one' => new Delayed(20, 1),
+                'two' => new Delayed(30, 2),
                 'three' => new Delayed(10, 3),
             ];
 

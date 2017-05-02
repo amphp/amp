@@ -9,6 +9,7 @@ namespace Amp\Internal;
  *
  * @return string Formatted stacktrace.
  *
+ * @codeCoverageIgnore
  * @internal
  */
 function formatStacktrace(array $trace): string {

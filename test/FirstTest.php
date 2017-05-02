@@ -8,6 +8,7 @@ use Amp\Loop;
 use Amp\MultiReasonException;
 use Amp\Promise;
 use Amp\Success;
+use React\Promise\FulfilledPromise;
 
 class FirstTest extends \PHPUnit\Framework\TestCase {
     /**
@@ -57,7 +58,19 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(3, $result);
     }
 
-    public function testPendingAwatiablesArray() {
+    public function testReactPromiseArray() {
+        $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
+
+        $callback = function ($exception, $value) use (&$result) {
+            $result = $value;
+        };
+
+        Promise\first($promises)->onResolve($callback);
+
+        $this->assertSame(1, $result);
+    }
+
+    public function testPendingPromiseArray() {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),

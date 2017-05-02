@@ -8,8 +8,10 @@ use Amp\Loop;
 use Amp\MultiReasonException;
 use Amp\Promise;
 use Amp\Success;
+use PHPUnit\Framework\TestCase;
+use React\Promise\FulfilledPromise;
 
-class SomeTest extends \PHPUnit\Framework\TestCase {
+class SomeTest extends TestCase {
     public function testEmptyArray() {
         $this->assertSame([[], []], Promise\wait(Promise\some([], 0)));
     }
@@ -32,6 +34,18 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
 
     public function testSuccessfulPromisesArray() {
         $promises = [new Success(1), new Success(2), new Success(3)];
+
+        $callback = function ($exception, $value) use (&$result) {
+            $result = $value;
+        };
+
+        Promise\some($promises)->onResolve($callback);
+
+        $this->assertSame([[], [1, 2, 3]], $result);
+    }
+
+    public function testReactPromiseArray() {
+        $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
@@ -92,8 +106,8 @@ class SomeTest extends \PHPUnit\Framework\TestCase {
 
         Loop::run(function () use (&$result) {
             $promises = [
-                'one'   => new Delayed(20, 1),
-                'two'   => new Delayed(30, 2),
+                'one' => new Delayed(20, 1),
+                'two' => new Delayed(30, 2),
                 'three' => new Delayed(10, 3),
             ];
 
