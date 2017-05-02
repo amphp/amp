@@ -1,14 +1,12 @@
 # Promises
 
-@TODO: Fix generator references once coroutines docs are finished.
-
 The basic unit of concurrency in Amp applications is the `Amp\Promise`. These objects should be thought of as placeholders for values or tasks that aren't yet complete. By using placeholders we're able to reason about the results of concurrent operations as if they were already complete variables.
 
 > **NOTE**
 >
 > Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators to "synchronize" concurrent task execution.
 >
-> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\adapt` can be used to adapt any object having a `then` or `done` method.
+> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\Promise\adapt` can be used to adapt any object having a `then` or `done` method.
 
 ## Promise Consumption
 
@@ -18,14 +16,13 @@ interface Promise {
 }
 ```
 
-In its simplest form the `Amp\Promise` aggregates callbacks for dealing with computational results once they eventually resolve. While most code will not interact with this API directly thanks to the magic of [Generators](#generators), let's take a quick look at the one simple API method exposed on `Amp\Promise` implementations:
+In its simplest form the `Amp\Promise` aggregates callbacks for dealing with results once they eventually resolve. While most code will not interact with this API directly thanks to [Generators](#generators), let's take a quick look at the one simple API method exposed on `Amp\Promise` implementations:
 
+| Method      | Callback Signature                                        |
+| ----------- | ----------------------------------------------------------|
+| `onResolve` | `function ($error = null, $result = null)` |
 
-| Method    | Callback Signature                                        |
-| --------- | ----------------------------------------------------------|
-| onResolve | `function ($error = null, $result = null)` |
-
-`Amp\Promise::onResolve()` accepts an error-first callback. This callback is responsible for reacting to the eventual result of the computation represented by the promise placeholder. For example:
+`Amp\Promise::onResolve()` accepts an error-first callback. This callback is responsible for reacting to the eventual result represented by the promise placeholder. For example:
 
 ```php
 <?php
@@ -46,7 +43,7 @@ $promise->onResolve(function (Throwable $error = null, $result = null) {
 });
 ```
 
-Those familiar with JavaScript code generally reflect that the above interface quickly devolves into ["callback hell"](http://callbackhell.com/), and they're correct. We will shortly see how to avoid this problem in the [Generators](#generators) section.
+Those familiar with JavaScript code generally reflect that the above interface quickly devolves into ["callback hell"](http://callbackhell.com/), and they're correct. We will shortly see how to avoid this problem in the [coroutines](../coroutines/README.md) section.
 
 ## Promise Creation
 
@@ -92,10 +89,10 @@ function asyncMultiply($x, $y) {
 }
 
 $promise = asyncMultiply(6, 7);
-$result = Amp\wait($promise);
+$result = Amp\Promise\wait($promise);
 var_dump($result); // int(42)
 ```
 
 ### Success and Failure
 
-Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O, but the specific implementation being always having directly the result available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct a immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
+Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct a immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
