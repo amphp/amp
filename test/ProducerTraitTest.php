@@ -186,4 +186,30 @@ class ProducerTraitTest extends TestCase {
         $this->assertTrue($invoked);
         throw $reason;
     }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The prior promise returned must resolve before invoking this method again
+     */
+    public function testDoubleAdvance() {
+        $this->producer->advance();
+        $this->producer->advance();
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage Promise returned from advance() must resolve before calling this method
+     */
+    public function testGetCurrentBeforeAdvance() {
+        $this->producer->getCurrent();
+    }
+
+    /**
+     * @expectedException \Error
+     * @expectedExceptionMessage Iterator has already been completed
+     */
+    public function testDoubleComplete() {
+        $this->producer->complete();
+        $this->producer->complete();
+    }
 }
