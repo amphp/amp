@@ -1396,9 +1396,11 @@ abstract class DriverTest extends TestCase {
             $this->loop->disable($watcher);
         });
 
-        $this->loop->delay(100, function () use ($watcher1, $watcher3) {
-            $this->loop->enable($watcher1);
-            $this->loop->enable($watcher3);
+        $this->loop->defer(function () {
+            $this->loop->delay(200, function () use ($watcher1, $watcher3) {
+                $this->loop->enable($watcher1);
+                $this->loop->enable($watcher3);
+            });
         });
 
         $this->loop->run();
