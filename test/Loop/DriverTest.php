@@ -577,91 +577,95 @@ abstract class DriverTest extends TestCase {
     public function testExecutionOrderGuarantees() {
         $this->expectOutputString("01 02 03 04 " . str_repeat("05 ", 8) . "10 11 12 " . str_repeat("13 ", 4) . "20 " . str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) use (&$ticks) {
-            $f = function () use ($loop) {
-                $args = func_get_args();
-                return function ($watcherId) use ($loop, &$args) {
-                    if (!$args) {
-                        $this->fail("Watcher callback called too often");
-                    }
-                    $loop->cancel($watcherId);
-                    echo array_shift($args) . array_shift($args), " ";
+            // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
+            // relative instead of last tick relative before first tick.
+            $loop->defer(function () use ($loop, &$ticks) {
+                $f = function () use ($loop) {
+                    $args = func_get_args();
+                    return function ($watcherId) use ($loop, &$args) {
+                        if (!$args) {
+                            $this->fail("Watcher callback called too often");
+                        }
+                        $loop->cancel($watcherId);
+                        echo array_shift($args) . array_shift($args), " ";
+                    };
                 };
-            };
 
-            $loop->onWritable(STDOUT, $f(0, 5));
-            $writ1 = $loop->onWritable(STDOUT, $f(0, 5));
-            $writ2 = $loop->onWritable(STDOUT, $f(0, 5));
+                $loop->onWritable(STDOUT, $f(0, 5));
+                $writ1 = $loop->onWritable(STDOUT, $f(0, 5));
+                $writ2 = $loop->onWritable(STDOUT, $f(0, 5));
 
-            $loop->delay($msDelay = 0, $f(0, 5));
-            $del1 = $loop->delay($msDelay = 0, $f(0, 5));
-            $del2 = $loop->delay($msDelay = 0, $f(0, 5));
-            $del3 = $loop->delay($msDelay = 0, $f());
-            $del4 = $loop->delay($msDelay = 0, $f(1, 3));
-            $del5 = $loop->delay($msDelay = 0, $f(2, 0));
-            $loop->defer(function () use ($loop, $del5) {
-                $loop->disable($del5);
-            });
-            $loop->cancel($del3);
-            $loop->disable($del1);
-            $loop->disable($del2);
+                $loop->delay($msDelay = 0, $f(0, 5));
+                $del1 = $loop->delay($msDelay = 0, $f(0, 5));
+                $del2 = $loop->delay($msDelay = 0, $f(0, 5));
+                $del3 = $loop->delay($msDelay = 0, $f());
+                $del4 = $loop->delay($msDelay = 0, $f(1, 3));
+                $del5 = $loop->delay($msDelay = 0, $f(2, 0));
+                $loop->defer(function () use ($loop, $del5) {
+                    $loop->disable($del5);
+                });
+                $loop->cancel($del3);
+                $loop->disable($del1);
+                $loop->disable($del2);
 
-            $writ3 = $loop->onWritable(STDOUT, $f());
-            $loop->cancel($writ3);
-            $loop->disable($writ1);
-            $loop->disable($writ2);
-            $loop->enable($writ1);
-            $writ4 = $loop->onWritable(STDOUT, $f(1, 3));
-            $loop->onWritable(STDOUT, $f(0, 5));
-            $loop->enable($writ2);
-            $loop->disable($writ4);
-            $loop->defer(function () use ($loop, $writ4, $f) {
-                $loop->enable($writ4);
-                $loop->onWritable(STDOUT, $f(1, 3));
-            });
+                $writ3 = $loop->onWritable(STDOUT, $f());
+                $loop->cancel($writ3);
+                $loop->disable($writ1);
+                $loop->disable($writ2);
+                $loop->enable($writ1);
+                $writ4 = $loop->onWritable(STDOUT, $f(1, 3));
+                $loop->onWritable(STDOUT, $f(0, 5));
+                $loop->enable($writ2);
+                $loop->disable($writ4);
+                $loop->defer(function () use ($loop, $writ4, $f) {
+                    $loop->enable($writ4);
+                    $loop->onWritable(STDOUT, $f(1, 3));
+                });
 
-            $loop->enable($del1);
-            $loop->delay($msDelay = 0, $f(0, 5));
-            $loop->enable($del2);
-            $loop->disable($del4);
-            $loop->defer(function () use ($loop, $del4, $f) {
-                $loop->enable($del4);
-                $loop->onWritable(STDOUT, $f(1, 3));
-            });
+                $loop->enable($del1);
+                $loop->delay($msDelay = 0, $f(0, 5));
+                $loop->enable($del2);
+                $loop->disable($del4);
+                $loop->defer(function () use ($loop, $del4, $f) {
+                    $loop->enable($del4);
+                    $loop->onWritable(STDOUT, $f(1, 3));
+                });
 
-            $loop->delay($msDelay = 1000, $f(4, 1));
-            $loop->delay($msDelay = 600, $f(3, 0));
-            $loop->delay($msDelay = 500, $f(2, 1));
-            $loop->repeat($msDelay = 500, $f(2, 1));
-            $rep1 = $loop->repeat($msDelay = 50, $f(2, 1));
-            $loop->disable($rep1);
-            $loop->delay($msDelay = 500, $f(2, 1));
-            $loop->enable($rep1);
+                $loop->delay($msDelay = 1000, $f(4, 1));
+                $loop->delay($msDelay = 600, $f(3, 0));
+                $loop->delay($msDelay = 500, $f(2, 1));
+                $loop->repeat($msDelay = 500, $f(2, 1));
+                $rep1 = $loop->repeat($msDelay = 50, $f(2, 1));
+                $loop->disable($rep1);
+                $loop->delay($msDelay = 500, $f(2, 1));
+                $loop->enable($rep1);
 
-            $loop->defer($f(0, 1));
-            $def1 = $loop->defer($f(0, 3));
-            $def2 = $loop->defer($f(1, 1));
-            $def3 = $loop->defer($f());
-            $loop->defer($f(0, 2));
-            $loop->disable($def1);
-            $loop->cancel($def3);
-            $loop->enable($def1);
-            $loop->defer(function () use ($loop, $def2, $del4, $del5, $f) {
-                $tick = $f(0, 4);
-                $tick("invalid");
-                $loop->defer($f(1, 0));
-                $loop->enable($def2);
-                $loop->defer($f(1, 2));
-                $loop->defer(function () use ($loop, $del5, $f) {
-                    $loop->enable($del5);
-                    $loop->defer(function () use ($loop, $f) {
-                        usleep(700000); // to have $msDelay == 500 and $msDelay == 600 run at the same tick (but not $msDelay == 150)
+                $loop->defer($f(0, 1));
+                $def1 = $loop->defer($f(0, 3));
+                $def2 = $loop->defer($f(1, 1));
+                $def3 = $loop->defer($f());
+                $loop->defer($f(0, 2));
+                $loop->disable($def1);
+                $loop->cancel($def3);
+                $loop->enable($def1);
+                $loop->defer(function () use ($loop, $def2, $del4, $del5, $f) {
+                    $tick = $f(0, 4);
+                    $tick("invalid");
+                    $loop->defer($f(1, 0));
+                    $loop->enable($def2);
+                    $loop->defer($f(1, 2));
+                    $loop->defer(function () use ($loop, $del5, $f) {
+                        $loop->enable($del5);
                         $loop->defer(function () use ($loop, $f) {
-                            $loop->defer($f(4, 0));
+                            usleep(700000); // to have $msDelay == 500 and $msDelay == 600 run at the same tick (but not $msDelay == 150)
+                            $loop->defer(function () use ($loop, $f) {
+                                $loop->defer($f(4, 0));
+                            });
                         });
                     });
                 });
+                $loop->disable($def2);
             });
-            $loop->disable($def2);
         });
     }
 
