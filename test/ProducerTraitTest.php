@@ -142,6 +142,15 @@ class ProducerTraitTest extends TestCase {
     }
 
     /**
+     * @expectedException \Error
+     * @expectedExceptionMessage The iterator has completed
+     */
+    public function testGetCurrentAfterComplete() {
+        $this->producer->complete();
+        $this->producer->getCurrent();
+    }
+
+    /**
      * @depends testEmit
      * @expectedException \Error
      * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
