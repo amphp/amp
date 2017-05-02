@@ -29,7 +29,7 @@ The addition of generators in PHP 5.5 trivializes synchronization and error hand
 use Amp\Loop;
 
 function asyncMultiply($x, $y) {
-    yield new Amp\Pause($millisecondsToPause = 100);
+    yield new Amp\Delayed($millisecondsToPause = 100);
     return $x * $y;
 }
 
