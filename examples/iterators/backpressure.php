@@ -3,11 +3,10 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\Promise;
+use function Amp\asyncCoroutine;
 
 Loop::run(function () {
     try {
@@ -28,7 +27,7 @@ Loop::run(function () {
             $emitter->complete();
         };
 
-        Promise\rethrow(new Coroutine($generator($emitter)));
+        asyncCoroutine($generator)($emitter);
 
         while (yield $iterator->advance()) {
             printf("Emitter emitted %d\n", $iterator->getCurrent());
