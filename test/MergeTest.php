@@ -2,13 +2,14 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Iterator;
 use Amp\Loop;
-use Amp\Pause;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
+use PHPUnit\Framework\TestCase;
 
-class MergeTest extends \PHPUnit\Framework\TestCase {
+class MergeTest extends TestCase {
     public function getArrays() {
         return [
             [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
@@ -43,8 +44,8 @@ class MergeTest extends \PHPUnit\Framework\TestCase {
     public function testMergeWithDelayedEmits() {
         Loop::run(function () {
             $iterators = [];
-            $values1 = [new Pause(10, 1), new Pause(50, 2), new Pause(70, 3)];
-            $values2 = [new Pause(20, 4), new Pause(40, 5), new Pause(60, 6)];
+            $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
+            $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
             $expected = [1, 4, 5, 2, 6, 3];
 
             $iterators[] = new Producer(function (callable $emit) use ($values1) {
