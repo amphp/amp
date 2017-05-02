@@ -321,6 +321,12 @@ Marks a watcher as referenced. Takes the `$watcherId` as first and only argument
 
 Marks a watcher as unreferenced. Takes the `$watcherId` as first and only argument.
 
+## Driver Bound State
+
+Sometimes it's very handy to have global state. While dependencies should usually be injected, it is impracticable to pass a `DnsResolver` into everything that needs a network connection. The `Loop` accessor provides therefore the two methods `getState` and `setState` to store state global to the current event loop driver.
+ 
+These should be used with care! They can be used to store loop bound singletons such as the DNS resolver, filesystem driver, or global `ReactAdapter`. Applications should generally not use these methods.
+
 ## Event Loop Addenda
 
 ### Watcher Callback Parameters
