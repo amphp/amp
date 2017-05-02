@@ -116,6 +116,9 @@ class EventDriver extends Driver {
         return \extension_loaded("event");
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function __destruct() {
         foreach ($this->events as $event) {
             $event->free();
