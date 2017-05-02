@@ -1,6 +1,6 @@
 # Structs
 
-A struct is a generic computer science term for an object composed of public properties. The  `\Amp\Stuct` trait
+A struct is a generic computer science term for an object composed of public properties. The `\Amp\Stuct` trait
 is intended to make using public properties a little safer by throwing an `\Error` when undefined properties
 are attempted to be written or read.
 
