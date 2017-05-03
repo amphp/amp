@@ -15,7 +15,7 @@ interface Iterator {
 }
 ```
 
-`advance()` returns a `Promise` and its resolution value tells whether there's an element to consume or not. If it resolve to `true`, `getCurrent()` can be used to consume the element at the current position, otherwise the iterator ended. In case an exception happens, `advance()` returns a failed promise and `getCurrent()` throws the failure reason on call.
+`advance()` returns a `Promise` and its resolution value tells whether there's an element to consume or not. If it resolves to `true`, `getCurrent()` can be used to consume the element at the current position, otherwise the iterator ended and there are no more values to consume. In case an exception happens, `advance()` returns a failed promise and `getCurrent()` throws the failure reason when called.
 
 ### Simple Consumption Example
 
@@ -46,7 +46,7 @@ What `Deferred` is for promises, is `Emitter` for iterators. A library that retu
 
 `Producer` is a simplified form of `Emitter` that can be used when a single coroutine can emit all values.
 
-`Producer` accepts a `callable` as first constructor parameter that gets run as a coroutine and passed a `$emit` callable that can be used to emit values just like the `emit()` method in `Emitter`.
+`Producer` accepts a `callable` as first constructor parameter that gets run as a coroutine and passed an `$emit` callable that can be used to emit values just like the `emit()` method does in `Emitter`.
 
 #### Example
 
