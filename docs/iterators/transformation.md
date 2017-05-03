@@ -1,3 +1,13 @@
 # Iterator Transformation
 
-This is a documentation stub. Please help writing this documentation. See [#105](https://github.com/amphp/amp/issues/105).
+Amp provides two common transformation helpers for iterators: `map` and `filter`.
+
+Further primitives are very easy to implement using `Producer` with those two as examples.
+
+## `map()`
+
+`map()` accepts an `Iterator` and a `callable` `$onEmit` that can transform each value into another value.
+
+## `filter()`
+
+`filter()` accepts an `Iterator` and a `callable` `$filter`. If `$filter($value)` returns `false` the value gets filtered, otherwise the value is retained in the resulting `Iterator`.
