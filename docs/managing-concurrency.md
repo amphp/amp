@@ -1,23 +1,4 @@
-# Managing Concurrency
-
-The weak link when managing concurrency is humans; we simply don't think asynchronously or in parallel. Instead, we're really good at doing one thing at a time and the world around us generally fits this model. So to effectively design for concurrent processing in our code we have a couple of options:
-
-1. Get smarter (not feasible);
-2. Abstract concurrent task execution to make it feel synchronous.
-
-## Combinators
-
-### `map()`
-
-Maps eventual promise results using the specified callable.
-
-### `filter()`
-
-Filters eventual promise results using the specified callable.
-
-If the functor returns a truthy value the resolved promise result is retained, otherwise it is
-discarded. Array keys are retained for any results not filtered out by the functor.
-
+@TODO: Move remaining parts to coroutine docs once they exist.
 
 ## Generators
 
@@ -66,29 +47,3 @@ All yields must be one of the following three types:
 | `Amp\Promise` | Any promise instance may be yielded and control will be returned to the generator once the promise resolves. If resolution fails the relevant exception is thrown into the generator and must be handled by the application or it will bubble up. If resolution succeeds the promise's resolved value is sent back into the generator. |
 | `React\Promise\PromiseInterface` | Same as `Amp\Promise`. Any React promise will automatically be adapted to an Amp promise. |
 | `array` | Yielding an array of promises combines them implicitly using `Amp\all`. An array with elements not being promises will result in an `Amp\InvalidYieldError`. |
-
-## Helpers
-
-### `pipe()`
-
-Takes a `Promise` as first and a `callable` as second argument. Upon resolution of the promise, the `callable` is invoked in case of a success and can be used to transform the value. The returned promise resolves to the returned value in case of a success. In case of a thrown exception or promise failure, the promise is failed with that exception.
-
-### `promises()`
-
-Normalizes an array of mixed values / Promises / Promisors to an array of promises.
-
-### `timeout()`
-
-Takes a `Promise` as first and timeout in milliseconds as second parameter. Returns a promise that's resolved / failed with the original promise's return value / failure reason or a `TimeoutException` in case the given promise doesn't resolve within the specified timeout.
-
-### `coroutine()`
-
-Transforms a `callable` given as first argument into a coroutine function.
-
-### `wait()`
-
-Block script execution indefinitely until the specified `Promise` resolves. The `Promise` is passed as the first and only argument.
-
-In the event of promise failure this method will throw the exception responsible for the failure. Otherwise the promise's resolved value is returned.
-
-This function should only be used outside of `Loop::run` when mixing synchronous and asynchronous code.
