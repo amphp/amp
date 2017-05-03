@@ -58,3 +58,13 @@ $iterator = new Producer(function (callable $emit) {
     yield $emit(4);
 });
 ```
+
+### `fromIterable`
+
+Iterators can also be created from ordinary PHP arrays or `Traversable` instances, which is mainly useful in tests, but might also be used for the same reasons as `Success` and `Failure`.
+
+```php
+function fromIterable($iterable, int $delay = 0) { ... }
+```
+
+`$delay` allows adding a delay between each emission.
