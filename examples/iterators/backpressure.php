@@ -6,7 +6,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
-use function Amp\asyncCoroutine;
+use function Amp\asyncCall;
 
 Loop::run(function () {
     try {
@@ -27,7 +27,7 @@ Loop::run(function () {
             $emitter->complete();
         };
 
-        asyncCoroutine($generator)($emitter);
+        asyncCall($generator, $emitter);
 
         while (yield $iterator->advance()) {
             printf("Emitter emitted %d\n", $iterator->getCurrent());

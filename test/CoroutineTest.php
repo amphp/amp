@@ -7,6 +7,7 @@ use Amp\Delayed;
 use Amp\Failure;
 use Amp\InvalidYieldError;
 use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -791,5 +792,17 @@ class CoroutineTest extends TestCase {
 
         $this->assertSame($reason, $exception);
         $this->assertNull($result);
+    }
+
+    public function testAsyncCoroutineFunctionWithFailure() {
+        $coroutine = \Amp\asyncCoroutine(function ($value) {
+            return new Failure(new TestException);
+        });
+
+        $coroutine(42);
+
+        $this->expectException(TestException::class);
+
+        Loop::run();
     }
 }

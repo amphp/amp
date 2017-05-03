@@ -4,6 +4,9 @@ namespace Amp\Test;
 
 use Amp;
 use Amp\Coroutine;
+use Amp\Failure;
+use Amp\Loop;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use PHPUnit\Framework\TestCase;
@@ -93,5 +96,15 @@ class CallTest extends TestCase {
 
         $this->assertNull($reason);
         $this->assertSame($value, $result);
+    }
+
+    public function testAsyncCallFunctionWithFailure() {
+        \Amp\asyncCall(function ($value) {
+            return new Failure(new TestException);
+        }, 42);
+
+        $this->expectException(TestException::class);
+
+        Loop::run();
     }
 }

@@ -5,25 +5,6 @@ namespace Amp {
 
     /**
      * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
-     * Generators as coroutines. The returned function always returns void when invoked. Errors are forwarded to the
-     * loop's error handler using `Amp\Promise\rethrow()`.
-     *
-     * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller.
-     *
-     * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
-     *
-     * @return callable(...$args): void
-     *
-     * @see coroutine()
-     */
-    function asyncCoroutine(callable $callback): callable {
-        return function (...$args) use ($callback) {
-            Promise\rethrow(call($callback, ...$args));
-        };
-    }
-
-    /**
-     * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
      * Generators as coroutines. The returned function always returns a promise when invoked. Errors have to be handled
      * by the callback caller or they will go unnoticed.
      *
@@ -38,6 +19,25 @@ namespace Amp {
     function coroutine(callable $callback): callable {
         return function (...$args) use ($callback): Promise {
             return call($callback, ...$args);
+        };
+    }
+
+    /**
+     * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
+     * Generators as coroutines. The returned function always returns void when invoked. Errors are forwarded to the
+     * loop's error handler using `Amp\Promise\rethrow()`.
+     *
+     * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller.
+     *
+     * @param callable(...$args): \Generator|\Amp\Promise|mixed $callback
+     *
+     * @return callable(...$args): void
+     *
+     * @see coroutine()
+     */
+    function asyncCoroutine(callable $callback): callable {
+        return function (...$args) use ($callback) {
+            Promise\rethrow(call($callback, ...$args));
         };
     }
 
@@ -70,6 +70,19 @@ namespace Amp {
         }
 
         return new Success($result);
+    }
+
+    /**
+     * Calls the given function. If the function returns a Generator, it will be run as a coroutine. If the function
+     * throws or returns a failing promise, the failure is forwarded to the loop error handler.
+     *
+     * @param callable $callback
+     * @param array    ...$args
+     *
+     * @throws \TypeError
+     */
+    function asyncCall(callable $callback, ...$args) {
+        Promise\rethrow(call($callback, ...$args));
     }
 }
 
