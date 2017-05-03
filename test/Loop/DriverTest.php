@@ -635,7 +635,7 @@ abstract class DriverTest extends TestCase {
                 $loop->delay($msDelay = 600, $f(3, 0));
                 $loop->delay($msDelay = 500, $f(2, 1));
                 $loop->repeat($msDelay = 500, $f(2, 1));
-                $rep1 = $loop->repeat($msDelay = 50, $f(2, 1));
+                $rep1 = $loop->repeat($msDelay = 250, $f(2, 1));
                 $loop->disable($rep1);
                 $loop->delay($msDelay = 500, $f(2, 1));
                 $loop->enable($rep1);
