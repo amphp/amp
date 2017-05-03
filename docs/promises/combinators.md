@@ -68,3 +68,7 @@ in the component arrays are preserved from the promise array passed to the funct
 
 `Amp\Promise\first()` resolves with the first successful result. The resulting promise will only fail if all
 promises in the group fail or if the promise array is empty.
+
+## Further Reading
+
+ * [Other Promise Helpers](./miscellaneous.md)

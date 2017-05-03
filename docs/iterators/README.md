@@ -68,3 +68,8 @@ function fromIterable($iterable, int $delay = 0) { ... }
 ```
 
 `$delay` allows adding a delay between each emission.
+
+## Further Reading
+
+ * [Iterator Combination](./combinators.md)
+ * [Iterator Transformation](./transformation.md)

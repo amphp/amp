@@ -393,3 +393,7 @@ Loop::disable($watcherId);
 ### Timer Drift
 
 @TODO Discuss how repeating timer watchers are rescheduled from `$timestampAtTickStart + $watcherMsInterval` and are not subject to drift but *may* stack up if executing very slow tasks with insufficiently low intervals in-between invocations.
+
+## Further Reading
+
+Continue with [Promises](../promises/README.md).

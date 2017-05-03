@@ -11,3 +11,7 @@ Creates a `Closure` form an instance method with the given name and returns it. 
 ## `callableFromStaticMethod()`
 
 Same as `callableFromInstanceMethod()`, but for static methods.
+
+## Further Reading
+
+ * [`Struct`](./struct.md)

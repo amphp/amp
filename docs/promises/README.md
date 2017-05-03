@@ -96,3 +96,8 @@ var_dump($result); // int(42)
 ### Success and Failure
 
 Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct a immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
+
+## Further Reading
+
+ * [Promise Combination](./combinators.md)
+ * [Other Promise Helpers](./miscellaneous.md)

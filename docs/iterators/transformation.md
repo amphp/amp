@@ -11,3 +11,7 @@ Further primitives are very easy to implement using `Producer` with those two as
 ## `filter()`
 
 `filter()` accepts an `Iterator` and a `callable` `$filter`. If `$filter($value)` returns `false` the value gets filtered, otherwise the value is retained in the resulting `Iterator`.
+
+## Further Reading
+
+ * [Iterator Combination](./combinators.md)
