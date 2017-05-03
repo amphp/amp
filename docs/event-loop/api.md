@@ -392,7 +392,7 @@ Loop::disable($watcherId);
 
 ### Timer Drift
 
-@TODO Discuss how repeating timer watchers are rescheduled from `$timestampAtTickStart + $watcherMsInterval` and are not subject to drift but *may* stack up if executing very slow tasks with insufficiently low intervals in-between invocations.
+Repeat timers are basically simple delay timers that are automatically rescheduled right before the appropriate handler is triggered. They are subject to timer drift. Multiple timers might stack up in case they execute as coroutines.
 
 ## Further Reading
 
