@@ -1,3 +1,23 @@
+2.0.0
+-----
+
+ * `Amp\reactor()` has been replaced with `Amp\Loop::set()` and `Amp\Loop::get()`.
+ * `Amp\driver()` has been replaced with `Amp\Loop\Factory::create()`.
+ * `Amp\tick()` no longer exists and doesn't have a replacements. Ticks are an internal detail.
+ * Functions for creating and managing watchers are now static methods of `Amp\Loop` instead of functions in the `Amp` namespace.
+   * `once()` is now `delay()` and `immediately()` is `defer()`.
+   * Parameter order for `delay()` and `repeat()` has been changed.
+   * `reference()` and `unreference()` have been added.
+ * `Amp\Pause` has been renamed to `Amp\Delayed` and accepts an optional resolution value now. Additionally `reference()` and `unreference()` methods have been added.
+ * Promise accepting functions have been moved to the `Amp\Promise` namespace.
+ * `Amp\Promise\some()` accepts an additional `$required` parameter.
+ * `Amp\call()`, `Amp\asyncCall()`, `Amp\coroutine()` and `Amp\asyncCoroutine()` have been added.
+ * `Amp\resolve()` has been removed, use `Amp\call()` instead.
+ * `Promise::when()` has been renamed to `Promise::onResolve()`
+ * `Promise::watch()` has been removed, use `Amp\Iterator`, [`amphp/byte-stream`](https://github.com/amphp/byte-stream) or a custom implementation that implements `Amp\Promise` instead and provides dedicated APIs to access the previously data shared via the `watch()` mechanism.
+ * `Amp\Iterator`, `Amp\Emitter` and `Amp\Producer` have been added with several functions in the `Amp\Iterator` namespace.
+ * Various other changes.
+
 ### 1.2.2
 
 - Fix notice in `NativeReactor` when removing a handle while
