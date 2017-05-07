@@ -45,7 +45,7 @@ abstract class DriverTest extends TestCase {
         gc_collect_cycles();
     }
 
-    function tearDown() {
+    public function tearDown() {
         unset($this->loop);
     }
 
