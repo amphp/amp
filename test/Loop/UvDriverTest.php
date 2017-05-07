@@ -16,7 +16,8 @@ class UvDriverTest extends DriverTest {
     }
 
     public function testHandle() {
-        $this->assertInternalType('resource', $this->loop->getHandle());
+        $handle = $this->loop->getHandle();
+        $this->assertTrue(\is_resource($handle) || $handle instanceof \UVLoop);
     }
 
     public function testSupported() {

@@ -42,6 +42,11 @@ abstract class DriverTest extends TestCase {
 
         // Required for error handler to work
         Loop::set($this->loop);
+        gc_collect_cycles();
+    }
+
+    function tearDown() {
+        unset($this->loop);
     }
 
     public function start($cb) {
