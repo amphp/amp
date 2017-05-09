@@ -10,7 +10,8 @@
         "awaitable",
         "future",
         "non-blocking",
-        "event"
+        "event",
+        "event-loop"
     ],
     "license": "MIT",
     "authors": [
