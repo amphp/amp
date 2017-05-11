@@ -60,7 +60,7 @@ class UvDriver extends Driver {
             }
 
             foreach ($watchers as $watcher) {
-                if (!($watcher->type & $events)) {
+                if (!($watcher->enabled && $watcher->type & $events)) {
                     continue;
                 }
 
@@ -146,11 +146,16 @@ class UvDriver extends Driver {
         $event = $this->events[$watcherId];
         $eventId = (int) $event;
 
-        if (empty($this->watchers[$eventId])) {
-            if (isset($this->io[$eventId])) {
-                unset($this->streams[$this->io[$eventId]], $this->io[$eventId]);
-            }
+        if ($this->watchers[$eventId] instanceof Watcher) { // All except IO watchers.
+            unset($this->watchers[$eventId]);
             \uv_close($event);
+        } else {
+            unset($this->watchers[$eventId][$watcherId]);
+
+            if (empty($this->watchers[$eventId])) {
+                unset($this->watchers[$eventId], $this->streams[$this->io[$eventId]], $this->io[$eventId]);
+                \uv_close($event);
+            }
         }
 
         unset($this->events[$watcherId]);
@@ -201,7 +206,7 @@ class UvDriver extends Driver {
 
                     $flags = 0;
                     foreach ($this->watchers[$eventId] as $watcher) {
-                        $flags |= $watcher->type;
+                        $flags |= $watcher->enabled ? $watcher->type : 0;
                     }
                     \uv_poll_start($event, $flags, $this->ioCallback);
                     break;
@@ -260,33 +265,26 @@ class UvDriver extends Driver {
         switch ($watcher->type) {
             case Watcher::READABLE:
             case Watcher::WRITABLE:
-                unset($this->watchers[$eventId][$id]);
+                $flags = 0;
+                foreach ($this->watchers[$eventId] as $watcher) {
+                    $flags |= $watcher->enabled ? $watcher->type : 0;
+                }
 
-                if (empty($this->watchers[$eventId])) {
-                    unset($this->watchers[$eventId]);
-
-                    if (\uv_is_active($event)) {
-                        \uv_poll_stop($event);
-                    }
-                } else {
-                    $flags = 0;
-                    foreach ($this->watchers[$eventId] as $watcher) {
-                        $flags |= $watcher->type;
-                    }
+                if ($flags) {
                     \uv_poll_start($event, $flags, $this->ioCallback);
+                } elseif (\uv_is_active($event)) {
+                    \uv_poll_stop($event);
                 }
                 break;
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
-                unset($this->watchers[$eventId]);
                 if (\uv_is_active($event)) {
                     \uv_timer_stop($event);
                 }
                 break;
 
             case Watcher::SIGNAL:
-                unset($this->watchers[$eventId]);
                 if (\uv_is_active($event)) {
                     \uv_signal_stop($event);
                 }
