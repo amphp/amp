@@ -149,13 +149,11 @@ class UvDriver extends Driver {
 
         if ($this->watchers[$eventId] instanceof Watcher) { // All except IO watchers.
             unset($this->watchers[$eventId]);
-            \uv_close($event);
         } else {
             unset($this->watchers[$eventId][$watcherId]);
 
             if (empty($this->watchers[$eventId])) {
                 unset($this->watchers[$eventId], $this->streams[$this->io[$eventId]], $this->io[$eventId]);
-                \uv_close($event);
             }
         }
 
