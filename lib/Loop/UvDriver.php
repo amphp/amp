@@ -42,20 +42,21 @@ class UvDriver extends Driver {
                 case 0: // OK
                     break;
 
-                // If $status is a severe error, disable all related watchers and notify the loop error handler.
-                case \UV::EACCES:
-                case \UV::EBADF:
-                case \UV::EINVAL:
-                case \UV::ENOTSOCK:
+                case \UV::EAGAIN: // Resource temporarily unavailable.
+                    $flags = 0;
+                    foreach ($this->watchers[(int) $event] as $watcher) {
+                        $flags |= $watcher->enabled ? $watcher->type : 0;
+                    }
+                    \uv_poll_start($event, $flags, $this->ioCallback); // Poll must be reactivated.
+                    return;
+
+                default: // Disable all related watchers and notify the loop error handler.
                     foreach ($watchers as $watcher) {
                         $this->disable($watcher);
                     }
                     $this->error(new \Error(
                         \sprintf("UV_%s: %s", \uv_err_name($status), \ucfirst(\uv_strerror($status)))
                     ));
-                    return;
-
-                default: // Ignore other (probably) trivial warnings and continuing polling.
                     return;
             }
 
