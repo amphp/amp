@@ -89,7 +89,8 @@ class UvDriver extends Driver {
             $watcher = $this->watchers[(int) $event];
 
             if ($watcher->type & Watcher::DELAY) {
-                $this->cancel($watcher->id);
+                unset($this->events[$watcher->id], $this->watchers[(int) $event]); // Avoid call to uv_is_active().
+                $this->cancel($watcher->id); // Remove reference to watcher in parent.
             }
 
             try {
