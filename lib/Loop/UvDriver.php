@@ -17,9 +17,6 @@ class UvDriver extends Driver {
     /** @var \Amp\Loop\Watcher[]|\Amp\Loop\Watcher[][] */
     private $watchers = [];
 
-    /** @var int[] */
-    private $io = [];
-
     /** @var resource[] */
     private $streams = [];
 
@@ -151,10 +148,11 @@ class UvDriver extends Driver {
         if ($this->watchers[$eventId] instanceof Watcher) { // All except IO watchers.
             unset($this->watchers[$eventId]);
         } else {
+            $watcher = $this->watchers[$eventId][$watcherId];
             unset($this->watchers[$eventId][$watcherId]);
 
             if (empty($this->watchers[$eventId])) {
-                unset($this->watchers[$eventId], $this->streams[$this->io[$eventId]], $this->io[$eventId]);
+                unset($this->watchers[$eventId], $this->streams[(int) $watcher->value]);
             }
         }
 
@@ -202,7 +200,6 @@ class UvDriver extends Driver {
                     $eventId = (int) $event;
                     $this->events[$id] = $event;
                     $this->watchers[$eventId][$id] = $watcher;
-                    $this->io[$eventId] = $streamId;
 
                     $flags = 0;
                     foreach ($this->watchers[$eventId] as $watcher) {
@@ -269,8 +266,7 @@ class UvDriver extends Driver {
             case Watcher::READABLE:
             case Watcher::WRITABLE:
                 $flags = 0;
-                $eventId = (int) $event;
-                foreach ($this->watchers[$eventId] as $watcher) {
+                foreach ($this->watchers[(int) $event] as $watcher) {
                     $flags |= $watcher->enabled ? $watcher->type : 0;
                 }
 
