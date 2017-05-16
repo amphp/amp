@@ -19,9 +19,10 @@ use function Amp\Promise\rethrow;
  * **Example**
  *
  * ```php
- * $cancellationTokenSource = new CancellationTokenSource;
+ * $tokenSource = new CancellationTokenSource;
+ * $token = $tokenSource->getToken();
  *
- * $response = yield $httpClient->request("https://example.com/stream");
+ * $response = yield $httpClient->request("https://example.com/stream", $token);
  * $responseBody = $response->getBody();
  *
  * while (($chunk = yield $response->read()) !== null) {
