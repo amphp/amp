@@ -6,7 +6,9 @@ use Amp\CancellationToken;
 use Amp\CancellationTokenSource;
 use Amp\Emitter;
 use Amp\Loop;
-use PHPUnit\Framework\TestCase;
+use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\TestException;
+use Amp\Success;
 use function Amp\asyncCall;
 
 class CancellationTest extends TestCase {
@@ -67,6 +69,77 @@ class CancellationTest extends TestCase {
             $cancellationSource->getToken()->unsubscribe($id);
 
             $cancellationSource->cancel();
+        });
+    }
+
+    public function testSubscriptionsRunAsCoroutine() {
+        $this->expectOutputString("abc");
+
+        Loop::run(function () {
+            $cancellationSource = new CancellationTokenSource;
+            $cancellationSource->getToken()->subscribe(function () {
+                print yield new Success("a");
+                print yield new Success("b");
+                print yield new Success("c");
+            });
+
+            $cancellationSource->cancel();
+        });
+    }
+
+    public function testThrowingCallbacksEndUpInLoop() {
+        Loop::run(function () {
+            $this->expectException(TestException::class);
+
+            $cancellationSource = new CancellationTokenSource;
+            $cancellationSource->getToken()->subscribe(function () {
+                throw new TestException;
+            });
+
+            try {
+                $cancellationSource->cancel();
+            } catch (TestException $e) {
+                $this->fail("Exception thrown from cancel instead of being thrown into the loop.");
+            }
+        });
+    }
+
+    public function testThrowingCallbacksEndUpInLoopIfCoroutine() {
+        Loop::run(function () {
+            $this->expectException(TestException::class);
+
+            $cancellationSource = new CancellationTokenSource;
+            $cancellationSource->getToken()->subscribe(function () {
+                if (false) {
+                    yield;
+                }
+
+                throw new TestException;
+            });
+
+            try {
+                $cancellationSource->cancel();
+            } catch (TestException $e) {
+                $this->fail("Exception thrown from cancel instead of being thrown into the loop.");
+            }
+        });
+    }
+
+    public function testDoubleCancelOnlyInvokesOnce() {
+        Loop::run(function () {
+            $cancellationSource = new CancellationTokenSource;
+            $cancellationSource->getToken()->subscribe($this->createCallback(1));
+
+            $cancellationSource->cancel();
+            $cancellationSource->cancel();
+        });
+    }
+
+    public function testCalledIfSubscribingAfterCancel() {
+        Loop::run(function () {
+            $cancellationSource = new CancellationTokenSource;
+            $cancellationSource->cancel();
+            $cancellationSource->getToken()->subscribe($this->createCallback(1));
         });
     }
 }
