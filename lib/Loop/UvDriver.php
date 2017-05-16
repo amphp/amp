@@ -260,34 +260,34 @@ class UvDriver extends Driver {
         }
 
         $event = $this->events[$id];
-        $eventId = (int) $event;
+
+        if (!\uv_is_active($event)) {
+            return;
+        }
 
         switch ($watcher->type) {
             case Watcher::READABLE:
             case Watcher::WRITABLE:
                 $flags = 0;
+                $eventId = (int) $event;
                 foreach ($this->watchers[$eventId] as $watcher) {
                     $flags |= $watcher->enabled ? $watcher->type : 0;
                 }
 
                 if ($flags) {
                     \uv_poll_start($event, $flags, $this->ioCallback);
-                } elseif (\uv_is_active($event)) {
+                } else {
                     \uv_poll_stop($event);
                 }
                 break;
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
-                if (\uv_is_active($event)) {
-                    \uv_timer_stop($event);
-                }
+                \uv_timer_stop($event);
                 break;
 
             case Watcher::SIGNAL:
-                if (\uv_is_active($event)) {
-                    \uv_signal_stop($event);
-                }
+                \uv_signal_stop($event);
                 break;
 
             default:

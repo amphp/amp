@@ -16,6 +16,9 @@
         <testsuite name="Main">
             <directory>test</directory>
         </testsuite>
+        <testsuite name="PHPT tests">
+            <directory suffix=".phpt">test</directory>
+        </testsuite>
     </testsuites>
     <filter>
         <whitelist>
