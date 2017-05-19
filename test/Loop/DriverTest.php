@@ -1060,7 +1060,7 @@ abstract class DriverTest extends TestCase {
 
         $this->expectOutputString("inner SIGUSR2\nouter SIGUSR1\n");
         $this->start(function (Driver $loop) {
-            $loop->delay($msDelay = 30, function () use ($loop) {
+            $loop->delay($msDelay = 300, function () use ($loop) {
                 $loop->stop();
             });
             $loop->onSignal(SIGUSR1, function () use ($loop) {
@@ -1071,7 +1071,7 @@ abstract class DriverTest extends TestCase {
             $loop->delay($msDelay = 1, function () {
                 /** @var Driver $loop */
                 $loop = ($this->getFactory())();
-                $stop = $loop->delay($msDelay = 10, function () use ($loop) {
+                $stop = $loop->delay($msDelay = 100, function () use ($loop) {
                     echo "ERROR: manual stop";
                     $loop->stop();
                 });
