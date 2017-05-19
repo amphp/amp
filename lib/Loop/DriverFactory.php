@@ -40,14 +40,14 @@ class DriverFactory {
 
         if (!\class_exists($driver)) {
             throw new \Error(\sprintf(
-                "Driver '%s' does not exist, falling back to default driver.",
+                "Driver '%s' does not exist.",
                 $driver
             ));
         }
 
         if (!\is_subclass_of($driver, Driver::class)) {
             throw new \Error(\sprintf(
-                "Driver '%s' is not a subclass of '%s', falling back to default driver.",
+                "Driver '%s' is not a subclass of '%s'.",
                 $driver,
                 Driver::class
             ));
