@@ -49,7 +49,7 @@ class UvDriver extends Driver {
 
                 default: // Disable all related watchers and notify the loop error handler.
                     foreach ($watchers as $watcher) {
-                        $this->disable($watcher);
+                        $this->disable($watcher->id);
                     }
                     $this->error(new \Error(
                         \sprintf("UV_%s: %s", \uv_err_name($status), \ucfirst(\uv_strerror($status)))
