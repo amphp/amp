@@ -25,6 +25,8 @@ Amp offers different event loop implementations based on various backends. All i
 
 It's not important to choose one implementation for your application. Amp will automatically select the best available driver. It's perfectly fine to have one of the extensions in production while relying on the `NativeDriver` locally for development.
 
+If you want to quickly switch implementations during development, e.g. for comparison or testing, you can set the `AMP_LOOP_DRIVER` environment variable to one of the classes. If you use a custom implementation, this only works if the implementation doesn't take any arguments.
+
 ## Event Loop as Task Scheduler
 
 The first thing we need to understand to program effectively using an event loop is this:
