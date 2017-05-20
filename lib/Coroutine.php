@@ -27,6 +27,9 @@ final class Coroutine implements Promise {
     /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $onResolve;
 
+    /** @var int */
+    private $depth = 0;
+
     /**
      * @param \Generator $generator
      */
