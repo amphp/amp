@@ -14,21 +14,15 @@ use React\Promise\PromiseInterface as ReactPromise;
 final class Coroutine implements Promise {
     use Internal\Placeholder;
 
-    /**
-     * Maximum number of immediate coroutine continuations before deferring next continuation to the loop.
-     *
-     * @internal
-     */
-    const MAX_CONTINUATION_DEPTH = 3;
-
     /** @var \Generator */
     private $generator;
 
     /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $onResolve;
 
-    /** @var int */
-    private $depth = 0;
+    private $immediate = false;
+    private $exception;
+    private $value;
 
     /**
      * @param \Generator $generator
@@ -41,35 +35,44 @@ final class Coroutine implements Promise {
          * @param mixed           $value Value to be sent into the generator.
          */
         $this->onResolve = function ($exception, $value) {
-            if ($this->depth > self::MAX_CONTINUATION_DEPTH) { // Defer continuation to avoid blowing up call stack.
-                Loop::defer(function () use ($exception, $value) {
-                    ($this->onResolve)($exception, $value);
-                });
+            if ($this->immediate) {
+                $this->immediate = false;
+                $this->exception = $exception;
+                $this->value = $value;
                 return;
             }
 
             try {
-                if ($exception) {
-                    // Throw exception at current execution point.
-                    $yielded = $this->generator->throw($exception);
-                } else {
-                    // Send the new value and execute to next yield statement.
-                    $yielded = $this->generator->send($value);
-                }
-
-                if (!$yielded instanceof Promise) {
-                    if (!$this->generator->valid()) {
-                        $this->resolve($this->generator->getReturn());
-                        $this->onResolve = null;
-                        return;
+                do {
+                    if ($exception) {
+                        // Throw exception at current execution point.
+                        $yielded = $this->generator->throw($exception);
+                    } else {
+                        // Send the new value and execute to next yield statement.
+                        $yielded = $this->generator->send($value);
                     }
 
-                    $yielded = $this->transform($yielded);
-                }
+                    if (!$yielded instanceof Promise) {
+                        if (!$this->generator->valid()) {
+                            $this->resolve($this->generator->getReturn());
+                            $this->onResolve = null;
+                            return;
+                        }
 
-                ++$this->depth;
-                $yielded->onResolve($this->onResolve);
-                --$this->depth;
+                        $yielded = $this->transform($yielded);
+                    }
+
+                    $this->immediate = true;
+                    $yielded->onResolve($this->onResolve);
+                    if ($this->immediate) {
+                        $this->immediate = false;
+                        return;
+                    }
+                    $exception = $this->exception;
+                    $this->exception = null;
+                    $value = $this->value;
+                    $this->value = null;
+                } while (true);
             } catch (\Throwable $exception) {
                 $this->fail($exception);
                 $this->onResolve = null;
@@ -89,9 +92,7 @@ final class Coroutine implements Promise {
                 $yielded = $this->transform($yielded);
             }
 
-            ++$this->depth;
             $yielded->onResolve($this->onResolve);
-            --$this->depth;
         } catch (\Throwable $exception) {
             $this->fail($exception);
             $this->onResolve = null;
