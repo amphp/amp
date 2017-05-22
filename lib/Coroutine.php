@@ -20,7 +20,7 @@ final class Coroutine implements Promise {
     /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $onResolve;
 
-    private $immediate = false;
+    private $immediate = true;
     private $exception;
     private $value;
 
@@ -35,21 +35,22 @@ final class Coroutine implements Promise {
          * @param mixed           $value Value to be sent into the generator.
          */
         $this->onResolve = function ($exception, $value) {
-            if ($this->immediate) {
-                $this->immediate = false;
-                $this->exception = $exception;
-                $this->value = $value;
+            $this->exception = $exception;
+            $this->value = $value;
+
+            if (!$this->immediate) {
+                $this->immediate = true;
                 return;
             }
 
             try {
                 do {
-                    if ($exception) {
+                    if ($this->exception) {
                         // Throw exception at current execution point.
-                        $yielded = $this->generator->throw($exception);
+                        $yielded = $this->generator->throw($this->exception);
                     } else {
                         // Send the new value and execute to next yield statement.
-                        $yielded = $this->generator->send($value);
+                        $yielded = $this->generator->send($this->value);
                     }
 
                     if (!$yielded instanceof Promise) {
@@ -62,20 +63,17 @@ final class Coroutine implements Promise {
                         $yielded = $this->transform($yielded);
                     }
 
-                    $this->immediate = true;
+                    $this->immediate = false;
                     $yielded->onResolve($this->onResolve);
-                    if ($this->immediate) {
-                        $this->immediate = false;
-                        return;
-                    }
-                    $exception = $this->exception;
-                    $this->exception = null;
-                    $value = $this->value;
-                    $this->value = null;
-                } while (true);
+                } while ($this->immediate);
+
+                $this->immediate = true;
             } catch (\Throwable $exception) {
                 $this->fail($exception);
                 $this->onResolve = null;
+            } finally {
+                $this->exception = null;
+                $this->value = null;
             }
         };
 
