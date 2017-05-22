@@ -69,43 +69,51 @@ class NativeDriver extends Driver {
         );
 
         if (!empty($this->timerExpires)) {
-            while (!$this->timerQueue->isEmpty()) {
-                list($watcher, $expiration) = $this->timerQueue->top();
+            $scheduleQueue = [];
 
-                $id = $watcher->id;
+            try {
+                while (!$this->timerQueue->isEmpty()) {
+                    list($watcher, $expiration) = $this->timerQueue->top();
 
-                if (!isset($this->timerExpires[$id]) || $expiration !== $this->timerExpires[$id]) {
-                    $this->timerQueue->extract(); // Timer was removed from queue.
-                    continue;
-                }
+                    $id = $watcher->id;
 
-                if ($this->timerExpires[$id] > $this->now) { // Timer at top of queue has not expired.
-                    break;
-                }
-
-                $this->timerQueue->extract();
-
-                if ($watcher->type & Watcher::REPEAT) {
-                    $expiration = $this->now + $watcher->value;
-                    $this->timerExpires[$watcher->id] = $expiration;
-                    $this->timerQueue->insert([$watcher, $expiration], -$expiration);
-                } else {
-                    $this->cancel($id);
-                }
-
-                try {
-                    // Execute the timer.
-                    $result = ($watcher->callback)($id, $watcher->data);
-
-                    if ($result instanceof \Generator) {
-                        $result = new Coroutine($result);
+                    if (!isset($this->timerExpires[$id]) || $expiration !== $this->timerExpires[$id]) {
+                        $this->timerQueue->extract(); // Timer was removed from queue.
+                        continue;
                     }
 
-                    if ($result instanceof Promise || $result instanceof ReactPromise) {
-                        rethrow($result);
+                    if ($this->timerExpires[$id] > $this->now) { // Timer at top of queue has not expired.
+                        break;
                     }
-                } catch (\Throwable $exception) {
-                    $this->error($exception);
+
+                    $this->timerQueue->extract();
+
+                    if ($watcher->type & Watcher::REPEAT) {
+                        $expiration = $this->now + $watcher->value;
+                        $this->timerExpires[$watcher->id] = $expiration;
+                        $scheduleQueue[] = [$watcher, $expiration];
+                    } else {
+                        $this->cancel($id);
+                    }
+
+                    try {
+                        // Execute the timer.
+                        $result = ($watcher->callback)($id, $watcher->data);
+
+                        if ($result instanceof \Generator) {
+                            $result = new Coroutine($result);
+                        }
+
+                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                            rethrow($result);
+                        }
+                    } catch (\Throwable $exception) {
+                        $this->error($exception);
+                    }
+                }
+            } finally {
+                foreach ($scheduleQueue as $item) {
+                    $this->timerQueue->insert($item, -$item[1]);
                 }
             }
         }

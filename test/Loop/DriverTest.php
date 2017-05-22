@@ -1433,4 +1433,23 @@ abstract class DriverTest extends TestCase {
         });
         $this->loop->run();
     }
+
+    public function testShortTimerDoesNotBlockOtherTimers() {
+        $this->loop->repeat(0, function () {
+            static $i = 0;
+
+            if (++$i === 5) {
+                $this->fail("Loop continues with repeat watcher");
+            }
+
+            \usleep(2000);
+        });
+
+        $this->loop->delay(2, function () {
+            $this->assertTrue(true);
+            $this->loop->stop();
+        });
+
+        $this->loop->run();
+    }
 }
