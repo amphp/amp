@@ -29,4 +29,18 @@ interface CancellationToken {
      * @return void
      */
     public function unsubscribe(string $id);
+
+    /**
+     * Returns whether cancellation has been requested yet.
+     *
+     * @return bool
+     */
+    public function isRequested(): bool;
+
+    /**
+     * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
+     *
+     * @return void
+     */
+    public function throwIfRequested();
 }

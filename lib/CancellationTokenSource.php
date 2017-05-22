@@ -44,8 +44,13 @@ final class CancellationTokenSource {
 
     public function __construct() {
         $this->token = new class($this->onCancel) implements CancellationToken {
+            /** @var string */
             private $nextId = "a";
+
+            /** @var callable[] */
             private $callbacks = [];
+
+            /** @var \Throwable|null */
             private $exception = null;
 
             public function __construct(&$onCancel) {
@@ -94,6 +99,16 @@ final class CancellationTokenSource {
 
             public function unsubscribe(string $id) {
                 unset($this->callbacks[$id]);
+            }
+
+            public function isRequested(): bool {
+                return isset($this->exception);
+            }
+
+            public function throwIfRequested() {
+                if (isset($this->exception)) {
+                    throw $this->exception;
+                }
             }
         };
     }
