@@ -22,7 +22,7 @@ Loop::run(function () {
             print "ok";
         }
     });
-    Loop::delay(0, [Loop::class, "stop"]);
+    Loop::defer([Loop::class, "stop"]);
 });
 
 ?>

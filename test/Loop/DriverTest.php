@@ -509,18 +509,18 @@ abstract class DriverTest extends TestCase {
                     $loop->run();
                 }
                 if ($type === "delay") {
-                    $loop->delay($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop) {
+                    $loop->delay($msDelay = 1, $fn = function ($watcherId, $i) use (&$fn, $loop) {
                         if ($i) {
-                            $loop->delay($msDelay = 0, $fn, --$i);
+                            $loop->delay($msDelay = 1, $fn, --$i);
                         }
                     }, $runs);
                     $loop->run();
                 }
                 if ($type === "repeat") {
-                    $loop->repeat($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop) {
+                    $loop->repeat($msDelay = 1, $fn = function ($watcherId, $i) use (&$fn, $loop) {
                         $loop->cancel($watcherId);
                         if ($i) {
-                            $loop->repeat($msDelay = 0, $fn, --$i);
+                            $loop->repeat($msDelay = 1, $fn, --$i);
                         }
                     }, $runs);
                     $loop->run();
@@ -600,18 +600,20 @@ abstract class DriverTest extends TestCase {
                 $writ1 = $loop->onWritable(STDOUT, $f(0, 5));
                 $writ2 = $loop->onWritable(STDOUT, $f(0, 5));
 
-                $loop->delay($msDelay = 0, $f(0, 5));
-                $del1 = $loop->delay($msDelay = 0, $f(0, 5));
-                $del2 = $loop->delay($msDelay = 0, $f(0, 5));
-                $del3 = $loop->delay($msDelay = 0, $f());
-                $del4 = $loop->delay($msDelay = 0, $f(1, 3));
-                $del5 = $loop->delay($msDelay = 0, $f(2, 0));
+                $loop->delay($msDelay = 1, $f(0, 5));
+                $del1 = $loop->delay($msDelay = 1, $f(0, 5));
+                $del2 = $loop->delay($msDelay = 1, $f(0, 5));
+                $del3 = $loop->delay($msDelay = 1, $f());
+                $del4 = $loop->delay($msDelay = 1, $f(1, 3));
+                $del5 = $loop->delay($msDelay = 1, $f(2, 0));
                 $loop->defer(function () use ($loop, $del5) {
                     $loop->disable($del5);
                 });
                 $loop->cancel($del3);
                 $loop->disable($del1);
                 $loop->disable($del2);
+
+                \usleep(1000);
 
                 $writ3 = $loop->onWritable(STDOUT, $f());
                 $loop->cancel($writ3);
@@ -628,7 +630,7 @@ abstract class DriverTest extends TestCase {
                 });
 
                 $loop->enable($del1);
-                $loop->delay($msDelay = 0, $f(0, 5));
+                $loop->delay($msDelay = 1, $f(0, 5));
                 $loop->enable($del2);
                 $loop->disable($del4);
                 $loop->defer(function () use ($loop, $del4, $f) {
@@ -765,7 +767,7 @@ abstract class DriverTest extends TestCase {
     /** @expectedException \Amp\Loop\InvalidWatcherError */
     public function testWatcherInvalidityOnDelay() {
         $this->start(function (Driver $loop) {
-            $loop->delay($msDelay = 0, function ($watcher) use ($loop) {
+            $loop->delay($msDelay = 1, function ($watcher) use ($loop) {
                 $loop->enable($watcher);
             });
         });
@@ -801,8 +803,8 @@ abstract class DriverTest extends TestCase {
 
                 $f = function () use ($loop) {
                     $watchers[] = $loop->defer([$this, "fail"]);
-                    $watchers[] = $loop->delay($msDelay = 0, [$this, "fail"]);
-                    $watchers[] = $loop->repeat($msDelay = 0, [$this, "fail"]);
+                    $watchers[] = $loop->delay($msDelay = 1, [$this, "fail"]);
+                    $watchers[] = $loop->repeat($msDelay = 1, [$this, "fail"]);
                     $watchers[] = $loop->onWritable(STDIN, [$this, "fail"]);
                     return $watchers;
                 };
@@ -1435,7 +1437,7 @@ abstract class DriverTest extends TestCase {
     }
 
     public function testShortTimerDoesNotBlockOtherTimers() {
-        $this->loop->repeat(0, function () {
+        $this->loop->repeat(1, function () {
             static $i = 0;
 
             if (++$i === 5) {
@@ -1451,5 +1453,32 @@ abstract class DriverTest extends TestCase {
         });
 
         $this->loop->run();
+    }
+
+    public function testTwoShortRepeatTimersWorkAsExpected() {
+        $this->loop->repeat(1, function () use (&$j) {
+            static $i = 0;
+
+            if (++$i === 5) {
+                $this->loop->stop();
+            }
+
+            $j = $i;
+        });
+
+        $this->loop->repeat(1, function () use (&$k) {
+            static $i = 0;
+
+            if (++$i === 5) {
+                $this->loop->stop();
+            }
+
+            $k = $i;
+        });
+
+        $this->loop->run();
+
+        $this->assertLessThan(2, \abs($j - $k));
+        $this->assertNotSame(0, $j);
     }
 }

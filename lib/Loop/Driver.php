@@ -193,7 +193,7 @@ abstract class Driver {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int   $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param int   $delay The amount of time, in milliseconds, to delay the execution for. Minimum: 1ms
      * @param       callable (string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
@@ -201,8 +201,8 @@ abstract class Driver {
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function delay(int $delay, callable $callback, $data = null): string {
-        if ($delay < 0) {
-            throw new \Error("Delay must be greater than or equal to zero");
+        if ($delay < 1) {
+            throw new \Error("Delay must be greater than zero");
         }
 
         $watcher = new Watcher;
@@ -228,15 +228,15 @@ abstract class Driver {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int   $interval The time interval, in milliseconds, to wait between executions.
+     * @param int   $interval The time interval, in milliseconds, to wait between executions. Minimum: 1ms
      * @param       callable (string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
     public function repeat(int $interval, callable $callback, $data = null): string {
-        if ($interval < 0) {
-            throw new \Error("Interval must be greater than or equal to zero");
+        if ($interval < 1) {
+            throw new \Error("Interval must be greater than zero");
         }
 
         $watcher = new Watcher;
