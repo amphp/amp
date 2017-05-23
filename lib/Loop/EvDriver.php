@@ -61,6 +61,13 @@ class EvDriver extends Driver {
                 $this->cancel($watcher->id);
             }
 
+            if ($watcher->type & Watcher::REPEAT && $watcher->value === 0) {
+                // Disable and re-enable so it's not executed repeatedly in the same tick
+                // See https://github.com/amphp/amp/issues/131
+                $this->disable($watcher->id);
+                $this->enable($watcher->id);
+            }
+
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 

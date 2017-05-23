@@ -1452,4 +1452,25 @@ abstract class DriverTest extends TestCase {
 
         $this->loop->run();
     }
+
+    public function testTwoShortRepeatTimersWorkAsExpected() {
+        $this->loop->repeat(0, function () use (&$j) {
+            static $i = 0;
+            if (++$i === 5) {
+                $this->loop->stop();
+            }
+            $j = $i;
+        });
+        $this->loop->repeat(0, function () use (&$k) {
+            static $i = 0;
+            if (++$i === 5) {
+                $this->loop->stop();
+            }
+            $k = $i;
+        });
+
+        $this->loop->run();
+        $this->assertLessThan(2, \abs($j - $k));
+        $this->assertNotSame(0, $j);
+    }
 }
