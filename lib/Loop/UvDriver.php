@@ -88,9 +88,7 @@ class UvDriver extends Driver {
             if ($watcher->type & Watcher::DELAY) {
                 unset($this->events[$watcher->id], $this->watchers[(int) $event]); // Avoid call to uv_is_active().
                 $this->cancel($watcher->id); // Remove reference to watcher in parent.
-            }
-
-            if ($watcher->type & Watcher::REPEAT && $watcher->value === 0) {
+            } elseif ($watcher->value === 0) {
                 // Disable and re-enable so it's not executed repeatedly in the same tick
                 // See https://github.com/amphp/amp/issues/131
                 $this->disable($watcher->id);
