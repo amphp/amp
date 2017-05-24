@@ -39,22 +39,14 @@ class UvDriver extends Driver {
                 case 0: // OK
                     break;
 
-                case \UV::EAGAIN: // Resource temporarily unavailable.
+                default: // Invoke the callback on errors, as this matches behavior with other loop back-ends.
+                    // Re-enable watcher as libuv disables the watcher on non-zero status.
                     $flags = 0;
                     foreach ($this->watchers[(int) $event] as $watcher) {
                         $flags |= $watcher->enabled ? $watcher->type : 0;
                     }
-                    \uv_poll_start($event, $flags, $this->ioCallback); // Poll must be reactivated.
-                    return;
-
-                default: // Disable all related watchers and notify the loop error handler.
-                    foreach ($watchers as $watcher) {
-                        $this->disable($watcher->id);
-                    }
-                    $this->error(new \Error(
-                        \sprintf("UV_%s: %s", \uv_err_name($status), \ucfirst(\uv_strerror($status)))
-                    ));
-                    return;
+                    \uv_poll_start($event, $flags, $this->ioCallback);
+                    break;
             }
 
             foreach ($watchers as $watcher) {
