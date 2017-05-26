@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Event Loop API
 permalink: /event-loop/api
 ---
-# Event Loop API
-
 This document describes the [`Amp\Loop`](../../lib/Loop.php) accessor. You might want to also read the documentation contained in the source file, it's extensively documented and doesn't contain much distracting code.
 
 ## `run()`

@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Coroutines
 permalink: /coroutines/
 ---
-# Coroutines
-
 Coroutines are interruptible functions. In PHP they can be implemented using [generators](http://php.net/manual/en/language.generators.overview.php).
 
 While generators are usually used to implement simple iterators and yielding elements using the `yield` keyword, Amp uses `yield` as interruption points. When a coroutine yields a value, execution of the coroutine is temporarily interrupted, allowing other tasks to be run, such as I/O handlers, timers, or other coroutines.

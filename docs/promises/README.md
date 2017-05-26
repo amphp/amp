@@ -1,13 +1,11 @@
 ---
 layout: docs
+title: Promises
 permalink: /promises/
 ---
-# Promises
-
 The basic unit of concurrency in Amp applications is the `Amp\Promise`. These objects should be thought of as placeholders for values or tasks that aren't yet complete. By using placeholders we're able to reason about the results of concurrent operations as if they were already complete variables.
 
-> **NOTE**
->
+{:.note}
 > Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators to "synchronize" concurrent task execution.
 >
 > However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\Promise\adapt` can be used to adapt any object having a `then` or `done` method.

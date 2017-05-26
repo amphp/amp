@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Introduction
 permalink: /
 ---
-## Managing Concurrency
-
 The weak link when managing concurrency is humans; we simply don't think asynchronously or in parallel. Instead, we're really good at doing one thing at a time and the world around us generally fits this model. So to effectively design for concurrent processing in our code we have a couple of options:
 
 1. Get smarter (not feasible);

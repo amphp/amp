@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Iterator Combination
 permalink: /iterators/combinators
 ---
-# Iterator Combination
-
 Amp provides two common combination helpers for iterators: `concat` and `merge`.
 
 ## `concat()`

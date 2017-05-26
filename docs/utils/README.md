@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Utils
 permalink: /utils/
 ---
-# Utils
-
 This documentation section deals with helpers that are not async specific, but generic helpers.
 
  * [`CallableMaker`](./callable-maker.md)

@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Promise Helpers
 permalink: /promises/miscellaneous
 ---
-# Promise Helpers
-
 Amp offers some small promise helpers, namely
  * `Amp\Promise\rethrow()`
  * `Amp\Promise\timeout()`

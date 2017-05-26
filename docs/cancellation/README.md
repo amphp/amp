@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Cancellation
 permalink: /cancellation/
 ---
-# Cancellation
-
 Amp provides primitives to allow the cancellation of operations, namely `CancellationTokenSource` and `CancellationToken`.
 
 Every operation that supports cancellation accepts an instance of `CancellationToken` as (optional) argument. The operation then subscribes with `CancellationToken::subscribe()` to any cancellation requests that might happen. If the operation consists of any sub-operations that support cancellation, it passes that same `CancellationToken` instance down to these sub-operations.

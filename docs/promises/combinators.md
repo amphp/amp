@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Promise Combinators
 permalink: /promises/combinators
 ---
-# Promise Combinators
-
 Multiple promises can be combined into a single promise using different functions.
 
 ## `all()`

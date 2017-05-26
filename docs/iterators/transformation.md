@@ -1,9 +1,8 @@
 ---
 layout: docs
+title: Iterator Transformation
 permalink: /iterators/transformation
 ---
-# Iterator Transformation
-
 Amp provides two common transformation helpers for iterators: `map` and `filter`.
 
 Further primitives are very easy to implement using `Producer` with those two as examples.
