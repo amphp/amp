@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /utils/
+---
 # Utils
 
 This documentation section deals with helpers that are not async specific, but generic helpers.

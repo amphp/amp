@@ -2,13 +2,19 @@
 
 This directory contains the documentation for `amphp/amp`. Documentation and code are bundled within a single repository for easier maintenance. Additionally, this preserves the documentation for older versions.
 
-## Managing Concurrency
+## Reading
 
-The weak link when managing concurrency is humans; we simply don't think asynchronously or in parallel. Instead, we're really good at doing one thing at a time and the world around us generally fits this model. So to effectively design for concurrent processing in our code we have a couple of options:
+You can read this documentation either directly on GitHub or on our website. While the website will always contain the latest version, viewing on GitHub also works with older versions.
 
-1. Get smarter (not feasible);
-2. Abstract concurrent task execution to make it feel synchronous.
+## Writing
 
-Amp provides an [event loop](./event-loop/README.md), [promises](./promises/README.md) and [asynchronous iterators](./iterators/README.md) as building blocks for (fully) asynchronous libraries and applications. [Coroutines](./coroutines/README.md) make asynchronous code feel as synchronous as synchronous code.
+Our documentation is built using Jekyll.
 
-Start with the [Introduction to Event Loops](./event-loop/).
+```
+sudo gem install bundler jekyll
+```
+
+```
+bundle install --path vendor/bundle
+bundle exec jekyll serve
+```

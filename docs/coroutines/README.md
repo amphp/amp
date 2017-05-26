@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /coroutines/
+---
 # Coroutines
 
 Coroutines are interruptible functions. In PHP they can be implemented using [generators](http://php.net/manual/en/language.generators.overview.php).
@@ -43,7 +47,3 @@ Loop::run(function () {
 ```
 
 Note that **no callbacks need to be registered** to consume promises and **errors can be handled with ordinary `catch` clauses**, which will bubble up to the calling context if uncaught in the same way exceptions bubble up in synchronous code.
-
-## Further Reading
-
- * [Coroutine Helpers](./helpers.md)

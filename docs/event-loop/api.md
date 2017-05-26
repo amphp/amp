@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /event-loop/api
+---
 # Event Loop API
 
 This document describes the [`Amp\Loop`](../../lib/Loop.php) accessor. You might want to also read the documentation contained in the source file, it's extensively documented and doesn't contain much distracting code.
@@ -393,7 +397,3 @@ Loop::disable($watcherId);
 ### Timer Drift
 
 Repeat timers are basically simple delay timers that are automatically rescheduled right before the appropriate handler is triggered. They are subject to timer drift. Multiple timers might stack up in case they execute as coroutines.
-
-## Further Reading
-
-Continue with [Promises](../promises/README.md).

@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /iterators/combinators
+---
 # Iterator Combination
 
 Amp provides two common combination helpers for iterators: `concat` and `merge`.
@@ -9,7 +13,3 @@ Amp provides two common combination helpers for iterators: `concat` and `merge`.
 ## `merge()`
 
 `merge()` accepts an array of `Iterator` instances and creates an `Iterator` that emits values emitted from any iterator in the array of iterators ending once all emitters completed.
-
-## Further Reading
-
- * [Iterator Transformation](./transformation.md)

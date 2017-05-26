@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /utils/callable-maker
+---
 # CallableMaker
 
 `Amp\CallableMaker` is a helper trait that allows creating closures from private / protected static and instance methods in an easy way. Creating such callables might be necessary to register private / protected methods as callbacks in an efficient manner without making those methods public.
@@ -11,7 +15,3 @@ Creates a `Closure` form an instance method with the given name and returns it. 
 ## `callableFromStaticMethod()`
 
 Same as `callableFromInstanceMethod()`, but for static methods.
-
-## Further Reading
-
- * [`Struct`](./struct.md)

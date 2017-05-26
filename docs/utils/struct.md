@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /utils/struct
+---
 # Struct
 
 A struct is a generic computer science term for an object composed of public properties. The `\Amp\Stuct` trait
@@ -42,7 +46,3 @@ The message for the thrown `\Error` will be similar to:
 
 Although, an `\Error` being thrown in your code may cause some havoc, it will not allow for unpredictable
 behavior caused by the use of properties which are not part of the class definition.
-
-## Further Reading
-
- * [`CallableMaker`](./callable-maker.md)

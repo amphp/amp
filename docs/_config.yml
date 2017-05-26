@@ -1,0 +1,13 @@
+kramdown:
+  input: GFM
+  toc_levels: 2..3
+
+baseurl: "/amp"
+layouts_dir: shared/layout
+
+exclude: ["Gemfile", "Gemfile.lock", "README.md", "vendor"]
+
+repository: amphp/amp
+gems:
+ - "jekyll-github-metadata"
+ - "jekyll-relative-links"

@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /iterators/
+---
 # Iterators
 
 Iterators are the next level after promises. While promises resolve once and with one value, iterators allow a set of items to be consumed.
@@ -68,8 +72,3 @@ function fromIterable($iterable, int $delay = 0) { ... }
 ```
 
 `$delay` allows adding a delay between each emission.
-
-## Further Reading
-
- * [Iterator Combination](./combinators.md)
- * [Iterator Transformation](./transformation.md)

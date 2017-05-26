@@ -1,3 +1,7 @@
+---
+layout: docs
+permalink: /promises/miscellaneous
+---
 # Promise Helpers
 
 Amp offers some small promise helpers, namely
@@ -20,7 +24,3 @@ Note that `timeout()` does not cancel any operation or frees any resources. If a
 ## `wait()`
 
 `wait()` can be used to synchronously wait for a promise to resolve. It returns the result value or throws an exception in case of an error. `wait()` blocks and calls `Loop::run()` internally. It SHOULD NOT be used in fully asynchronous applications, but only when integrating async APIs into an otherwise synchronous application.
-
-## Further Reading
-
- * [Promise Combination](./combinators.md)
