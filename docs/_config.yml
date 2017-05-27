@@ -11,3 +11,11 @@ repository: amphp/amp
 gems:
  - "jekyll-github-metadata"
  - "jekyll-relative-links"
+
+navigation:
+ - event-loop
+ - promises
+ - coroutines
+ - iterators
+ - cancellation
+ - utils
