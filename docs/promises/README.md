@@ -18,11 +18,11 @@ interface Promise {
 }
 ```
 
-In its simplest form the `Amp\Promise` aggregates callbacks for dealing with results once they eventually resolve. While most code will not interact with this API directly thanks to [Generators](#generators), let's take a quick look at the one simple API method exposed on `Amp\Promise` implementations:
+In its simplest form the `Amp\Promise` aggregates callbacks for dealing with results once they eventually resolve. While most code will not interact with this API directly thanks to [coroutines](../coroutines/), let's take a quick look at the one simple API method exposed on `Amp\Promise` implementations:
 
-| Method      | Callback Signature                                        |
-| ----------- | ----------------------------------------------------------|
-| `onResolve` | `function ($error = null, $result = null)` |
+| Parameter    | Callback Signature                         |
+| ------------ | ------------------------------------------ |
+| `$onResolve` | `function ($error = null, $result = null)` |
 
 `Amp\Promise::onResolve()` accepts an error-first callback. This callback is responsible for reacting to the eventual result represented by the promise placeholder. For example:
 
@@ -55,13 +55,16 @@ Those familiar with JavaScript code generally reflect that the above interface q
 final class Deferred {
     public function promise(): Promise;
     public function resolve($result = null);
-    public function fail($error);
+    public function fail(Throwable $error);
 }
 ```
 
 #### `promise()`
 
-Returns the corresponding `Promise` instance. `Deferred` and `Promise` are separated, so the consumer of the promise can't fulfill it.
+Returns the corresponding `Promise` instance. `Deferred` and `Promise` are separated, so the consumer of the promise can't fulfill it. You should always return `$deferred->promise()` to API consumers. If you're passing `Deferred` objects around, you're probably doing something wrong.
+
+{:.note}
+> This separation of concerns is generally a good thing. However, creating two objects instead of one for each fundamental placeholder is a measurable performance penalty. For that reason, this separation only exists if assertions are enabled to ensure the code does what it's expected to do. `Deferred` directly implements `Promise` if assertions are disabled.
 
 #### `resolve()`
 
@@ -97,4 +100,4 @@ var_dump($result); // int(42)
 
 ### Success and Failure
 
-Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct a immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
+Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct an immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
