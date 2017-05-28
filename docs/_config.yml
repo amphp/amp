@@ -12,6 +12,15 @@ gems:
  - "jekyll-github-metadata"
  - "jekyll-relative-links"
 
+defaults:
+ - scope:
+     path: ""
+     type: "pages"
+   values:
+     layout: "docs"
+
+asset_path: "/amp/shared/asset"
+
 navigation:
  - event-loop
  - promises
