@@ -37,7 +37,7 @@ script:
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
-  - coverage/bin/phpcov merge --clover build/logs/clover.xml coverage/cov
+  - phpdbg -qrr coverage/bin/phpcov merge --clover build/logs/clover.xml coverage/cov
   - php vendor/bin/coveralls -v
 
 cache:
