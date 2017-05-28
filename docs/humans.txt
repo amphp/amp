@@ -1,0 +1,11 @@
+---
+layout:
+---
+/* SITE */
+Last Updated: {{ site.time | date: "%Y/%m/%d" }}
+Components: {% for dependency in site.github.versions %}
+ - {{ dependency[0] }} @ {{ dependency[1]}}{% endfor %}
+
+/* TEAM */
+Contributors: {% for contributor in site.github.contributors %}
+ - {{ contributor.login }} with {{ contributor.contributions }} contribution(s){% endfor %}
