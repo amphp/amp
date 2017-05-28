@@ -3,9 +3,10 @@ kramdown:
   toc_levels: 2..3
 
 baseurl: "/amp"
-layouts_dir: shared/layout
+layouts_dir: ".shared/layout"
 
 exclude: ["Gemfile", "Gemfile.lock", "README.md", "vendor"]
+include: [".shared"]
 
 repository: amphp/amp
 gems:
@@ -19,7 +20,7 @@ defaults:
    values:
      layout: "docs"
 
-asset_path: "/amp/shared/asset"
+asset_path: "/amp/.shared/asset"
 
 navigation:
  - event-loop
