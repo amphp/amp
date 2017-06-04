@@ -3,7 +3,7 @@ layout: docs
 title: Coroutine Helpers
 permalink: /coroutines/helpers
 ---
-`Amp\Coroutine` requires a already instantiated `Generator` to be passed to its constructor. Always calling a callable before passing the `Generator` to `Amp\Coroutine` is unnecessary boilerplate.
+`Amp\Coroutine` requires an already instantiated `Generator` to be passed to its constructor. Always calling a callable before passing the `Generator` to `Amp\Coroutine` is unnecessary boilerplate.
 
 ## `coroutine()`
 
