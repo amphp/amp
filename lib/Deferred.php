@@ -12,26 +12,32 @@ try {
          * API, but used internally to create and resolve a promise.
          */
         final class Deferred {
-            /**
-             * @var \Amp\Promise
-             */
+            /** @var \Amp\Promise */
             private $promise;
 
-            /**
-             * @var callable
-             */
+            /** @var callable */
             private $resolve;
 
-            /**
-             * @var callable
-             */
+            /** @var callable */
             private $fail;
 
             public function __construct() {
-                $this->promise = new Internal\PrivatePromise(function (callable $resolve, callable $fail) {
+                $this->promise = new class (function (callable $resolve, callable $fail) {
                     $this->resolve = $resolve;
                     $this->fail = $fail;
-                });
+                }) implements Promise {
+                    use CallableMaker, Internal\Placeholder;
+
+                    /**
+                     * @param callable (callable $resolve, callable $reject): void $resolver
+                     */
+                    public function __construct(callable $resolver) {
+                        $resolver(
+                            $this->callableFromInstanceMethod("resolve"),
+                            $this->callableFromInstanceMethod("fail")
+                        );
+                    }
+                };
             }
 
             /**

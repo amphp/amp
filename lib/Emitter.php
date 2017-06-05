@@ -13,34 +13,37 @@ try {
          * iterator.
          */
         final class Emitter {
-            /**
-             * @var \Amp\Iterator
-             */
+            /** @var \Amp\Iterator */
             private $iterator;
 
-            /**
-             * @var callable
-             */
+            /** @var callable */
             private $emit;
 
-            /**
-             * @var callable
-             */
+            /** @var callable */
             private $complete;
 
-            /**
-             * @var callable
-             */
+            /** @var callable */
             private $fail;
 
             public function __construct() {
-                $this->iterator = new Internal\PrivateIterator(
-                    function (callable $emit, callable $complete, callable $fail) {
-                        $this->emit = $emit;
-                        $this->complete = $complete;
-                        $this->fail = $fail;
+                $this->iterator = new class (function (callable $emit, callable $complete, callable $fail) {
+                    $this->emit = $emit;
+                    $this->complete = $complete;
+                    $this->fail = $fail;
+                }) implements Iterator {
+                    use CallableMaker, Internal\Producer;
+
+                    /**
+                     * @param callable (callable $emit, callable $complete, callable $fail): void $producer
+                     */
+                    public function __construct(callable $producer) {
+                        $producer(
+                            $this->callableFromInstanceMethod("emit"),
+                            $this->callableFromInstanceMethod("complete"),
+                            $this->callableFromInstanceMethod("fail")
+                        );
                     }
-                );
+                };
             }
 
             /**
