@@ -26,22 +26,13 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->iterator = new class(function (callable $emit, callable $complete, callable $fail) {
-                    $this->emit = $emit;
-                    $this->complete = $complete;
-                    $this->fail = $fail;
-                }) implements Iterator {
+                $this->iterator = new class($this->emit, $this->complete, $this->fail) implements Iterator {
                     use CallableMaker, Internal\Producer;
 
-                    /**
-                     * @param callable (callable $emit, callable $complete, callable $fail): void $producer
-                     */
-                    public function __construct(callable $producer) {
-                        $producer(
-                            $this->callableFromInstanceMethod("emit"),
-                            $this->callableFromInstanceMethod("complete"),
-                            $this->callableFromInstanceMethod("fail")
-                        );
+                    public function __construct(&$emit, &$complete, &$fail) {
+                        $emit = $this->callableFromInstanceMethod("emit");
+                        $complete = $this->callableFromInstanceMethod("complete");
+                        $fail = $this->callableFromInstanceMethod("fail");
                     }
                 };
             }

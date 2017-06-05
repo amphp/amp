@@ -22,20 +22,12 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->promise = new class(function (callable $resolve, callable $fail) {
-                    $this->resolve = $resolve;
-                    $this->fail = $fail;
-                }) implements Promise {
+                $this->promise = new class($this->resolve, $this->fail) implements Promise {
                     use CallableMaker, Internal\Placeholder;
 
-                    /**
-                     * @param callable (callable $resolve, callable $reject): void $resolver
-                     */
-                    public function __construct(callable $resolver) {
-                        $resolver(
-                            $this->callableFromInstanceMethod("resolve"),
-                            $this->callableFromInstanceMethod("fail")
-                        );
+                    public function __construct(&$resolve, &$fail) {
+                        $resolve = $this->callableFromInstanceMethod("resolve");
+                        $fail = $this->callableFromInstanceMethod("fail");
                     }
                 };
             }
