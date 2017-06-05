@@ -37,7 +37,7 @@ final class Failure implements Promise {
                 Promise\rethrow($result);
             }
         } catch (\Throwable $exception) {
-            Loop::defer(function () use ($exception) {
+            Loop::defer(static function () use ($exception) {
                 throw $exception;
             });
         }
