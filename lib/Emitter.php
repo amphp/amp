@@ -26,7 +26,7 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->iterator = new class (function (callable $emit, callable $complete, callable $fail) {
+                $this->iterator = new class(function (callable $emit, callable $complete, callable $fail) {
                     $this->emit = $emit;
                     $this->complete = $complete;
                     $this->fail = $fail;

@@ -22,7 +22,7 @@ try {
             private $fail;
 
             public function __construct() {
-                $this->promise = new class (function (callable $resolve, callable $fail) {
+                $this->promise = new class(function (callable $resolve, callable $fail) {
                     $this->resolve = $resolve;
                     $this->fail = $fail;
                 }) implements Promise {
