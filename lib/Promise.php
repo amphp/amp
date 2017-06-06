@@ -11,10 +11,13 @@ interface Promise {
      *
      * If the promise is already resolved, the callback MUST be executed immediately.
      *
+     * Exceptions MUST NOT be thrown from this method. Any exceptions thrown from invoked callbacks MUST be
+     * forwarded to the event-loop error handler.
+     *
      * @param callable(\Throwable|null $reason, $value) $onResolved `$reason` shall be `null` on
      *     success, `$value` shall be `null` on failure.
      *
-     * @return mixed Return type and value are unspecified.
+     * @return void
      */
     public function onResolve(callable $onResolved);
 }

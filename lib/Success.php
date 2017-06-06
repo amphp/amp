@@ -5,8 +5,8 @@ namespace Amp;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Creates a successful promise using the given value (which can be any value except another object implementing
- * `Amp\Promise`).
+ * Creates a successful promise using the given value (which can be any value except an object implementing
+ * `Amp\Promise` or `React\Promise\PromiseInterface`).
  */
 final class Success implements Promise {
     /** @var mixed */
