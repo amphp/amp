@@ -117,13 +117,16 @@ final class CancellationTokenSource {
         return $this->token;
     }
 
-    public function cancel() {
+    /**
+     * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
+     */
+    public function cancel(\Throwable $previous = null) {
         if ($this->onCancel === null) {
             return;
         }
 
         $onCancel = $this->onCancel;
         $this->onCancel = null;
-        $onCancel(new CancelledException);
+        $onCancel(new CancelledException($previous));
     }
 }
