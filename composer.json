@@ -1,7 +1,7 @@
 {
     "name": "amphp/amp",
-    "homepage": "https://github.com/amphp/amp",
-    "description": "A non-blocking concurrency framework for PHP applications",
+    "homepage": "http://amphp.org/amp",
+    "description": "A non-blocking concurrency framework for PHP applications.",
     "keywords": [
         "async",
         "asynchronous",
@@ -36,14 +36,14 @@
         "php": ">=7"
     },
     "require-dev": {
-        "amphp/phpunit-util": "dev-master",
+        "amphp/phpunit-util": "^1",
         "react/promise": "^2",
         "friendsofphp/php-cs-fixer": "^2.3",
         "phpunit/phpunit": "^6.0.9"
     },
     "autoload": {
         "psr-4": {
-            "Amp\\": "lib/"
+            "Amp\\": "lib"
         },
         "files": [
             "lib/functions.php",
@@ -52,11 +52,12 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Test\\": "test/"
+            "Amp\\Test\\": "test"
         }
     },
     "support": {
-        "issues": "https://github.com/amphp/amp/issues"
+        "issues": "https://github.com/amphp/amp/issues",
+        "irc": "irc://irc.freenode.org/amphp"
     },
     "extra": {
         "branch-alias": {
