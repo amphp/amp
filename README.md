@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/travis/amphp/amp/master.svg?style=flat-square)](https://travis-ci.org/amphp/amp)
 [![CoverageStatus](https://img.shields.io/coveralls/amphp/amp/master.svg?style=flat-square)](https://coveralls.io/github/amphp/amp?branch=master)
-![Unstable v2](https://img.shields.io/badge/unstable-v2-green.svg?style=flat-square)
+![Stable v2](https://img.shields.io/badge/stable-v2-green.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
 
 `amphp/amp` is a non-blocking concurrency framework for PHP. It provides an event loop, promises and streams as a base for asynchronous programming.
@@ -14,7 +14,7 @@ Promises in combination with generators are used to build coroutines, which allo
 This package can be installed as a [Composer](https://getcomposer.org/) dependency.
 
 ```bash
-composer require amphp/amp ^2@dev
+composer require amphp/amp ^2
 ```
 
 ## Requirements
