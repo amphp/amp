@@ -23,7 +23,7 @@ class UvReactorTest extends ReactorTest {
 
     public function testGetLoop() {
         $result = \Amp\reactor()->getLoop();
-        $this->assertInternalType("resource", $result);
+        $this->assertTrue(\is_resource($result) || $result instanceof \UVLoop);
     }
 
     public function testOnSignalWatcherKeepAliveRunResult() {

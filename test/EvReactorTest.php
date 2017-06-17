@@ -39,6 +39,10 @@ class EvReactorTest extends ReactorTest {
         \Amp\cancel($watcherId);
     }
 
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage coroutine error
+     */
     public function testImmediateCoroutineResolutionError() {
         if (\extension_loaded("xdebug")) {
             $this->markTestSkipped(
@@ -49,6 +53,10 @@ class EvReactorTest extends ReactorTest {
         }
     }
 
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage coroutine error
+     */
     public function testOnErrorFailure() {
         if (\extension_loaded("xdebug")) {
             $this->markTestSkipped(
