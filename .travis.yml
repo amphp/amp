@@ -6,14 +6,14 @@ php:
   - 5.5
   - 5.6
   - 7.0
+  - 7.1
   - nightly
 
 install:
   - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0")
   - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install ev)
-  - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (mkdir libuv && (curl -L https://github.com/libuv/libuv/archive/v1.6.1.tar.gz | tar xzf -) && cd libuv-1.6.1 && ./autogen.sh && ./configure --prefix=$(readlink -f `pwd`/../libuv) && make && make install && cd ..)
+  - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (mkdir libuv && (curl -L https://github.com/libuv/libuv/archive/v1.x.tar.gz | tar xzf -) && cd libuv-1.x && ./autogen.sh && ./configure --prefix=$(readlink -f `pwd`/../libuv) && make && make install && cd ..)
   - php -r 'exit((int) (PHP_MAJOR_VERSION >= 7));' || (git clone https://github.com/bwoebi/php-uv && cd php-uv && phpize && ./configure --with-uv=$(readlink -f `pwd`/../libuv) && make install && (echo "extension = uv.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini) && cd ..)
-  - composer self-update
   - composer require satooshi/php-coveralls:dev-master
   - composer install
 
@@ -23,7 +23,7 @@ script:
 
 after_script:
   - php vendor/bin/coveralls -v
-  
+
 cache:
   directories:
     - $HOME/.composer/cache
