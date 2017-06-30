@@ -37,6 +37,11 @@ Documentation is bundled within this repository in the [`./docs`](./docs) direct
 
 `amphp/amp` follows the [semver](http://semver.org/) semantic versioning specification like all other `amphp` packages.
 
+| Version | Bug Fixes Until | Security Fixes Until |
+| ------- | --------------- | -------------------- |
+| 2.x     | TBA             | TBA                  |
+| 1.x     | 2017-12-31      | 2018-12-31           |
+
 ## Compatible Packages
 
 Compatible packages should use the [`amphp`](https://github.com/search?utf8=%E2%9C%93&q=topic%3Aamphp) topic on GitHub.
