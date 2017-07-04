@@ -119,7 +119,21 @@ final class Coroutine implements Promise {
                 $promise = $this->generator->key();
 
                 if (!$promise instanceof Promise) {
-                    throw new \Error("Must yield a promise as the key when yielding a cancellation token");
+                    if (\is_array($promise)) {
+                        $promise = Promise\all($promise);
+                    } elseif ($promise instanceof ReactPromise) {
+                        $promise = Promise\adapt($promise);
+                    } else {
+                        return new Failure(new InvalidYieldError(
+                            $this->generator,
+                            \sprintf(
+                                "Key must be an instance of %s or %s or array of such instances when yielding an instance of %s",
+                                Promise::class,
+                                ReactPromise::class,
+                                CancellationToken::class
+                            )
+                        ));
+                    }
                 }
 
                 return Promise\cancellable($promise, $yielded);

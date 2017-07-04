@@ -890,7 +890,50 @@ class CoroutineTest extends TestCase {
         });
 
         $this->assertInstanceOf(InvalidYieldError::class, $reason);
-        $this->assertInstanceOf(\Error::class, $reason->getPrevious());
+    }
+
+    public function testYieldingCancellationTokenWithArray() {
+        $token = new TimeoutCancellationToken(100);
+
+        $generator = function () use ($token) {
+            return yield [new Success(1), new Success(2)] => $token;
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        Loop::run();
+
+        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertNull($reason);
+        $this->assertSame([1, 2], $result);
+    }
+
+    public function testYieldingCancellationTokenWithReactPromise() {
+        $token = new TimeoutCancellationToken(100);
+        $value = 1;
+        $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
+            $resolve($value);
+        });
+
+        $generator = function () use ($token, $promise) {
+            return yield $promise => $token;
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        Loop::run();
+
+        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertNull($reason);
+        $this->assertSame($value, $result);
     }
 
     public function testAsyncCoroutineFunctionWithFailure() {
