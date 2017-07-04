@@ -2,6 +2,7 @@
 
 namespace Amp\Test;
 
+use Amp\CancelledException;
 use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Failure;
@@ -10,6 +11,7 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
+use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
@@ -845,6 +847,50 @@ class CoroutineTest extends TestCase {
 
         $this->assertSame($reason, $exception);
         $this->assertNull($result);
+    }
+
+    public function testYieldingCancellationToken() {
+        $token = new TimeoutCancellationToken(100);
+        $promise = new Delayed(200);
+
+        $generator = function () use ($token, $promise) {
+            yield $promise => $token;
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        Loop::run();
+
+        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertInstanceOf(CancelledException::class, $reason);
+        $this->assertNull($result);
+    }
+
+    /**
+     * @depends testYieldingCancellationToken
+     */
+    public function testYieldingCancellationTokenWithoutPromiseKey() {
+        $token = new TimeoutCancellationToken(100);
+
+        $generator = function () use ($token) {
+            yield $token;
+        };
+
+        $coroutine = new Coroutine($generator());
+
+        Loop::run();
+
+        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
+            $reason = $exception;
+            $result = $value;
+        });
+
+        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+        $this->assertInstanceOf(\Error::class, $reason->getPrevious());
     }
 
     public function testAsyncCoroutineFunctionWithFailure() {

@@ -115,6 +115,16 @@ final class Coroutine implements Promise {
                 return Promise\adapt($yielded);
             }
 
+            if ($yielded instanceof CancellationToken) {
+                $promise = $this->generator->key();
+
+                if (!$promise instanceof Promise) {
+                    throw new \Error("Must yield a promise as the key when yielding a cancellation token");
+                }
+
+                return Promise\cancellable($promise, $yielded);
+            }
+
             // No match, continue to returning Failure below.
         } catch (\Throwable $exception) {
             // Conversion to promise failed, fall-through to returning Failure below.
