@@ -100,9 +100,9 @@ abstract class DriverTest extends TestCase {
 
     public function testLoopTerminatesWithOnlyUnreferencedWatchers() {
         $this->start(function (Driver $loop) use (&$end) {
-            $loop->unreference($loop->onReadable(STDIN, function() {}));
-            $w = $loop->delay(10000000, function() {});
-            $loop->defer(function() use ($loop, $w) { $loop->cancel($w); });
+            $loop->unreference($loop->onReadable(STDIN, function () {}));
+            $w = $loop->delay(10000000, function () {});
+            $loop->defer(function () use ($loop, $w) { $loop->cancel($w); });
             $end = true;
         });
         $this->assertTrue($end);
