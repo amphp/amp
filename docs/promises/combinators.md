@@ -33,7 +33,8 @@ Loop::run(function () {
 
     try {
         // magic combinator sauce to flatten the promise
-        // array into a single promise
+        // array into a single promise.
+        // yielding an array is an implicit "yield Amp\Promise\all($array)".
         $responses = yield array_map(function ($uri) use ($httpClient) {
             return $httpClient->request($uri);
         }, $uris);
