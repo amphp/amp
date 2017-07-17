@@ -1,9 +1,9 @@
-![Amp](https://raw.githubusercontent.com/amphp/logo/master/repos/amp.png?v=16-07-2017-18-21-00)
+[![Amp](https://raw.githubusercontent.com/amphp/logo/master/repos/amp.png?v=16-07-2017-18-21-00)](http://amphp.org)
 
 <p align="center">
 <a href="https://travis-ci.org/amphp/amp"><img src="https://img.shields.io/travis/amphp/amp/master.svg?style=flat-square"></a>
 <a href="https://coveralls.io/github/amphp/amp?branch=master"><img src="https://img.shields.io/coveralls/amphp/amp/master.svg?style=flat-square"></a>
-<img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square">
+<a href="blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"></a>
 </p>
 
 Amp is a non-blocking concurrency framework for PHP. It provides an event loop, promises and streams as a base for asynchronous programming.
@@ -27,7 +27,7 @@ composer require amphp/amp
 Extensions are only needed if your app necessitates a high numbers of concurrent socket connections.
 
 - [ev](https://pecl.php.net/package/ev)
-- [libevent](https://pecl.php.net/package/libevent)
+- [event](https://pecl.php.net/package/event)
 - [php-uv](https://github.com/bwoebi/php-uv) (experimental fork)
 
 ## Documentation
