@@ -244,7 +244,7 @@ class EventDriver extends Driver {
 
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
-                    // No break
+                    // no break
 
                 default:
                     $this->events[$id]->add();
