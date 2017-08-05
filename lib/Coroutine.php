@@ -20,8 +20,13 @@ final class Coroutine implements Promise {
     /** @var callable(\Throwable|null $exception, mixed $value): void */
     private $onResolve;
 
+    /** @var bool Used to control iterative coroutine continuation. */
     private $immediate = true;
+
+    /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
     private $exception;
+
+    /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
     private $value;
 
     /**
@@ -29,6 +34,22 @@ final class Coroutine implements Promise {
      */
     public function __construct(\Generator $generator) {
         $this->generator = $generator;
+
+        try {
+            $yielded = $this->generator->current();
+
+            if (!$yielded instanceof Promise) {
+                if (!$this->generator->valid()) {
+                    $this->resolve($this->generator->getReturn());
+                    return;
+                }
+
+                $yielded = $this->transform($yielded);
+            }
+        } catch (\Throwable $exception) {
+            $this->fail($exception);
+            return;
+        }
 
         /**
          * @param \Throwable|null $exception Exception to be thrown into the generator.
@@ -77,24 +98,7 @@ final class Coroutine implements Promise {
             }
         };
 
-        try {
-            $yielded = $this->generator->current();
-
-            if (!$yielded instanceof Promise) {
-                if (!$this->generator->valid()) {
-                    $this->resolve($this->generator->getReturn());
-                    $this->onResolve = null;
-                    return;
-                }
-
-                $yielded = $this->transform($yielded);
-            }
-
-            $yielded->onResolve($this->onResolve);
-        } catch (\Throwable $exception) {
-            $this->fail($exception);
-            $this->onResolve = null;
-        }
+        $yielded->onResolve($this->onResolve);
     }
 
     /**
