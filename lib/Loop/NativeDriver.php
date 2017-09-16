@@ -144,7 +144,13 @@ class NativeDriver extends Driver {
 
             // Error reporting suppressed since stream_select() emits an E_WARNING if it is interrupted by a signal.
             if (!@\stream_select($read, $write, $except, $seconds, $microseconds)) {
-                return;
+                $error = error_get_last();
+
+                if (\strpos($error["message"], "Interrupted system call") !== false) {
+                    return;
+                }
+
+                $this->error(new \Exception("stream_select() failed: " . $error["message"]));
             }
 
             foreach ($read as $stream) {
