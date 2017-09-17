@@ -1,13 +1,24 @@
-sudo: false
+sudo: required
 
 language: php
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
 
 php:
   - 5.5
   - 5.6
   - 7.0
   - 7.1
+  - 7.2
   - nightly
+
+matrix:
+  allow_failures:
+    - php: nightly
+  fast_finish: true
 
 install:
   - php -r 'exit((int) (PHP_MAJOR_VERSION < 7));' || (yes "" | pecl install "channel://pecl.php.net/libevent-0.1.0")
