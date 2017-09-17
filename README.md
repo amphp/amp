@@ -1,7 +1,7 @@
 # amp
 
-[![Build Status](https://img.shields.io/travis/amphp/amp/master.svg?style=flat-square)](https://travis-ci.org/amphp/amp)
-[![CoverageStatus](https://img.shields.io/coveralls/amphp/amp/master.svg?style=flat-square)](https://coveralls.io/github/amphp/amp?branch=master)
+[![Build Status](https://img.shields.io/travis/amphp/amp/1.x.svg?style=flat-square)](https://travis-ci.org/amphp/amp)
+[![CoverageStatus](https://img.shields.io/coveralls/amphp/amp/1.x.svg?style=flat-square)](https://coveralls.io/github/amphp/amp?branch=1.x)
 ![Stable v1](https://img.shields.io/badge/stable-v1-green.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
 
