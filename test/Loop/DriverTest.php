@@ -3,6 +3,7 @@
 namespace Amp\Test\Loop;
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Loop\Driver;
@@ -1482,5 +1483,18 @@ abstract class DriverTest extends TestCase {
         $this->loop->run();
         $this->assertLessThan(2, \abs($j - $k));
         $this->assertNotSame(0, $j);
+    }
+
+    public function testBug163ConsecutiveDelayed() {
+        $emits = 3;
+        Loop::run(function () use (&$time, $emits) {
+            $time = microtime(true);
+            for ($i = 0; $i < $emits; ++$i) {
+                yield new Delayed(100);
+            }
+            $time = microtime(true) - $time;
+        });
+
+        $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 }
