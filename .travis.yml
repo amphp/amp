@@ -1,6 +1,11 @@
-sudo: false
+sudo: required
 
 language: php
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
 
 php:
   - 7.0
