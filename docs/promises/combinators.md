@@ -43,7 +43,7 @@ Loop::run(function () {
             printf(
                 "%s | HTTP/%s %d %s\n",
                 $key,
-                $response->getProtocol(),
+                $response->getProtocolVersion(),
                 $response->getStatus(),
                 $response->getReason()
             );
