@@ -1487,13 +1487,16 @@ abstract class DriverTest extends TestCase {
 
     public function testBug163ConsecutiveDelayed() {
         $emits = 3;
-        Loop::run(function () use (&$time, $emits) {
+
+        $this->loop->defer(function () use (&$time, $emits) {
             $time = microtime(true);
             for ($i = 0; $i < $emits; ++$i) {
                 yield new Delayed(100);
             }
             $time = microtime(true) - $time;
         });
+
+        $this->loop->run();
 
         $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
