@@ -18,6 +18,8 @@ function asyncOperation() {
 try {
     Loop::run(function () {
         try {
+            // the failing promise returned from asyncOperation() will throw at the point of yield
+            // and can be caught like any other exception in PHP.
             $res = yield asyncOperation();
 
             echo "asyncOperation result -> " . $res . PHP_EOL;
@@ -26,5 +28,5 @@ try {
         }
     });
 } catch (Throwable $loopException) {
-    echo "loopException -> " . $loopException->getMessage() . PHP_EOL;
+    echo "loop bubbled exception caught -> " . $loopException->getMessage() . PHP_EOL;
 }
