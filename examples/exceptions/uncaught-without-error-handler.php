@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-use Amp\Deferred;
+
 use Amp\Loop;
 
 require_once __DIR__ . "/../../vendor/autoload.php";

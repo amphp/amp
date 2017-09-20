@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 use Amp\Deferred;
 use Amp\Loop;
 
