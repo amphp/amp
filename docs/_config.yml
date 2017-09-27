@@ -4,6 +4,7 @@ kramdown:
 
 baseurl: "/amp"
 layouts_dir: ".shared/layout"
+includes_dir: ".shared/includes"
 
 exclude: ["Gemfile", "Gemfile.lock", "README.md", "vendor"]
 safe: true
