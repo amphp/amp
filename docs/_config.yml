@@ -20,7 +20,7 @@ defaults:
    values:
      layout: "docs"
 
-asset_path: "/amp/asset"
+shared_asset_path: "/amp/asset"
 
 navigation:
  - event-loop
