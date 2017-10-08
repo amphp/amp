@@ -6,6 +6,7 @@ use Amp\Loop\Driver;
 use Amp\Loop\DriverFactory;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
+use Amp\Loop\Watcher;
 
 /**
  * Accessor to allow global access to the event loop.
@@ -31,7 +32,29 @@ final class Loop {
      * @param Driver $driver
      */
     public static function set(Driver $driver) {
-        self::$driver = $driver;
+        try {
+            self::$driver = new class extends Driver {
+                protected function activate(array $watchers) {
+                    throw new \Error("Can't activate watcher during garbage collection.");
+                }
+
+                protected function dispatch(bool $blocking) {
+                    throw new \Error("Can't dispatch during garbage collection.");
+                }
+
+                protected function deactivate(Watcher $watcher) {
+                    // do nothing
+                }
+
+                public function getHandle() {
+                    return null;
+                }
+            };
+
+            \gc_collect_cycles();
+        } finally {
+            self::$driver = $driver;
+        }
     }
 
     /**
