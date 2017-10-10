@@ -284,6 +284,7 @@ namespace Amp\Promise {
                 throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
+            $values[$key] = null; // add entry to array to preserve order
             $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key) {
                 if ($pending === 0) {
                     return;
@@ -333,6 +334,7 @@ namespace Amp\Promise {
                 throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
+            $exceptions[$key] = null; // add entry to array to preserve order
             $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
                 if ($pending === 0) {
                     return;
@@ -394,13 +396,16 @@ namespace Amp\Promise {
                 throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
+            $values[$key] = $exceptions[$key] = null; // add entry to arrays to preserve order
             $promise->onResolve(function ($exception, $value) use (
                 &$values, &$exceptions, &$pending, $key, $required, $deferred
             ) {
                 if ($exception) {
                     $exceptions[$key] = $exception;
+                    unset($values[$key]);
                 } else {
                     $values[$key] = $value;
+                    unset($exceptions[$key]);
                 }
 
                 if (0 === --$pending) {
