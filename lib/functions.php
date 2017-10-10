@@ -284,7 +284,7 @@ namespace Amp\Promise {
                 throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key, &$promises) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key, $promises) {
                 if ($pending === 0) {
                     return;
                 }
