@@ -284,7 +284,7 @@ namespace Amp\Promise {
                 throw createTypeError([Promise::class, ReactPromise::class], $promise);
             }
 
-            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key) {
+            $promise->onResolve(function ($exception, $value) use (&$deferred, &$values, &$pending, $key, &$promises) {
                 if ($pending === 0) {
                     return;
                 }
@@ -298,7 +298,11 @@ namespace Amp\Promise {
 
                 $values[$key] = $value;
                 if (0 === --$pending) {
-                    $deferred->resolve($values);
+                    $result = [];
+                    foreach ($promises as $key => $_) {
+                        $result[$key] = $values[$key];
+                    }
+                    $deferred->resolve($result);
                 }
             });
         }
