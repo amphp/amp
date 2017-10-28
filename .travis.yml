@@ -1,10 +1,16 @@
-sudo: false
+sudo: required
 
 language: php
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
 
 php:
   - 7.0
   - 7.1
+  - 7.2
   - nightly
 
 matrix:
@@ -13,7 +19,7 @@ matrix:
   fast_finish: true
 
 before_install:
-  - phpenv config-rm xdebug.ini
+  - phpenv config-rm xdebug.ini || echo "No xdebug config."
 
 install:
   - travis/install-uv.sh

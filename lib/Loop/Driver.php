@@ -127,7 +127,7 @@ abstract class Driver {
             }
         }
 
-        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running);
+        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
     }
 
     /**

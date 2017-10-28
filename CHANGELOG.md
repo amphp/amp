@@ -1,3 +1,12 @@
+### 2.0.2
+
+ - Fixed warnings and timers in `EventDriver`.
+ - Does no longer hide warnings from `stream_select`.
+
+### 2.0.1
+
+ - Fixed an issue where the loop blocks even though all watchers are unreferenced.
+
 2.0.0
 -----
 
