@@ -87,6 +87,7 @@ namespace Amp {
 }
 
 namespace Amp\Promise {
+    use Amp\CancellationToken;
     use Amp\Deferred;
     use Amp\Loop;
     use Amp\MultiReasonException;
@@ -233,6 +234,46 @@ namespace Amp\Promise {
         } else {
             throw new \Error("Object must have a 'then' or 'done' method");
         }
+
+        return $deferred->promise();
+    }
+
+    /**
+     * Returns a promise that is resolved in the same way as the given promise or fails if cancellation is requested by
+     * the cancellation token. Note that it is the callers responsibility to clean up any resources that may be used
+     * by the operation represented by the promise if cancellation is requested.
+     *
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
+     * @param \Amp\CancellationToken $token
+     *
+     * @return \Amp\Promise
+     */
+    function cancellable($promise, CancellationToken $token): Promise {
+        if (!$promise instanceof Promise) {
+            if ($promise instanceof ReactPromise) {
+                $promise = adapt($promise);
+            } else {
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
+            }
+        }
+
+        $deferred = new Deferred;
+        $id = $token->subscribe([$deferred, "fail"]);
+
+        $promise->onResolve(function ($exception, $value) use ($id, $token, $deferred) {
+            if ($token->isRequested()) {
+                return; // Deferred has already been resolved.
+            }
+
+            $token->unsubscribe($id);
+
+            if ($exception) {
+                $deferred->fail($exception);
+                return;
+            }
+
+            $deferred->resolve($value);
+        });
 
         return $deferred->promise();
     }
