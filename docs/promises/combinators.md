@@ -20,35 +20,37 @@ asynchronous operations at the same time. Let's look at a simple example using t
 <?php
 
 use Amp\Loop;
-use function Amp\Promise;
+use Amp\Promise;
 
 Loop::run(function () {
-    $httpClient = new Amp\Artax\Client;
-    $promiseArray = $httpClient->requestMulti([
-        "google"    => "http://www.google.com",
-        "news"      => "http://news.google.com",
-        "bing"      => "http://www.bing.com",
-        "yahoo"     => "https://www.yahoo.com",
-    ]);
+    $httpClient = new Amp\Artax\DefaultClient;
+    $uris = [
+        "google" => "http://www.google.com",
+        "news"   => "http://news.google.com",
+        "bing"   => "http://www.bing.com",
+        "yahoo"  => "https://www.yahoo.com",
+    ];
 
     try {
         // magic combinator sauce to flatten the promise
-        // array into a single promise
-        $responses = yield Promise\all($promiseArray);
+        // array into a single promise.
+        // yielding an array is an implicit "yield Amp\Promise\all($array)".
+        $responses = yield array_map(function ($uri) use ($httpClient) {
+            return $httpClient->request($uri);
+        }, $uris);
 
         foreach ($responses as $key => $response) {
             printf(
                 "%s | HTTP/%s %d %s\n",
                 $key,
-                $response->getProtocol(),
+                $response->getProtocolVersion(),
                 $response->getStatus(),
                 $response->getReason()
             );
         }
     } catch (Amp\MultiReasonException $e) {
-        // If any one of the requests fails the combo
-        // promise returned by Amp\all() will fail and
-        // be thrown back into our generator here.
+        // If any one of the requests fails the combo will fail and
+        // be thrown back into our generator.
         echo $e->getMessage(), "\n";
     }
 

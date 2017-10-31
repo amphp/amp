@@ -143,8 +143,18 @@ class NativeDriver extends Driver {
             $except = null;
 
             // Error reporting suppressed since stream_select() emits an E_WARNING if it is interrupted by a signal.
-            if (!@\stream_select($read, $write, $except, $seconds, $microseconds)) {
-                return;
+            if (!($result = @\stream_select($read, $write, $except, $seconds, $microseconds))) {
+                if ($result === 0) {
+                    return;
+                }
+
+                $error = \error_get_last();
+
+                if (\strpos($error["message"], "unable to select") !== 0) {
+                    return;
+                }
+
+                $this->error(new \Exception($error["message"]));
             }
 
             foreach ($read as $stream) {

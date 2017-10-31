@@ -3,6 +3,7 @@
 namespace Amp\Test\Loop;
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Loop\Driver;
@@ -96,6 +97,16 @@ abstract class DriverTest extends TestCase {
                 echo 3;
             });
         });
+    }
+
+    public function testLoopTerminatesWithOnlyUnreferencedWatchers() {
+        $this->start(function (Driver $loop) use (&$end) {
+            $loop->unreference($loop->onReadable(STDIN, function () {}));
+            $w = $loop->delay(10000000, function () {});
+            $loop->defer(function () use ($loop, $w) { $loop->cancel($w); });
+            $end = true;
+        });
+        $this->assertTrue($end);
     }
 
     /** This MUST NOT have a "test" prefix, otherwise it's executed as test and marked as risky. */
@@ -1472,5 +1483,21 @@ abstract class DriverTest extends TestCase {
         $this->loop->run();
         $this->assertLessThan(2, \abs($j - $k));
         $this->assertNotSame(0, $j);
+    }
+
+    public function testBug163ConsecutiveDelayed() {
+        $emits = 3;
+
+        $this->loop->defer(function () use (&$time, $emits) {
+            $time = microtime(true);
+            for ($i = 0; $i < $emits; ++$i) {
+                yield new Delayed(100);
+            }
+            $time = microtime(true) - $time;
+        });
+
+        $this->loop->run();
+
+        $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 }

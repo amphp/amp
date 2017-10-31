@@ -123,6 +123,10 @@ class EventDriver extends Driver {
         foreach ($this->events as $event) {
             $event->free();
         }
+
+        // Unset here, otherwise $event->del() fails with a warning, because __destruct order isn't defined.
+        // See https://github.com/amphp/amp/issues/159.
+        $this->events = [];
     }
 
     /**
@@ -176,6 +180,7 @@ class EventDriver extends Driver {
      */
     protected function dispatch(bool $blocking) {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
 
     /**
@@ -244,15 +249,13 @@ class EventDriver extends Driver {
 
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
-                    // No break
+                    // no break
 
                 default:
                     $this->events[$id]->add();
                     break;
             }
         }
-
-        $this->now = $now;
     }
 
     /**
