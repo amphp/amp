@@ -1,4 +1,4 @@
-### Unreleased
+### 2.0.3
 
  - `Loop::set()` replaces the current driver with a dummy driver for the time of `gc_collect_cycles()` now. This allows cyclic references to be cleaned up properly before the new driver is set. Without such a fix, cyclic references might have been cleaned up later, e.g. cancelling their watcher IDs on the new loop, thereby cancelling the wrong watchers.
  - Promise combinator functions (`all(), `any()`, `first()`, `some()`) now preserve order of the given `$promises` array argument.
