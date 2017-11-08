@@ -12,8 +12,8 @@ require_once __DIR__ . "/../../vendor/autoload.php";
 function jobSuccess() {
     $deferred = new Deferred();
 
-    //we delay Promise resolve for 1 sec to simulate some async job
-    Loop::delay( 1 * 1000, function () use ($deferred) {
+    // We delay Promise resolve for 1 sec to simulate some async job
+    Loop::delay(1 * 1000, function () use ($deferred) {
         $deferred->resolve("value");
     });
 
@@ -26,8 +26,8 @@ function jobSuccess() {
 function jobFail() {
     $deferred = new Deferred();
 
-    //we delay Promise fail for 2 sec to simulate some async job
-    Loop::delay( 2 * 1000, function () use ($deferred) {
+    // We delay Promise fail for 2 sec to simulate some async job
+    Loop::delay(2 * 1000, function () use ($deferred) {
         $deferred->fail(new Exception("force fail"));
     });
 
@@ -39,7 +39,7 @@ Loop::run(function () {
         $asyncOperation1 = yield jobSuccess();
         echo "asyncOperation1 result -> " . $asyncOperation1 . PHP_EOL;
 
-        //remark: jobFail() will start only after jobSuccess() is finished, all this will be executed asynchronous
+        // jobFail() will start only after jobSuccess() is finished, all this will be executed asynchronous
         $asyncOperation2 = yield jobFail();
         echo "asyncOperation2 result -> " . $asyncOperation2 . PHP_EOL; //this statment will not run
     } catch (Throwable $exception) {

@@ -12,8 +12,8 @@ require_once __DIR__ . "/../../vendor/autoload.php";
 function jobSuccess() {
     $deferred = new Deferred();
 
-    //we delay Promise resolve for 1 sec to simulate some async job
-    Loop::delay( 1 * 1000, function () use ($deferred) {
+    // We delay Promise resolve for 1 sec to simulate some async job.
+    Loop::delay(1 * 1000, function () use ($deferred) {
         $deferred->resolve("value");
     });
 
@@ -26,17 +26,17 @@ function jobSuccess() {
 function jobFail() {
     $deferred = new Deferred();
 
-    //we delay Promise fail for 2 sec to simulate some async job
-    Loop::delay( 2 * 1000, function () use ($deferred) {
+    // We delay Promise fail for 2 sec to simulate some async job.
+    Loop::delay(2 * 1000, function () use ($deferred) {
         $deferred->fail(new Exception("force fail"));
     });
 
     return $deferred->promise();
 }
 
-//remark: onResolve() shouldn't be used directly in 99% of all cases
-//check https://github.com/amphp/amp/issues/178#issuecomment-342460585
-//check deferred.php for a cleaner code syntax
+// onResolve() shouldn't be used directly in 99% of all cases.
+// Check https://github.com/amphp/amp/issues/178#issuecomment-342460585
+// Check deferred.php for a cleaner code syntax.
 Loop::run(function () {
     jobSuccess()->onResolve(function (Throwable $error = null, $result = null) {
         if ($error) {
