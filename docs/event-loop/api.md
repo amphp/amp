@@ -99,7 +99,7 @@ Loop::run(function () {
 
 ## Stream IO Watchers
 
-Stream watchers are how we know when we can read and write to sockets and other streams. These events are how we're able to actually *create* things like HTTP servers and asynchronous database libraries using the event loop. As such, stream IO watchers form the backbone of any useful non-blocking Amp application.
+Stream watchers are how we know when we can read and write to sockets and other streams. These events are how we're able to actually create things like HTTP servers and asynchronous database libraries using the event loop. As such, stream IO watchers form the backbone of any useful non-blocking Amp application.
 
 There are two types of IO watchers:
 
@@ -107,6 +107,9 @@ There are two types of IO watchers:
  - Writability watchers
 
 ### `onReadable()`
+
+{:.note}
+> This is an advanced low-level API. Most users should use [`amphp/byte-stream`](https://github.com/amphp/byte-stream) instead.
 
 Watchers registered via `Loop::onReadable()` trigger their callbacks in the following situations:
 
@@ -144,7 +147,13 @@ In the above example we've done a few very simple things:
  - When we read data from the stream in our triggered callback we pass that to a stateful parser that does something domain-specific when certain conditions are met.
  - If the `fread()` call indicates that the socket connection is dead we clean up any resources we've allocated for the storage of this stream. This process should always include calling `Loop::cancel()` on any event loop watchers we registered in relation to the stream.
 
+{:.warning}
+> You should always read a multiple of the configured chunk size (default: 8192), otherwise your code might not work as expected with loop backends other than `stream_select()`, see [amphp/amp#65](https://github.com/amphp/amp/issues/65) for more information.
+
 ### `onWritable()`
+
+{:.note}
+> This is an advanced low-level API. Most users should use [`amphp/byte-stream`](https://github.com/amphp/byte-stream) instead.
 
  - Streams are essentially *"always"* writable. The only time they aren't is when their respective write buffers are full.
 
@@ -327,7 +336,7 @@ Marks a watcher as unreferenced. Takes the `$watcherId` as first and only argume
 ## Driver Bound State
 
 Sometimes it's very handy to have global state. While dependencies should usually be injected, it is impracticable to pass a `DnsResolver` into everything that needs a network connection. The `Loop` accessor provides therefore the two methods `getState` and `setState` to store state global to the current event loop driver.
- 
+
 These should be used with care! They can be used to store loop bound singletons such as the DNS resolver, filesystem driver, or global `ReactAdapter`. Applications should generally not use these methods.
 
 ## Event Loop Addenda
