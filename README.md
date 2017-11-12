@@ -16,6 +16,10 @@ This package can be installed as a [Composer](https://getcomposer.org/) dependen
 composer require amphp/amp
 ```
 
+## Documentation
+
+Documentation can be found on [amphp.org](https://amphp.org/) as well as in the [`./docs`](./docs) directory.
+
 ## Requirements
 
 - PHP 7.0+
@@ -28,9 +32,47 @@ Extensions are only needed if your app necessitates a high numbers of concurrent
 - [event](https://pecl.php.net/package/event)
 - [php-uv](https://github.com/bwoebi/php-uv) (experimental fork)
 
-## Documentation
+## Examples
 
-Documentation is bundled within this repository in the [`./docs`](./docs) directory.
+This simple example uses our [Artax](https://amphp.org/artax/) HTTP client to fetch multiple HTTP resources concurrently.
+
+```
+<?php
+
+use Amp\Artax\Response;
+use Amp\Loop;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+Loop::run(function () {
+    $uris = [
+        "https://google.com/",
+        "https://github.com/",
+        "https://stackoverflow.com/",
+    ];
+
+    $client = new Amp\Artax\DefaultClient;
+    $client->setOption(Amp\Artax\Client::OP_DISCARD_BODY, true);
+
+    try {
+        foreach ($uris as $uri) {
+            $promises[$uri] = $client->request($uri);
+        }
+
+        $responses = yield $promises;
+
+        foreach ($responses as $uri => $response) {
+            print $uri . " - " . $response->getStatus() . $response->getReason() . PHP_EOL;
+        }
+    } catch (Amp\Artax\HttpException $error) {
+        // If something goes wrong Amp will throw the exception where the promise was yielded.
+        // The Client::request() method itself will never throw directly, but returns a promise.
+        print $error->getMessage() . PHP_EOL;
+    }
+});
+```
+
+Further examples can be found in the [`./examples`](./examples) directory of this repository as well as in the `./examples` directory of [our other libraries](https://github.com/amphp?utf8=%E2%9C%93&q=&type=public&language=php)
 
 ## Versioning
 
