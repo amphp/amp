@@ -36,7 +36,7 @@ Extensions are only needed if your app necessitates a high numbers of concurrent
 
 This simple example uses our [Artax](https://amphp.org/artax/) HTTP client to fetch multiple HTTP resources concurrently.
 
-```
+```php
 <?php
 
 use Amp\Artax\Response;
