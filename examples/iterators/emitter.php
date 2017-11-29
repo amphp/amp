@@ -29,10 +29,10 @@ Loop::run(function () {
         $iterator = $emitter->iterate();
 
         while (yield $iterator->advance()) {
-            printf("Emitter emitted %d\n", $iterator->getCurrent());
+            \printf("Emitter emitted %d\n", $iterator->getCurrent());
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {
-        printf("Exception: %s\n", $exception);
+        \printf("Exception: %s\n", $exception);
     }
 });

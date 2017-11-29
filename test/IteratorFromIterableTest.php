@@ -107,7 +107,7 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testInterval() {
         Loop::run(function () {
             $count = 3;
-            $iterator = Iterator\fromIterable(range(1, $count), self::TIMEOUT);
+            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
 
             $i = 0;
             while (yield $iterator->advance()) {
@@ -124,7 +124,7 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
     public function testSlowConsumer() {
         $count = 5;
         Loop::run(function () use ($count) {
-            $iterator = Iterator\fromIterable(range(1, $count), self::TIMEOUT);
+            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
 
             for ($i = 0; yield $iterator->advance(); ++$i) {
                 yield new Delayed(self::TIMEOUT * 2);

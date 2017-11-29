@@ -24,10 +24,10 @@ Loop::run(function () {
         });
 
         while (yield $iterator->advance()) {
-            printf("Producer emitted %d\n", $iterator->getCurrent());
+            \printf("Producer emitted %d\n", $iterator->getCurrent());
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Exception $exception) {
-        printf("Exception: %s\n", $exception);
+        \printf("Exception: %s\n", $exception);
     }
 });

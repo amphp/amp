@@ -82,11 +82,11 @@ class ProducerTest extends TestCase {
         $emits = 3;
         Loop::run(function () use (&$time, $emits) {
             $producer = new Producer(function (callable $emit) use (&$time, $emits) {
-                $time = microtime(true);
+                $time = \microtime(true);
                 for ($i = 0; $i < $emits; ++$i) {
                     yield $emit($i);
                 }
-                $time = microtime(true) - $time;
+                $time = \microtime(true) - $time;
             });
 
             while (yield $producer->advance()) {
