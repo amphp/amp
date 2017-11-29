@@ -2,7 +2,7 @@
 Test order of destruction not interfering with access to UV handles
 --SKIPIF--
 <?php
-extension_loaded("uv") or die("SKIP: ext/uv required for this test");
+\extension_loaded("uv") or die("SKIP: ext/uv required for this test");
 ?>
 --FILE--
 <?php

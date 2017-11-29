@@ -12,15 +12,15 @@ use Amp\Loop\UnsupportedFeatureException;
 use PHPUnit\Framework\TestCase;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-if (!defined("SIGUSR1")) {
-    define("SIGUSR1", 30);
+if (!\defined("SIGUSR1")) {
+    \define("SIGUSR1", 30);
 }
-if (!defined("SIGUSR2")) {
-    define("SIGUSR2", 31);
+if (!\defined("SIGUSR2")) {
+    \define("SIGUSR2", 31);
 }
 
-if (!defined("PHP_INT_MIN")) {
-    define("PHP_INT_MIN", ~PHP_INT_MAX);
+if (!\defined("PHP_INT_MIN")) {
+    \define("PHP_INT_MIN", ~PHP_INT_MAX);
 }
 
 abstract class DriverTest extends TestCase {
@@ -43,7 +43,7 @@ abstract class DriverTest extends TestCase {
 
         // Required for error handler to work
         Loop::set($this->loop);
-        gc_collect_cycles();
+        \gc_collect_cycles();
     }
 
     public function tearDown() {
@@ -226,7 +226,7 @@ abstract class DriverTest extends TestCase {
                 $invoked = true;
             });
 
-            usleep(1000 * 10);
+            \usleep(1000 * 10);
         });
         $this->assertTrue($invoked);
     }
@@ -276,15 +276,15 @@ abstract class DriverTest extends TestCase {
 
         $this->start(function (Driver $loop) use ($type, $args, &$invoked) {
             if ($type == "onReadable") {
-                $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-                fwrite($ends[0], "trigger readability watcher");
+                $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                \fwrite($ends[0], "trigger readability watcher");
                 $args = [$ends[1]];
             } else {
-                array_pop($args);
+                \array_pop($args);
             }
 
             $expectedData = 20.75;
-            if (substr($type, 0, 2) == "on") {
+            if (\substr($type, 0, 2) == "on") {
                 $args[] = function ($watcherId, $arg, int $data) use ($loop, &$invoked, $expectedData) {
                     $invoked = true;
                     $this->assertSame((int) $expectedData, $data);
@@ -300,7 +300,7 @@ abstract class DriverTest extends TestCase {
                 };
             }
             $args[] = $expectedData;
-            call_user_func_array([$loop, $type], $args);
+            \call_user_func_array([$loop, $type], $args);
 
             if ($type == "onSignal") {
                 $loop->defer(function () {
@@ -341,8 +341,8 @@ abstract class DriverTest extends TestCase {
         $loop = $this->loop;
 
         $func = [$loop, $type];
-        if (substr($type, 0, 2) === "on") {
-            $type = "on_" . lcfirst(substr($type, 2));
+        if (\substr($type, 0, 2) === "on") {
+            $type = "on_" . \lcfirst(\substr($type, 2));
         }
 
         // being referenced is the default
@@ -407,8 +407,8 @@ abstract class DriverTest extends TestCase {
         $loop = $this->loop;
 
         $func = [$loop, $type];
-        if (substr($type, 0, 2) === "on") {
-            $type = "on_" . lcfirst(substr($type, 2));
+        if (\substr($type, 0, 2) === "on") {
+            $type = "on_" . \lcfirst(\substr($type, 2));
         }
 
         $watcherId = \call_user_func_array($func, $args);
@@ -478,7 +478,7 @@ abstract class DriverTest extends TestCase {
         }
 
         $this->start(function (Driver $loop) use ($type, $args, $runs) {
-            $initialMem = memory_get_usage();
+            $initialMem = \memory_get_usage();
             $cb = function ($runs) use ($loop, $type, $args) {
                 $func = [$loop, $type];
                 for ($watchers = [], $i = 0; $i < $runs; $i++) {
@@ -541,11 +541,11 @@ abstract class DriverTest extends TestCase {
                         $fn = function ($watcherId, $socket, $i) use (&$fn, $loop) {
                             $loop->cancel($watcherId);
                             if ($socket) {
-                                fwrite($socket, ".");
+                                \fwrite($socket, ".");
                             }
                             if ($i) {
                                 // explicitly use *different* streams with *different* resource ids
-                                $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                                $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
                                 $loop->onWritable($ends[0], $fn, --$i);
                                 $loop->onReadable($ends[1], function ($watcherId) use ($loop) {
                                     $loop->cancel($watcherId);
@@ -571,15 +571,15 @@ abstract class DriverTest extends TestCase {
                     $loop->run();
                 }
             };
-            $closureMem = memory_get_usage() - $initialMem;
+            $closureMem = \memory_get_usage() - $initialMem;
             $cb($runs); /* just to set up eventual structures inside loop without counting towards memory comparison */
-            gc_collect_cycles();
-            $initialMem = memory_get_usage() - $closureMem;
+            \gc_collect_cycles();
+            $initialMem = \memory_get_usage() - $closureMem;
             $cb($runs);
             unset($cb);
 
-            gc_collect_cycles();
-            $endMem = memory_get_usage();
+            \gc_collect_cycles();
+            $endMem = \memory_get_usage();
 
             /* this is allowing some memory usage due to runtime caches etc., but nothing actually leaking */
             $this->assertLessThan($runs * 4, $endMem - $initialMem); // * 4, as 4 is minimal sizeof(void *)
@@ -591,19 +591,19 @@ abstract class DriverTest extends TestCase {
      * indicates the order within the tick.
      */
     public function testExecutionOrderGuarantees() {
-        $this->expectOutputString("01 02 03 04 " . str_repeat("05 ", 8) . "10 11 12 " . str_repeat("13 ", 4) . "20 " . str_repeat("21 ", 4) . "30 40 41 ");
+        $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat("13 ", 4) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) use (&$ticks) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
             $loop->defer(function () use ($loop, &$ticks) {
                 $f = function () use ($loop) {
-                    $args = func_get_args();
+                    $args = \func_get_args();
                     return function ($watcherId) use ($loop, &$args) {
                         if (!$args) {
                             $this->fail("Watcher callback called too often");
                         }
                         $loop->cancel($watcherId);
-                        echo array_shift($args) . array_shift($args), " ";
+                        echo \array_shift($args) . \array_shift($args), " ";
                     };
                 };
 
@@ -673,7 +673,7 @@ abstract class DriverTest extends TestCase {
                     $loop->defer(function () use ($loop, $del5, $f) {
                         $loop->enable($del5);
                         $loop->defer(function () use ($loop, $f) {
-                            usleep(700000); // to have $msDelay == 500 and $msDelay == 600 run at the same tick (but not $msDelay == 150)
+                            \usleep(700000); // to have $msDelay == 500 and $msDelay == 600 run at the same tick (but not $msDelay == 150)
                             $loop->defer(function () use ($loop, $f) {
                                 $loop->defer($f(4, 0));
                             });
@@ -1237,7 +1237,7 @@ abstract class DriverTest extends TestCase {
     }
 
     public function testLoopStopPreventsTimerExecution() {
-        $t = microtime(1);
+        $t = \microtime(1);
         $this->start(function (Driver $loop) {
             $loop->delay($msDelay = 10000, function () {
                 $this->fail("Timer was executed despite stopped loop");
@@ -1246,7 +1246,7 @@ abstract class DriverTest extends TestCase {
                 $loop->stop();
             });
         });
-        $this->assertTrue($t + 0.1 > microtime(1));
+        $this->assertTrue($t + 0.1 > \microtime(1));
     }
 
     public function testDeferEnabledInNextTick() {
@@ -1349,8 +1349,8 @@ abstract class DriverTest extends TestCase {
                             break;
 
                         case "onReadable":
-                            $ends = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-                            fwrite($ends[0], "trigger readability watcher");
+                            $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                            \fwrite($ends[0], "trigger readability watcher");
                             $args[] = $ends[1];
                             break;
 
@@ -1372,7 +1372,7 @@ abstract class DriverTest extends TestCase {
                         };
                     }
 
-                    call_user_func_array([$this->loop, $watcher], $args);
+                    \call_user_func_array([$this->loop, $watcher], $args);
 
                     if ($watcher == "onSignal") {
                         $this->loop->delay(100, function () {
@@ -1391,7 +1391,7 @@ abstract class DriverTest extends TestCase {
     }
 
     public function testMultipleWatchersOnSameDescriptor() {
-        $sockets = stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        $sockets = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         \fwrite($sockets[1], "testing");
 
         $invoked = 0;
@@ -1489,11 +1489,11 @@ abstract class DriverTest extends TestCase {
         $emits = 3;
 
         $this->loop->defer(function () use (&$time, $emits) {
-            $time = microtime(true);
+            $time = \microtime(true);
             for ($i = 0; $i < $emits; ++$i) {
                 yield new Delayed(100);
             }
-            $time = microtime(true) - $time;
+            $time = \microtime(true) - $time;
         });
 
         $this->loop->run();

@@ -40,10 +40,10 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
             ->method("then")
             ->with(
                 $this->callback(function ($resolve) {
-                    return is_callable($resolve);
+                    return \is_callable($resolve);
                 }),
                 $this->callback(function ($reject) {
-                    return is_callable($reject);
+                    return \is_callable($reject);
                 })
             );
 

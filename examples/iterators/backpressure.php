@@ -30,10 +30,10 @@ Loop::run(function () {
         asyncCall($generator, $emitter);
 
         while (yield $iterator->advance()) {
-            printf("Emitter emitted %d\n", $iterator->getCurrent());
+            \printf("Emitter emitted %d\n", $iterator->getCurrent());
             yield new Delayed(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {
-        printf("Exception: %s\n", $exception);
+        \printf("Exception: %s\n", $exception);
     }
 });

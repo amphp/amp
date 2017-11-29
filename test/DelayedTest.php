@@ -9,7 +9,7 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
     public function testDelayed() {
         $time = 100;
         $value = "test";
-        $start = microtime(true);
+        $start = \microtime(true);
 
         Loop::run(function () use (&$result, $time, $value) {
             $promise = new Delayed($time, $value);
@@ -21,14 +21,14 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
             $promise->onResolve($callback);
         });
 
-        $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (microtime(true) - $start) * 1000);
+        $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
         $this->assertSame($value, $result);
     }
 
     public function testUnreference() {
         $time = 100;
         $value = "test";
-        $start = microtime(true);
+        $start = \microtime(true);
 
         $invoked = false;
         Loop::run(function () use (&$invoked, $time, $value) {
@@ -42,7 +42,7 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
             $promise->onResolve($callback);
         });
 
-        $this->assertLessThanOrEqual($time - 1 /* 1ms grace period */, (microtime(true) - $start) * 1000);
+        $this->assertLessThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
         $this->assertFalse($invoked);
     }
 
@@ -52,7 +52,7 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
     public function testReference() {
         $time = 100;
         $value = "test";
-        $start = microtime(true);
+        $start = \microtime(true);
 
         $invoked = false;
         Loop::run(function () use (&$invoked, $time, $value) {
@@ -67,7 +67,7 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
             $promise->onResolve($callback);
         });
 
-        $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (microtime(true) - $start) * 1000);
+        $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
         $this->assertTrue($invoked);
     }
 }

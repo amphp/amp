@@ -77,7 +77,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         list($promise, $succeeder) = $this->promise();
         $succeeder($value);
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
-            $this->assertSame(null, $e);
+            $this->assertNull($e);
             $this->assertSame($value, $v);
             $invoked = true;
         });
@@ -89,26 +89,26 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $invoked = 0;
 
         $promise->onResolve(function ($e, $v) use (&$invoked) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
+            $this->assertNull($e);
+            $this->assertTrue($v);
             $invoked++;
         });
         $promise->onResolve(function ($e, $v) use (&$invoked) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
+            $this->assertNull($e);
+            $this->assertTrue($v);
             $invoked++;
         });
 
         $succeeder(true);
 
         $promise->onResolve(function ($e, $v) use (&$invoked) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
+            $this->assertNull($e);
+            $this->assertTrue($v);
             $invoked++;
         });
         $promise->onResolve(function ($e, $v) use (&$invoked) {
-            $this->assertSame(null, $e);
-            $this->assertSame(true, $v);
+            $this->assertNull($e);
+            $this->assertTrue($v);
             $invoked++;
         });
 
@@ -118,7 +118,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     public function testPromiseExceptionFailure() {
         list($promise, , $failer) = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
         });
         $failer(new \RuntimeException);
@@ -129,7 +129,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         list($promise, , $failer) = $this->promise();
         $failer(new \RuntimeException);
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
         });
         $this->assertTrue($invoked);
@@ -140,22 +140,22 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $invoked = 0;
 
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked++;
         });
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked++;
         });
 
         $failer(new \RuntimeException);
 
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked++;
         });
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "RuntimeException");
+            $this->assertSame(\get_class($e), "RuntimeException");
             $invoked++;
         });
 
@@ -169,7 +169,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
 
         list($promise, , $failer) = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "Error");
+            $this->assertSame(\get_class($e), "Error");
             $invoked = true;
         });
         $failer(new \Error);
@@ -184,7 +184,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         list($promise, , $failer) = $this->promise();
         $failer(new \Error);
         $promise->onResolve(function ($e) use (&$invoked) {
-            $this->assertSame(get_class($e), "Error");
+            $this->assertSame(\get_class($e), "Error");
             $invoked = true;
         });
         $this->assertTrue($invoked);
@@ -225,8 +225,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
             list($promise, $succeeder) = $this->promise();
             $succeeder(true);
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertSame(null, $e);
-                $this->assertSame(true, $v);
+                $this->assertNull($e);
+                $this->assertTrue($v);
                 $invoked++;
 
                 throw new \Exception;
@@ -234,8 +234,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
 
             list($promise, $succeeder) = $this->promise();
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertSame(null, $e);
-                $this->assertSame(true, $v);
+                $this->assertNull($e);
+                $this->assertTrue($v);
                 $invoked++;
 
                 throw new \Exception;
@@ -256,15 +256,15 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
 
             list($promise, $succeeder) = $this->promise();
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertSame(null, $e);
-                $this->assertSame(true, $v);
+                $this->assertNull($e);
+                $this->assertTrue($v);
                 $invoked++;
 
                 throw new \Exception;
             });
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertSame(null, $e);
-                $this->assertSame(true, $v);
+                $this->assertNull($e);
+                $this->assertTrue($v);
                 $invoked++;
             });
             $succeeder(true);
@@ -337,7 +337,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $promise->onResolve(function () { });
         $promise->onResolve(function () use (&$invoked) {
             $invoked = true;
-            $this->assertLessThan(30, count(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)));
+            $this->assertLessThan(30, \count(\debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)));
         });
 
         $last = $promise;
