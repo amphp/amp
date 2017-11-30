@@ -84,7 +84,6 @@ trait Producer {
      *
      * @param mixed $value
      *
-     *
      * @throws \Error If the iterator has completed.
      */
     private function emit($value): Promise {
