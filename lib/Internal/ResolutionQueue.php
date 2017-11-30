@@ -27,7 +27,6 @@ class ResolutionQueue {
 
     /**
      * Unrolls instances of self to avoid blowing up the call stack on resolution.
-     *
      */
     public function push(callable $callback) {
         if ($callback instanceof self) {
