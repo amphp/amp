@@ -4,8 +4,6 @@ namespace Amp;
 
 class InvalidYieldError extends \Error {
     /**
-     * @param \Generator      $generator
-     * @param string          $prefix
      * @param \Throwable|null $previous
      */
     public function __construct(\Generator $generator, string $prefix, \Throwable $previous = null) {

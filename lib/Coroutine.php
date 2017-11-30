@@ -29,9 +29,6 @@ final class Coroutine implements Promise {
     /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
     private $value;
 
-    /**
-     * @param \Generator $generator
-     */
     public function __construct(\Generator $generator) {
         $this->generator = $generator;
 
@@ -106,8 +103,6 @@ final class Coroutine implements Promise {
      * `Amp\Failure` failed with an instance of `Amp\InvalidYieldError`.
      *
      * @param mixed $yielded Non-promise yielded from generator.
-     *
-     * @return \Amp\Promise
      */
     private function transform($yielded): Promise {
         try {

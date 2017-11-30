@@ -25,8 +25,6 @@ interface CancellationToken {
      * The handler will no longer be called as long as this method isn't invoked from a subscribed callback.
      *
      * @param string $id
-     *
-     * @return void
      */
     public function unsubscribe(string $id);
 
@@ -39,8 +37,6 @@ interface CancellationToken {
 
     /**
      * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
-     *
-     * @return void
      */
     public function throwIfRequested();
 }
