@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp;
 
@@ -16,8 +16,6 @@ if (\PHP_VERSION_ID < 70100) {
          * publicly invokable callback.
          *
          * @param string $method Instance method name.
-         *
-         * @return callable
          */
         private function callableFromInstanceMethod(string $method): callable {
             if (!isset(self::$__reflectionMethods[$method])) {
@@ -35,8 +33,6 @@ if (\PHP_VERSION_ID < 70100) {
          * publicly invokable callback.
          *
          * @param string $method Static method name.
-         *
-         * @return callable
          */
         private static function callableFromStaticMethod(string $method): callable {
             if (!isset(self::$__reflectionMethods[$method])) {

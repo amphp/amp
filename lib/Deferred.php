@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp;
 
@@ -32,9 +32,6 @@ try {
                 };
             }
 
-            /**
-             * @return \Amp\Promise
-             */
             public function promise(): Promise {
                 return $this->promise;
             }
@@ -50,8 +47,6 @@ try {
 
             /**
              * Fails the promise the the given reason.
-             *
-             * @param \Throwable $reason
              */
             public function fail(\Throwable $reason) {
                 ($this->fail)($reason);

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp;
 
@@ -28,8 +28,6 @@ final class Loop {
 
     /**
      * Sets the driver to be used for `Loop::run()`.
-     *
-     * @param Driver $driver
      */
     public static function set(Driver $driver) {
         try {
@@ -65,8 +63,6 @@ final class Loop {
      * error handler or exceptions that would be passed to an error handler but none exists to handle them.
      *
      * @param callable|null $callback The callback to execute.
-     *
-     * @return void
      */
     public static function run(callable $callback = null) {
         if ($callback) {
@@ -81,8 +77,6 @@ final class Loop {
      *
      * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
      * to stop MUST be ignored and MUST NOT raise an exception.
-     *
-     * @return void
      */
     public static function stop() {
         self::$driver->stop();
@@ -225,8 +219,6 @@ final class Loop {
      *
      * @param string $watcherId The watcher identifier.
      *
-     * @return void
-     *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public static function enable(string $watcherId) {
@@ -243,8 +235,6 @@ final class Loop {
      * invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
-     *
-     * @return void
      */
     public static function disable(string $watcherId) {
         self::$driver->disable($watcherId);
@@ -257,8 +247,6 @@ final class Loop {
      * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
-     *
-     * @return void
      */
     public static function cancel(string $watcherId) {
         self::$driver->cancel($watcherId);
@@ -271,8 +259,6 @@ final class Loop {
      * default.
      *
      * @param string $watcherId The watcher identifier.
-     *
-     * @return void
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
@@ -287,8 +273,6 @@ final class Loop {
      * are all referenced by default.
      *
      * @param string $watcherId The watcher identifier.
-     *
-     * @return void
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
@@ -307,8 +291,6 @@ final class Loop {
      *
      * @param string $key The namespaced storage key.
      * @param mixed  $value The value to be stored.
-     *
-     * @return void
      */
     public static function setState(string $key, $value) {
         self::$driver->setState($key, $value);
@@ -376,8 +358,6 @@ final class Loop {
 
     /**
      * Retrieve the event loop driver that is in scope.
-     *
-     * @return Driver
      */
     public static function get(): Driver {
         return self::$driver;

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp\Internal;
 
@@ -27,8 +27,6 @@ class ResolutionQueue {
 
     /**
      * Unrolls instances of self to avoid blowing up the call stack on resolution.
-     *
-     * @param callable $callback
      */
     public function push(callable $callback) {
         if ($callback instanceof self) {
@@ -42,10 +40,9 @@ class ResolutionQueue {
     /**
      * Calls each callback in the queue, passing the provided values to the function.
      *
-     * @param \Throwable|null $exception
      * @param mixed           $value
      */
-    public function __invoke($exception, $value) {
+    public function __invoke(\Throwable $exception = null, $value) {
         foreach ($this->queue as $callback) {
             try {
                 $result = $callback($exception, $value);

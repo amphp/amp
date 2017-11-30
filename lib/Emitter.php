@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp;
 
@@ -37,9 +37,6 @@ try {
                 };
             }
 
-            /**
-             * @return \Amp\Iterator
-             */
             public function iterate(): Iterator {
                 return $this->iterator;
             }
@@ -48,8 +45,6 @@ try {
              * Emits a value to the iterator.
              *
              * @param mixed $value
-             *
-             * @return \Amp\Promise
              */
             public function emit($value): Promise {
                 return ($this->emit)($value);
@@ -64,8 +59,6 @@ try {
 
             /**
              * Fails the iterator with the given reason.
-             *
-             * @param \Throwable $reason
              */
             public function fail(\Throwable $reason) {
                 ($this->fail)($reason);
