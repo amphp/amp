@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp\Internal;
 
@@ -84,7 +84,6 @@ trait Producer {
      *
      * @param mixed $value
      *
-     * @return \Amp\Promise
      *
      * @throws \Error If the iterator has completed.
      */

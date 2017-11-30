@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp\Internal;
 
@@ -30,7 +30,6 @@ function formatStacktrace(array $trace): string {
  * @param string[] $expected Expected types.
  * @param mixed $given Given value.
  *
- * @return \TypeError
  *
  * @internal
  */
