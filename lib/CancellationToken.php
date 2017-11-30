@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp;
 
@@ -24,14 +24,12 @@ interface CancellationToken {
      *
      * The handler will no longer be called as long as this method isn't invoked from a subscribed callback.
      *
-     * @param string $id
      */
     public function unsubscribe(string $id);
 
     /**
      * Returns whether cancellation has been requested yet.
      *
-     * @return bool
      */
     public function isRequested(): bool;
 
