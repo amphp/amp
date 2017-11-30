@@ -30,7 +30,6 @@ function formatStacktrace(array $trace): string {
  * @param string[] $expected Expected types.
  * @param mixed $given Given value.
  *
- *
  * @internal
  */
 function createTypeError(array $expected, $given): \TypeError {
