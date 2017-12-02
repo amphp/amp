@@ -2,6 +2,12 @@
 
 namespace Amp;
 
+// Issue a notice if AMP_OPTIMIZATIONS is not defined.
+if (\getenv("AMP_OPTIMIZATIONS") === false && !\defined("AMP_OPTIMIZATIONS")) {
+    \trigger_error("Amp is running in development mode. Define environment variable AMP_OPTIMIZATIONS or "
+        . "const AMP_OPTIMIZATIONS to hide this notice. Use a truthy value to run in production mode", E_USER_NOTICE);
+}
+
 /**
  * Representation of the future value of an asynchronous operation.
  */
