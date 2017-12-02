@@ -26,9 +26,7 @@ install:
   - travis/install-ev.sh
   - travis/install-event.sh
 
-  # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
-  - composer update -n --prefer-dist --ignore-platform-reqs
-  - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
+  - composer update -n --prefer-dist
 
   - mkdir -p coverage/cov coverage/bin
   - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
@@ -43,8 +41,10 @@ script:
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
+  - curl -OL https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.0/coveralls.phar
+  - chmod +x coveralls.phar
   - phpdbg -qrr coverage/bin/phpcov merge --clover build/logs/clover.xml coverage/cov
-  - php vendor/bin/coveralls -v
+  - ./coveralls.phar
 
 cache:
   directories:
