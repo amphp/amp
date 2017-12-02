@@ -9,9 +9,9 @@ if ((function () {
     }
     return $env === "0" || $env === "false";
 })()) {
-    development: // PHP 7 development (zend.assertions=1)
+    development: // PHP 7 development
     /**
-     * Deferred is a container for an iterator that can emit values using the emit() method and completed using the
+     * Emitter is a container for an iterator that can emit values using the emit() method and completed using the
      * complete() and fail() methods of this object. The contained iterator may be accessed using the iterate()
      * method. This object should not be part of a public API, but used internally to create and emit values to an
      * iterator.
@@ -76,7 +76,7 @@ if ((function () {
         }
     }
 } else {
-    production: // PHP 7 production environment (zend.assertions=0)
+    production: // PHP 7 production environment
     /**
      * An optimized version of Emitter for production environments that is itself the iterator. Eval is used to
      * prevent IDEs and other tools from reporting multiple definitions.
