@@ -94,7 +94,8 @@ trait Placeholder {
         }
 
         \assert((function () {
-            if (\getenv("AMP_DEBUG") || (\defined("AMP_DEBUG") && \AMP_DEBUG)) {
+            $env = \getenv("AMP_DEBUG");
+            if (($env !== "0" && $env !== "false") || (\defined("AMP_DEBUG") && \AMP_DEBUG)) {
                 $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
                 \array_shift($trace); // remove current closure
                 $this->resolutionTrace = $trace;
