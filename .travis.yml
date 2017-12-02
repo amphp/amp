@@ -18,6 +18,9 @@ matrix:
     - php: nightly
   fast_finish: true
 
+env:
+  - AMP_DEBUG=true
+
 before_install:
   - phpenv config-rm xdebug.ini || echo "No xdebug config."
 
