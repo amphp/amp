@@ -89,11 +89,11 @@ abstract class DriverTest extends TestCase {
             });
             $loop->defer(function () use ($loop) {
                 echo 2;
-                $loop->defer(function () use ($loop) {
+                $loop->defer(function () {
                     echo 4;
                 });
             });
-            $loop->defer(function () use ($loop) {
+            $loop->defer(function () {
                 echo 3;
             });
         });
@@ -592,10 +592,10 @@ abstract class DriverTest extends TestCase {
      */
     public function testExecutionOrderGuarantees() {
         $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat("13 ", 4) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
-        $this->start(function (Driver $loop) use (&$ticks) {
+        $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
-            $loop->defer(function () use ($loop, &$ticks) {
+            $loop->defer(function () use ($loop) {
                 $f = function () use ($loop) {
                     $args = \func_get_args();
                     return function ($watcherId) use ($loop, &$args) {
@@ -664,7 +664,7 @@ abstract class DriverTest extends TestCase {
                 $loop->disable($def1);
                 $loop->cancel($def3);
                 $loop->enable($def1);
-                $loop->defer(function () use ($loop, $def2, $del4, $del5, $f) {
+                $loop->defer(function () use ($loop, $def2, $del5, $f) {
                     $tick = $f(0, 4);
                     $tick("invalid");
                     $loop->defer($f(1, 0));
@@ -1214,10 +1214,10 @@ abstract class DriverTest extends TestCase {
         $callbackData = new \StdClass;
 
         $this->start(function (Driver $loop) use ($callbackData) {
-            $loop->defer(function ($watcherId, $callbackData) use ($loop) {
+            $loop->defer(function ($watcherId, $callbackData) {
                 $callbackData->defer = true;
             }, $callbackData);
-            $loop->delay($msDelay = 1, function ($watcherId, $callbackData) use ($loop) {
+            $loop->delay($msDelay = 1, function ($watcherId, $callbackData) {
                 $callbackData->delay = true;
             }, $callbackData);
             $loop->repeat($msDelay = 1, function ($watcherId, $callbackData) use ($loop) {
@@ -1399,7 +1399,7 @@ abstract class DriverTest extends TestCase {
             $invoked += 1;
             $this->loop->disable($watcher);
         });
-        $watcher2 = $this->loop->onReadable($sockets[0], function ($watcher) use (&$invoked, $watcher1) {
+        $watcher2 = $this->loop->onReadable($sockets[0], function ($watcher) use (&$invoked) {
             $invoked += 10;
             $this->loop->disable($watcher);
         });
@@ -1407,7 +1407,7 @@ abstract class DriverTest extends TestCase {
             $invoked += 100;
             $this->loop->disable($watcher);
         });
-        $watcher4 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked, $watcher3) {
+        $watcher4 = $this->loop->onWritable($sockets[0], function ($watcher) use (&$invoked) {
             $invoked += 1000;
             $this->loop->disable($watcher);
         });

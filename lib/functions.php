@@ -335,7 +335,7 @@ namespace Amp\Promise {
             }
 
             $exceptions[$key] = null; // add entry to array to preserve order
-            $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, &$resolved, $key) {
+            $promise->onResolve(function ($error, $value) use (&$deferred, &$exceptions, &$pending, $key) {
                 if ($pending === 0) {
                     return;
                 }
