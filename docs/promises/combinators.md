@@ -58,18 +58,18 @@ Loop::run(function () {
 });
 ```
 
-### `some()`
+## `some()`
 
 `Amp\Promise\some()` is the same as `all()` except that it tolerates individual failures. As long
 as at least one promise in the passed succeeds, the combined promise will succeed. The successful
 resolution value is an array of the form `[$arrayOfErrors, $arrayOfValues]`. The individual keys
 in the component arrays are preserved from the promise array passed to the functor for evaluation.
 
-### `any()`
+## `any()`
 
 `Amp\Promise\any()` is the same as `some()` except that it tolerates all failures. It will succeed even if all promises failed.
 
-### `first()`
+## `first()`
 
 `Amp\Promise\first()` resolves with the first successful result. The resulting promise will only fail if all
 promises in the group fail or if the promise array is empty.
