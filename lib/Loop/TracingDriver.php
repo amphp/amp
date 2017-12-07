@@ -7,6 +7,7 @@ use function Amp\Internal\formatStacktrace;
 class TracingDriver extends Driver {
     private $driver;
     private $creationTraces = [];
+    private $cancelTraces = [];
 
     public function __construct(Driver $driver) {
         $this->driver = $driver;
@@ -60,12 +61,13 @@ class TracingDriver extends Driver {
         try {
             $this->driver->enable($watcherId);
         } catch (InvalidWatcherError $e) {
-            throw new InvalidWatcherError($watcherId, $e->getMessage() . "\r\n\r\nCreation Trace: " . $this->getCreationTrace($watcherId));
+            throw new InvalidWatcherError($watcherId, $e->getMessage() . "\r\n\r\n== Creation Trace =====\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\n== Cancel Trace =====\r\n" . $this->getCreationTrace($watcherId));
         }
     }
 
     public function cancel(string $watcherId) {
         $this->driver->cancel($watcherId);
+        $this->creationTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
     }
 
     public function disable(string $watcherId) {
@@ -111,6 +113,12 @@ class TracingDriver extends Driver {
 
     private function getCreationTrace(string $watcher): string {
         return $this->creationTraces[$watcher] ?? (function () use ($watcher) {
+            throw new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
+        })();
+    }
+
+    private function getCancelTrace(string $watcher): string {
+        return $this->cancelTraces[$watcher] ?? (function () use ($watcher) {
             throw new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
         })();
     }
