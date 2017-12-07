@@ -2,6 +2,7 @@
 
 namespace Amp;
 
+use function Amp\Internal\formatStacktrace;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
@@ -51,16 +52,27 @@ final class Coroutine implements Promise
         ));
     }
 
+    /** @var string Timeout watcher for each step. */
+    private $timeoutWatcher;
+
+    /** @var string Debug trace. */
+    private $trace;
+
     /**
      * @param \Generator $generator
      */
     public function __construct(\Generator $generator)
     {
+        $this->timeoutWatcher = Loop::delay(1000, function () {
+            fwrite(STDERR, $this->trace . "\r\n");
+        });
+
         try {
             $yielded = $generator->current();
 
             if (!$yielded instanceof Promise) {
                 if (!$generator->valid()) {
+                    Loop::cancel($this->timeoutWatcher);
                     $this->resolve($generator->getReturn());
                     return;
                 }
@@ -68,6 +80,7 @@ final class Coroutine implements Promise
                 $yielded = self::transform($yielded, $generator);
             }
         } catch (\Throwable $exception) {
+            Loop::cancel($this->timeoutWatcher);
             $this->fail($exception);
             return;
         }
@@ -77,6 +90,11 @@ final class Coroutine implements Promise
          * @param mixed           $v Value to be sent into the generator.
          */
         $onResolve = function ($e, $v) use ($generator, &$onResolve) {
+            // Reset the timeout
+            Loop::disable($this->timeoutWatcher);
+            Loop::enable($this->timeoutWatcher);
+            $this->trace = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+
             /** @var bool Used to control iterative coroutine continuation. */
             static $immediate = true;
 
@@ -107,6 +125,7 @@ final class Coroutine implements Promise
 
                         if (!$yielded instanceof Promise) {
                             if (!$generator->valid()) {
+                                Loop::cancel($this->timeoutWatcher);
                                 $this->resolve($generator->getReturn());
                                 $onResolve = null;
                                 return;
@@ -121,6 +140,7 @@ final class Coroutine implements Promise
 
                     $immediate = true;
                 } catch (\Throwable $exception) {
+                    Loop::cancel($this->timeoutWatcher);
                     $this->fail($exception);
                     $onResolve = null;
                 } finally {
