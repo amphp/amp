@@ -64,6 +64,10 @@ final class Coroutine implements Promise
     public function __construct(\Generator $generator)
     {
         $this->timeoutWatcher = Loop::delay(1000, function () {
+            $this->timeoutWatcher = Loop::delay(1000, function () {
+                fwrite(STDERR, $this->trace . "\r\n");
+            });
+
             fwrite(STDERR, $this->trace . "\r\n");
         });
         $this->trace = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
