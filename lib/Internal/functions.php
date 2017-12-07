@@ -20,7 +20,7 @@ function formatStacktrace(array $trace): string {
             $line .= "{$e['file']}:{$e['line']} ";
         }
 
-        if ($e["type"]) {
+        if (isset($e["type"])) {
             $line .= $e["class"] . $e["type"];
         }
 
