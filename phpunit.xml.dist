@@ -12,6 +12,9 @@
         processIsolation="false"
         stopOnFailure="false"
 >
+    <php>
+        <env name="AMP_OPTIMIZATIONS" value="false"/>
+    </php>
     <testsuites>
         <testsuite name="Main">
             <directory>test</directory>
