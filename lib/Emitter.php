@@ -2,7 +2,10 @@
 
 namespace Amp;
 
-// @codeCoverageIgnoreStart
+/**
+ * @codeCoverageIgnoreStart
+ * @class Emitter
+ */
 try {
     if (!@\assert(false)) {
         development: // PHP 7 development (zend.assertions=1)
