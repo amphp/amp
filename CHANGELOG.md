@@ -1,3 +1,9 @@
+### 2.0.5
+
+ - Fixed possible notices in `formatStacktrace()`. This is an internal API, but the notices might appear on certain stack traces when running with `AMP_DEBUG=true`.
+ - Fixed segfault with `ev`, see amphp/parallel-functions#3.
+ - Dropped multiple definitions of `Deferred` and `Emitter`. These were introduced as performance hack, but relied on `zend.assertions` being disabled to change behavior, which is bad. The performance impact is believed to be rather low, because coroutines are used a lot more than `Deferred` in Amp v2.
+
 ### 2.0.4
 
  - Allow `AMP_DEBUG` to be defined via the environment.
