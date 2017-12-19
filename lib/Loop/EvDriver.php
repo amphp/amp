@@ -125,6 +125,10 @@ class EvDriver extends Driver {
         foreach ($this->events as $event) {
             $event->stop();
         }
+
+        // We need to clear all references to events manually, see
+        // https://bitbucket.org/osmanov/pecl-ev/issues/31/segfault-in-ev_timer_stop
+        $this->events = [];
     }
 
     /**
@@ -231,6 +235,7 @@ class EvDriver extends Driver {
     protected function deactivate(Watcher $watcher) {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();
+
             if ($watcher->type === Watcher::SIGNAL) {
                 unset($this->signals[$id]);
             }
