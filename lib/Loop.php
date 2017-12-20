@@ -46,6 +46,10 @@ final class Loop {
                     // do nothing
                 }
 
+                public function unreference(string $watcherId) {
+                    // ignore
+                }
+
                 public function getHandle() {
                     return null;
                 }
