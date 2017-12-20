@@ -8,14 +8,28 @@ namespace Amp;
  * API, but used internally to create and resolve a promise.
  */
 final class Deferred {
-    /** @var \Amp\Promise */
+    /** @var object Has public resolve and fail methods. */
+    private $resolver;
+
+    /** @var \Amp\Promise Hides placeholder methods */
     private $promise;
 
     public function __construct() {
-        $this->promise = new class implements Promise {
+        $this->resolver = new class {
             use Internal\Placeholder {
                 resolve as public;
                 fail as public;
+            }
+        };
+
+        $this->promise = new class($this->resolver) implements Promise {
+            /** @var \Amp\Promise */
+            private $promise;
+            public function __construct($promise) {
+                $this->promise = $promise;
+            }
+            public function onResolve(callable $onResolved) {
+                $this->promise->onResolve($onResolved);
             }
         };
     }
@@ -33,7 +47,7 @@ final class Deferred {
      * @param mixed $value
      */
     public function resolve($value = null) {
-        $this->promise->resolve($value);
+        $this->resolver->resolve($value);
     }
 
     /**
@@ -42,6 +56,6 @@ final class Deferred {
      * @param \Throwable $reason
      */
     public function fail(\Throwable $reason) {
-        $this->promise->fail($reason);
+        $this->resolver->fail($reason);
     }
 }

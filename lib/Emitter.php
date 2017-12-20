@@ -9,15 +9,32 @@ namespace Amp;
  * iterator.
  */
 final class Emitter {
-    /** @var \Amp\Iterator */
+    /** @var object Has public emit, complete, and fail methods. */
+    private $emitter;
+
+    /** @var \Amp\Iterator Hides producer methods. */
     private $iterator;
 
     public function __construct() {
-        $this->iterator = new class implements Iterator {
+        $this->emitter = new class {
             use Internal\Producer {
                 emit as public;
                 complete as public;
                 fail as public;
+            }
+        };
+
+        $this->iterator = new class($this->emitter) implements Iterator {
+            /** @var \Amp\Iterator */
+            private $iterator;
+            public function __construct($iterator) {
+                $this->iterator = $iterator;
+            }
+            public function advance(): Promise {
+                return $this->iterator->advance();
+            }
+            public function getCurrent() {
+                return $this->iterator->getCurrent();
             }
         };
     }
@@ -37,14 +54,14 @@ final class Emitter {
      * @return \Amp\Promise
      */
     public function emit($value): Promise {
-        return $this->iterator->emit($value);
+        return $this->emitter->emit($value);
     }
 
     /**
      * Completes the iterator.
      */
     public function complete() {
-        $this->iterator->complete();
+        $this->emitter->complete();
     }
 
     /**
@@ -53,6 +70,6 @@ final class Emitter {
      * @param \Throwable $reason
      */
     public function fail(\Throwable $reason) {
-        $this->iterator->fail($reason);
+        $this->emitter->fail($reason);
     }
 }
