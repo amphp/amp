@@ -3,12 +3,66 @@ layout: docs
 title: Promises
 permalink: /promises/
 ---
-The basic unit of concurrency in Amp applications is the `Amp\Promise`. These objects should be thought of as placeholders for values or tasks that aren't yet complete. By using placeholders we're able to reason about the results of concurrent operations as if they were already complete variables.
+A `Promise` is an object representing the eventual result of an asynchronous operation.
+There are three states:
+
+ - **Success**: The promise resolved successfully.
+ - **Failure**: The promise failed.
+ - **Pending**: The promise has not been resolved yet.
+
+A successful resolution is like returning a value in synchronous code while failing a promise is like throwing an exception.
+
+Promises are the basic unit of concurrency in asynchronous applications.
+In Amp they implement the `Amp\Promise` interface.
+These objects should be thought of as placeholders for values or tasks that might not be complete immediately.
+
+
+Another way to approach asynchronous APIs is using callbacks that are passed when the operation is started.
+
+```php
+doSomething(function ($error, $value) {
+    if ($error) {
+        /* ... */
+    } else {
+        /* ... */
+    }
+});
+```
+
+The callback approach has several drawbacks.
+
+ - Passing callbacks and doing further actions in them that depend on the result of the first action gets messy really quickly.
+ - An explicit callback is required as input parameter to the function, and the return value is simply unused. There's no way to use this API without involving a callback.
+
+That's where promises come into play.
+They're simple placeholders that are returned and allow a callback (or several callbacks) to be registered.
+
+```php
+doSomething()->onResolve(function ($error, $value)) {
+    if ($error) {
+        /* ... */
+    } else {
+        /* ... */
+    }
+});
+```
+
+This doesn't seem a lot better at first sight, we have just moved the callback.
+But in fact this enabled a lot.
+We can now write helper functions like [`Amp\Promise\all()`](https://amphp.org/amp/promises/combinators#all) which subscribe to several of those placeholders and combine them. We don't have to write any complicated code to combine the results of several callbacks.
+
+But the most important improvement of promises is that they allow writing [coroutines](https://amphp.org/amp/coroutines/), which completely eliminate the need for _any_ callbacks.
+
+Coroutines make use of PHP's generators.
+Every time a promise is `yield`ed, the coroutine subscribes to the promise and automatically continues it once the promise resolved.
+On successful resolution the coroutine will send the resolution value into the generator using [`Generator::send()`](https://secure.php.net/generator.send).
+On failure it will throw the exception into the generator using [`Generator::throw()`](https://secure.php.net/generator.throw).
+This allows writing asynchronous code almost like synchronous code.
 
 {:.note}
-> Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators to "synchronize" concurrent task execution.
+> Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators as described above.
 >
-> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\Promise\adapt` can be used to adapt any object having a `then` or `done` method.
+> However, as ReactPHP is another wide-spread implementation, we also accept any `React\Promise\PromiseInterface` where we accept instances of `Amp\Promise`. In case of custom implementations not implementing `React\Promise\PromiseInterface`, `Amp\Promise\adapt()` can be used to adapt any object having a `then` or `done` method.
 
 ## Promise Consumption
 
@@ -49,6 +103,17 @@ Those familiar with JavaScript code generally reflect that the above interface q
 
 ## Promise Creation
 
+Promises can be created in several different ways. Most code will use [`Amp\call()`](https://amphp.org/amp/coroutines/helpers#call) which takes a function and runs it as coroutine if it returns a `Generator`.
+
+### Success and Failure
+
+Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct an immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
+
+### Deferred
+
+{:.note}
+> The `Deferred` API described below is an advanced API that many applications probably don't need. Use [`Amp\call()`](https://amphp.org/amp/coroutines/helpers#call) or [promise combinators](https://amphp.org/amp/promises/combinators) instead where possible.
+
 `Amp\Deferred` is the abstraction responsible for resolving future values once they become available. A library that resolves values asynchronously creates an `Amp\Deferred` and uses it to return an `Amp\Promise` to API consumers. Once the async library determines that the value is ready it resolves the promise held by the API consumer using methods on the linked promisor.
 
 ```php
@@ -62,9 +127,6 @@ final class Deferred {
 #### `promise()`
 
 Returns the corresponding `Promise` instance. `Deferred` and `Promise` are separated, so the consumer of the promise can't fulfill it. You should always return `$deferred->promise()` to API consumers. If you're passing `Deferred` objects around, you're probably doing something wrong.
-
-{:.note}
-> This separation of concerns is generally a good thing. However, creating two objects instead of one for each fundamental placeholder is a measurable performance penalty. For that reason, this separation only exists if assertions are enabled to ensure the code does what it's expected to do. `Deferred` directly implements `Promise` if assertions are disabled.
 
 #### `resolve()`
 
@@ -97,7 +159,3 @@ $promise = asyncMultiply(6, 7);
 $result = Amp\Promise\wait($promise);
 var_dump($result); // int(42)
 ```
-
-### Success and Failure
-
-Sometimes values are immediately available. This might be due to them being cached, but can also be the case if an interface mandates a promise to be returned to allow for async I/O but the specific implementation always having the result directly available. In these cases `Amp\Success` and `Amp\Failure` can be used to construct an immediately resolved promise. `Amp\Success` accepts a resolution value. `Amp\Failure` accepts an exception as failure reason.
