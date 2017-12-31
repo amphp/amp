@@ -13,7 +13,7 @@ final class Emitter {
     private $iterator;
 
     public function __construct() {
-        $this->iterator = new class implements Iterator {
+        $this->iterator = new class {
             use Internal\Producer {
                 emit as public;
                 complete as public;
@@ -26,7 +26,7 @@ final class Emitter {
      * @return \Amp\Promise
      */
     public function iterate(): Iterator {
-        return $this->iterator;
+        return $this->iterator->iterate();
     }
 
     /**
