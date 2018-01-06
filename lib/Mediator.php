@@ -59,7 +59,7 @@ class Mediator {
                     "Event subscriber(s) threw uncaught exceptions while reacting to {$eventName}"
                 );
             }
-            return count($results);
+            return \count($results);
         })());
     }
 
