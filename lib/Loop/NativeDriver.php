@@ -30,8 +30,14 @@ class NativeDriver extends Driver
     /** @var \Amp\Loop\Watcher[][] */
     private $signalWatchers = [];
 
+    /** @var bool */
+    private $nowUpdateNeeded = false;
+
     /** @var int Internal timestamp for now. */
-    private $now;
+    private $now = 0;
+
+    /** @var int Loop time offset from microtime() */
+    private $nowOffset;
 
     /** @var bool */
     private $signalHandling;
@@ -40,7 +46,7 @@ class NativeDriver extends Driver
     {
         $this->timerQueue = new \SplPriorityQueue();
         $this->signalHandling = \extension_loaded("pcntl");
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->nowOffset = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
 
     /**
@@ -60,6 +66,19 @@ class NativeDriver extends Driver
     /**
      * {@inheritdoc}
      */
+    public function now(): int
+    {
+        if ($this->nowUpdateNeeded) {
+            $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC) - $this->nowOffset;
+            $this->nowUpdateNeeded = false;
+        }
+
+        return $this->now;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getHandle()
     {
         return null;
@@ -67,13 +86,13 @@ class NativeDriver extends Driver
 
     protected function dispatch(bool $blocking)
     {
+        $this->nowUpdateNeeded = true;
+
         $this->selectStreams(
             $this->readStreams,
             $this->writeStreams,
             $blocking ? $this->getTimeout() : 0
         );
-
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         if (!empty($this->timerExpires)) {
             $scheduleQueue = [];
@@ -89,14 +108,14 @@ class NativeDriver extends Driver
                         continue;
                     }
 
-                    if ($this->timerExpires[$id] > $this->now) { // Timer at top of queue has not expired.
+                    if ($this->timerExpires[$id] > $this->now()) { // Timer at top of queue has not expired.
                         break;
                     }
 
                     $this->timerQueue->extract();
 
                     if ($watcher->type & Watcher::REPEAT) {
-                        $expiration = $this->now + $watcher->value;
+                        $expiration = $this->now() + $watcher->value;
                         $this->timerExpires[$watcher->id] = $expiration;
                         $scheduleQueue[] = [$watcher, $expiration];
                     } else {
@@ -283,7 +302,7 @@ class NativeDriver extends Driver
 
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $expiration = $this->now + $watcher->value;
+                    $expiration = $this->now() + $watcher->value;
                     $this->timerExpires[$watcher->id] = $expiration;
                     $this->timerQueue->insert([$watcher, $expiration], -$expiration);
                     break;

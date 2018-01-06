@@ -591,6 +591,20 @@ abstract class Driver
     }
 
     /**
+     * Returns the current loop time in millisecond increments. Note this value does not necessarily correlate to
+     * wall-clock time, rather the value returned is meant to be used in relative comparisons to prior values returned
+     * by this method (intervals, expiration calculations, etc.) and is only updated once per loop tick.
+     *
+     * Extending classes should override this function to return a value cached once per loop tick.
+     *
+     * @return int
+     */
+    public function now(): int
+    {
+        return \microtime(true) * self::MILLISEC_PER_SEC;
+    }
+
+    /**
      * Get the underlying loop handle.
      *
      * Example: the `uv_loop` resource for `libuv` or the `EvLoop` object for `libev` or `null` for a native driver.

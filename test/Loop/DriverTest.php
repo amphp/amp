@@ -1555,6 +1555,23 @@ abstract class DriverTest extends TestCase
         $this->assertNotSame(0, $j);
     }
 
+    public function testNow()
+    {
+        $now = $this->loop->now();
+        $this->loop->delay(100, function () use ($now) {
+            $now += 100;
+            $new = $this->loop->now();
+
+            // Allow a few milliseconds of inaccuracy.
+            $this->assertGreaterThanOrEqual($now - 5, $new);
+            $this->assertLessThanOrEqual($now + 5, $new);
+
+            // Same time should be returned from later call.
+            $this->assertSame($new, $this->loop->now());
+        });
+        $this->loop->run();
+    }
+
     public function testBug163ConsecutiveDelayed()
     {
         $emits = 3;
