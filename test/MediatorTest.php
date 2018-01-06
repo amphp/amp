@@ -81,34 +81,4 @@ class MediatorTest extends TestCase {
         $this->assertTrue($caughtExpected);
         $this->assertSame(2, $invocations);
     }
-
-    public function testSubscriberArrayRemovedWhenEmptyToAvoidLeakage() {
-        $mediator = new Mediator;
-
-        Loop::run(function () use ($mediator) {
-            $mediator->subscribe("event.foo", static function () {});
-            $mediator->subscribe("event.foo", static function () { return false; });
-            $mediator->subscribe("event.bar", static function () {});
-            $mediator->subscribe("event.baz", static function () { return false; });
-            yield $mediator->publish("event.foo", 42);
-            yield $mediator->publish("event.bar", 42);
-            yield $mediator->publish("event.baz", 42);
-        });
-
-        $debugInfo = $mediator->__debugInfo();
-        $this->assertSame(1, $debugInfo["event.foo"]);
-        $this->assertSame(1, $debugInfo["event.bar"]);
-        $this->assertFalse(isset($debugInfo["event.baz"]));
-    }
-
-    public function testDebugInfoMapsSubscriberCounts() {
-        $mediator = new Mediator;
-        $mediator->subscribe("event.foo", static function () {});
-        $mediator->subscribe("event.foo", static function () {});
-        $mediator->subscribe("event.bar", static function () {});
-
-        $debugInfo = $mediator->__debugInfo();
-        $this->assertSame(2, $debugInfo["event.foo"]);
-        $this->assertSame(1, $debugInfo["event.bar"]);
-    }
 }
