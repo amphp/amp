@@ -30,17 +30,14 @@ class NativeDriver extends Driver
     /** @var \Amp\Loop\Watcher[][] */
     private $signalWatchers = [];
 
-    /** @var int Internal timestamp for now. */
-    private $now;
-
     /** @var bool */
     private $signalHandling;
 
     public function __construct()
     {
-        $this->timerQueue = new \SplPriorityQueue();
+        $this->timerQueue = new \SplPriorityQueue;
         $this->signalHandling = \extension_loaded("pcntl");
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now(); // Initialize initial tick time when constructing.
     }
 
     /**
@@ -73,8 +70,6 @@ class NativeDriver extends Driver
             $blocking ? $this->getTimeout() : 0
         );
 
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
-
         if (!empty($this->timerExpires)) {
             $scheduleQueue = [];
 
@@ -89,14 +84,14 @@ class NativeDriver extends Driver
                         continue;
                     }
 
-                    if ($this->timerExpires[$id] > $this->now) { // Timer at top of queue has not expired.
+                    if ($this->timerExpires[$id] > $this->now()) { // Timer at top of queue has not expired.
                         break;
                     }
 
                     $this->timerQueue->extract();
 
                     if ($watcher->type & Watcher::REPEAT) {
-                        $expiration = $this->now + $watcher->value;
+                        $expiration = $this->now() + $watcher->value;
                         $this->timerExpires[$watcher->id] = $expiration;
                         $scheduleQueue[] = [$watcher, $expiration];
                     } else {
@@ -106,6 +101,10 @@ class NativeDriver extends Driver
                     try {
                         // Execute the timer.
                         $result = ($watcher->callback)($id, $watcher->data);
+
+                        if ($result === null) {
+                            continue;
+                        }
 
                         if ($result instanceof \Generator) {
                             $result = new Coroutine($result);
@@ -238,7 +237,7 @@ class NativeDriver extends Driver
     /**
      * @return int Milliseconds until next timer expires or -1 if there are no pending times.
      */
-    private function getTimeout()
+    private function getTimeout(): int
     {
         while (!$this->timerQueue->isEmpty()) {
             list($watcher, $expiration) = $this->timerQueue->top();
@@ -283,7 +282,7 @@ class NativeDriver extends Driver
 
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $expiration = $this->now + $watcher->value;
+                    $expiration = $this->now() + $watcher->value;
                     $this->timerExpires[$watcher->id] = $expiration;
                     $this->timerQueue->insert([$watcher, $expiration], -$expiration);
                     break;

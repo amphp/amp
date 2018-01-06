@@ -11,16 +11,22 @@ class EvDriver extends Driver
 {
     /** @var \EvSignal[]|null */
     private static $activeSignals;
+
     /** @var \EvLoop */
     private $handle;
+
     /** @var \EvWatcher[] */
     private $events = [];
+
     /** @var callable */
     private $ioCallback;
+
     /** @var callable */
     private $timerCallback;
+
     /** @var callable */
     private $signalCallback;
+
     /** @var \EvSignal[] */
     private $signals = [];
 

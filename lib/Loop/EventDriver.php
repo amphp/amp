@@ -11,25 +11,29 @@ class EventDriver extends Driver
 {
     /** @var \Event[]|null */
     private static $activeSignals;
+
     /** @var \EventBase */
     private $handle;
+
     /** @var \Event[] */
     private $events = [];
+
     /** @var callable */
     private $ioCallback;
+
     /** @var callable */
     private $timerCallback;
+
     /** @var callable */
     private $signalCallback;
+
     /** @var \Event[] */
     private $signals = [];
-    /** @var int Internal timestamp for now. */
-    private $now;
 
     public function __construct()
     {
         $this->handle = new \EventBase;
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now(); // Initialize initial tick time when constructing.
 
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
@@ -198,7 +202,6 @@ class EventDriver extends Driver
     protected function dispatch(bool $blocking)
     {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
 
     /**
@@ -262,7 +265,7 @@ class EventDriver extends Driver
             switch ($watcher->type) {
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
-                    $interval = $watcher->value - ($now - $this->now);
+                    $interval = $watcher->value - ($now - $this->now());
                     $this->events[$id]->add($interval > 0 ? $interval / self::MILLISEC_PER_SEC : 0);
                     break;
 

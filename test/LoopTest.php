@@ -46,12 +46,30 @@ class LoopTest extends TestCase
         });
     }
 
+    public function testNow()
+    {
+        Loop::run(function () {
+            $now = Loop::now();
+            Loop::delay(100, function () use ($now) {
+                $now += 100;
+                $new = Loop::now();
+
+                // Allow a few milliseconds of inaccuracy.
+                $this->assertGreaterThanOrEqual($now - 5, $new);
+                $this->assertLessThanOrEqual($now + 5, $new);
+
+                // Same time should be returned from later call.
+                $this->assertSame($new, Loop::now());
+            });
+        });
+    }
+
     public function testGet()
     {
         $this->assertInstanceOf(Loop\Driver::class, Loop::get());
     }
 
-    public function testGetInto()
+    public function testGetInfo()
     {
         $this->assertSame(Loop::get()->getInfo(), Loop::getInfo());
     }

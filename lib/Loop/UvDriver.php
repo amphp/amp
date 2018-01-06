@@ -167,6 +167,16 @@ class UvDriver extends Driver
     }
 
     /**
+     * Uses uv_now() instead of microtime().
+     *
+     * @return int
+     */
+    public function now(): int
+    {
+        return \uv_now($this->handle);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getHandle()

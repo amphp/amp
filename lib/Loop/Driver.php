@@ -45,6 +45,12 @@ abstract class Driver
     /** @var array */
     private $registry = [];
 
+    /** @var bool */
+    private $nowUpdateNeeded = true;
+
+    /** @var int Internal timestamp for now. */
+    private $now;
+
     /**
      * Run the event loop.
      *
@@ -130,6 +136,8 @@ abstract class Driver
                 $this->error($exception);
             }
         }
+
+        $this->nowUpdateNeeded = true;
 
         $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
     }
@@ -588,6 +596,23 @@ abstract class Driver
         }
 
         ($this->errorHandler)($exception);
+    }
+
+    /**
+     * Returns the current loop time in millisecond increments. Note this value does not necessarily correlate to
+     * wall-clock time, rather the value returned is meant to be used in relative comparisons to prior values returned
+     * by this method (intervals, expiration calculations, etc.) and is only updated once per loop tick.
+     *
+     * @return int
+     */
+    public function now(): int
+    {
+        if ($this->nowUpdateNeeded) {
+            $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+            $this->nowUpdateNeeded = false;
+        }
+
+        return $this->now;
     }
 
     /**

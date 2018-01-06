@@ -333,6 +333,18 @@ final class Loop
     }
 
     /**
+     * Returns the current loop time in millisecond increments. Note this value does not necessarily correlate to
+     * wall-clock time, rather the value returned is meant to be used in relative comparisons to prior values returned
+     * by this method (intervals, expiration calculations, etc.) and is only updated once per loop tick.
+     *
+     * @return int
+     */
+    public static function now(): int
+    {
+        return self::$driver->now();
+    }
+
+    /**
      * Stores information in the loop bound registry.
      *
      * Stored information is package private. Packages MUST NOT retrieve the stored state of other packages. Packages
