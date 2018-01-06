@@ -39,9 +39,7 @@ class Mediator {
             return new Success(0);
         }
         return new Coroutine((function () use ($eventName, $data) {
-            $promises = [];
-            $callbacks = $this->eventSubscriberMap[$eventName];
-            foreach ($callbacks as $id => $callback) {
+            foreach ($this->eventSubscriberMap[$eventName] as $id => $callback) {
                 $promises[$id] = call($callback, ...$data);
             }
             list($errors, $results) = yield Promise\any($promises);
