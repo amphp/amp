@@ -39,25 +39,21 @@ class Mediator {
             return new Success(0);
         }
         return new Coroutine((function () use ($eventName, $data) {
-            $errors = [];
-            $executionCount = 0;
+            $promises = [];
             $callbacks = $this->eventSubscriberMap[$eventName];
             foreach ($callbacks as $id => $callback) {
-                try {
-                    // detach callback if it returns false (===)
-                    if (false === yield call($callback, ...$data)) {
-                        unset($this->eventSubscriberMap[$eventName][$id]);
-                        // don't leak memory even if it's just an empty array
-                        if (empty($this->eventSubscriberMap[$eventName])) {
-                            unset($this->eventSubscriberMap[$eventName]);
-                        }
-                    }
-                } catch (\Throwable $t) {
-                    // aggregate errors to ensure all callbacks execute
-                    $errors[] = $t;
-                } finally {
-                    $executionCount++;
+                $promises[$id] = call($callback, ...$data);
+            }
+            list($errors, $results) = yield Promise\any($promises);
+            // remove subscribers that returned FALSE (===)
+            foreach ($results as $id => $result) {
+                if ($result === false) {
+                    unset($this->eventSubscriberMap[$eventName][$id]);
                 }
+            }
+            // don't leak memory even if it's just an empty array
+            if (empty($this->eventSubscriberMap[$eventName])) {
+                unset($this->eventSubscriberMap[$eventName]);
             }
             if ($errors) {
                 throw new MultiReasonException(
@@ -65,7 +61,7 @@ class Mediator {
                     "Event subscriber(s) threw uncaught exceptions while reacting to {$eventName}"
                 );
             }
-            return $executionCount;
+            return count($results);
         })());
     }
 
