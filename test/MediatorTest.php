@@ -1,0 +1,114 @@
+<?php
+
+namespace Amp\Test;
+
+use Amp\Loop;
+use Amp\Mediator;
+use Amp\MultiReasonException;
+use PHPUnit\Framework\TestCase;
+
+class MediatorTest extends TestCase {
+    public function testNoSubscriberInvocation() {
+        $result = null;
+        $loopRan = false;
+        $wasInvoked = false;
+
+        Loop::run(function () use (&$result, &$loopRan, &$wasInvoked) {
+            $loopRan = true;
+            $mediator = new Mediator;
+            $mediator->subscribe("this-event", static function () use (&$wasInvoked) {
+                $wasInvoked = true;
+            });
+            $result = yield $mediator->publish("that-event", 42);
+        });
+
+        $this->assertTrue($loopRan, "Loop did not run");
+        $this->assertFalse($wasInvoked, "Subscriber was invoked but shouldn't have been");
+        $this->assertSame(0, $result);
+    }
+
+    public function testSingleSubscriberInvocation() {
+        $result = null;
+
+        Loop::run(function () use (&$result) {
+            $loopRan = true;
+            $mediator = new Mediator;
+            $mediator->subscribe("this-event", static function () {});
+            $result = yield $mediator->publish("this-event", 42);
+        });
+
+        $this->assertSame(1, $result);
+    }
+
+    public function testMultiSubscriberInvocation() {
+        $result = null;
+
+        Loop::run(function () use (&$result) {
+            $mediator = new Mediator;
+            $mediator->subscribe("this-event", static function () {});
+            $mediator->subscribe("this-event", static function () {});
+            $result = yield $mediator->publish("this-event", 42);
+        });
+
+        $this->assertSame(2, $result);
+    }
+
+    public function testMultiSubscriberErrorCase() {
+        $invocations = 0;
+        $caughtExpected = false;
+
+        Loop::run(function () use (&$invocations, &$caughtExpected) {
+            $mediator = new Mediator;
+            $f1 = static function () use (&$invocations) {
+                $invocations++;
+                throw new \Exception;
+            };
+            $f2 = static function () use (&$invocations) {
+                $invocations++;
+                throw new \Exception;
+            };
+            $mediator->subscribe("this-event", $f1);
+            $mediator->subscribe("this-event", $f2);
+            try {
+                yield $mediator->publish("this-event", 42);
+            } catch (MultiReasonException $e) {
+                // do this instead of $this->expectException() so we can validate
+                // that both subscribers are called despite the exceptions
+                $caughtExpected = true;
+            }
+        });
+
+        $this->assertTrue($caughtExpected);
+        $this->assertSame(2, $invocations);
+    }
+
+    public function testSubscriberArrayRemovedWhenEmptyToAvoidLeakage() {
+        $mediator = new Mediator;
+
+        Loop::run(function () use ($mediator) {
+            $mediator->subscribe("event.foo", static function () {});
+            $mediator->subscribe("event.foo", static function () { return false; });
+            $mediator->subscribe("event.bar", static function () {});
+            $mediator->subscribe("event.baz", static function () { return false; });
+            yield $mediator->publish("event.foo", 42);
+            yield $mediator->publish("event.bar", 42);
+            yield $mediator->publish("event.baz", 42);
+        });
+
+        $debugInfo = $mediator->__debugInfo();
+        $this->assertSame(1, $debugInfo["event.foo"]);
+        $this->assertSame(1, $debugInfo["event.bar"]);
+        $this->assertFalse(isset($debugInfo["event.baz"]));
+    }
+
+    public function testDebugInfoMapsSubscriberCounts() {
+        $mediator = new Mediator;
+        $mediator->subscribe("event.foo", static function () {});
+        $mediator->subscribe("event.foo", static function () {});
+        $mediator->subscribe("event.bar", static function () {});
+
+        $debugInfo = $mediator->__debugInfo();
+        $this->assertSame(2, $debugInfo["event.foo"]);
+        $this->assertSame(1, $debugInfo["event.bar"]);
+    }
+}
