@@ -95,20 +95,7 @@ class MediatorTest extends TestCase {
             yield $mediator->publish("event.baz", 42);
         });
 
-        $debugInfo = $mediator->__debugInfo();
-        $this->assertSame(1, $debugInfo["event.foo"]);
-        $this->assertSame(1, $debugInfo["event.bar"]);
-        $this->assertFalse(isset($debugInfo["event.baz"]));
-    }
-
-    public function testDebugInfoMapsSubscriberCounts() {
-        $mediator = new Mediator;
-        $mediator->subscribe("event.foo", static function () {});
-        $mediator->subscribe("event.foo", static function () {});
-        $mediator->subscribe("event.bar", static function () {});
-
-        $debugInfo = $mediator->__debugInfo();
-        $this->assertSame(2, $debugInfo["event.foo"]);
-        $this->assertSame(1, $debugInfo["event.bar"]);
+        $eventMap = (function() { return $this->eventSubscriberMap; })->call($mediator);
+        $this->assertFalse(isset($eventMap["event.baz"]));
     }
 }
