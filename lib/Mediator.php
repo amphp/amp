@@ -62,4 +62,12 @@ class Mediator {
             return \count($results);
         })());
     }
+
+    public function __debugInfo() {
+        $info = [];
+        foreach ($this->eventSubscriberMap as $eventName => $callbacks) {
+            $info[$eventName] = \count($callbacks);
+        }
+        return $info;
+    }
 }
