@@ -35,31 +35,33 @@ class Mediator {
      * @return \Amp\Promise<int> Resolves to the number of subscribers invoked
      */
     public function publish(string $eventName, ...$data): Promise {
-        if (empty($this->eventSubscriberMap[$eventName])) {
-            return new Success(0);
+        return empty($this->eventSubscriberMap[$eventName])
+            ? new Success(0)
+            : new Coroutine($this->doPublish($eventName, $data))
+        ;
+    }
+
+    private function doPublish(string $eventName, array $data): \Generator {
+        foreach ($this->eventSubscriberMap[$eventName] as $id => $callback) {
+            $promises[$id] = call($callback, ...$data);
         }
-        return new Coroutine((function () use ($eventName, $data) {
-            foreach ($this->eventSubscriberMap[$eventName] as $id => $callback) {
-                $promises[$id] = call($callback, ...$data);
+        list($errors, $results) = yield Promise\any($promises);
+        // remove subscribers that returned FALSE (===)
+        foreach ($results as $id => $result) {
+            if ($result === false) {
+                unset($this->eventSubscriberMap[$eventName][$id]);
             }
-            list($errors, $results) = yield Promise\any($promises);
-            // remove subscribers that returned FALSE (===)
-            foreach ($results as $id => $result) {
-                if ($result === false) {
-                    unset($this->eventSubscriberMap[$eventName][$id]);
-                }
-            }
-            // don't leak memory even if it's just an empty array
-            if (empty($this->eventSubscriberMap[$eventName])) {
-                unset($this->eventSubscriberMap[$eventName]);
-            }
-            if ($errors) {
-                throw new MultiReasonException(
-                    $errors,
-                    "Event subscriber(s) threw uncaught exceptions while reacting to {$eventName}"
-                );
-            }
-            return \count($results);
-        })());
+        }
+        // don't leak memory even if it's just an empty array
+        if (empty($this->eventSubscriberMap[$eventName])) {
+            unset($this->eventSubscriberMap[$eventName]);
+        }
+        if ($errors) {
+            throw new MultiReasonException(
+                $errors,
+                "Event subscriber(s) threw uncaught exceptions while reacting to {$eventName}"
+            );
+        }
+        return \count($results);
     }
 }
