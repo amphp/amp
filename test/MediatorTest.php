@@ -86,10 +86,10 @@ class MediatorTest extends TestCase {
         $mediator = new Mediator;
 
         Loop::run(function () use ($mediator) {
-            $mediator->subscribe("event.foo", static function () {});
-            $mediator->subscribe("event.foo", static function () { return false; });
-            $mediator->subscribe("event.bar", static function () {});
-            $mediator->subscribe("event.baz", static function () { return false; });
+            $mediator->subscribe("event.foo", function () {});
+            $mediator->subscribe("event.foo", function ($m, $id) { $m->unsubscribe($id); });
+            $mediator->subscribe("event.bar", function () {});
+            $mediator->subscribe("event.baz", function ($m, $id) { $m->unsubscribe($id); });
             yield $mediator->publish("event.foo", 42);
             yield $mediator->publish("event.bar", 42);
             yield $mediator->publish("event.baz", 42);
