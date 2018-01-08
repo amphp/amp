@@ -13,12 +13,12 @@ class Mediator {
     private $eventSubscriberMap = [];
 
     /**
-     * Attach an event listener callback to the Mediator
+     * Attach an event listener callback to the Mediator.
      *
      * Listener callbacks are invoked with the signature:
-     * 
+     *
      *     callback(Mediator $mediator, string $subscriberId, ...$data)
-     * 
+     *
      * @param string $eventName The name of the event being subscribed to
      * @param callable $callback The callback to invoke when the event is published
      * @return string Returns listener's subscriber ID
@@ -31,8 +31,8 @@ class Mediator {
     }
 
     /**
-     * Detach an event listener from the Mediator
-     * 
+     * Detach an event listener from the Mediator.
+     *
      * @param string $subscriberId The subscriber ID generated registering the listener
      * @return bool Returns TRUE if a listener was removed, FALSE otherwise
      */
@@ -65,8 +65,7 @@ class Mediator {
     public function publish(string $eventName, ...$data): Promise {
         return empty($this->eventSubscriberMap[$eventName])
             ? new Success(0)
-            : new Coroutine($this->doPublish($eventName, $data))
-        ;
+            : new Coroutine($this->doPublish($eventName, $data));
     }
 
     private function doPublish(string $eventName, array $data): \Generator {

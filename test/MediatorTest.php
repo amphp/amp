@@ -95,7 +95,7 @@ class MediatorTest extends TestCase {
             yield $mediator->publish("event.baz", 42);
         });
 
-        $eventMap = (function() { return $this->eventSubscriberMap; })->call($mediator);
+        $eventMap = (function () { return $this->eventSubscriberMap; })->call($mediator);
         $this->assertFalse(isset($eventMap["event.baz"]));
     }
 }
