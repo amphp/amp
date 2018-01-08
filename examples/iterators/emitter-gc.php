@@ -3,7 +3,6 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Amp\Delayed;
 use Amp\Emitter;
 use Amp\Loop;
 
@@ -28,7 +27,7 @@ Loop::run(function () {
     yield new Amp\Delayed(0);
 
     unset($emitter, $iterator);
-    gc_collect_cycles();
+    \gc_collect_cycles();
 
     print "Done.\n";
 });
