@@ -15,23 +15,14 @@ final class Deferred {
     private $promise;
 
     public function __construct() {
-        $this->resolver = new class {
+        $this->resolver = new class implements Promise {
             use Internal\Placeholder {
                 resolve as public;
                 fail as public;
             }
         };
 
-        $this->promise = new class($this->resolver) implements Promise {
-            /** @var \Amp\Promise */
-            private $promise;
-            public function __construct($promise) {
-                $this->promise = $promise;
-            }
-            public function onResolve(callable $onResolved) {
-                $this->promise->onResolve($onResolved);
-            }
-        };
+        $this->promise = new Internal\PrivatePromise($this->resolver);
     }
 
     /**
