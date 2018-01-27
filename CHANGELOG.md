@@ -1,3 +1,8 @@
+### 2.0.6
+
+ - Resolution methods are now hidden in the `Promise` returned from `Deferred::promise()`. Their exposure was an implementation detail and never promised by the return type of `Deferred::promise()`.
+ - A named class is now used for promises, so you don't end up with an anonymous class in `var_dump()` and stack traces, which can be confusing.
+
 ### 2.0.5
 
  - Fixed possible notices in `formatStacktrace()`. This is an internal API, but the notices might appear on certain stack traces when running with `AMP_DEBUG=true`.
