@@ -69,5 +69,9 @@
         "platform": {
             "php": "7.0.0"
         }
+    },
+    "scripts": {
+        "test": "@php -dzend.assertions=1 -dassert.exception=1 ./vendor/bin/phpunit",
+        "code-style": "@php ./vendor/bin/php-cs-fixer fix"
     }
 }

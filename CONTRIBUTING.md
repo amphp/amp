@@ -28,3 +28,17 @@ opening braces for classes and methods must appear on the same line as
 the declaration:
 
 https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md
+
+To apply amphp code standards you can run `php-cs-fixer` with following composer command:
+
+```bash
+composer code-style
+```
+
+## Running the tests
+
+Run the test suite from root directory:
+
+```bash
+composer test
+```
