@@ -37,7 +37,7 @@ composer code-style
 
 ## Running the tests
 
-Run the test suite from amphp root directory:
+Run the test suite from root directory:
 
 ```bash
 composer test
