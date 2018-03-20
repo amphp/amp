@@ -123,7 +123,9 @@ class EvDriver extends Driver {
 
     public function __destruct() {
         foreach ($this->events as $event) {
-            $event->stop();
+            if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
+                $event->stop();
+            }
         }
 
         // We need to clear all references to events manually, see
