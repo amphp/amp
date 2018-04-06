@@ -14,7 +14,7 @@ class UvDriver extends Driver {
     /** @var resource[] */
     private $events = [];
 
-    /** @var \Amp\Loop\Watcher[]|\Amp\Loop\Watcher[][] */
+    /** @var \Amp\Loop\Watcher[][] */
     private $watchers = [];
 
     /** @var resource[] */
@@ -50,7 +50,7 @@ class UvDriver extends Driver {
             }
 
             foreach ($watchers as $watcher) {
-                if (!($watcher->enabled && $watcher->type & $events)) {
+                if (!($watcher->enabled && ($watcher->type & $events || ($events | 4) === 4))) {
                     continue;
                 }
 
