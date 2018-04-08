@@ -754,14 +754,11 @@ abstract class DriverTest extends TestCase {
         }
     }
 
-    /** @expectedException \Amp\Loop\InvalidWatcherError */
-    public function testExceptionOnUnreferenceNonexistentWatcher() {
-        try {
-            $this->loop->unreference("nonexistentWatcher");
-        } catch (InvalidWatcherError $e) {
-            $this->assertSame("nonexistentWatcher", $e->getWatcherId());
-            throw $e;
-        }
+    public function testSuccessOnUnreferenceNonexistentWatcher() {
+        $this->loop->unreference("nonexistentWatcher");
+
+        // Otherwise risky, throwing fails the test
+        $this->assertTrue(true);
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherError */

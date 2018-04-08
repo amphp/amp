@@ -487,12 +487,10 @@ abstract class Driver {
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public function unreference(string $watcherId) {
         if (!isset($this->watchers[$watcherId])) {
-            throw new InvalidWatcherError($watcherId, "Cannot unreference an invalid watcher identifier: '{$watcherId}'");
+            return;
         }
 
         $this->watchers[$watcherId]->referenced = false;

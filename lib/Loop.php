@@ -301,10 +301,14 @@ final class Loop {
      * @param string $watcherId The watcher identifier.
      *
      * @return void
-     *
-     * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
     public static function unreference(string $watcherId) {
+        if (!isset(self::$driver)) {
+            // Prior to PHP 7.2, self::$driver may be unset during destruct.
+            // See https://github.com/amphp/amp/issues/212.
+            return;
+        }
+
         self::$driver->unreference($watcherId);
     }
 
