@@ -50,6 +50,8 @@ class UvDriver extends Driver {
             }
 
             foreach ($watchers as $watcher) {
+                // $events is OR'ed with 4 to trigger watcher if no events are indicated (0) or on UV_DISCONNECT (4).
+                // http://docs.libuv.org/en/v1.x/poll.html
                 if (!($watcher->enabled && ($watcher->type & $events || ($events | 4) === 4))) {
                     continue;
                 }
