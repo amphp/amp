@@ -121,12 +121,21 @@ class EventDriver extends Driver {
      */
     public function __destruct() {
         foreach ($this->events as $event) {
-            $event->free();
+            if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
+                $event->free();
+            }
         }
 
         // Unset here, otherwise $event->del() fails with a warning, because __destruct order isn't defined.
         // See https://github.com/amphp/amp/issues/159.
         $this->events = [];
+
+        // Manually free the loop handle to fully release loop resources.
+        // See https://github.com/amphp/amp/issues/177.
+        if ($this->handle !== null) {
+            $this->handle->free();
+            $this->handle = null;
+        }
     }
 
     /**
