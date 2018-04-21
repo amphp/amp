@@ -29,11 +29,20 @@ class EventDriver extends Driver {
         $this->handle = new \EventBase;
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
+        $errorHandler = &$this->errorHandler;
+        $error = static function (\Throwable $exception) use (&$errorHandler) {
+            if ($errorHandler === null) {
+                throw $exception;
+            }
+
+            $errorHandler($exception);
+        };
+
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
         }
 
-        $this->ioCallback = function ($resource, $what, Watcher $watcher) {
+        $this->ioCallback = static function ($resource, $what, Watcher $watcher) use ($error) {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
@@ -49,15 +58,19 @@ class EventDriver extends Driver {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
-                $this->error($exception);
+                $error($exception);
             }
         };
 
-        $this->timerCallback = function ($resource, $what, Watcher $watcher) {
+        $events = $this->events;
+        $this->timerCallback = static function ($resource, $what, Watcher $watcher) use ($error, $events) {
             if ($watcher->type & Watcher::DELAY) {
-                $this->cancel($watcher->id);
+                if (isset($events[$watcher->id])) {
+                    $events[$watcher->id]->free();
+                    unset($events[$watcher->id]);
+                }
             } else {
-                $this->events[$watcher->id]->add($watcher->value / self::MILLISEC_PER_SEC);
+                $events[$watcher->id]->add($watcher->value / self::MILLISEC_PER_SEC);
             }
 
             try {
@@ -75,11 +88,11 @@ class EventDriver extends Driver {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
-                $this->error($exception);
+                $error($exception);
             }
         };
 
-        $this->signalCallback = function ($signum, $what, Watcher $watcher) {
+        $this->signalCallback = static function ($signum, $what, Watcher $watcher) use ($error) {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
@@ -95,7 +108,7 @@ class EventDriver extends Driver {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
-                $this->error($exception);
+                $error($exception);
             }
         };
     }
