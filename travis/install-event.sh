@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-curl -LS https://pecl.php.net/get/event | tar -xz \
+curl -LS https://pecl.php.net/get/event-2.3.0 | tar -xz \
  && pushd event-* \
  && phpize \
  && ./configure --with-event-core --with-event-extra --with-event-pthreads \
