@@ -1,3 +1,10 @@
+### 2.0.7
+
+ - Fixed recording of stack traces for double resolution in case `AMP_DEBUG` was not set as environment variable, defaulting to `0` now. (#217)
+ - `Loop::unreference()` is ignored on invalid watchers now.
+ - Invoke UV watchers in case no events or `UV_DISCONNECT` is indicated.
+ - Ignore `Loop::$driver` not being set during shutdown, which might happen due to the unreliable shutdown order. (#212)
+
 ### 2.0.6
 
  - Resolution methods are now hidden in the `Promise` returned from `Deferred::promise()`. Their exposure was an implementation detail and never promised by the return type of `Deferred::promise()`.
