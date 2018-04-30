@@ -35,14 +35,14 @@ abstract class Driver {
     /** @var \Amp\Loop\Watcher[] */
     private $nextTickQueue = [];
 
-    /** @var callable|null */
-    private $errorHandler;
-
     /** @var bool */
     private $running = false;
 
     /** @var array */
     private $registry = [];
+
+    /** @var callable|null */
+    protected $errorHandler;
 
     /**
      * Run the event loop.
