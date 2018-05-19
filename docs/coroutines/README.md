@@ -98,3 +98,5 @@ int(3)
 int(3)
 int(3)
 ```
+
+For further information about the "yield from" keyword, see [PHP Manual](http://php.net/manual/en/language.generators.syntax.php#control-structures.yield.from)
