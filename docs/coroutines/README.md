@@ -47,6 +47,8 @@ All `yield`s in a coroutine must be one of the following three types:
 
 ## Yield VS Yield From
 
+Yield is used to "await" promises, yield from can be used to delegate to a sub-routine. Yield from should only be used to delegate to private methods, any public API should always return promises instead of generators.
+
 Yield promises from within a `\Generator`, the code within the `\Generator` will continue, as soon as the promise is resolved. Use `yield from` to yield the result of a `\Generator`. Instead of using yield from, you can also use `yield new Coroutine($this->bar());` or `yield call([$this, "bar"]);`.
 
 An example:
@@ -54,36 +56,36 @@ An example:
 ```php
 class Foo
 {
-    public function foo1(): \Amp\Promise
+    public function delegationWithCoroutine(): Amp\Promise
     {
-        return new \Amp\Coroutine($this->bar());
+        return new Amp\Coroutine($this->bar());
     }
 
-    public function foo2(): \Amp\Promise
+    public function delegationWithYieldFrom(): Amp\Promise
     {
-        return \Amp\call(function () {
+        return Amp\call(function () {
             return yield from $this->bar();
         });
     }
 
-    public function foo3(): \Amp\Promise
+    public function delegationWithCallable(): Amp\Promise
     {
-        return \Amp\call([$this, 'bar']);
+        return Amp\call([$this, 'bar']);
     }
 
     public function bar(): Generator
     {
-        yield new \Amp\Success(1);
-        yield new \Amp\Success(2);
-        return yield new \Amp\Success(3);
+        yield new Amp\Success(1);
+        yield new Amp\Success(2);
+        return yield new Amp\Success(3);
     }
 }
 
-\Amp\Loop::run(function () {
+Amp\Loop::run(function () {
     $foo = new Foo();
-    $r1 = yield $foo->foo1();
-    $r2 = yield $foo->foo2();
-    $r3 = yield $foo->foo3();
+    $r1 = yield $foo->delegationWithCoroutine();
+    $r2 = yield $foo->delegationWithYieldFrom();
+    $r3 = yield $foo->delegationWithCallable();
     var_dump($r1);
     var_dump($r2);
     var_dump($r3);
@@ -96,6 +98,3 @@ int(3)
 int(3)
 int(3)
 ```
-
-{:.note}
-Yield is used to "await" promises, yield from can be used to delegate to a sub-routine. Yield from should only be used to delegate to private methods, any public API should always return promises instead of generators.
