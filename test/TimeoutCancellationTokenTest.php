@@ -9,8 +9,10 @@ use Amp\PHPUnit\TestCase;
 use Amp\TimeoutCancellationToken;
 use Amp\TimeoutException;
 
-class TimeoutCancellationTokenTest extends TestCase {
-    public function testTimeout() {
+class TimeoutCancellationTokenTest extends TestCase
+{
+    public function testTimeout()
+    {
         Loop::run(function () {
             $token = new TimeoutCancellationToken(10);
 
@@ -26,7 +28,8 @@ class TimeoutCancellationTokenTest extends TestCase {
         });
     }
 
-    public function testWatcherCancellation() {
+    public function testWatcherCancellation()
+    {
         Loop::run(function () {
             $token = new TimeoutCancellationToken(1);
             $this->assertSame(1, Loop::getInfo()["delay"]["enabled"]);

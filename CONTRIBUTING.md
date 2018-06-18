@@ -23,13 +23,10 @@ Truths which we believe to be self-evident:
 
 ## Code style
 
-The amphp project adheres to the PSR-2 style guide with the exception that
-opening braces for classes and methods must appear on the same line as
-the declaration:
+The amphp project adheres to the [PSR-2 style guide](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md
+).
 
-https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md
-
-To apply amphp code standards you can run `php-cs-fixer` with following composer command:
+To apply code standards you can run `php-cs-fixer` with following composer command:
 
 ```bash
 composer code-style

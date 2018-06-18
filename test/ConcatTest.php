@@ -7,8 +7,10 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
-class ConcatTest extends \PHPUnit\Framework\TestCase {
-    public function getArrays() {
+class ConcatTest extends \PHPUnit\Framework\TestCase
+{
+    public function getArrays()
+    {
         return [
             [[\range(1, 3), \range(4, 6)], \range(1, 6)],
             [[\range(1, 5), \range(6, 8)], \range(1, 8)],
@@ -22,7 +24,8 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
      * @param array $iterators
      * @param array $expected
      */
-    public function testConcat(array $iterators, array $expected) {
+    public function testConcat(array $iterators, array $expected)
+    {
         Loop::run(function () use ($iterators, $expected) {
             $iterators = \array_map(function (array $iterator): Iterator {
                 return Iterator\fromIterable($iterator);
@@ -39,7 +42,8 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedIterator() {
+    public function testConcatWithFailedIterator()
+    {
         Loop::run(function () {
             $exception = new TestException;
             $expected = \range(1, 6);
@@ -66,7 +70,8 @@ class ConcatTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonIterator() {
+    public function testNonIterator()
+    {
         Iterator\concat([1]);
     }
 }

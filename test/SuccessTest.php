@@ -7,15 +7,18 @@ use Amp\Promise;
 use Amp\Success;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class SuccessTest extends \PHPUnit\Framework\TestCase {
+class SuccessTest extends \PHPUnit\Framework\TestCase
+{
     /**
      * @expectedException \Error
      */
-    public function testConstructWithNonException() {
+    public function testConstructWithNonException()
+    {
         $failure = new Success($this->getMockBuilder(Promise::class)->getMock());
     }
 
-    public function testOnResolve() {
+    public function testOnResolve()
+    {
         $value = "Resolution value";
 
         $invoked = 0;
@@ -35,7 +38,8 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testOnResolve
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess() {
+    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess()
+    {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
             $expected = new \Exception;
@@ -61,7 +65,8 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromise() {
+    public function testOnResolveWithReactPromise()
+    {
         Loop::run(function () {
             $success = new Success;
             $success->onResolve(function ($exception, $value) {
@@ -70,7 +75,8 @@ class SuccessTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testOnResolveWithGenerator() {
+    public function testOnResolveWithGenerator()
+    {
         $value = 1;
         $success = new Success($value);
         $invoked = false;

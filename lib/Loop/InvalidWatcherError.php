@@ -7,7 +7,8 @@ namespace Amp\Loop;
  *
  * An invalid watcher identifier is any identifier that is not yet emitted by the driver or cancelled by the user.
  */
-class InvalidWatcherError extends \Error {
+class InvalidWatcherError extends \Error
+{
     /** @var string */
     private $watcherId;
 
@@ -15,7 +16,8 @@ class InvalidWatcherError extends \Error {
      * @param string      $watcherId The watcher identifier.
      * @param string|null $message The exception message.
      */
-    public function __construct(string $watcherId, string $message) {
+    public function __construct(string $watcherId, string $message)
+    {
         $this->watcherId = $watcherId;
         parent::__construct($message);
     }
@@ -23,7 +25,8 @@ class InvalidWatcherError extends \Error {
     /**
      * @return string The watcher identifier.
      */
-    public function getWatcherId() {
+    public function getWatcherId()
+    {
         return $this->watcherId;
     }
 }

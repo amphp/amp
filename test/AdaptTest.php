@@ -6,15 +6,18 @@ use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
 
-class PromiseMock {
+class PromiseMock
+{
     /** @var \Amp\Promise */
     private $promise;
 
-    public function __construct(Promise $promise) {
+    public function __construct(Promise $promise)
+    {
         $this->promise = $promise;
     }
 
-    public function then(callable $onFulfilled = null, callable $onRejected = null) {
+    public function then(callable $onFulfilled = null, callable $onRejected = null)
+    {
         $this->promise->onResolve(function ($exception, $value) use ($onFulfilled, $onRejected) {
             if ($exception) {
                 if ($onRejected) {
@@ -30,8 +33,10 @@ class PromiseMock {
     }
 }
 
-class AdaptTest extends \PHPUnit\Framework\TestCase {
-    public function testThenCalled() {
+class AdaptTest extends \PHPUnit\Framework\TestCase
+{
+    public function testThenCalled()
+    {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -55,7 +60,8 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testThenCalled
      */
-    public function testPromiseFulfilled() {
+    public function testPromiseFulfilled()
+    {
         $value = 1;
 
         $promise = new PromiseMock(new Success($value));
@@ -72,7 +78,8 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testThenCalled
      */
-    public function testPromiseRejected() {
+    public function testPromiseRejected()
+    {
         $exception = new \Exception;
 
         $promise = new PromiseMock(new Failure($exception));
@@ -89,14 +96,16 @@ class AdaptTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \Error
      */
-    public function testScalarValue() {
+    public function testScalarValue()
+    {
         Promise\adapt(1);
     }
 
     /**
      * @expectedException \Error
      */
-    public function testNonThenableObject() {
+    public function testNonThenableObject()
+    {
         Promise\adapt(new \stdClass);
     }
 }

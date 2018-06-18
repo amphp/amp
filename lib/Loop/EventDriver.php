@@ -7,7 +7,8 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
-class EventDriver extends Driver {
+class EventDriver extends Driver
+{
     /** @var \Event[]|null */
     private static $activeSignals;
     /** @var \EventBase */
@@ -25,7 +26,8 @@ class EventDriver extends Driver {
     /** @var int Internal timestamp for now. */
     private $now;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->handle = new \EventBase;
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
@@ -103,7 +105,8 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId) {
+    public function cancel(string $watcherId)
+    {
         parent::cancel($watcherId);
 
         if (isset($this->events[$watcherId])) {
@@ -112,14 +115,16 @@ class EventDriver extends Driver {
         }
     }
 
-    public static function isSupported(): bool {
+    public static function isSupported(): bool
+    {
         return \extension_loaded("event");
     }
 
     /**
      * @codeCoverageIgnore
      */
-    public function __destruct() {
+    public function __destruct()
+    {
         foreach ($this->events as $event) {
             if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
                 $event->free();
@@ -141,7 +146,8 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function run() {
+    public function run()
+    {
         $active = self::$activeSignals;
 
         foreach ($active as $event) {
@@ -172,7 +178,8 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function stop() {
+    public function stop()
+    {
         $this->handle->stop();
         parent::stop();
     }
@@ -180,14 +187,16 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function getHandle(): \EventBase {
+    public function getHandle(): \EventBase
+    {
         return $this->handle;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking) {
+    protected function dispatch(bool $blocking)
+    {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
@@ -195,7 +204,8 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers) {
+    protected function activate(array $watchers)
+    {
         $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         foreach ($watchers as $watcher) {
@@ -245,7 +255,7 @@ class EventDriver extends Driver {
                     default:
                         // @codeCoverageIgnoreStart
                         throw new \Error("Unknown watcher type");
-                        // @codeCoverageIgnoreEnd
+                    // @codeCoverageIgnoreEnd
                 }
             }
 
@@ -258,7 +268,7 @@ class EventDriver extends Driver {
 
                 case Watcher::SIGNAL:
                     $this->signals[$id] = $this->events[$id];
-                    // no break
+                // no break
 
                 default:
                     $this->events[$id]->add();
@@ -270,7 +280,8 @@ class EventDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher)
+    {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->del();
 

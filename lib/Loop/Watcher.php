@@ -4,7 +4,8 @@ namespace Amp\Loop;
 
 use Amp\Struct;
 
-class Watcher {
+class Watcher
+{
     use Struct;
 
     const IO = 0b00000011;

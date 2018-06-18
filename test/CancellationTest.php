@@ -11,8 +11,10 @@ use Amp\PHPUnit\TestException;
 use Amp\Success;
 use function Amp\asyncCall;
 
-class CancellationTest extends TestCase {
-    private function createAsyncIterator(CancellationToken $cancellationToken) {
+class CancellationTest extends TestCase
+{
+    private function createAsyncIterator(CancellationToken $cancellationToken)
+    {
         $emitter = new Emitter;
 
         asyncCall(function () use ($emitter, $cancellationToken) {
@@ -32,7 +34,8 @@ class CancellationTest extends TestCase {
         return $emitter->iterate();
     }
 
-    public function testCancellationCancelsIterator() {
+    public function testCancellationCancelsIterator()
+    {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
 
@@ -54,7 +57,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testUnsubscribeWorks() {
+    public function testUnsubscribeWorks()
+    {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
 
@@ -72,7 +76,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testSubscriptionsRunAsCoroutine() {
+    public function testSubscriptionsRunAsCoroutine()
+    {
         $this->expectOutputString("abc");
 
         Loop::run(function () {
@@ -87,7 +92,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testThrowingCallbacksEndUpInLoop() {
+    public function testThrowingCallbacksEndUpInLoop()
+    {
         Loop::run(function () {
             $this->expectException(TestException::class);
 
@@ -104,7 +110,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testThrowingCallbacksEndUpInLoopIfCoroutine() {
+    public function testThrowingCallbacksEndUpInLoopIfCoroutine()
+    {
         Loop::run(function () {
             $this->expectException(TestException::class);
 
@@ -125,7 +132,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testDoubleCancelOnlyInvokesOnce() {
+    public function testDoubleCancelOnlyInvokesOnce()
+    {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
             $cancellationSource->getToken()->subscribe($this->createCallback(1));
@@ -135,7 +143,8 @@ class CancellationTest extends TestCase {
         });
     }
 
-    public function testCalledIfSubscribingAfterCancel() {
+    public function testCalledIfSubscribingAfterCancel()
+    {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
             $cancellationSource->cancel();

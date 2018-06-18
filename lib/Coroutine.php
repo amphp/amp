@@ -11,7 +11,8 @@ use React\Promise\PromiseInterface as ReactPromise;
  * value is sent into the generator, while a failure reason is thrown into the generator. Using a coroutine,
  * asynchronous code can be written without callbacks and be structured like synchronous code.
  */
-final class Coroutine implements Promise {
+final class Coroutine implements Promise
+{
     use Internal\Placeholder;
 
     /** @var \Generator */
@@ -32,7 +33,8 @@ final class Coroutine implements Promise {
     /**
      * @param \Generator $generator
      */
-    public function __construct(\Generator $generator) {
+    public function __construct(\Generator $generator)
+    {
         $this->generator = $generator;
 
         try {
@@ -109,7 +111,8 @@ final class Coroutine implements Promise {
      *
      * @return \Amp\Promise
      */
-    private function transform($yielded): Promise {
+    private function transform($yielded): Promise
+    {
         try {
             if (\is_array($yielded)) {
                 return Promise\all($yielded);

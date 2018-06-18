@@ -6,15 +6,18 @@ use Amp\Failure;
 use Amp\Loop;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class FailureTest extends \PHPUnit\Framework\TestCase {
+class FailureTest extends \PHPUnit\Framework\TestCase
+{
     /**
      * @expectedException \TypeError
      */
-    public function testConstructWithNonException() {
+    public function testConstructWithNonException()
+    {
         $failure = new Failure(1);
     }
 
-    public function testOnResolve() {
+    public function testOnResolve()
+    {
         $exception = new \Exception;
 
         $invoked = 0;
@@ -35,7 +38,8 @@ class FailureTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromise() {
+    public function testOnResolveWithReactPromise()
+    {
         Loop::run(function () {
             $failure = new Failure(new \Exception);
             $failure->onResolve(function ($exception, $value) {
@@ -44,7 +48,8 @@ class FailureTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testOnResolveWithGenerator() {
+    public function testOnResolveWithGenerator()
+    {
         $exception = new \Exception;
         $failure = new Failure($exception);
         $invoked = false;

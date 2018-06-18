@@ -9,18 +9,22 @@ use Amp\PHPUnit\TestException;
 use Amp\Producer;
 use PHPUnit\Framework\TestCase;
 
-class ProducerTest extends TestCase {
+class ProducerTest extends TestCase
+{
     const TIMEOUT = 100;
 
     /**
      * @expectedException \Error
      * @expectedExceptionMessage The callable did not return a Generator
      */
-    public function testNonGeneratorCallable() {
-        new Producer(function () {});
+    public function testNonGeneratorCallable()
+    {
+        new Producer(function () {
+        });
     }
 
-    public function testEmit() {
+    public function testEmit()
+    {
         Loop::run(function () {
             $value = 1;
 
@@ -36,7 +40,8 @@ class ProducerTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulPromise() {
+    public function testEmitSuccessfulPromise()
+    {
         Loop::run(function () {
             $deferred = new Deferred();
 
@@ -55,7 +60,8 @@ class ProducerTest extends TestCase {
     /**
      * @depends testEmitSuccessfulPromise
      */
-    public function testEmitFailedPromise() {
+    public function testEmitFailedPromise()
+    {
         $exception = new TestException;
         Loop::run(function () use ($exception) {
             $deferred = new Deferred();
@@ -78,7 +84,8 @@ class ProducerTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitBackPressure() {
+    public function testEmitBackPressure()
+    {
         $emits = 3;
         Loop::run(function () use (&$time, $emits) {
             $producer = new Producer(function (callable $emit) use (&$time, $emits) {
@@ -100,7 +107,8 @@ class ProducerTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testProducerCoroutineThrows() {
+    public function testProducerCoroutineThrows()
+    {
         $exception = new TestException;
 
         try {
@@ -110,7 +118,7 @@ class ProducerTest extends TestCase {
                     throw $exception;
                 });
 
-                while (yield $producer->advance());
+                while (yield $producer->advance()) ;
                 $this->fail("The exception thrown from the coroutine should fail the iterator");
             });
         } catch (TestException $caught) {

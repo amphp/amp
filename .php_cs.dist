@@ -7,7 +7,6 @@ return PhpCsFixer\Config::create()
         "@PSR2" => true,
         "braces" => [
             "allow_single_line_closure" => true,
-            "position_after_functions_and_oop_constructs" => "same",
         ],
         "array_syntax" => ["syntax" => "short"],
         "cast_spaces" => true,

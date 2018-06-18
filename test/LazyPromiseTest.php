@@ -9,8 +9,10 @@ use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class LazyPromiseTest extends TestCase {
-    public function testPromisorNotCalledOnConstruct() {
+class LazyPromiseTest extends TestCase
+{
+    public function testPromisorNotCalledOnConstruct()
+    {
         $invoked = false;
         $lazy = new LazyPromise(function () use (&$invoked) {
             $invoked = true;
@@ -18,7 +20,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testPromisorReturningScalar() {
+    public function testPromisorReturningScalar()
+    {
         $invoked = false;
         $value = 1;
         $lazy = new LazyPromise(function () use (&$invoked, $value) {
@@ -34,7 +37,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testPromisorReturningSuccessfulPromise() {
+    public function testPromisorReturningSuccessfulPromise()
+    {
         $invoked = false;
         $value = 1;
         $promise = new Success($value);
@@ -51,7 +55,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testPromisorReturningFailedPromise() {
+    public function testPromisorReturningFailedPromise()
+    {
         $invoked = false;
         $exception = new \Exception;
         $promise = new Failure($exception);
@@ -68,7 +73,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($exception, $reason);
     }
 
-    public function testPromisorThrowingException() {
+    public function testPromisorThrowingException()
+    {
         $invoked = false;
         $exception = new \Exception;
         $lazy = new LazyPromise(function () use (&$invoked, $exception) {
@@ -84,7 +90,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($exception, $reason);
     }
 
-    public function testPromisorReturningSuccessfulReactPromise() {
+    public function testPromisorReturningSuccessfulReactPromise()
+    {
         $invoked = false;
         $value = 1;
         $promise = new FulfilledReactPromise($value);
@@ -101,7 +108,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testPromisorReturningFailedReactPromise() {
+    public function testPromisorReturningFailedReactPromise()
+    {
         $invoked = false;
         $exception = new \Exception;
         $promise = new RejectedReactPromise($exception);
@@ -118,7 +126,8 @@ class LazyPromiseTest extends TestCase {
         $this->assertSame($exception, $reason);
     }
 
-    public function testPromisorReturningGenerator() {
+    public function testPromisorReturningGenerator()
+    {
         $invoked = false;
         $value = 1;
         $lazy = new LazyPromise(function () use (&$invoked, $value) {

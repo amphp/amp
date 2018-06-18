@@ -14,10 +14,12 @@ use Amp\Loop;
 Loop::run(function () {
     Loop::setState('test', new class {
         private $handle;
-        public function __construct() {
+        public function __construct()
+        {
             $this->handle = Loop::repeat(10, function () {});
         }
-        public function __destruct() {
+        public function __destruct()
+        {
             Loop::cancel($this->handle);
             print "ok";
         }

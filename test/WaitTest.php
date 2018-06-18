@@ -12,8 +12,10 @@ use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use function React\Promise\resolve;
 
-class WaitTest extends TestCase {
-    public function testWaitOnSuccessfulPromise() {
+class WaitTest extends TestCase
+{
+    public function testWaitOnSuccessfulPromise()
+    {
         $value = 1;
 
         $promise = new Success($value);
@@ -23,7 +25,8 @@ class WaitTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testWaitOnFailedPromise() {
+    public function testWaitOnFailedPromise()
+    {
         $exception = new \Exception();
 
         $promise = new Failure($exception);
@@ -41,7 +44,8 @@ class WaitTest extends TestCase {
     /**
      * @depends testWaitOnSuccessfulPromise
      */
-    public function testWaitOnPendingPromise() {
+    public function testWaitOnPendingPromise()
+    {
         Loop::run(function () {
             $value = 1;
 
@@ -57,7 +61,8 @@ class WaitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Loop stopped without resolving the promise
      */
-    public function testPromiseWithNoResolutionPathThrowsException() {
+    public function testPromiseWithNoResolutionPathThrowsException()
+    {
         Promise\wait((new Deferred)->promise());
     }
 
@@ -65,7 +70,8 @@ class WaitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Loop exceptionally stopped without resolving the promise
      */
-    public function testPromiseWithErrorBeforeResolutionThrowsException() {
+    public function testPromiseWithErrorBeforeResolutionThrowsException()
+    {
         Loop::defer(function () {
             throw new TestException;
         });
@@ -76,7 +82,8 @@ class WaitTest extends TestCase {
     /**
      * @depends testWaitOnSuccessfulPromise
      */
-    public function testReactPromise() {
+    public function testReactPromise()
+    {
         $value = 1;
 
         $promise = resolve($value);
@@ -86,7 +93,8 @@ class WaitTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testNonPromise() {
+    public function testNonPromise()
+    {
         $this->expectException(\TypeError::class);
         Promise\wait(42);
     }

@@ -7,18 +7,22 @@ use Amp\Loop\EvDriver;
 /**
  * @requires extension ev
  */
-class EvDriverTest extends DriverTest {
-    public function getFactory(): callable {
+class EvDriverTest extends DriverTest
+{
+    public function getFactory(): callable
+    {
         return function () {
             return new EvDriver;
         };
     }
 
-    public function testHandle() {
+    public function testHandle()
+    {
         $this->assertInstanceOf(\EvLoop::class, $this->loop->getHandle());
     }
 
-    public function testSupported() {
+    public function testSupported()
+    {
         $this->assertTrue(EvDriver::isSupported());
     }
 }

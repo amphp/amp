@@ -23,7 +23,8 @@ if (!\defined("PHP_INT_MIN")) {
     \define("PHP_INT_MIN", ~PHP_INT_MAX);
 }
 
-abstract class DriverTest extends TestCase {
+abstract class DriverTest extends TestCase
+{
     /**
      * The DriverFactory to run this test on.
      *
@@ -34,7 +35,8 @@ abstract class DriverTest extends TestCase {
     /** @var Driver */
     public $loop;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->loop = ($this->getFactory())();
 
         if (!$this->loop instanceof Driver) {
@@ -46,25 +48,30 @@ abstract class DriverTest extends TestCase {
         \gc_collect_cycles();
     }
 
-    public function tearDown() {
+    public function tearDown()
+    {
         unset($this->loop);
     }
 
-    public function start($cb) {
+    public function start($cb)
+    {
         $cb($this->loop);
         $this->loop->run();
     }
 
-    public function testEmptyLoop() {
+    public function testEmptyLoop()
+    {
         $this->assertNull($this->loop->run());
     }
 
-    public function testStopWorksEvenIfNotCurrentlyRunning() {
+    public function testStopWorksEvenIfNotCurrentlyRunning()
+    {
         $this->assertNull($this->loop->stop());
     }
 
     // Note: The running nesting is important for being able to continue actually still running loops (i.e. running flag set, if the driver has one) inside register_shutdown_function() for example
-    public function testLoopRunsCanBeConsecutiveAndNested() {
+    public function testLoopRunsCanBeConsecutiveAndNested()
+    {
         $this->expectOutputString("123456");
         $this->start(function (Driver $loop) {
             $loop->stop();
@@ -99,18 +106,24 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testLoopTerminatesWithOnlyUnreferencedWatchers() {
+    public function testLoopTerminatesWithOnlyUnreferencedWatchers()
+    {
         $this->start(function (Driver $loop) use (&$end) {
-            $loop->unreference($loop->onReadable(STDIN, function () {}));
-            $w = $loop->delay(10000000, function () {});
-            $loop->defer(function () use ($loop, $w) { $loop->cancel($w); });
+            $loop->unreference($loop->onReadable(STDIN, function () {
+            }));
+            $w = $loop->delay(10000000, function () {
+            });
+            $loop->defer(function () use ($loop, $w) {
+                $loop->cancel($w);
+            });
             $end = true;
         });
         $this->assertTrue($end);
     }
 
     /** This MUST NOT have a "test" prefix, otherwise it's executed as test and marked as risky. */
-    public function checkForSignalCapability() {
+    public function checkForSignalCapability()
+    {
         try {
             $watcher = $this->loop->onSignal(SIGUSR1, function () {
             });
@@ -120,7 +133,8 @@ abstract class DriverTest extends TestCase {
         }
     }
 
-    public function testWatcherUnrefRerefRunResult() {
+    public function testWatcherUnrefRerefRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->defer(function () use (&$invoked) {
@@ -133,7 +147,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testDeferWatcherUnrefRunResult() {
+    public function testDeferWatcherUnrefRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->defer(function () use (&$invoked) {
@@ -144,7 +159,8 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testOnceWatcherUnrefRunResult() {
+    public function testOnceWatcherUnrefRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->delay(2000, function () use (&$invoked) {
@@ -156,7 +172,8 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testRepeatWatcherUnrefRunResult() {
+    public function testRepeatWatcherUnrefRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->repeat(2000, function () use (&$invoked) {
@@ -167,7 +184,8 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testOnReadableWatcherUnrefRunResult() {
+    public function testOnReadableWatcherUnrefRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->onReadable(STDIN, function () use (&$invoked) {
@@ -178,7 +196,8 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testOnWritableWatcherKeepAliveRunResult() {
+    public function testOnWritableWatcherKeepAliveRunResult()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->onWritable(STDOUT, function () use (&$invoked) {
@@ -189,7 +208,8 @@ abstract class DriverTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testOnSignalWatcherKeepAliveRunResult() {
+    public function testOnSignalWatcherKeepAliveRunResult()
+    {
         $this->checkForSignalCapability();
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
@@ -205,7 +225,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testUnreferencedDeferWatcherStillExecutes() {
+    public function testUnreferencedDeferWatcherStillExecutes()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $watcher = $loop->defer(function () use (&$invoked) {
@@ -219,7 +240,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testLoopDoesNotBlockOnNegativeTimerExpiration() {
+    public function testLoopDoesNotBlockOnNegativeTimerExpiration()
+    {
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
             $loop->delay(1, function () use (&$invoked) {
@@ -231,7 +253,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testDisabledDeferReenableInSubsequentTick() {
+    public function testDisabledDeferReenableInSubsequentTick()
+    {
         $this->expectOutputString("123");
         $this->start(function (Driver $loop) {
             $watcherId = $loop->defer(function ($watcherId) {
@@ -246,7 +269,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function provideRegistrationArgs() {
+    public function provideRegistrationArgs()
+    {
         $args = [
             ["defer", [function () {
             }]],
@@ -269,7 +293,8 @@ abstract class DriverTest extends TestCase {
      * @requires PHP 7
      * @dataProvider provideRegistrationArgs
      */
-    public function testWeakTypes($type, $args) {
+    public function testWeakTypes($type, $args)
+    {
         if ($type == "onSignal") {
             $this->checkForSignalCapability();
         }
@@ -313,7 +338,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @dataProvider provideRegistrationArgs */
-    public function testDisableWithConsecutiveCancel($type, $args) {
+    public function testDisableWithConsecutiveCancel($type, $args)
+    {
         if ($type === "onSignal") {
             $this->checkForSignalCapability();
         }
@@ -333,7 +359,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @dataProvider provideRegistrationArgs */
-    public function testWatcherReferenceInfo($type, $args) {
+    public function testWatcherReferenceInfo($type, $args)
+    {
         if ($type === "onSignal") {
             $this->checkForSignalCapability();
         }
@@ -399,7 +426,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @dataProvider provideRegistrationArgs */
-    public function testWatcherRegistrationAndCancellationInfo($type, $args) {
+    public function testWatcherRegistrationAndCancellationInfo($type, $args)
+    {
         if ($type === "onSignal") {
             $this->checkForSignalCapability();
         }
@@ -466,7 +494,8 @@ abstract class DriverTest extends TestCase {
      * @dataProvider provideRegistrationArgs
      * @group memoryleak
      */
-    public function testNoMemoryLeak($type, $args) {
+    public function testNoMemoryLeak($type, $args)
+    {
         if ($this->getTestResultObject()->getCollectCodeCoverageInformation()) {
             $this->markTestSkipped("Cannot run this test with code coverage active [code coverage consumes memory which makes it impossible to rely on memory_get_usage()]");
         }
@@ -590,7 +619,8 @@ abstract class DriverTest extends TestCase {
      * The first number of each tuple indicates the tick in which the watcher is supposed to execute, the second digit
      * indicates the order within the tick.
      */
-    public function testExecutionOrderGuarantees() {
+    public function testExecutionOrderGuarantees()
+    {
         $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat("13 ", 4) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
@@ -685,7 +715,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testSignalExecutionOrder() {
+    public function testSignalExecutionOrder()
+    {
         $this->checkForSignalCapability();
 
         $this->expectOutputString("122222");
@@ -721,7 +752,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherError */
-    public function testExceptionOnEnableNonexistentWatcher() {
+    public function testExceptionOnEnableNonexistentWatcher()
+    {
         try {
             $this->loop->enable("nonexistentWatcher");
         } catch (InvalidWatcherError $e) {
@@ -730,14 +762,16 @@ abstract class DriverTest extends TestCase {
         }
     }
 
-    public function testSuccessOnDisableNonexistentWatcher() {
+    public function testSuccessOnDisableNonexistentWatcher()
+    {
         $this->loop->disable("nonexistentWatcher");
 
         // Otherwise risky, throwing fails the test
         $this->assertTrue(true);
     }
 
-    public function testSuccessOnCancelNonexistentWatcher() {
+    public function testSuccessOnCancelNonexistentWatcher()
+    {
         $this->loop->cancel("nonexistentWatcher");
 
         // Otherwise risky, throwing fails the test
@@ -745,7 +779,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherError */
-    public function testExceptionOnReferenceNonexistentWatcher() {
+    public function testExceptionOnReferenceNonexistentWatcher()
+    {
         try {
             $this->loop->reference("nonexistentWatcher");
         } catch (InvalidWatcherError $e) {
@@ -754,7 +789,8 @@ abstract class DriverTest extends TestCase {
         }
     }
 
-    public function testSuccessOnUnreferenceNonexistentWatcher() {
+    public function testSuccessOnUnreferenceNonexistentWatcher()
+    {
         $this->loop->unreference("nonexistentWatcher");
 
         // Otherwise risky, throwing fails the test
@@ -762,7 +798,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherError */
-    public function testWatcherInvalidityOnDefer() {
+    public function testWatcherInvalidityOnDefer()
+    {
         $this->start(function (Driver $loop) {
             $loop->defer(function ($watcher) use ($loop) {
                 $loop->enable($watcher);
@@ -771,7 +808,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @expectedException \Amp\Loop\InvalidWatcherError */
-    public function testWatcherInvalidityOnDelay() {
+    public function testWatcherInvalidityOnDelay()
+    {
         $this->start(function (Driver $loop) {
             $loop->delay($msDelay = 0, function ($watcher) use ($loop) {
                 $loop->enable($watcher);
@@ -779,7 +817,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testEventsNotExecutedInSameTickAsEnabled() {
+    public function testEventsNotExecutedInSameTickAsEnabled()
+    {
         $this->start(function (Driver $loop) {
             $loop->defer(function () use ($loop) {
                 $loop->defer(function () use ($loop, &$diswatchers, &$watchers) {
@@ -823,7 +862,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue(true);
     }
 
-    public function testEnablingWatcherAllowsSubsequentInvocation() {
+    public function testEnablingWatcherAllowsSubsequentInvocation()
+    {
         $loop = $this->loop;
         $increment = 0;
         $watcherId = $loop->defer(function () use (&$increment) {
@@ -839,7 +879,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(1, $increment);
     }
 
-    public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop() {
+    public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop()
+    {
         $increment = 0;
         $this->start(function (Driver $loop) use (&$increment) {
             $loop->defer([$loop, "stop"]);
@@ -858,7 +899,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(1, $increment);
     }
 
-    public function testTimerWatcherParameterOrder() {
+    public function testTimerWatcherParameterOrder()
+    {
         $this->start(function (Driver $loop) {
             $counter = 0;
             $loop->defer(function ($watcherId) use ($loop, &$counter) {
@@ -883,7 +925,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testStreamWatcherParameterOrder() {
+    public function testStreamWatcherParameterOrder()
+    {
         $this->start(function (Driver $loop) use (&$invoked) {
             $invoked = 0;
             $loop->onWritable(STDOUT, function ($watcherId, $stream) use ($loop, &$invoked) {
@@ -896,7 +939,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(1, $invoked);
     }
 
-    public function testDisablingWatcherPreventsSubsequentInvocation() {
+    public function testDisablingWatcherPreventsSubsequentInvocation()
+    {
         $this->start(function (Driver $loop) {
             $increment = 0;
             $watcherId = $loop->defer(function () use (&$increment) {
@@ -910,7 +954,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testImmediateExecution() {
+    public function testImmediateExecution()
+    {
         $loop = $this->loop;
         $increment = 0;
         $this->start(function (Driver $loop) use (&$increment) {
@@ -922,7 +967,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(1, $increment);
     }
 
-    public function testImmediatelyCallbacksDoNotRecurseInSameTick() {
+    public function testImmediatelyCallbacksDoNotRecurseInSameTick()
+    {
         $increment = 0;
         $this->start(function (Driver $loop) use (&$increment) {
             $loop->defer(function () use ($loop, &$increment) {
@@ -936,7 +982,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(1, $increment);
     }
 
-    public function testRunExecutesEventsUntilExplicitlyStopped() {
+    public function testRunExecutesEventsUntilExplicitlyStopped()
+    {
         $increment = 0;
         $this->start(function (Driver $loop) use (&$increment) {
             $loop->repeat($msInterval = 5, function ($watcherId) use ($loop, &$increment) {
@@ -953,7 +1000,8 @@ abstract class DriverTest extends TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage loop error
      */
-    public function testLoopAllowsExceptionToBubbleUpDuringStart() {
+    public function testLoopAllowsExceptionToBubbleUpDuringStart()
+    {
         $this->start(function (Driver $loop) {
             $loop->defer(function () {
                 throw new \Exception("loop error");
@@ -965,7 +1013,8 @@ abstract class DriverTest extends TestCase {
      * @expectedException \RuntimeException
      * @expectedExceptionMessage test
      */
-    public function testLoopAllowsExceptionToBubbleUpFromRepeatingAlarmDuringStart() {
+    public function testLoopAllowsExceptionToBubbleUpFromRepeatingAlarmDuringStart()
+    {
         $this->start(function (Driver $loop) {
             $loop->repeat($msInterval = 1, function () {
                 throw new \RuntimeException("test");
@@ -973,7 +1022,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testErrorHandlerCapturesUncaughtException() {
+    public function testErrorHandlerCapturesUncaughtException()
+    {
         $msg = "";
         $this->loop->setErrorHandler($f = function () {
         });
@@ -993,7 +1043,8 @@ abstract class DriverTest extends TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage errorception
      */
-    public function testOnErrorFailure() {
+    public function testOnErrorFailure()
+    {
         $this->loop->setErrorHandler(function () {
             throw new \Exception("errorception");
         });
@@ -1008,7 +1059,8 @@ abstract class DriverTest extends TestCase {
      * @expectedException \RuntimeException
      * @expectedExceptionMessage test
      */
-    public function testLoopException() {
+    public function testLoopException()
+    {
         $this->start(function (Driver $loop) {
             $loop->defer(function () use ($loop) {
                 // force next tick, outside of primary startup tick
@@ -1019,7 +1071,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testOnSignalWatcher() {
+    public function testOnSignalWatcher()
+    {
         $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
@@ -1038,7 +1091,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testInitiallyDisabledOnSignalWatcher() {
+    public function testInitiallyDisabledOnSignalWatcher()
+    {
         $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
@@ -1063,7 +1117,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testNestedLoopSignalDispatch() {
+    public function testNestedLoopSignalDispatch()
+    {
         $this->checkForSignalCapability();
 
         $this->expectOutputString("inner SIGUSR2\nouter SIGUSR1\n");
@@ -1099,7 +1154,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testCancelRemovesWatcher() {
+    public function testCancelRemovesWatcher()
+    {
         $invoked = false;
 
         $this->start(function (Driver $loop) use (&$invoked) {
@@ -1118,7 +1174,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testOnWritableWatcher() {
+    public function testOnWritableWatcher()
+    {
         $flag = false;
         $this->start(function (Driver $loop) use (&$flag) {
             $loop->onWritable(STDOUT, function () use ($loop, &$flag) {
@@ -1130,7 +1187,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($flag);
     }
 
-    public function testInitiallyDisabledWriteWatcher() {
+    public function testInitiallyDisabledWriteWatcher()
+    {
         $increment = 0;
         $this->start(function (Driver $loop) {
             $watcherId = $loop->onWritable(STDOUT, function () use (&$increment) {
@@ -1142,7 +1200,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(0, $increment);
     }
 
-    public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled() {
+    public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled()
+    {
         $this->expectOutputString("12");
         $this->start(function (Driver $loop) {
             $watcherId = $loop->onWritable(STDOUT, function () use ($loop) {
@@ -1158,7 +1217,8 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @expectedException \RuntimeException */
-    public function testStreamWatcherDoesntSwallowExceptions() {
+    public function testStreamWatcherDoesntSwallowExceptions()
+    {
         $this->start(function (Driver $loop) {
             $loop->onWritable(STDOUT, function () {
                 throw new \RuntimeException;
@@ -1167,7 +1227,8 @@ abstract class DriverTest extends TestCase {
         });
     }
 
-    public function testReactorRunsUntilNoWatchersRemain() {
+    public function testReactorRunsUntilNoWatchersRemain()
+    {
         $var1 = $var2 = 0;
         $this->start(function (Driver $loop) use (&$var1, &$var2) {
             $loop->repeat($msDelay = 1, function ($watcherId) use ($loop, &$var1) {
@@ -1186,7 +1247,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(4, $var2);
     }
 
-    public function testReactorRunsUntilNoWatchersRemainWhenStartedDeferred() {
+    public function testReactorRunsUntilNoWatchersRemainWhenStartedDeferred()
+    {
         $var1 = $var2 = 0;
         $this->start(function (Driver $loop) use (&$var1, &$var2) {
             $loop->defer(function () use ($loop, &$var1, &$var2) {
@@ -1207,7 +1269,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(4, $var2);
     }
 
-    public function testOptionalCallbackDataPassedOnInvocation() {
+    public function testOptionalCallbackDataPassedOnInvocation()
+    {
         $callbackData = new \StdClass;
 
         $this->start(function (Driver $loop) use ($callbackData) {
@@ -1233,7 +1296,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($callbackData->onWritable);
     }
 
-    public function testLoopStopPreventsTimerExecution() {
+    public function testLoopStopPreventsTimerExecution()
+    {
         $t = \microtime(1);
         $this->start(function (Driver $loop) {
             $loop->delay($msDelay = 10000, function () {
@@ -1246,7 +1310,8 @@ abstract class DriverTest extends TestCase {
         $this->assertTrue($t + 0.1 > \microtime(1));
     }
 
-    public function testDeferEnabledInNextTick() {
+    public function testDeferEnabledInNextTick()
+    {
         $tick = function () {
             $this->loop->defer(function () {
                 $this->loop->stop();
@@ -1272,7 +1337,8 @@ abstract class DriverTest extends TestCase {
     }
 
     // getState and setState are final, but test it here again to be sure
-    public function testRegistry() {
+    public function testRegistry()
+    {
         $this->assertNull($this->loop->getState("foo"));
         $this->loop->setState("foo", NAN);
         $this->assertNan($this->loop->getState("foo"));
@@ -1287,12 +1353,14 @@ abstract class DriverTest extends TestCase {
     }
 
     /** @dataProvider provideRegistryValues */
-    public function testRegistryValues($val) {
+    public function testRegistryValues($val)
+    {
         $this->loop->setState("foo", $val);
         $this->assertSame($val, $this->loop->getState("foo"));
     }
 
-    public function provideRegistryValues() {
+    public function provideRegistryValues()
+    {
         return [
             ["string"],
             [0],
@@ -1306,7 +1374,8 @@ abstract class DriverTest extends TestCase {
         ];
     }
 
-    public function testRethrowsFromCallbacks() {
+    public function testRethrowsFromCallbacks()
+    {
         foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
             $promises = [
                 new Failure(new \Exception("rethrow test")),
@@ -1387,7 +1456,8 @@ abstract class DriverTest extends TestCase {
         }
     }
 
-    public function testMultipleWatchersOnSameDescriptor() {
+    public function testMultipleWatchersOnSameDescriptor()
+    {
         $sockets = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         \fwrite($sockets[1], "testing");
 
@@ -1433,7 +1503,8 @@ abstract class DriverTest extends TestCase {
         $this->assertSame(2323, $invoked);
     }
 
-    public function testTimerIntervalCountedWhenNotRunning() {
+    public function testTimerIntervalCountedWhenNotRunning()
+    {
         \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
         $start = \microtime(true);
         $this->loop->delay(1000, function () use ($start) {
@@ -1442,7 +1513,8 @@ abstract class DriverTest extends TestCase {
         $this->loop->run();
     }
 
-    public function testShortTimerDoesNotBlockOtherTimers() {
+    public function testShortTimerDoesNotBlockOtherTimers()
+    {
         $this->loop->repeat(0, function () {
             static $i = 0;
 
@@ -1461,7 +1533,8 @@ abstract class DriverTest extends TestCase {
         $this->loop->run();
     }
 
-    public function testTwoShortRepeatTimersWorkAsExpected() {
+    public function testTwoShortRepeatTimersWorkAsExpected()
+    {
         $this->loop->repeat(0, function () use (&$j) {
             static $i = 0;
             if (++$i === 5) {
@@ -1482,7 +1555,8 @@ abstract class DriverTest extends TestCase {
         $this->assertNotSame(0, $j);
     }
 
-    public function testBug163ConsecutiveDelayed() {
+    public function testBug163ConsecutiveDelayed()
+    {
         $emits = 3;
 
         $this->loop->defer(function () use (&$time, $emits) {

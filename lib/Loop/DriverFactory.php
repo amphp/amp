@@ -3,7 +3,8 @@
 namespace Amp\Loop;
 
 // @codeCoverageIgnoreStart
-class DriverFactory {
+class DriverFactory
+{
     /**
      * Creates a new loop instance and chooses the best available driver.
      *
@@ -11,7 +12,8 @@ class DriverFactory {
      *
      * @throws \Error If an invalid class has been specified via AMP_LOOP_DRIVER
      */
-    public function create(): Driver {
+    public function create(): Driver
+    {
         if ($driver = $this->createDriverFromEnv()) {
             return $driver;
         }
@@ -31,7 +33,8 @@ class DriverFactory {
         return new NativeDriver;
     }
 
-    private function createDriverFromEnv() {
+    private function createDriverFromEnv()
+    {
         $driver = \getenv("AMP_LOOP_DRIVER");
 
         if (!$driver) {

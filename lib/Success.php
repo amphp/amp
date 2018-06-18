@@ -8,7 +8,8 @@ use React\Promise\PromiseInterface as ReactPromise;
  * Creates a successful promise using the given value (which can be any value except an object implementing
  * `Amp\Promise` or `React\Promise\PromiseInterface`).
  */
-final class Success implements Promise {
+final class Success implements Promise
+{
     /** @var mixed */
     private $value;
 
@@ -17,7 +18,8 @@ final class Success implements Promise {
      *
      * @throws \Error If a promise is given as the value.
      */
-    public function __construct($value = null) {
+    public function __construct($value = null)
+    {
         if ($value instanceof Promise || $value instanceof ReactPromise) {
             throw new \Error("Cannot use a promise as success value");
         }
@@ -28,7 +30,8 @@ final class Success implements Promise {
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved) {
+    public function onResolve(callable $onResolved)
+    {
         try {
             $result = $onResolved(null, $this->value);
 

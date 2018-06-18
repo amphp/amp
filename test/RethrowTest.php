@@ -8,8 +8,10 @@ use Amp\Promise;
 use PHPUnit\Framework\TestCase;
 use function React\Promise\reject;
 
-class RethrowTest extends TestCase {
-    public function testRethrow() {
+class RethrowTest extends TestCase
+{
+    public function testRethrow()
+    {
         $exception = new \Exception;
 
         try {
@@ -29,7 +31,8 @@ class RethrowTest extends TestCase {
     /**
      * @depends testRethrow
      */
-    public function testReactPromise() {
+    public function testReactPromise()
+    {
         $exception = new \Exception;
 
         try {
@@ -46,7 +49,8 @@ class RethrowTest extends TestCase {
         $this->fail('Failed promise reason should be thrown from loop');
     }
 
-    public function testNonPromise() {
+    public function testNonPromise()
+    {
         $this->expectException(\TypeError::class);
         Promise\rethrow(42);
     }

@@ -5,23 +5,29 @@ namespace Amp\Test;
 use Amp\Loop;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class Promise implements \Amp\Promise {
+class Promise implements \Amp\Promise
+{
     use \Amp\Internal\Placeholder {
         resolve as public;
         fail as public;
     }
 }
 
-class PromiseTest extends \PHPUnit\Framework\TestCase {
+class PromiseTest extends \PHPUnit\Framework\TestCase
+{
     private $originalErrorHandler;
 
     /**
      * A Promise to use for a test with resolution methods.
-     * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in order to ensure resolution.
+     * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual
+     * implementation delays resolution to the next loop tick. The callables then must run one tick of the loop in
+     * order to ensure resolution.
      *
-     * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result or a Throwable/Exception respectively
+     * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result
+     *     or a Throwable/Exception respectively
      */
-    public function promise() {
+    public function promise()
+    {
         $promise = new Promise;
         return [
             $promise,
@@ -30,17 +36,20 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         ];
     }
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->originalErrorHandler = Loop::setErrorHandler(function ($e) {
             throw $e;
         });
     }
 
-    public function tearDown() {
+    public function tearDown()
+    {
         Loop::setErrorHandler($this->originalErrorHandler);
     }
 
-    public function provideSuccessValues() {
+    public function provideSuccessValues()
+    {
         return [
             ["string"],
             [0],
@@ -55,13 +64,15 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         ];
     }
 
-    public function testPromiseImplementsPromise() {
+    public function testPromiseImplementsPromise()
+    {
         list($promise) = $this->promise();
         $this->assertInstanceOf(Promise::class, $promise);
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testPromiseSucceed($value) {
+    public function testPromiseSucceed($value)
+    {
         list($promise, $succeeder) = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
             $this->assertNull($e);
@@ -73,7 +84,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testOnResolveOnSucceededPromise($value) {
+    public function testOnResolveOnSucceededPromise($value)
+    {
         list($promise, $succeeder) = $this->promise();
         $succeeder($value);
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
@@ -84,7 +96,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testSuccessAllOnResolvesExecuted() {
+    public function testSuccessAllOnResolvesExecuted()
+    {
         list($promise, $succeeder) = $this->promise();
         $invoked = 0;
 
@@ -115,7 +128,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(4, $invoked);
     }
 
-    public function testPromiseExceptionFailure() {
+    public function testPromiseExceptionFailure()
+    {
         list($promise, , $failer) = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "RuntimeException");
@@ -125,7 +139,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveOnExceptionFailedPromise() {
+    public function testOnResolveOnExceptionFailedPromise()
+    {
         list($promise, , $failer) = $this->promise();
         $failer(new \RuntimeException);
         $promise->onResolve(function ($e) use (&$invoked) {
@@ -135,7 +150,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testFailureAllOnResolvesExecuted() {
+    public function testFailureAllOnResolvesExecuted()
+    {
         list($promise, , $failer) = $this->promise();
         $invoked = 0;
 
@@ -162,7 +178,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(4, $invoked);
     }
 
-    public function testPromiseErrorFailure() {
+    public function testPromiseErrorFailure()
+    {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
         }
@@ -176,7 +193,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveOnErrorFailedPromise() {
+    public function testOnResolveOnErrorFailedPromise()
+    {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
         }
@@ -191,7 +209,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     }
 
     /** Implementations MAY fail upon resolution with a Promise, but they definitely MUST NOT return a Promise */
-    public function testPromiseResolutionWithPromise() {
+    public function testPromiseResolutionWithPromise()
+    {
         list($success, $succeeder) = $this->promise();
         $succeeder(true);
 
@@ -214,7 +233,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public function testThrowingInCallback() {
+    public function testThrowingInCallback()
+    {
         Loop::run(function () {
             $invoked = 0;
 
@@ -246,7 +266,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testThrowingInCallbackContinuesOtherOnResolves() {
+    public function testThrowingInCallbackContinuesOtherOnResolves()
+    {
         Loop::run(function () {
             $invoked = 0;
 
@@ -273,7 +294,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testThrowingInCallbackOnFailure() {
+    public function testThrowingInCallbackOnFailure()
+    {
         Loop::run(function () {
             $invoked = 0;
             Loop::setErrorHandler(function () use (&$invoked) {
@@ -309,7 +331,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     /**
      * @requires PHP 7
      */
-    public function testWeakTypes() {
+    public function testWeakTypes()
+    {
         $invoked = 0;
         list($promise, $succeeder) = $this->promise();
 
@@ -328,13 +351,16 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(2, $invoked);
     }
 
-    public function testResolvedQueueUnrolling() {
+    public function testResolvedQueueUnrolling()
+    {
         $count = 50;
         $invoked = false;
 
         $promise = new Promise;
-        $promise->onResolve(function () { });
-        $promise->onResolve(function () { });
+        $promise->onResolve(function () {
+        });
+        $promise->onResolve(function () {
+        });
         $promise->onResolve(function () use (&$invoked) {
             $invoked = true;
             $this->assertLessThan(30, \count(\debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)));
@@ -344,8 +370,10 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
 
         $f = function () use (&$f, &$count, &$last) {
             $p = new Promise;
-            $p->onResolve(function () { });
-            $p->onResolve(function () { });
+            $p->onResolve(function () {
+            });
+            $p->onResolve(function () {
+            });
 
             $last->resolve($p);
             $last = $p;
@@ -365,7 +393,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromise() {
+    public function testOnResolveWithReactPromise()
+    {
         Loop::run(function () {
             $promise = new Promise;
             $promise->onResolve(function ($exception, $value) {
@@ -380,7 +409,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \Exception
      * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromiseAfterResolve() {
+    public function testOnResolveWithReactPromiseAfterResolve()
+    {
         Loop::run(function () {
             $promise = new Promise;
             $promise->resolve();
@@ -390,7 +420,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testOnResolveWithGenerator() {
+    public function testOnResolveWithGenerator()
+    {
         $promise = new Promise;
         $invoked = false;
         $promise->onResolve(function ($exception, $value) use (&$invoked) {
@@ -407,7 +438,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testOnResolveWithGenerator
      */
-    public function testOnResolveWithGeneratorAfterResolve() {
+    public function testOnResolveWithGeneratorAfterResolve()
+    {
         $promise = new Promise;
         $invoked = false;
         $promise->resolve(1);
@@ -420,7 +452,8 @@ class PromiseTest extends \PHPUnit\Framework\TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveWithGeneratorWithMultipleCallbacks() {
+    public function testOnResolveWithGeneratorWithMultipleCallbacks()
+    {
         $promise = new Promise;
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked) {

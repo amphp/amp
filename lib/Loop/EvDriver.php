@@ -7,7 +7,8 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
-class EvDriver extends Driver {
+class EvDriver extends Driver
+{
     /** @var \EvSignal[]|null */
     private static $activeSignals;
     /** @var \EvLoop */
@@ -23,7 +24,8 @@ class EvDriver extends Driver {
     /** @var \EvSignal[] */
     private $signals = [];
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->handle = new \EvLoop;
 
         if (self::$activeSignals === null) {
@@ -112,16 +114,19 @@ class EvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId) {
+    public function cancel(string $watcherId)
+    {
         parent::cancel($watcherId);
         unset($this->events[$watcherId]);
     }
 
-    public static function isSupported(): bool {
+    public static function isSupported(): bool
+    {
         return \extension_loaded("ev");
     }
 
-    public function __destruct() {
+    public function __destruct()
+    {
         foreach ($this->events as $event) {
             if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
                 $event->stop();
@@ -136,7 +141,8 @@ class EvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function run() {
+    public function run()
+    {
         $active = self::$activeSignals;
 
         foreach ($active as $event) {
@@ -167,7 +173,8 @@ class EvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function stop() {
+    public function stop()
+    {
         $this->handle->stop();
         parent::stop();
     }
@@ -175,21 +182,24 @@ class EvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function getHandle(): \EvLoop {
+    public function getHandle(): \EvLoop
+    {
         return $this->handle;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking) {
+    protected function dispatch(bool $blocking)
+    {
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers) {
+    protected function activate(array $watchers)
+    {
         foreach ($watchers as $watcher) {
             if (!isset($this->events[$id = $watcher->id])) {
                 switch ($watcher->type) {
@@ -219,7 +229,7 @@ class EvDriver extends Driver {
                     default:
                         // @codeCoverageIgnoreStart
                         throw new \Error("Unknown watcher type");
-                        // @codeCoverageIgnoreEnd
+                    // @codeCoverageIgnoreEnd
                 }
             } else {
                 $this->events[$id]->start();
@@ -234,7 +244,8 @@ class EvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher)
+    {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();
 

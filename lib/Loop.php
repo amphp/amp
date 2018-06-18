@@ -13,7 +13,8 @@ use Amp\Loop\Watcher;
  *
  * @see \Amp\Loop\Driver
  */
-final class Loop {
+final class Loop
+{
     /**
      * @var Driver
      */
@@ -22,7 +23,8 @@ final class Loop {
     /**
      * Disable construction as this is a static class.
      */
-    private function __construct() {
+    private function __construct()
+    {
         // intentionally left blank
     }
 
@@ -31,22 +33,27 @@ final class Loop {
      *
      * @param Driver $driver
      */
-    public static function set(Driver $driver) {
+    public static function set(Driver $driver)
+    {
         try {
             self::$driver = new class extends Driver {
-                protected function activate(array $watchers) {
+                protected function activate(array $watchers)
+                {
                     throw new \Error("Can't activate watcher during garbage collection.");
                 }
 
-                protected function dispatch(bool $blocking) {
+                protected function dispatch(bool $blocking)
+                {
                     throw new \Error("Can't dispatch during garbage collection.");
                 }
 
-                protected function deactivate(Watcher $watcher) {
+                protected function deactivate(Watcher $watcher)
+                {
                     // do nothing
                 }
 
-                public function getHandle() {
+                public function getHandle()
+                {
                     return null;
                 }
             };
@@ -68,7 +75,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function run(callable $callback = null) {
+    public static function run(callable $callback = null)
+    {
         if ($callback) {
             self::$driver->defer($callback);
         }
@@ -84,7 +92,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function stop() {
+    public static function stop()
+    {
         self::$driver->stop();
     }
 
@@ -103,7 +112,8 @@ final class Loop {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function defer(callable $callback, $data = null): string {
+    public static function defer(callable $callback, $data = null): string
+    {
         return self::$driver->defer($callback, $data);
     }
 
@@ -116,14 +126,15 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $delay The amount of time, in milliseconds, to delay the execution for.
+     * @param int   $delay The amount of time, in milliseconds, to delay the execution for.
      * @param callable(string $watcherId, mixed $data) $callback The callback to delay. The `$watcherId` will be
      *     invalidated before the callback call.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function delay(int $delay, callable $callback, $data = null): string {
+    public static function delay(int $delay, callable $callback, $data = null): string
+    {
         return self::$driver->delay($delay, $callback, $data);
     }
 
@@ -137,13 +148,14 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $interval The time interval, in milliseconds, to wait between executions.
+     * @param int   $interval The time interval, in milliseconds, to wait between executions.
      * @param callable(string $watcherId, mixed $data) $callback The callback to repeat.
      * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function repeat(int $interval, callable $callback, $data = null): string {
+    public static function repeat(int $interval, callable $callback, $data = null): string
+    {
         return self::$driver->repeat($interval, $callback, $data);
     }
 
@@ -162,11 +174,12 @@ final class Loop {
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onReadable($stream, callable $callback, $data = null): string {
+    public static function onReadable($stream, callable $callback, $data = null): string
+    {
         return self::$driver->onReadable($stream, $callback, $data);
     }
 
@@ -185,11 +198,12 @@ final class Loop {
      *
      * @param resource $stream The stream to monitor.
      * @param callable(string $watcherId, resource $stream, mixed $data) $callback The callback to execute.
-     * @param mixed $data Arbitrary data given to the callback function as the `$data` parameter.
+     * @param mixed    $data Arbitrary data given to the callback function as the `$data` parameter.
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public static function onWritable($stream, callable $callback, $data = null): string {
+    public static function onWritable($stream, callable $callback, $data = null): string
+    {
         return self::$driver->onWritable($stream, $callback, $data);
     }
 
@@ -205,7 +219,7 @@ final class Loop {
      * The created watcher MUST immediately be marked as enabled, but only be activated (i.e. callback can be called)
      * right before the next tick. Callbacks of watchers MUST NOT be called in the tick they were enabled.
      *
-     * @param int $signo The signal number to monitor.
+     * @param int   $signo The signal number to monitor.
      * @param callable(string $watcherId, int $signo, mixed $data) $callback The callback to execute.
      * @param mixed $data Arbitrary data given to the callback function as the $data parameter.
      *
@@ -213,7 +227,8 @@ final class Loop {
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public static function onSignal(int $signo, callable $callback, $data = null): string {
+    public static function onSignal(int $signo, callable $callback, $data = null): string
+    {
         return self::$driver->onSignal($signo, $callback, $data);
     }
 
@@ -229,7 +244,8 @@ final class Loop {
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public static function enable(string $watcherId) {
+    public static function enable(string $watcherId)
+    {
         self::$driver->enable($watcherId);
     }
 
@@ -246,7 +262,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function disable(string $watcherId) {
+    public static function disable(string $watcherId)
+    {
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
@@ -266,7 +283,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function cancel(string $watcherId) {
+    public static function cancel(string $watcherId)
+    {
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
@@ -288,7 +306,8 @@ final class Loop {
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public static function reference(string $watcherId) {
+    public static function reference(string $watcherId)
+    {
         self::$driver->reference($watcherId);
     }
 
@@ -302,7 +321,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function unreference(string $watcherId) {
+    public static function unreference(string $watcherId)
+    {
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
@@ -326,7 +346,8 @@ final class Loop {
      *
      * @return void
      */
-    public static function setState(string $key, $value) {
+    public static function setState(string $key, $value)
+    {
         self::$driver->setState($key, $value);
     }
 
@@ -343,7 +364,8 @@ final class Loop {
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    public static function getState(string $key) {
+    public static function getState(string $key)
+    {
         return self::$driver->getState($key);
     }
 
@@ -361,7 +383,8 @@ final class Loop {
      *
      * @return callable(\Throwable $error)|null The previous handler, `null` if there was none.
      */
-    public static function setErrorHandler(callable $callback = null) {
+    public static function setErrorHandler(callable $callback = null)
+    {
         return self::$driver->setErrorHandler($callback);
     }
 
@@ -386,7 +409,8 @@ final class Loop {
      *
      * @return array Statistics about the loop in the described format.
      */
-    public static function getInfo(): array {
+    public static function getInfo(): array
+    {
         return self::$driver->getInfo();
     }
 
@@ -395,7 +419,8 @@ final class Loop {
      *
      * @return Driver
      */
-    public static function get(): Driver {
+    public static function get(): Driver
+    {
         return self::$driver;
     }
 }

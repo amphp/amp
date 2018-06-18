@@ -14,10 +14,12 @@ use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
 
-class CoroutineTest extends TestCase {
+class CoroutineTest extends TestCase
+{
     const TIMEOUT = 100;
 
-    public function testYieldSuccessfulPromise() {
+    public function testYieldSuccessfulPromise()
+    {
         $value = 1;
 
         $generator = function () use (&$yielded, $value) {
@@ -29,7 +31,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $yielded);
     }
 
-    public function testYieldFailedPromise() {
+    public function testYieldFailedPromise()
+    {
         $exception = new \Exception;
 
         $generator = function () use (&$yielded, $exception) {
@@ -50,7 +53,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldSuccessfulPromise
      */
-    public function testYieldPendingPromise() {
+    public function testYieldPendingPromise()
+    {
         $value = 1;
 
         Loop::run(function () use (&$yielded, $value) {
@@ -64,13 +68,14 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $yielded);
     }
 
-    public function testYieldPromiseArray() {
+    public function testYieldPromiseArray()
+    {
         Loop::run(function () {
             $value = 1;
 
             $generator = function () use (&$yielded, $value) {
                 list($yielded) = yield [
-                    new Success($value)
+                    new Success($value),
                 ];
             };
 
@@ -80,7 +85,8 @@ class CoroutineTest extends TestCase {
         });
     }
 
-    public function testYieldNonPromiseArray() {
+    public function testYieldNonPromiseArray()
+    {
         $this->expectException(InvalidYieldError::class);
 
         Loop::run(function () {
@@ -88,7 +94,7 @@ class CoroutineTest extends TestCase {
 
             $generator = function () use (&$yielded, $value) {
                 list($yielded) = yield [
-                    $value
+                    $value,
                 ];
             };
 
@@ -96,14 +102,15 @@ class CoroutineTest extends TestCase {
         });
     }
 
-    public function testYieldPromiseArrayAfterPendingPromise() {
+    public function testYieldPromiseArrayAfterPendingPromise()
+    {
         Loop::run(function () {
             $value = 1;
 
             $generator = function () use (&$yielded, $value) {
                 yield new Delayed(10);
                 list($yielded) = yield [
-                    new Success($value)
+                    new Success($value),
                 ];
             };
 
@@ -113,7 +120,8 @@ class CoroutineTest extends TestCase {
         });
     }
 
-    public function testYieldNonPromiseArrayAfterPendingPromise() {
+    public function testYieldNonPromiseArrayAfterPendingPromise()
+    {
         $this->expectException(InvalidYieldError::class);
 
         Loop::run(function () {
@@ -122,7 +130,7 @@ class CoroutineTest extends TestCase {
             $generator = function () use (&$yielded, $value) {
                 yield new Delayed(10);
                 list($yielded) = yield [
-                    $value
+                    $value,
                 ];
             };
 
@@ -133,7 +141,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldFailedPromise
      */
-    public function testCatchingFailedPromiseException() {
+    public function testCatchingFailedPromiseException()
+    {
         $exception = new \Exception;
 
         $fail = false;
@@ -153,7 +162,8 @@ class CoroutineTest extends TestCase {
         $this->assertFalse($fail);
     }
 
-    public function testInvalidYield() {
+    public function testInvalidYield()
+    {
         $generator = function () {
             yield 1;
         };
@@ -170,7 +180,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testInvalidYield
      */
-    public function testInvalidYieldAfterYieldPromise() {
+    public function testInvalidYieldAfterYieldPromise()
+    {
         $generator = function () {
             yield new Success;
             yield 1;
@@ -188,7 +199,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testInvalidYield
      */
-    public function testInvalidYieldCatchingThrownError() {
+    public function testInvalidYieldCatchingThrownError()
+    {
         $value = 42;
         $generator = function () use ($value) {
             try {
@@ -212,7 +224,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testInvalidYieldCatchingThrownError
      */
-    public function testInvalidYieldCatchingThrownErrorAndYieldingAgain() {
+    public function testInvalidYieldCatchingThrownErrorAndYieldingAgain()
+    {
         $value = 42;
         $generator = function () use ($value) {
             try {
@@ -234,7 +247,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testInvalidYieldCatchingThrownError
      */
-    public function testInvalidYieldCatchingThrownErrorAndThrowing() {
+    public function testInvalidYieldCatchingThrownErrorAndThrowing()
+    {
         $exception = new \Exception;
         $generator = function () use ($exception) {
             try {
@@ -256,7 +270,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testInvalidYieldCatchingThrownError
      */
-    public function testInvalidYieldWithThrowingFinallyBlock() {
+    public function testInvalidYieldWithThrowingFinallyBlock()
+    {
         $exception = new \Exception;
         $generator = function () use ($exception) {
             try {
@@ -279,7 +294,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldFailedPromise
      */
-    public function testCatchingFailedPromiseExceptionWithNoFurtherYields() {
+    public function testCatchingFailedPromiseExceptionWithNoFurtherYields()
+    {
         $exception = new \Exception;
 
         $generator = function () use ($exception) {
@@ -301,7 +317,8 @@ class CoroutineTest extends TestCase {
         $this->assertNull($result);
     }
 
-    public function testGeneratorThrowingExceptionFailsCoroutine() {
+    public function testGeneratorThrowingExceptionFailsCoroutine()
+    {
         $exception = new \Exception;
 
         $generator = function () use ($exception) {
@@ -321,7 +338,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testGeneratorThrowingExceptionFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionWithFinallyFailsCoroutine() {
+    public function testGeneratorThrowingExceptionWithFinallyFailsCoroutine()
+    {
         $exception = new \Exception;
 
         $invoked = false;
@@ -348,7 +366,8 @@ class CoroutineTest extends TestCase {
      * @depends testYieldFailedPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
-    public function testGeneratorYieldingFailedPromiseWithFinallyFailsCoroutine() {
+    public function testGeneratorYieldingFailedPromiseWithFinallyFailsCoroutine()
+    {
         $exception = new \Exception;
 
         $invoked = false;
@@ -373,7 +392,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testGeneratorThrowingExceptionFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionAfterPendingPromiseWithFinallyFailsCoroutine() {
+    public function testGeneratorThrowingExceptionAfterPendingPromiseWithFinallyFailsCoroutine()
+    {
         $exception = new \Exception;
         $value = 1;
 
@@ -404,7 +424,8 @@ class CoroutineTest extends TestCase {
      * @depends testYieldPendingPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionWithFinallyYieldingPendingPromise() {
+    public function testGeneratorThrowingExceptionWithFinallyYieldingPendingPromise()
+    {
         $exception = new \Exception;
         $value = 1;
 
@@ -432,7 +453,8 @@ class CoroutineTest extends TestCase {
      * @depends testYieldPendingPromise
      * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
      */
-    public function testGeneratorThrowingExceptionWithFinallyBlockThrowing() {
+    public function testGeneratorThrowingExceptionWithFinallyBlockThrowing()
+    {
         $exception = new \Exception;
 
         $generator = function () use ($exception) {
@@ -457,7 +479,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldSuccessfulPromise
      */
-    public function testYieldConsecutiveSucceeded() {
+    public function testYieldConsecutiveSucceeded()
+    {
         $invoked = false;
         Loop::run(function () use (&$invoked) {
             $count = 1000;
@@ -482,7 +505,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldFailedPromise
      */
-    public function testYieldConsecutiveFailed() {
+    public function testYieldConsecutiveFailed()
+    {
         $invoked = false;
         Loop::run(function () use (&$invoked) {
             $count = 1000;
@@ -510,7 +534,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testYieldSuccessfulPromise
      */
-    public function testFastInvalidGenerator() {
+    public function testFastInvalidGenerator()
+    {
         $generator = function () {
             if (false) {
                 yield new Success;
@@ -527,7 +552,8 @@ class CoroutineTest extends TestCase {
         $this->assertTrue($invoked);
     }
 
-    public function testCoroutineFunction() {
+    public function testCoroutineFunction()
+    {
         $callable = \Amp\coroutine(function () {
             yield;
         });
@@ -538,7 +564,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineFunction
      */
-    public function testCoroutineFunctionWithCallbackReturningPromise() {
+    public function testCoroutineFunctionWithCallbackReturningPromise()
+    {
         $value = 1;
         $promise = new Success($value);
         $callable = \Amp\coroutine(function ($value) {
@@ -562,7 +589,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineFunction
      */
-    public function testCoroutineFunctionWithNonGeneratorCallback() {
+    public function testCoroutineFunctionWithNonGeneratorCallback()
+    {
         $value = 1;
         $callable = \Amp\coroutine(function ($value) {
             return $value;
@@ -585,7 +613,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineFunction
      */
-    public function testCoroutineFunctionWithThrowingCallback() {
+    public function testCoroutineFunctionWithThrowingCallback()
+    {
         $exception = new \Exception;
         $callable = \Amp\coroutine(function () use ($exception) {
             throw $exception;
@@ -608,7 +637,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineFunction
      */
-    public function testCoroutineFunctionWithSuccessReturnCallback() {
+    public function testCoroutineFunctionWithSuccessReturnCallback()
+    {
         $callable = \Amp\coroutine(function () {
             return new Success(42);
         });
@@ -627,7 +657,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame(42, $result);
     }
 
-    public function testCoroutineFunctionWithReactPromise() {
+    public function testCoroutineFunctionWithReactPromise()
+    {
         $callable = \Amp\coroutine(function () {
             return new FulfilledReactPromise(42);
         });
@@ -646,7 +677,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame(42, $result);
     }
 
-    public function testCoroutineResolvedWithReturn() {
+    public function testCoroutineResolvedWithReturn()
+    {
         $value = 1;
 
         $generator = function () use ($value) {
@@ -668,7 +700,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineResolvedWithReturn
      */
-    public function testYieldFromGenerator() {
+    public function testYieldFromGenerator()
+    {
         $value = 1;
 
         $generator = function () use ($value) {
@@ -693,7 +726,8 @@ class CoroutineTest extends TestCase {
     /**
      * @depends testCoroutineResolvedWithReturn
      */
-    public function testFastReturningGenerator() {
+    public function testFastReturningGenerator()
+    {
         $value = 1;
 
         $generator = function () use ($value) {
@@ -717,7 +751,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testYieldingFulfilledReactPromise() {
+    public function testYieldingFulfilledReactPromise()
+    {
         $value = 1;
         $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
             $resolve($value);
@@ -738,7 +773,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testYieldingFulfilledReactPromiseAfterInteropPromise() {
+    public function testYieldingFulfilledReactPromiseAfterInteropPromise()
+    {
         $value = 1;
         $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
             $resolve($value);
@@ -760,7 +796,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testYieldingRejectedReactPromise() {
+    public function testYieldingRejectedReactPromise()
+    {
         $exception = new \Exception;
         $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
             $reject($exception);
@@ -781,7 +818,8 @@ class CoroutineTest extends TestCase {
         $this->assertNull($result);
     }
 
-    public function testYieldingRejectedReactPromiseAfterInteropPromise() {
+    public function testYieldingRejectedReactPromiseAfterInteropPromise()
+    {
         $exception = new \Exception;
         $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
             $reject($exception);
@@ -803,7 +841,8 @@ class CoroutineTest extends TestCase {
         $this->assertNull($result);
     }
 
-    public function testReturnFulfilledReactPromise() {
+    public function testReturnFulfilledReactPromise()
+    {
         $value = 1;
         $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
             $resolve($value);
@@ -825,7 +864,8 @@ class CoroutineTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testReturningRejectedReactPromise() {
+    public function testReturningRejectedReactPromise()
+    {
         $exception = new \Exception;
         $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
             $reject($exception);
@@ -847,7 +887,8 @@ class CoroutineTest extends TestCase {
         $this->assertNull($result);
     }
 
-    public function testAsyncCoroutineFunctionWithFailure() {
+    public function testAsyncCoroutineFunctionWithFailure()
+    {
         $coroutine = \Amp\asyncCoroutine(function ($value) {
             return new Failure(new TestException);
         });

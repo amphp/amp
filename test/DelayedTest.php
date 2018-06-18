@@ -5,8 +5,10 @@ namespace Amp\Test;
 use Amp\Delayed;
 use Amp\Loop;
 
-class DelayedTest extends \PHPUnit\Framework\TestCase {
-    public function testDelayed() {
+class DelayedTest extends \PHPUnit\Framework\TestCase
+{
+    public function testDelayed()
+    {
         $time = 100;
         $value = "test";
         $start = \microtime(true);
@@ -25,7 +27,8 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testUnreference() {
+    public function testUnreference()
+    {
         $time = 100;
         $value = "test";
         $start = \microtime(true);
@@ -49,7 +52,8 @@ class DelayedTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testUnreference
      */
-    public function testReference() {
+    public function testReference()
+    {
         $time = 100;
         $value = "test";
         $start = \microtime(true);

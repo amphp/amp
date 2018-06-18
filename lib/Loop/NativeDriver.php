@@ -7,7 +7,8 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
-class NativeDriver extends Driver {
+class NativeDriver extends Driver
+{
     /** @var resource[] */
     private $readStreams = [];
 
@@ -35,7 +36,8 @@ class NativeDriver extends Driver {
     /** @var bool */
     private $signalHandling;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->timerQueue = new \SplPriorityQueue();
         $this->signalHandling = \extension_loaded("pcntl");
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
@@ -46,7 +48,8 @@ class NativeDriver extends Driver {
      *
      * @throws \Amp\Loop\UnsupportedFeatureException If the pcntl extension is not available.
      */
-    public function onSignal(int $signo, callable $callback, $data = null): string {
+    public function onSignal(int $signo, callable $callback, $data = null): string
+    {
         if (!$this->signalHandling) {
             throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
         }
@@ -57,11 +60,13 @@ class NativeDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function getHandle() {
+    public function getHandle()
+    {
         return null;
     }
 
-    protected function dispatch(bool $blocking) {
+    protected function dispatch(bool $blocking)
+    {
         $this->selectStreams(
             $this->readStreams,
             $this->writeStreams,
@@ -128,7 +133,8 @@ class NativeDriver extends Driver {
      * @param resource[] $write
      * @param int        $timeout
      */
-    private function selectStreams(array $read, array $write, $timeout) {
+    private function selectStreams(array $read, array $write, $timeout)
+    {
         $timeout /= self::MILLISEC_PER_SEC;
 
         if (!empty($read) || !empty($write)) { // Use stream_select() if there are any streams in the loop.
@@ -230,7 +236,8 @@ class NativeDriver extends Driver {
     /**
      * @return int Milliseconds until next timer expires or -1 if there are no pending times.
      */
-    private function getTimeout() {
+    private function getTimeout()
+    {
         while (!$this->timerQueue->isEmpty()) {
             list($watcher, $expiration) = $this->timerQueue->top();
 
@@ -256,7 +263,8 @@ class NativeDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers) {
+    protected function activate(array $watchers)
+    {
         $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         foreach ($watchers as $watcher) {
@@ -297,7 +305,7 @@ class NativeDriver extends Driver {
                 default:
                     // @codeCoverageIgnoreStart
                     throw new \Error("Unknown watcher type");
-                    // @codeCoverageIgnoreEnd
+                // @codeCoverageIgnoreEnd
             }
         }
 
@@ -307,7 +315,8 @@ class NativeDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher)
+    {
         switch ($watcher->type) {
             case Watcher::READABLE:
                 $streamId = (int) $watcher->value;
@@ -344,14 +353,15 @@ class NativeDriver extends Driver {
             default:
                 // @codeCoverageIgnoreStart
                 throw new \Error("Unknown watcher type");
-                // @codeCoverageIgnoreEnd
+            // @codeCoverageIgnoreEnd
         }
     }
 
     /**
      * @param int $signo
      */
-    private function handleSignal(int $signo) {
+    private function handleSignal(int $signo)
+    {
         foreach ($this->signalWatchers[$signo] as $watcher) {
             if (!isset($this->signalWatchers[$signo][$watcher->id])) {
                 continue;

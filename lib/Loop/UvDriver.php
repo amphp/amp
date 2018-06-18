@@ -7,7 +7,8 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
-class UvDriver extends Driver {
+class UvDriver extends Driver
+{
     /** @var resource A uv_loop resource created with uv_loop_new() */
     private $handle;
 
@@ -29,7 +30,8 @@ class UvDriver extends Driver {
     /** @var callable */
     private $signalCallback;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->handle = \uv_loop_new();
 
         $this->ioCallback = function ($event, $status, $events, $resource) {
@@ -134,7 +136,8 @@ class UvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId) {
+    public function cancel(string $watcherId)
+    {
         parent::cancel($watcherId);
 
         if (!isset($this->events[$watcherId])) {
@@ -158,28 +161,32 @@ class UvDriver extends Driver {
         unset($this->events[$watcherId]);
     }
 
-    public static function isSupported(): bool {
+    public static function isSupported(): bool
+    {
         return \extension_loaded("uv");
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getHandle() {
+    public function getHandle()
+    {
         return $this->handle;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking) {
+    protected function dispatch(bool $blocking)
+    {
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers) {
+    protected function activate(array $watchers)
+    {
         foreach ($watchers as $watcher) {
             $id = $watcher->id;
 
@@ -240,7 +247,7 @@ class UvDriver extends Driver {
                 default:
                     // @codeCoverageIgnoreStart
                     throw new \Error("Unknown watcher type");
-                    // @codeCoverageIgnoreEnd
+                // @codeCoverageIgnoreEnd
             }
         }
     }
@@ -248,7 +255,8 @@ class UvDriver extends Driver {
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher) {
+    protected function deactivate(Watcher $watcher)
+    {
         $id = $watcher->id;
 
         if (!isset($this->events[$id])) {
@@ -288,7 +296,7 @@ class UvDriver extends Driver {
             default:
                 // @codeCoverageIgnoreStart
                 throw new \Error("Unknown watcher type");
-                // @codeCoverageIgnoreEnd
+            // @codeCoverageIgnoreEnd
         }
     }
 }

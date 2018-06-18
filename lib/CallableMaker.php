@@ -4,7 +4,8 @@ namespace Amp;
 
 // @codeCoverageIgnoreStart
 if (\PHP_VERSION_ID < 70100) {
-    trait CallableMaker {
+    trait CallableMaker
+    {
         /** @var \ReflectionClass */
         private static $__reflectionClass;
 
@@ -19,7 +20,8 @@ if (\PHP_VERSION_ID < 70100) {
          *
          * @return callable
          */
-        private function callableFromInstanceMethod(string $method): callable {
+        private function callableFromInstanceMethod(string $method): callable
+        {
             if (!isset(self::$__reflectionMethods[$method])) {
                 if (self::$__reflectionClass === null) {
                     self::$__reflectionClass = new \ReflectionClass(self::class);
@@ -38,7 +40,8 @@ if (\PHP_VERSION_ID < 70100) {
          *
          * @return callable
          */
-        private static function callableFromStaticMethod(string $method): callable {
+        private static function callableFromStaticMethod(string $method): callable
+        {
             if (!isset(self::$__reflectionMethods[$method])) {
                 if (self::$__reflectionClass === null) {
                     self::$__reflectionClass = new \ReflectionClass(self::class);
@@ -50,18 +53,21 @@ if (\PHP_VERSION_ID < 70100) {
         }
     }
 } else {
-    trait CallableMaker {
+    trait CallableMaker
+    {
         /**
          * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
-        private function callableFromInstanceMethod(string $method): callable {
+        private function callableFromInstanceMethod(string $method): callable
+        {
             return \Closure::fromCallable([$this, $method]);
         }
 
         /**
          * @deprecated Use \Closure::fromCallable() instead of this method in PHP 7.1.
          */
-        private static function callableFromStaticMethod(string $method): callable {
+        private static function callableFromStaticMethod(string $method): callable
+        {
             return \Closure::fromCallable([self::class, $method]);
         }
     }

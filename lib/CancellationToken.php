@@ -5,7 +5,8 @@ namespace Amp;
 /**
  * Cancellation tokens are simple objects that allow registering handlers to subscribe to cancellation requests.
  */
-interface CancellationToken {
+interface CancellationToken
+{
     /**
      * Subscribes a new handler to be invoked on a cancellation request.
      *

@@ -25,24 +25,29 @@ namespace Amp;
  *
  * instead.
  */
-final class NullCancellationToken implements CancellationToken {
+final class NullCancellationToken implements CancellationToken
+{
     /** @inheritdoc */
-    public function subscribe(callable $callback): string {
+    public function subscribe(callable $callback): string
+    {
         return "null-token";
     }
 
     /** @inheritdoc */
-    public function unsubscribe(string $id) {
+    public function unsubscribe(string $id)
+    {
         // nothing to do
     }
 
     /** @inheritdoc */
-    public function isRequested(): bool {
+    public function isRequested(): bool
+    {
         return false;
     }
 
     /** @inheritdoc */
-    public function throwIfRequested() {
+    public function throwIfRequested()
+    {
         // nothing to do
     }
 }

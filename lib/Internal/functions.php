@@ -12,7 +12,8 @@ namespace Amp\Internal;
  * @codeCoverageIgnore
  * @internal
  */
-function formatStacktrace(array $trace): string {
+function formatStacktrace(array $trace): string
+{
     return \implode("\n", \array_map(function ($e, $i) {
         $line = "#{$i} ";
 
@@ -32,13 +33,14 @@ function formatStacktrace(array $trace): string {
  * Creates a `TypeError` with a standardized error message.
  *
  * @param string[] $expected Expected types.
- * @param mixed $given Given value.
+ * @param mixed    $given Given value.
  *
  * @return \TypeError
  *
  * @internal
  */
-function createTypeError(array $expected, $given): \TypeError {
+function createTypeError(array $expected, $given): \TypeError
+{
     $givenType = \is_object($given) ? \sprintf("instance of %s", \get_class($given)) : \gettype($given);
 
     if (\count($expected) === 1) {

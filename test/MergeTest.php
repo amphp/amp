@@ -9,8 +9,10 @@ use Amp\PHPUnit\TestException;
 use Amp\Producer;
 use PHPUnit\Framework\TestCase;
 
-class MergeTest extends TestCase {
-    public function getArrays() {
+class MergeTest extends TestCase
+{
+    public function getArrays()
+    {
         return [
             [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
             [[\range(1, 5), \range(6, 8)], [1, 6, 2, 7, 3, 8, 4, 5]],
@@ -24,7 +26,8 @@ class MergeTest extends TestCase {
      * @param array $iterators
      * @param array $expected
      */
-    public function testMerge(array $iterators, array $expected) {
+    public function testMerge(array $iterators, array $expected)
+    {
         Loop::run(function () use ($iterators, $expected) {
             $iterators = \array_map(function (array $iterator): Iterator {
                 return Iterator\fromIterable($iterator);
@@ -41,7 +44,8 @@ class MergeTest extends TestCase {
     /**
      * @depends testMerge
      */
-    public function testMergeWithDelayedEmits() {
+    public function testMergeWithDelayedEmits()
+    {
         Loop::run(function () {
             $iterators = [];
             $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
@@ -71,7 +75,8 @@ class MergeTest extends TestCase {
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedIterator() {
+    public function testMergeWithFailedIterator()
+    {
         Loop::run(function () {
             $exception = new TestException;
             $producer = new Producer(function (callable $emit) use ($exception) {
@@ -82,7 +87,7 @@ class MergeTest extends TestCase {
             $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
 
             try {
-                while (yield $iterator->advance());
+                while (yield $iterator->advance()) ;
                 $this->fail("The exception used to fail the iterator should be thrown from advance()");
             } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
@@ -93,7 +98,8 @@ class MergeTest extends TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonIterator() {
+    public function testNonIterator()
+    {
         Iterator\merge([1]);
     }
 }

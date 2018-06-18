@@ -1,6 +1,8 @@
 <?php
 
-namespace Amp {
+namespace Amp
+{
+
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
@@ -16,7 +18,8 @@ namespace Amp {
      *
      * @see asyncCoroutine()
      */
-    function coroutine(callable $callback): callable {
+    function coroutine(callable $callback): callable
+    {
         return function (...$args) use ($callback): Promise {
             return call($callback, ...$args);
         };
@@ -35,7 +38,8 @@ namespace Amp {
      *
      * @see coroutine()
      */
-    function asyncCoroutine(callable $callback): callable {
+    function asyncCoroutine(callable $callback): callable
+    {
         return function (...$args) use ($callback) {
             Promise\rethrow(call($callback, ...$args));
         };
@@ -50,7 +54,8 @@ namespace Amp {
      *
      * @return \Amp\Promise
      */
-    function call(callable $callback, ...$args): Promise {
+    function call(callable $callback, ...$args): Promise
+    {
         try {
             $result = $callback(...$args);
         } catch (\Throwable $exception) {
@@ -81,12 +86,15 @@ namespace Amp {
      *
      * @throws \TypeError
      */
-    function asyncCall(callable $callback, ...$args) {
+    function asyncCall(callable $callback, ...$args)
+    {
         Promise\rethrow(call($callback, ...$args));
     }
 }
 
-namespace Amp\Promise {
+namespace Amp\Promise
+{
+
     use Amp\Deferred;
     use Amp\Loop;
     use Amp\MultiReasonException;
@@ -106,7 +114,8 @@ namespace Amp\Promise {
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
-    function rethrow($promise) {
+    function rethrow($promise)
+    {
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
@@ -136,7 +145,8 @@ namespace Amp\Promise {
      * @throws \Error If the event loop stopped without the $promise being resolved.
      * @throws \Throwable Promise failure reason.
      */
-    function wait($promise) {
+    function wait($promise)
+    {
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
@@ -178,13 +188,14 @@ namespace Amp\Promise {
      * `Amp\TimeoutException`.
      *
      * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
-     * @param int $timeout Timeout in milliseconds.
+     * @param int                                          $timeout Timeout in milliseconds.
      *
      * @return \Amp\Promise
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
-    function timeout($promise, int $timeout): Promise {
+    function timeout($promise, int $timeout): Promise
+    {
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
@@ -223,7 +234,8 @@ namespace Amp\Promise {
      *
      * @throws \Error If the provided object does not have a then() method.
      */
-    function adapt($promise): Promise {
+    function adapt($promise): Promise
+    {
         $deferred = new Deferred;
 
         if (\method_exists($promise, 'done')) {
@@ -251,7 +263,8 @@ namespace Amp\Promise {
      *
      * @throws \Error If a non-Promise is in the array.
      */
-    function any(array $promises): Promise {
+    function any(array $promises): Promise
+    {
         return some($promises, 0);
     }
 
@@ -266,7 +279,8 @@ namespace Amp\Promise {
      *
      * @throws \Error If a non-Promise is in the array.
      */
-    function all(array $promises): Promise {
+    function all(array $promises): Promise
+    {
         if (empty($promises)) {
             return new Success([]);
         }
@@ -316,7 +330,8 @@ namespace Amp\Promise {
      *
      * @throws \Error If the array is empty or a non-Promise is in the array.
      */
-    function first(array $promises): Promise {
+    function first(array $promises): Promise
+    {
         if (empty($promises)) {
             throw new \Error("No promises provided");
         }
@@ -363,13 +378,14 @@ namespace Amp\Promise {
      * The returned promise will only fail if the given number of required promises fail.
      *
      * @param \Amp\Promise[] $promises Array of only promises.
-     * @param int $required Number of promises that must succeed for the returned promise to succeed.
+     * @param int            $required Number of promises that must succeed for the returned promise to succeed.
      *
      * @return \Amp\Promise
      *
      * @throws \Error If a non-Promise is in the array.
      */
-    function some(array $promises, int $required = 1): Promise {
+    function some(array $promises, int $required = 1): Promise
+    {
         if ($required < 0) {
             throw new \Error("Number of promises required must be non-negative");
         }
@@ -398,7 +414,12 @@ namespace Amp\Promise {
 
             $values[$key] = $exceptions[$key] = null; // add entry to arrays to preserve order
             $promise->onResolve(function ($exception, $value) use (
-                &$values, &$exceptions, &$pending, $key, $required, $deferred
+                &$values,
+                &$exceptions,
+                &$pending,
+                $key,
+                $required,
+                $deferred
             ) {
                 if ($exception) {
                     $exceptions[$key] = $exception;
@@ -422,7 +443,9 @@ namespace Amp\Promise {
     }
 }
 
-namespace Amp\Iterator {
+namespace Amp\Iterator
+{
+
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Iterator;
@@ -436,13 +459,16 @@ namespace Amp\Iterator {
      * promise fails, the iterator will fail with the same reason.
      *
      * @param array|\Traversable $iterable Elements to emit.
-     * @param int $delay Delay between element emissions in milliseconds.
+     * @param int                $delay Delay between element emissions in milliseconds.
      *
      * @return \Amp\Iterator
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
-    function fromIterable(/* iterable */ $iterable, int $delay = 0): Iterator {
+    function fromIterable(/* iterable */
+        $iterable,
+        int $delay = 0
+    ): Iterator {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw createTypeError(["array", "Traversable"], $iterable);
         }
@@ -464,7 +490,8 @@ namespace Amp\Iterator {
      *
      * @return \Amp\Iterator
      */
-    function map(Iterator $iterator, callable $onEmit): Iterator {
+    function map(Iterator $iterator, callable $onEmit): Iterator
+    {
         return new Producer(function (callable $emit) use ($iterator, $onEmit) {
             while (yield $iterator->advance()) {
                 yield $emit($onEmit($iterator->getCurrent()));
@@ -478,7 +505,8 @@ namespace Amp\Iterator {
      *
      * @return \Amp\Iterator
      */
-    function filter(Iterator $iterator, callable $filter): Iterator {
+    function filter(Iterator $iterator, callable $filter): Iterator
+    {
         return new Producer(function (callable $emit) use ($iterator, $filter) {
             while (yield $iterator->advance()) {
                 if ($filter($iterator->getCurrent())) {
@@ -495,7 +523,8 @@ namespace Amp\Iterator {
      *
      * @return \Amp\Iterator
      */
-    function merge(array $iterators): Iterator {
+    function merge(array $iterators): Iterator
+    {
         $emitter = new Emitter;
         $result = $emitter->iterate();
 
@@ -534,7 +563,8 @@ namespace Amp\Iterator {
      *
      * @return \Amp\Iterator
      */
-    function concat(array $iterators): Iterator {
+    function concat(array $iterators): Iterator
+    {
         foreach ($iterators as $iterator) {
             if (!$iterator instanceof Iterator) {
                 throw createTypeError([Iterator::class], $iterator);

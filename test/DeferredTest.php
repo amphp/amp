@@ -5,15 +5,18 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Promise;
 
-class DeferredTest extends \PHPUnit\Framework\TestCase {
+class DeferredTest extends \PHPUnit\Framework\TestCase
+{
     /** @var \Amp\Deferred */
     private $deferred;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->deferred = new Deferred;
     }
 
-    public function testGetPromise() {
+    public function testGetPromise()
+    {
         $promise = $this->deferred->promise();
         $this->assertInstanceOf(Promise::class, $promise);
     }
@@ -21,7 +24,8 @@ class DeferredTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testGetPromise
      */
-    public function testResolve() {
+    public function testResolve()
+    {
         $value = "Resolution value";
         $promise = $this->deferred->promise();
 
@@ -40,7 +44,8 @@ class DeferredTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testGetPromise
      */
-    public function testFail() {
+    public function testFail()
+    {
         $exception = new \Exception;
         $promise = $this->deferred->promise();
 

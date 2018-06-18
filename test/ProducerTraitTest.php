@@ -11,7 +11,8 @@ use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
-class Producer {
+class Producer
+{
     use \Amp\Internal\Producer {
         emit as public;
         complete as public;
@@ -19,15 +20,18 @@ class Producer {
     }
 }
 
-class ProducerTraitTest extends TestCase {
+class ProducerTraitTest extends TestCase
+{
     /** @var \Amp\Test\Producer */
     private $producer;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->producer = new Producer;
     }
 
-    public function testEmit() {
+    public function testEmit()
+    {
         Loop::run(function () {
             $value = 1;
 
@@ -43,7 +47,8 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulPromise() {
+    public function testEmitSuccessfulPromise()
+    {
         Loop::run(function () {
             $value = 1;
             $promise = new Success($value);
@@ -60,7 +65,8 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitFailedPromise() {
+    public function testEmitFailedPromise()
+    {
         Loop::run(function () {
             $exception = new TestException;
             $promise = new Failure($exception);
@@ -81,7 +87,8 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromise() {
+    public function testEmitPendingPromise()
+    {
         Loop::run(function () {
             $value = 1;
             $deferred = new Deferred;
@@ -98,7 +105,8 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulReactPromise() {
+    public function testEmitSuccessfulReactPromise()
+    {
         Loop::run(function () {
             $value = 1;
             $promise = new FulfilledReactPromise($value);
@@ -113,7 +121,8 @@ class ProducerTraitTest extends TestCase {
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenNonPromise() {
+    public function testEmitPendingPromiseThenNonPromise()
+    {
         Loop::run(function () {
             $deferred = new Deferred;
 
@@ -136,7 +145,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Iterators cannot emit values after calling complete
      */
-    public function testEmitAfterComplete() {
+    public function testEmitAfterComplete()
+    {
         $this->producer->complete();
         $this->producer->emit(1);
     }
@@ -145,7 +155,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage The iterator has completed
      */
-    public function testGetCurrentAfterComplete() {
+    public function testGetCurrentAfterComplete()
+    {
         $this->producer->complete();
         $this->producer->getCurrent();
     }
@@ -155,7 +166,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
-    public function testEmitPendingPromiseThenComplete() {
+    public function testEmitPendingPromiseThenComplete()
+    {
         $invoked = false;
         $deferred = new Deferred;
 
@@ -178,7 +190,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
-    public function testEmitPendingPromiseThenFail() {
+    public function testEmitPendingPromiseThenFail()
+    {
         $invoked = false;
         $deferred = new Deferred;
 
@@ -200,7 +213,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage The prior promise returned must resolve before invoking this method again
      */
-    public function testDoubleAdvance() {
+    public function testDoubleAdvance()
+    {
         $this->producer->advance();
         $this->producer->advance();
     }
@@ -209,7 +223,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Promise returned from advance() must resolve before calling this method
      */
-    public function testGetCurrentBeforeAdvance() {
+    public function testGetCurrentBeforeAdvance()
+    {
         $this->producer->getCurrent();
     }
 
@@ -217,7 +232,8 @@ class ProducerTraitTest extends TestCase {
      * @expectedException \Error
      * @expectedExceptionMessage Iterator has already been completed
      */
-    public function testDoubleComplete() {
+    public function testDoubleComplete()
+    {
         $this->producer->complete();
         $this->producer->complete();
     }

@@ -8,8 +8,10 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
-class MapTest extends \PHPUnit\Framework\TestCase {
-    public function testNoValuesEmitted() {
+class MapTest extends \PHPUnit\Framework\TestCase
+{
+    public function testNoValuesEmitted()
+    {
         $invoked = false;
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
@@ -26,7 +28,8 @@ class MapTest extends \PHPUnit\Framework\TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testValuesEmitted() {
+    public function testValuesEmitted()
+    {
         Loop::run(function () {
             $count = 0;
             $values = [1, 2, 3];
@@ -52,7 +55,8 @@ class MapTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testValuesEmitted
      */
-    public function testOnNextCallbackThrows() {
+    public function testOnNextCallbackThrows()
+    {
         Loop::run(function () {
             $values = [1, 2, 3];
             $exception = new TestException;
@@ -76,7 +80,8 @@ class MapTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testIteratorFails() {
+    public function testIteratorFails()
+    {
         Loop::run(function () {
             $invoked = false;
             $exception = new TestException;

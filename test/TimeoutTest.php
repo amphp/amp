@@ -9,8 +9,10 @@ use Amp\Promise;
 use Amp\Success;
 use function React\Promise\resolve;
 
-class TimeoutTest extends \PHPUnit\Framework\TestCase {
-    public function testSuccessfulPromise() {
+class TimeoutTest extends \PHPUnit\Framework\TestCase
+{
+    public function testSuccessfulPromise()
+    {
         Loop::run(function () {
             $value = 1;
 
@@ -29,7 +31,8 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testFailedPromise() {
+    public function testFailedPromise()
+    {
         Loop::run(function () {
             $exception = new \Exception;
 
@@ -51,7 +54,8 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testSuccessfulPromise
      */
-    public function testFastPending() {
+    public function testFastPending()
+    {
         $value = 1;
 
         Loop::run(function () use (&$result, $value) {
@@ -73,7 +77,8 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testSuccessfulPromise
      */
-    public function testSlowPending() {
+    public function testSlowPending()
+    {
         Loop::run(function () use (&$reason) {
             $promise = new Delayed(200);
 
@@ -93,7 +98,8 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testSuccessfulPromise
      */
-    public function testReactPromise() {
+    public function testReactPromise()
+    {
         Loop::run(function () {
             $value = 1;
 
@@ -112,7 +118,8 @@ class TimeoutTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testNonPromise() {
+    public function testNonPromise()
+    {
         $this->expectException(\TypeError::class);
         Promise\timeout(42, 42);
     }

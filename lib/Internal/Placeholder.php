@@ -14,7 +14,8 @@ use React\Promise\PromiseInterface as ReactPromise;
  *
  * @internal
  */
-trait Placeholder {
+trait Placeholder
+{
     /** @var bool */
     private $resolved = false;
 
@@ -30,7 +31,8 @@ trait Placeholder {
     /**
      * @inheritdoc
      */
-    public function onResolve(callable $onResolved) {
+    public function onResolve(callable $onResolved)
+    {
         if ($this->resolved) {
             if ($this->result instanceof Promise) {
                 $this->result->onResolve($onResolved);
@@ -76,7 +78,8 @@ trait Placeholder {
      *
      * @throws \Error Thrown if the promise has already been resolved.
      */
-    private function resolve($value = null) {
+    private function resolve($value = null)
+    {
         if ($this->resolved) {
             $message = "Promise has already been resolved";
 
@@ -147,7 +150,8 @@ trait Placeholder {
     /**
      * @param \Throwable $reason Failure reason.
      */
-    private function fail(\Throwable $reason) {
+    private function fail(\Throwable $reason)
+    {
         $this->resolve(new Failure($reason));
     }
 }

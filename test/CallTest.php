@@ -12,8 +12,10 @@ use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
-class CallTest extends TestCase {
-    public function testCallWithFunctionReturningPromise() {
+class CallTest extends TestCase
+{
+    public function testCallWithFunctionReturningPromise()
+    {
         $value = 1;
         $promise = Amp\call(function ($value) {
             return new Success($value);
@@ -30,7 +32,8 @@ class CallTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testCallWithFunctionReturningValue() {
+    public function testCallWithFunctionReturningValue()
+    {
         $value = 1;
         $promise = Amp\call(function ($value) {
             return $value;
@@ -47,7 +50,8 @@ class CallTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testCallWithThrowingFunction() {
+    public function testCallWithThrowingFunction()
+    {
         $exception = new \Exception;
         $promise = Amp\call(function () use ($exception) {
             throw $exception;
@@ -64,7 +68,8 @@ class CallTest extends TestCase {
         $this->assertNull($result);
     }
 
-    public function testCallWithFunctionReturningReactPromise() {
+    public function testCallWithFunctionReturningReactPromise()
+    {
         $value = 1;
         $promise = Amp\call(function ($value) {
             return new FulfilledReactPromise($value);
@@ -81,7 +86,8 @@ class CallTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testCallWithGeneratorFunction() {
+    public function testCallWithGeneratorFunction()
+    {
         $value = 1;
         $promise = Amp\call(function ($value) {
             return yield new Success($value);
@@ -98,7 +104,8 @@ class CallTest extends TestCase {
         $this->assertSame($value, $result);
     }
 
-    public function testAsyncCallFunctionWithFailure() {
+    public function testAsyncCallFunctionWithFailure()
+    {
         \Amp\asyncCall(function ($value) {
             return new Failure(new TestException);
         }, 42);

@@ -7,21 +7,24 @@ use React\Promise\PromiseInterface as ReactPromise;
 /**
  * Creates a failed promise using the given exception.
  */
-final class Failure implements Promise {
+final class Failure implements Promise
+{
     /** @var \Throwable $exception */
     private $exception;
 
     /**
      * @param \Throwable $exception Rejection reason.
      */
-    public function __construct(\Throwable $exception) {
+    public function __construct(\Throwable $exception)
+    {
         $this->exception = $exception;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved) {
+    public function onResolve(callable $onResolved)
+    {
         try {
             $result = $onResolved($this->exception, null);
 

@@ -8,14 +8,16 @@ namespace Amp;
  * method. This object should not be part of a public API, but used internally to create and emit values to an
  * iterator.
  */
-final class Emitter {
+final class Emitter
+{
     /** @var object Has public emit, complete, and fail methods. */
     private $emitter;
 
     /** @var \Amp\Iterator Hides producer methods. */
     private $iterator;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->emitter = new class implements Iterator {
             use Internal\Producer {
                 emit as public;
@@ -30,7 +32,8 @@ final class Emitter {
     /**
      * @return \Amp\Promise
      */
-    public function iterate(): Iterator {
+    public function iterate(): Iterator
+    {
         return $this->iterator;
     }
 
@@ -41,14 +44,16 @@ final class Emitter {
      *
      * @return \Amp\Promise
      */
-    public function emit($value): Promise {
+    public function emit($value): Promise
+    {
         return $this->emitter->emit($value);
     }
 
     /**
      * Completes the iterator.
      */
-    public function complete() {
+    public function complete()
+    {
         $this->emitter->complete();
     }
 
@@ -57,7 +62,8 @@ final class Emitter {
      *
      * @param \Throwable $reason
      */
-    public function fail(\Throwable $reason) {
+    public function fail(\Throwable $reason)
+    {
         $this->emitter->fail($reason);
     }
 }

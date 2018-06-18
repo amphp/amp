@@ -7,11 +7,13 @@ namespace Amp;
  *
  * @see \Amp\Promise\timeout()
  */
-class TimeoutException extends \Exception {
+class TimeoutException extends \Exception
+{
     /**
      * @param string|null $message Exception message.
      */
-    public function __construct(string $message = "Operation timed out") {
+    public function __construct(string $message = "Operation timed out")
+    {
         parent::__construct($message);
     }
 }

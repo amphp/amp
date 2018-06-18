@@ -9,10 +9,12 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Success;
 
-class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
+class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase
+{
     const TIMEOUT = 10;
 
-    public function testSuccessfulPromises() {
+    public function testSuccessfulPromises()
+    {
         Loop::run(function () {
             $expected = \range(1, 3);
             $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Success(3)]);
@@ -23,7 +25,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testFailedPromises() {
+    public function testFailedPromises()
+    {
         Loop::run(function () {
             $exception = new \Exception;
             $iterator = Iterator\fromIterable([new Failure($exception), new Failure($exception)]);
@@ -36,7 +39,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testMixedPromises() {
+    public function testMixedPromises()
+    {
         Loop::run(function () {
             $exception = new TestException;
             $expected = \range(1, 2);
@@ -55,7 +59,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testPendingPromises() {
+    public function testPendingPromises()
+    {
         Loop::run(function () {
             $expected = \range(1, 4);
             $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
@@ -66,7 +71,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
         });
     }
 
-    public function testTraversable() {
+    public function testTraversable()
+    {
         Loop::run(function () {
             $expected = \range(1, 4);
             $generator = (function () {
@@ -89,11 +95,13 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
      * @expectedException \TypeError
      * @dataProvider provideInvalidIteratorArguments
      */
-    public function testInvalid($arg) {
+    public function testInvalid($arg)
+    {
         Iterator\fromIterable($arg);
     }
 
-    public function provideInvalidIteratorArguments() {
+    public function provideInvalidIteratorArguments()
+    {
         return [
             [null],
             [new \stdClass],
@@ -104,7 +112,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
         ];
     }
 
-    public function testInterval() {
+    public function testInterval()
+    {
         Loop::run(function () {
             $count = 3;
             $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
@@ -121,7 +130,8 @@ class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase {
     /**
      * @depends testInterval
      */
-    public function testSlowConsumer() {
+    public function testSlowConsumer()
+    {
         $count = 5;
         Loop::run(function () use ($count) {
             $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);

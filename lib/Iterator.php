@@ -5,7 +5,8 @@ namespace Amp;
 /**
  * Defines an asynchronous iterator over a set of values that is designed to be used within a coroutine.
  */
-interface Iterator {
+interface Iterator
+{
     /**
      * Succeeds with true if an emitted value is available by calling getCurrent() or false if the iterator has
      * resolved. If the iterator fails, the returned promise will fail with the same exception.

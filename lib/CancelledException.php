@@ -8,8 +8,10 @@ namespace Amp;
  * @see CancellationToken
  * @see CancellationTokenSource
  */
-class CancelledException extends \Exception {
-    public function __construct(\Throwable $previous = null) {
+class CancelledException extends \Exception
+{
+    public function __construct(\Throwable $previous = null)
+    {
         parent::__construct("The operation was cancelled", 0, $previous);
     }
 }

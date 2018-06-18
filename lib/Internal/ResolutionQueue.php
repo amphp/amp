@@ -12,14 +12,16 @@ use React\Promise\PromiseInterface as ReactPromise;
  *
  * @internal
  */
-class ResolutionQueue {
+class ResolutionQueue
+{
     /** @var callable[] */
     private $queue = [];
 
     /**
      * @param callable|null $callback Initial callback to add to queue.
      */
-    public function __construct(callable $callback = null) {
+    public function __construct(callable $callback = null)
+    {
         if (null !== $callback) {
             $this->push($callback);
         }
@@ -30,7 +32,8 @@ class ResolutionQueue {
      *
      * @param callable $callback
      */
-    public function push(callable $callback) {
+    public function push(callable $callback)
+    {
         if ($callback instanceof self) {
             $this->queue = \array_merge($this->queue, $callback->queue);
             return;
@@ -45,7 +48,8 @@ class ResolutionQueue {
      * @param \Throwable|null $exception
      * @param mixed           $value
      */
-    public function __invoke($exception, $value) {
+    public function __invoke($exception, $value)
+    {
         foreach ($this->queue as $callback) {
             try {
                 $result = $callback($exception, $value);

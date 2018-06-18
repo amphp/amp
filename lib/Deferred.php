@@ -7,14 +7,16 @@ namespace Amp;
  * The contained promise may be accessed using the promise() method. This object should not be part of a public
  * API, but used internally to create and resolve a promise.
  */
-final class Deferred {
+final class Deferred
+{
     /** @var object Has public resolve and fail methods. */
     private $resolver;
 
     /** @var \Amp\Promise Hides placeholder methods */
     private $promise;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->resolver = new class implements Promise {
             use Internal\Placeholder {
                 resolve as public;
@@ -28,7 +30,8 @@ final class Deferred {
     /**
      * @return \Amp\Promise
      */
-    public function promise(): Promise {
+    public function promise(): Promise
+    {
         return $this->promise;
     }
 
@@ -37,7 +40,8 @@ final class Deferred {
      *
      * @param mixed $value
      */
-    public function resolve($value = null) {
+    public function resolve($value = null)
+    {
         $this->resolver->resolve($value);
     }
 
@@ -46,7 +50,8 @@ final class Deferred {
      *
      * @param \Throwable $reason
      */
-    public function fail(\Throwable $reason) {
+    public function fail(\Throwable $reason)
+    {
         $this->resolver->fail($reason);
     }
 }

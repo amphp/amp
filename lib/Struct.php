@@ -8,26 +8,30 @@ namespace Amp;
  * This trait is intended to make using public properties a little safer by throwing when
  * nonexistent property names are read or written.
  */
-trait Struct {
+trait Struct
+{
     /**
      * The minimum percentage [0-100] at which to recommend a similar property
      * name when generating error messages.
      */
     private $__propertySuggestThreshold = 70;
 
-    public function __get(string $property) {
+    public function __get(string $property)
+    {
         throw new \Error(
             $this->generateStructPropertyError($property)
         );
     }
 
-    public function __set(string $property, $value) {
+    public function __set(string $property, $value)
+    {
         throw new \Error(
             $this->generateStructPropertyError($property)
         );
     }
 
-    private function generateStructPropertyError(string $property): string {
+    private function generateStructPropertyError(string $property): string
+    {
         $suggestion = $this->suggestPropertyName($property);
         $suggestStr = ($suggestion == "") ? "" : " ... did you mean \"{$suggestion}?\"";
 
@@ -39,7 +43,8 @@ trait Struct {
         );
     }
 
-    private function suggestPropertyName(string $badProperty): string {
+    private function suggestPropertyName(string $badProperty): string
+    {
         $badProperty = \strtolower($badProperty);
         $bestMatch = "";
         $bestMatchPercentage = 0;

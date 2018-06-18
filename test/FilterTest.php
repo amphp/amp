@@ -9,8 +9,10 @@ use Amp\PHPUnit\TestException;
 use Amp\Producer;
 use PHPUnit\Framework\TestCase;
 
-class FilterTest extends TestCase {
-    public function testNoValuesEmitted() {
+class FilterTest extends TestCase
+{
+    public function testNoValuesEmitted()
+    {
         $invoked = false;
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
@@ -27,7 +29,8 @@ class FilterTest extends TestCase {
         $this->assertFalse($invoked);
     }
 
-    public function testValuesEmitted() {
+    public function testValuesEmitted()
+    {
         Loop::run(function () {
             $count = 0;
             $values = [1, 2, 3];
@@ -53,7 +56,8 @@ class FilterTest extends TestCase {
     /**
      * @depends testValuesEmitted
      */
-    public function testCallbackThrows() {
+    public function testCallbackThrows()
+    {
         Loop::run(function () {
             $values = [1, 2, 3];
             $exception = new TestException;
@@ -76,7 +80,8 @@ class FilterTest extends TestCase {
         });
     }
 
-    public function testIteratorFails() {
+    public function testIteratorFails()
+    {
         Loop::run(function () {
             $invoked = false;
             $exception = new TestException;

@@ -7,7 +7,8 @@ namespace Amp;
  * on the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails
  * with that exception. If $promisor returns a Generator, it will be run as a coroutine.
  */
-final class LazyPromise implements Promise {
+final class LazyPromise implements Promise
+{
     /** @var callable|null */
     private $promisor;
 
@@ -18,14 +19,16 @@ final class LazyPromise implements Promise {
      * @param callable $promisor Function which starts an async operation, returning a Promise (or any value).
      *     Generators will be run as a coroutine.
      */
-    public function __construct(callable $promisor) {
+    public function __construct(callable $promisor)
+    {
         $this->promisor = $promisor;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved) {
+    public function onResolve(callable $onResolved)
+    {
         if ($this->promise === null) {
             $provider = $this->promisor;
             $this->promisor = null;

@@ -6,7 +6,8 @@ use Amp\Loop;
 
 require_once __DIR__ . "/../../vendor/autoload.php";
 
-function asyncOperation() {
+function asyncOperation()
+{
     $def = new Deferred();
 
     Loop::delay(1000, function () use ($def) {

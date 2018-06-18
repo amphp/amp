@@ -38,11 +38,13 @@ use function Amp\Promise\rethrow;
  * @see CancellationToken
  * @see CancelledException
  */
-final class CancellationTokenSource {
+final class CancellationTokenSource
+{
     private $token;
     private $onCancel;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->token = new class($this->onCancel) implements CancellationToken {
             /** @var string */
             private $nextId = "a";
@@ -53,7 +55,8 @@ final class CancellationTokenSource {
             /** @var \Throwable|null */
             private $exception = null;
 
-            public function __construct(&$onCancel) {
+            public function __construct(&$onCancel)
+            {
                 $onCancel = function (\Throwable $exception) {
                     $this->exception = $exception;
 
@@ -66,7 +69,8 @@ final class CancellationTokenSource {
                 };
             }
 
-            private function invokeCallback($callback) {
+            private function invokeCallback($callback)
+            {
                 // No type declaration to prevent exception outside the try!
                 try {
                     $result = $callback($this->exception);
@@ -85,7 +89,8 @@ final class CancellationTokenSource {
                 }
             }
 
-            public function subscribe(callable $callback): string {
+            public function subscribe(callable $callback): string
+            {
                 $id = $this->nextId++;
 
                 if ($this->exception) {
@@ -97,15 +102,18 @@ final class CancellationTokenSource {
                 return $id;
             }
 
-            public function unsubscribe(string $id) {
+            public function unsubscribe(string $id)
+            {
                 unset($this->callbacks[$id]);
             }
 
-            public function isRequested(): bool {
+            public function isRequested(): bool
+            {
                 return isset($this->exception);
             }
 
-            public function throwIfRequested() {
+            public function throwIfRequested()
+            {
                 if (isset($this->exception)) {
                     throw $this->exception;
                 }
@@ -113,14 +121,16 @@ final class CancellationTokenSource {
         };
     }
 
-    public function getToken(): CancellationToken {
+    public function getToken(): CancellationToken
+    {
         return $this->token;
     }
 
     /**
      * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
      */
-    public function cancel(\Throwable $previous = null) {
+    public function cancel(\Throwable $previous = null)
+    {
         if ($this->onCancel === null) {
             return;
         }

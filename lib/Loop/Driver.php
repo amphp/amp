@@ -15,7 +15,8 @@ use function Amp\Promise\rethrow;
  *
  * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
-abstract class Driver {
+abstract class Driver
+{
     // Don't use 1e3 / 1e6, they result in a float instead of int
     const MILLISEC_PER_SEC = 1000;
     const MICROSEC_PER_SEC = 1000000;
@@ -59,7 +60,8 @@ abstract class Driver {
      *
      * @return void
      */
-    public function run() {
+    public function run()
+    {
         $this->running = true;
 
         try {
@@ -77,7 +79,8 @@ abstract class Driver {
     /**
      * @return bool True if no enabled and referenced watchers remain in the loop.
      */
-    private function isEmpty() {
+    private function isEmpty()
+    {
         foreach ($this->watchers as $watcher) {
             if ($watcher->enabled && $watcher->referenced) {
                 return false;
@@ -90,7 +93,8 @@ abstract class Driver {
     /**
      * Executes a single tick of the event loop.
      */
-    private function tick() {
+    private function tick()
+    {
         if (empty($this->deferQueue)) {
             $this->deferQueue = $this->nextTickQueue;
         } else {
@@ -152,7 +156,8 @@ abstract class Driver {
      *
      * @return void
      */
-    public function stop() {
+    public function stop()
+    {
         $this->running = false;
     }
 
@@ -171,7 +176,8 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function defer(callable $callback, $data = null): string {
+    public function defer(callable $callback, $data = null): string
+    {
         $watcher = new Watcher;
         $watcher->type = Watcher::DEFER;
         $watcher->id = $this->nextId++;
@@ -200,7 +206,8 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function delay(int $delay, callable $callback, $data = null): string {
+    public function delay(int $delay, callable $callback, $data = null): string
+    {
         if ($delay < 0) {
             throw new \Error("Delay must be greater than or equal to zero");
         }
@@ -234,7 +241,8 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function repeat(int $interval, callable $callback, $data = null): string {
+    public function repeat(int $interval, callable $callback, $data = null): string
+    {
         if ($interval < 0) {
             throw new \Error("Interval must be greater than or equal to zero");
         }
@@ -271,7 +279,8 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onReadable($stream, callable $callback, $data = null): string {
+    public function onReadable($stream, callable $callback, $data = null): string
+    {
         $watcher = new Watcher;
         $watcher->type = Watcher::READABLE;
         $watcher->id = $this->nextId++;
@@ -304,7 +313,8 @@ abstract class Driver {
      *
      * @return string An unique identifier that can be used to cancel, enable or disable the watcher.
      */
-    public function onWritable($stream, callable $callback, $data = null): string {
+    public function onWritable($stream, callable $callback, $data = null): string
+    {
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
         $watcher->id = $this->nextId++;
@@ -338,7 +348,8 @@ abstract class Driver {
      *
      * @throws UnsupportedFeatureException If signal handling is not supported.
      */
-    public function onSignal(int $signo, callable $callback, $data = null): string {
+    public function onSignal(int $signo, callable $callback, $data = null): string
+    {
         $watcher = new Watcher;
         $watcher->type = Watcher::SIGNAL;
         $watcher->id = $this->nextId++;
@@ -364,7 +375,8 @@ abstract class Driver {
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function enable(string $watcherId) {
+    public function enable(string $watcherId)
+    {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
         }
@@ -398,7 +410,8 @@ abstract class Driver {
      *
      * @return void
      */
-    public function cancel(string $watcherId) {
+    public function cancel(string $watcherId)
+    {
         $this->disable($watcherId);
         unset($this->watchers[$watcherId]);
     }
@@ -416,7 +429,8 @@ abstract class Driver {
      *
      * @return void
      */
-    public function disable(string $watcherId) {
+    public function disable(string $watcherId)
+    {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -470,7 +484,8 @@ abstract class Driver {
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function reference(string $watcherId) {
+    public function reference(string $watcherId)
+    {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
         }
@@ -488,7 +503,8 @@ abstract class Driver {
      *
      * @return void
      */
-    public function unreference(string $watcherId) {
+    public function unreference(string $watcherId)
+    {
         if (!isset($this->watchers[$watcherId])) {
             return;
         }
@@ -510,7 +526,8 @@ abstract class Driver {
      *
      * @return void
      */
-    final public function setState(string $key, $value) {
+    final public function setState(string $key, $value)
+    {
         if ($value === null) {
             unset($this->registry[$key]);
         } else {
@@ -531,7 +548,8 @@ abstract class Driver {
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    final public function getState(string $key) {
+    final public function getState(string $key)
+    {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
 
@@ -549,7 +567,8 @@ abstract class Driver {
      *
      * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
      */
-    public function setErrorHandler(callable $callback = null) {
+    public function setErrorHandler(callable $callback = null)
+    {
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
         return $previous;
@@ -562,7 +581,8 @@ abstract class Driver {
      *
      * @throws \Throwable If no error handler has been set.
      */
-    protected function error(\Throwable $exception) {
+    protected function error(\Throwable $exception)
+    {
         if ($this->errorHandler === null) {
             throw $exception;
         }
@@ -587,7 +607,8 @@ abstract class Driver {
      *
      * @return array
      */
-    public function __debugInfo() {
+    public function __debugInfo()
+    {
         // @codeCoverageIgnoreStart
         return $this->getInfo();
         // @codeCoverageIgnoreEnd
@@ -614,7 +635,8 @@ abstract class Driver {
      *
      * @return array Statistics about the loop in the described format.
      */
-    public function getInfo(): array {
+    public function getInfo(): array
+    {
         $watchers = [
             "referenced" => 0,
             "unreferenced" => 0,
@@ -649,7 +671,7 @@ abstract class Driver {
                 default:
                     // @codeCoverageIgnoreStart
                     throw new \Error("Unknown watcher type");
-                    // @codeCoverageIgnoreEnd
+                // @codeCoverageIgnoreEnd
             }
 
             if ($watcher->enabled) {

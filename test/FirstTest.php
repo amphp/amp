@@ -10,16 +10,19 @@ use Amp\Promise;
 use Amp\Success;
 use React\Promise\FulfilledPromise;
 
-class FirstTest extends \PHPUnit\Framework\TestCase {
+class FirstTest extends \PHPUnit\Framework\TestCase
+{
     /**
      * @expectedException \Error
      * @expectedExceptionMessage No promises provided
      */
-    public function testEmptyArray() {
+    public function testEmptyArray()
+    {
         Promise\first([]);
     }
 
-    public function testSuccessfulPromisesArray() {
+    public function testSuccessfulPromisesArray()
+    {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
@@ -31,7 +34,8 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(1, $result);
     }
 
-    public function testFailedPromisesArray() {
+    public function testFailedPromisesArray()
+    {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
 
@@ -45,7 +49,8 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
     }
 
-    public function testMixedPromisesArray() {
+    public function testMixedPromisesArray()
+    {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
@@ -58,7 +63,8 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(3, $result);
     }
 
-    public function testReactPromiseArray() {
+    public function testReactPromiseArray()
+    {
         $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
@@ -70,7 +76,8 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame(1, $result);
     }
 
-    public function testPendingPromiseArray() {
+    public function testPendingPromiseArray()
+    {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),
@@ -91,7 +98,8 @@ class FirstTest extends \PHPUnit\Framework\TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonPromise() {
+    public function testNonPromise()
+    {
         Promise\first([1]);
     }
 }

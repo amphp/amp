@@ -2,7 +2,8 @@
 
 namespace Amp;
 
-final class Producer implements Iterator {
+final class Producer implements Iterator
+{
     use CallableMaker, Internal\Producer;
 
     /**
@@ -10,7 +11,8 @@ final class Producer implements Iterator {
      *
      * @throws \Error Thrown if the callable does not return a Generator.
      */
-    public function __construct(callable $producer) {
+    public function __construct(callable $producer)
+    {
         $result = $producer($this->callableFromInstanceMethod("emit"));
 
         if (!$result instanceof \Generator) {

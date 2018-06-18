@@ -2,36 +2,43 @@
 
 namespace Amp\Test;
 
-class CallableMaker {
+class CallableMaker
+{
     use \Amp\CallableMaker {
         callableFromInstanceMethod as public;
         callableFromStaticMethod as public;
     }
 
-    public function instanceMethod() {
+    public function instanceMethod()
+    {
         return __METHOD__;
     }
 
-    public static function staticMethod() {
+    public static function staticMethod()
+    {
         return __METHOD__;
     }
 }
 
-class CallableMakerTest extends \PHPUnit\Framework\TestCase {
+class CallableMakerTest extends \PHPUnit\Framework\TestCase
+{
     /** @var \Amp\Test\CallableMaker */
     private $maker;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->maker = new CallableMaker;
     }
 
-    public function testCallableFromInstanceMethod() {
+    public function testCallableFromInstanceMethod()
+    {
         $callable = $this->maker->callableFromInstanceMethod("instanceMethod");
         $this->assertInternalType("callable", $callable);
         $this->assertSame(\sprintf("%s::%s", CallableMaker::class, "instanceMethod"), $callable());
     }
 
-    public function testCallableFromStaticMethod() {
+    public function testCallableFromStaticMethod()
+    {
         $callable = $this->maker->callableFromInstanceMethod("staticMethod");
         $this->assertInternalType("callable", $callable);
         $this->assertSame(\sprintf("%s::%s", CallableMaker::class, "staticMethod"), $callable());

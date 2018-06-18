@@ -9,8 +9,10 @@ use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise;
 
-class AllTest extends TestCase {
-    public function testEmptyArray() {
+class AllTest extends TestCase
+{
+    public function testEmptyArray()
+    {
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
         };
@@ -20,7 +22,8 @@ class AllTest extends TestCase {
         $this->assertSame([], $result);
     }
 
-    public function testSuccessfulPromisesArray() {
+    public function testSuccessfulPromisesArray()
+    {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
         $callback = function ($exception, $value) use (&$result) {
@@ -32,7 +35,8 @@ class AllTest extends TestCase {
         $this->assertSame([1, 2, 3], $result);
     }
 
-    public function testPendingPromiseArray() {
+    public function testPendingPromiseArray()
+    {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),
@@ -50,7 +54,8 @@ class AllTest extends TestCase {
         $this->assertEquals([1, 2, 3], $result);
     }
 
-    public function testReactPromiseArray() {
+    public function testReactPromiseArray()
+    {
         Loop::run(function () use (&$result) {
             $promises = [
                 new Delayed(20, 1),
@@ -67,7 +72,8 @@ class AllTest extends TestCase {
         $this->assertEquals([1, 2], $result);
     }
 
-    public function testArrayKeysPreserved() {
+    public function testArrayKeysPreserved()
+    {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
         Loop::run(function () use (&$result) {
@@ -90,7 +96,8 @@ class AllTest extends TestCase {
     /**
      * @expectedException \TypeError
      */
-    public function testNonPromise() {
+    public function testNonPromise()
+    {
         Promise\all([1]);
     }
 }

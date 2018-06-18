@@ -5,7 +5,8 @@ namespace Amp;
 /**
  * Representation of the future value of an asynchronous operation.
  */
-interface Promise {
+interface Promise
+{
     /**
      * Registers a callback to be invoked when the promise is resolved.
      *

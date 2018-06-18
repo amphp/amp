@@ -9,7 +9,8 @@ require_once __DIR__ . "/../../vendor/autoload.php";
 /**
  * @return \Amp\Promise<string>
  */
-function jobSuccess() {
+function jobSuccess()
+{
     $deferred = new Deferred();
 
     // We delay Promise resolve for 1 sec to simulate some async job
@@ -23,7 +24,8 @@ function jobSuccess() {
 /**
  * @return \Amp\Promise<string>
  */
-function jobFail() {
+function jobFail()
+{
     $deferred = new Deferred();
 
     // We delay Promise fail for 2 sec to simulate some async job

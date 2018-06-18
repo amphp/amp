@@ -16,7 +16,8 @@ use React\Promise\PromiseInterface as ReactPromise;
  *
  * @internal
  */
-trait Producer {
+trait Producer
+{
     /** @var \Amp\Promise|null */
     private $complete;
 
@@ -38,7 +39,8 @@ trait Producer {
     /**
      * {@inheritdoc}
      */
-    public function advance(): Promise {
+    public function advance(): Promise
+    {
         if ($this->waiting !== null) {
             throw new \Error("The prior promise returned must resolve before invoking this method again");
         }
@@ -66,7 +68,8 @@ trait Producer {
     /**
      * {@inheritdoc}
      */
-    public function getCurrent() {
+    public function getCurrent()
+    {
         if (empty($this->values) && $this->complete) {
             throw new \Error("The iterator has completed");
         }
@@ -88,7 +91,8 @@ trait Producer {
      *
      * @throws \Error If the iterator has completed.
      */
-    private function emit($value): Promise {
+    private function emit($value): Promise
+    {
         if ($this->complete) {
             throw new \Error("Iterators cannot emit values after calling complete");
         }
@@ -136,7 +140,8 @@ trait Producer {
      *
      * @throws \Error If the iterator has already been completed.
      */
-    private function complete() {
+    private function complete()
+    {
         if ($this->complete) {
             $message = "Iterator has already been completed";
 
@@ -173,7 +178,8 @@ trait Producer {
         }
     }
 
-    private function fail(\Throwable $exception) {
+    private function fail(\Throwable $exception)
+    {
         $this->complete = new Failure($exception);
 
         if ($this->waiting !== null) {

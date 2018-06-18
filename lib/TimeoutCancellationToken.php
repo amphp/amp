@@ -5,7 +5,8 @@ namespace Amp;
 /**
  * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
  */
-final class TimeoutCancellationToken implements CancellationToken {
+final class TimeoutCancellationToken implements CancellationToken
+{
     /** @var string */
     private $watcher;
 
@@ -15,7 +16,8 @@ final class TimeoutCancellationToken implements CancellationToken {
     /**
      * @param int $timeout Milliseconds until cancellation is requested.
      */
-    public function __construct(int $timeout) {
+    public function __construct(int $timeout)
+    {
         $source = new CancellationTokenSource;
         $this->token = $source->getToken();
 
@@ -28,35 +30,40 @@ final class TimeoutCancellationToken implements CancellationToken {
     /**
      * Cancels the delay watcher.
      */
-    public function __destruct() {
+    public function __destruct()
+    {
         Loop::cancel($this->watcher);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function subscribe(callable $callback): string {
+    public function subscribe(callable $callback): string
+    {
         return $this->token->subscribe($callback);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function unsubscribe(string $id) {
+    public function unsubscribe(string $id)
+    {
         $this->token->unsubscribe($id);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isRequested(): bool {
+    public function isRequested(): bool
+    {
         return $this->token->isRequested();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function throwIfRequested() {
+    public function throwIfRequested()
+    {
         $this->token->throwIfRequested();
     }
 }

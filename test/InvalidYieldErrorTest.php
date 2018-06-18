@@ -4,8 +4,10 @@ namespace Amp\Test;
 
 use Amp\InvalidYieldError;
 
-class InvalidYieldErrorTest extends \PHPUnit\Framework\TestCase {
-    public function testWithInvalidGenerator() {
+class InvalidYieldErrorTest extends \PHPUnit\Framework\TestCase
+{
+    public function testWithInvalidGenerator()
+    {
         /** @var \Generator $gen */
         $gen = (function () {
             if (false) {
@@ -19,7 +21,8 @@ class InvalidYieldErrorTest extends \PHPUnit\Framework\TestCase {
         $this->assertSame("prefix message; NULL yielded at key NULL", $error->getMessage());
     }
 
-    public function testSubgenerator() {
+    public function testSubgenerator()
+    {
         $subgen = (function () {
             yield "foo" => 42;
         })();
