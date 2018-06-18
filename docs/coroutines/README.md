@@ -45,11 +45,11 @@ All `yield`s in a coroutine must be one of the following three types:
 | `React\Promise\PromiseInterface` | Same as `Amp\Promise`. Any React promise will automatically be adapted to an Amp promise. |
 | `array` | Yielding an array of promises combines them implicitly using `Amp\Promise\all()`. An array with elements not being promises will result in an `Amp\InvalidYieldError`. |
 
-## Yield VS Yield From
+## Yield vs. Yield From
 
-Yield is used to "await" promises, yield from can be used to delegate to a sub-routine. Yield from should only be used to delegate to private methods, any public API should always return promises instead of generators.
+`yield` is used to "await" promises, `yield from` can be used to delegate to a sub-routine. `yield from` should only be used to delegate to private methods, any public API should always return promises instead of generators.
 
-Yield promises from within a `\Generator`, the code within the `\Generator` will continue, as soon as the promise is resolved. Use `yield from` to yield the result of a `\Generator`. Instead of using yield from, you can also use `yield new Coroutine($this->bar());` or `yield call([$this, "bar"]);`.
+When a promise is yielded from within a `\Generator`, `\Generator` will be paused and continue as soon as the promise is resolved. Use `yield from` to yield another `\Generator`. Instead of using `yield from`, you can also use `yield new Coroutine($this->bar());` or `yield call([$this, "bar"]);`.
 
 An example:
 
@@ -99,4 +99,4 @@ int(3)
 int(3)
 ```
 
-For further information about the "yield from" keyword, see [PHP Manual](http://php.net/manual/en/language.generators.syntax.php#control-structures.yield.from)
+For further information about `yield from`, consult the [PHP manual](http://php.net/manual/en/language.generators.syntax.php#control-structures.yield.from).

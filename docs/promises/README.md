@@ -117,7 +117,8 @@ Sometimes values are immediately available. This might be due to them being cach
 `Amp\Deferred` is the abstraction responsible for resolving future values once they become available. A library that resolves values asynchronously creates an `Amp\Deferred` and uses it to return an `Amp\Promise` to API consumers. Once the async library determines that the value is ready it resolves the promise held by the API consumer using methods on the linked promisor.
 
 ```php
-final class Deferred {
+final class Deferred
+{
     public function promise(): Promise;
     public function resolve($result = null);
     public function fail(Throwable $error);
@@ -143,7 +144,8 @@ Here's a simple example of an async value producer `asyncMultiply()` creating a 
 
 use Amp\Loop;
 
-function asyncMultiply($x, $y) {
+function asyncMultiply($x, $y)
+{
     // Create a new promisor
     $deferred = new Amp\Deferred;
 
@@ -157,5 +159,6 @@ function asyncMultiply($x, $y) {
 
 $promise = asyncMultiply(6, 7);
 $result = Amp\Promise\wait($promise);
+
 var_dump($result); // int(42)
 ```

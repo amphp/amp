@@ -83,7 +83,8 @@ use Amp\Loop;
 
 $myText = null;
 
-function onInput($watcherId, $stream) {
+function onInput($watcherId, $stream)
+{
     global $myText;
 
     $myText = fgets($stream);

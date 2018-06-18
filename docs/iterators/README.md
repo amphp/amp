@@ -12,7 +12,8 @@ Every iterator in Amp follows the `Amp\Iterator` interface.
 ```php
 namespace Amp;
 
-interface Iterator {
+interface Iterator
+{
     public function advance(): Promise;
     public function getCurrent();
 }

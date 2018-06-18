@@ -221,15 +221,18 @@ For a slightly more complex use case, let's look at a common scenario where a se
 
 use Amp\Loop;
 
-class Server {
+class Server
+{
     private $clients = [];
 
-    public function startServer() {
+    public function startServer()
+    {
         // ... server bind and accept logic would exist here
         Loop::run();
     }
 
-    private function onNewClient($sock) {
+    private function onNewClient($sock)
+    {
         $socketId = (int) $sock;
         $client = new ClientStruct;
         $client->socket = $sock;
@@ -250,12 +253,14 @@ class Server {
 
     // ... other class implementation details here ...
 
-    private function writeToClient($client, $data) {
+    private function writeToClient($client, $data)
+    {
         $client->writeBuffer .= $data;
         $this->doWrite($client);
     }
 
-    private function doWrite(ClientStruct $client) {
+    private function doWrite(ClientStruct $client)
+    {
         $bytesToWrite = strlen($client->writeBuffer);
         $bytesWritten = @fwrite($client->socket, $client->writeBuffer);
 
