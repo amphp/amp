@@ -117,7 +117,7 @@ namespace Amp\Promise
     use React\Promise\PromiseInterface as ReactPromise;
     use function Amp\Internal\createTypeError;
 
-    function await(Promise $promise): void
+    function await(Promise $promise)
     {
         $deferred = new \Concurrent\Deferred;
         $promise->onResolve(function ($error, $value) use ($deferred) {
@@ -128,7 +128,7 @@ namespace Amp\Promise
             }
         });
 
-        Task::await($deferred->awaitable());
+        return Task::await($deferred->awaitable());
     }
 
     /**
