@@ -10,20 +10,34 @@ use function Amp\delay;
 // Note that the first two items are printed _before_ the Loop::run()
 // as they're executed immediately and do not register any timers or defers.
 
-print "starting first task" . PHP_EOL;
+function printWithTime(string $message): void
+{
+    static $start = null;
+    $start = $start ?? microtime(true);
+
+    printf("%' 4d ms ", round((microtime(true) - $start) * 1000));
+
+    print $message . PHP_EOL;
+}
+
+printWithTime("-- begin task A --");
 $a = Task::async(function () {
-    for ($i = 0; $i < 5; $i++) {
-        print "1 - " . $i . PHP_EOL;
+    for ($i = 0; $i < 8; $i++) {
+        printWithTime(" A :: " . $i);
         delay(1000);
     }
+
+    printWithTime("-- end of task A --");
 });
 
-print "starting second task" . PHP_EOL;
+printWithTime("-- begin task B --");
 $b = Task::async(function () {
-    for ($i = 0; $i < 5; $i++) {
-        print "2 - " . $i . PHP_EOL;
-        delay(1000);
+    for ($i = 0; $i < 3; $i++) {
+        printWithTime("           B :: " . $i);
+        delay(2000);
     }
+
+    printWithTime("-- end of task B --");
 });
 
 Task::await($a);
