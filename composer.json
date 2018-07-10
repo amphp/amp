@@ -40,7 +40,8 @@
         "react/promise": "^2",
         "friendsofphp/php-cs-fixer": "^2.3",
         "phpunit/phpunit": "^6.0.9",
-        "phpstan/phpstan": "^0.8.5"
+        "phpstan/phpstan": "^0.8.5",
+        "concurrent-php/task": "1.0"
     },
     "autoload": {
         "psr-4": {
@@ -73,5 +74,19 @@
     "scripts": {
         "test": "@php -dzend.assertions=1 -dassert.exception=1 ./vendor/bin/phpunit",
         "code-style": "@php ./vendor/bin/php-cs-fixer fix"
-    }
+    },
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "concurrent-php/task",
+                "version": "1.0",
+                "source": {
+                    "url": "https://github.com/concurrent-php/task",
+                    "type": "git",
+                    "reference": "origin/master"
+                }
+            }
+        }
+    ]
 }

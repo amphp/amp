@@ -2,6 +2,30 @@
 
 namespace Amp\Internal;
 
+use Amp\Loop;
+use Concurrent\TaskScheduler;
+
+TaskScheduler::setDefaultScheduler(new class extends TaskScheduler
+{
+    private $dispatch;
+
+    public function __construct()
+    {
+        $this->dispatch = \Closure::fromCallable([$this, 'dispatch']);
+    }
+
+    protected function activate()
+    {
+        // TODO: Try calling $this->dispatch() directly here
+        Loop::defer($this->dispatch);
+    }
+
+    protected function runLoop()
+    {
+        Loop::run();
+    }
+});
+
 /**
  * Formats a stacktrace obtained via `debug_backtrace()`.
  *

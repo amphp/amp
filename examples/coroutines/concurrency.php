@@ -1,33 +1,27 @@
 <?php
-#!/usr/bin/env php
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Amp\Delayed;
-use Amp\Loop;
-use function Amp\asyncCall;
+use Concurrent\Task;
+use function Amp\delay;
 
 // Shows how two for loops are executed concurrently.
 
 // Note that the first two items are printed _before_ the Loop::run()
 // as they're executed immediately and do not register any timers or defers.
 
-asyncCall(function () {
+print "starting first task" . PHP_EOL;
+Task::async(function () {
     for ($i = 0; $i < 5; $i++) {
         print "1 - " . $i . PHP_EOL;
-        yield new Delayed(1000);
+        delay(1000);
     }
 });
 
-asyncCall(function () {
+print "starting second task" . PHP_EOL;
+Task::async(function () {
     for ($i = 0; $i < 5; $i++) {
         print "2 - " . $i . PHP_EOL;
-        yield new Delayed(400);
+        delay(1000);
     }
 });
-
-print "-- before Loop::run()" . PHP_EOL;
-
-Loop::run();
-
-print "-- after Loop::run()" . PHP_EOL;

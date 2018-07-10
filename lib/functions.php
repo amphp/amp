@@ -3,7 +3,19 @@
 namespace Amp
 {
 
+    use Concurrent\Awaitable;
     use React\Promise\PromiseInterface as ReactPromise;
+
+    function delay(int $msDelay): Awaitable
+    {
+        $deferred = new \Concurrent\Deferred;
+
+        Loop::delay($msDelay, function () use ($deferred) {
+            $deferred->resolve();
+        });
+
+        return $deferred->awaitable();
+    }
 
     /**
      * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
