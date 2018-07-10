@@ -3,10 +3,10 @@
 namespace Amp
 {
 
-    use Concurrent\Awaitable;
+    use Concurrent\Task;
     use React\Promise\PromiseInterface as ReactPromise;
 
-    function delay(int $msDelay): Awaitable
+    function delay(int $msDelay): void
     {
         $deferred = new \Concurrent\Deferred;
 
@@ -14,7 +14,7 @@ namespace Amp
             $deferred->resolve();
         });
 
-        return $deferred->awaitable();
+        Task::await($deferred->awaitable());
     }
 
     /**

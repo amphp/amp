@@ -16,8 +16,7 @@ TaskScheduler::setDefaultScheduler(new class extends TaskScheduler
 
     protected function activate()
     {
-        // TODO: Try calling $this->dispatch() directly here
-        Loop::defer($this->dispatch);
+        $this->dispatch();
     }
 
     protected function runLoop()
