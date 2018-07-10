@@ -113,8 +113,23 @@ namespace Amp\Promise
     use Amp\Promise;
     use Amp\Success;
     use Amp\TimeoutException;
+    use Concurrent\Task;
     use React\Promise\PromiseInterface as ReactPromise;
     use function Amp\Internal\createTypeError;
+
+    function await(Promise $promise): void
+    {
+        $deferred = new \Concurrent\Deferred;
+        $promise->onResolve(function ($error, $value) use ($deferred) {
+            if ($error) {
+                $deferred->fail($error);
+            } else {
+                $deferred->resolve($value);
+            }
+        });
+
+        Task::await($deferred->awaitable());
+    }
 
     /**
      * Registers a callback that will forward the failure reason to the event loop's error handler if the promise fails.
