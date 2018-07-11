@@ -11,7 +11,7 @@ namespace Amp
         $deferred = new \Concurrent\Deferred;
 
         Loop::delay($msDelay, function () use ($deferred) {
-            $deferred->resolve();
+            $deferred->resolve(null);
         });
 
         Task::await($deferred->awaitable());
