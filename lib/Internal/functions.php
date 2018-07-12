@@ -16,12 +16,17 @@ TaskScheduler::setDefaultScheduler(new class extends TaskScheduler
 
     protected function activate()
     {
-        $this->dispatch();
+        Loop::defer($this->dispatch);
     }
 
     protected function runLoop()
     {
         Loop::run();
+    }
+
+    protected function stopLoop()
+    {
+        Loop::stop();
     }
 });
 

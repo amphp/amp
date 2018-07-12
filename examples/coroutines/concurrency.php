@@ -21,7 +21,7 @@ function printWithTime(string $message): void
 }
 
 printWithTime("-- begin task A --");
-$a = Task::async(function () {
+Task::async(function () {
     for ($i = 0; $i < 8; $i++) {
         printWithTime(" A :: " . $i);
         delay(1000);
@@ -31,14 +31,9 @@ $a = Task::async(function () {
 });
 
 printWithTime("-- begin task B --");
-$b = Task::async(function () {
-    for ($i = 0; $i < 3; $i++) {
-        printWithTime("           B :: " . $i);
-        delay(2000);
-    }
+for ($i = 0; $i < 3; $i++) {
+    printWithTime("           B :: " . $i);
+    delay(2000);
+}
 
-    printWithTime("-- end of task B --");
-});
-
-Task::await($a);
-Task::await($b);
+printWithTime("-- end of task B --");
