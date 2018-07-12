@@ -26,6 +26,20 @@ if (!\defined("PHP_INT_MIN")) {
 abstract class DriverTest extends TestCase
 {
     /**
+     * Timing mechanisms between drivers vary on accuracy. Set the target resolution in milliseconds.
+     *
+     * @var int
+     */
+    const DELAY_TEST_RESOLUTION_MS = 1;
+
+    /**
+     * Allow elapsed time assertions to be epsilon ms less than DELAY_TEST_MIN_RESOLUTION_MS.
+     *
+     * @var int
+     */
+    const DELAY_TEST_EPSILON_MS = 0.1;
+
+    /**
      * The DriverFactory to run this test on.
      *
      * @return callable
@@ -1503,14 +1517,50 @@ abstract class DriverTest extends TestCase
         $this->assertSame(2323, $invoked);
     }
 
-    public function testTimerIntervalCountedWhenNotRunning()
+    public function testTimerIntervalBlocksOnFirstTick()
     {
-        \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
         $start = \microtime(true);
-        $this->loop->delay(1000, function () use ($start) {
-            $this->assertLessThan(0.5, \microtime(true) - $start);
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
+            $loop->delay(static::DELAY_TEST_RESOLUTION_MS, function () use (&$invoked) {
+                $invoked = true;
+            });
         });
+        $end = \microtime(true);
+        $this->assertTrue($invoked, 'The delay callback was not invoked');
+
+        $minElapsedExpected = (static::DELAY_TEST_RESOLUTION_MS - static::DELAY_TEST_EPSILON_MS) / 1000;
+        $actualElapsed = $end - $start;
+        $this->assertGreaterThanOrEqual($minElapsedExpected, $actualElapsed);
+        $this->assertLessThan(0.1, $actualElapsed);
+    }
+
+    public function testTimerIntervalDeductedWhenResuming()
+    {
+        $invoked = false;
+        $this->start(function (Driver $loop) use (&$invoked) {
+            // add the delay callback before stopping the loop
+            $loop->delay(1000, function () use (&$invoked) {
+                $invoked = true;
+            });
+
+            // stop the event loop before the delay callback is invoked
+            $loop->defer(function () use ($loop) {
+                $loop->stop();
+            });
+        });
+
+        \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
+
+        $this->assertFalse($invoked, 'Test logic error, the delay callback should not be called yet');
+
+        $start = \microtime(true);
         $this->loop->run();
+        $end = \microtime(true);
+        $this->assertTrue($invoked, 'The delay callback was not invoked');
+
+        $this->assertGreaterThanOrEqual(0.1, $end - $start);
+        $this->assertLessThan(0.5, $end - $start);
     }
 
     public function testShortTimerDoesNotBlockOtherTimers()

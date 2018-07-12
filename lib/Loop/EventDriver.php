@@ -23,13 +23,12 @@ class EventDriver extends Driver
     private $signalCallback;
     /** @var \Event[] */
     private $signals = [];
-    /** @var int Internal timestamp for now. */
+    /** @var int|null Internal timestamp for now. */
     private $now;
 
     public function __construct()
     {
         $this->handle = new \EventBase;
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
@@ -159,6 +158,8 @@ class EventDriver extends Driver
         foreach ($this->signals as $event) {
             $event->add();
         }
+
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         try {
             parent::run();

@@ -30,7 +30,7 @@ class NativeDriver extends Driver
     /** @var \Amp\Loop\Watcher[][] */
     private $signalWatchers = [];
 
-    /** @var int Internal timestamp for now. */
+    /** @var int|null Internal timestamp for now. */
     private $now;
 
     /** @var bool */
@@ -40,7 +40,6 @@ class NativeDriver extends Driver
     {
         $this->timerQueue = new \SplPriorityQueue();
         $this->signalHandling = \extension_loaded("pcntl");
-        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
 
     /**
@@ -55,6 +54,16 @@ class NativeDriver extends Driver
         }
 
         return parent::onSignal($signo, $callback, $data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function run()
+    {
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+
+        parent::run();
     }
 
     /**
