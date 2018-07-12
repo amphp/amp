@@ -26,20 +26,6 @@ if (!\defined("PHP_INT_MIN")) {
 abstract class DriverTest extends TestCase
 {
     /**
-     * Timing mechanisms between drivers vary on accuracy. Set the target resolution in milliseconds.
-     *
-     * @var int
-     */
-    const DELAY_TEST_RESOLUTION_MS = 1;
-
-    /**
-     * Allow elapsed time assertions to be epsilon ms less than DELAY_TEST_MIN_RESOLUTION_MS.
-     *
-     * @var int
-     */
-    const DELAY_TEST_EPSILON_MS = 0.1;
-
-    /**
      * The DriverFactory to run this test on.
      *
      * @return callable
@@ -1522,17 +1508,19 @@ abstract class DriverTest extends TestCase
         $start = \microtime(true);
         $invoked = false;
         $this->start(function (Driver $loop) use (&$invoked) {
-            $loop->delay(static::DELAY_TEST_RESOLUTION_MS, function () use (&$invoked) {
+            $loop->delay(1, function () use (&$invoked) {
                 $invoked = true;
             });
         });
         $end = \microtime(true);
         $this->assertTrue($invoked, 'The delay callback was not invoked');
 
-        $minElapsedExpected = (static::DELAY_TEST_RESOLUTION_MS - static::DELAY_TEST_EPSILON_MS) / 1000;
-        $actualElapsed = $end - $start;
+        // allow the elapsed time to be epsilon ms less than the delay
+        $epsilon = 0.1;
+        $minElapsedExpected = 1 - $epsilon;
+        $actualElapsed = 1000.0 * ($end - $start);
         $this->assertGreaterThanOrEqual($minElapsedExpected, $actualElapsed);
-        $this->assertLessThan(0.1, $actualElapsed);
+        $this->assertLessThan(100, $actualElapsed);
     }
 
     public function testTimerIntervalDeductedWhenResuming()

@@ -177,6 +177,16 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
+    public function run()
+    {
+        \uv_update_time($this->handle);
+
+        parent::run();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function dispatch(bool $blocking)
     {
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
