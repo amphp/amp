@@ -3,9 +3,10 @@
 namespace Amp\Internal;
 
 use Amp\Loop;
+use Concurrent\TaskLoopScheduler;
 use Concurrent\TaskScheduler;
 
-TaskScheduler::setDefaultScheduler(new class extends TaskScheduler
+TaskScheduler::setDefaultScheduler(new class extends TaskLoopScheduler
 {
     private $dispatch;
 
@@ -22,11 +23,6 @@ TaskScheduler::setDefaultScheduler(new class extends TaskScheduler
     protected function runLoop()
     {
         Loop::run();
-    }
-
-    protected function stopLoop()
-    {
-        Loop::stop();
     }
 });
 
