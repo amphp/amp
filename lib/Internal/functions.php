@@ -3,10 +3,10 @@
 namespace Amp\Internal;
 
 use Amp\Loop;
-use Concurrent\TaskLoopScheduler;
+use Concurrent\LoopTaskScheduler;
 use Concurrent\TaskScheduler;
 
-TaskScheduler::setDefaultScheduler(new class extends TaskLoopScheduler
+TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
 {
     private $dispatch;
 

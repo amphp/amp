@@ -11,5 +11,7 @@ class TaskTest extends TestCase
     {
         delay(1);
         delay(1);
+
+        $this->assertTrue(true);
     }
 }
