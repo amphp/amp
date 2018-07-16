@@ -9,6 +9,7 @@ use Concurrent\TaskScheduler;
 TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
 {
     private $dispatch;
+    private $watcher;
 
     public function __construct()
     {
@@ -17,7 +18,7 @@ TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
 
     protected function activate()
     {
-        Loop::defer($this->dispatch);
+        $this->watcher = Loop::defer($this->dispatch);
     }
 
     protected function runLoop()
@@ -25,6 +26,8 @@ TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
         Loop::run();
 
         if (count($this)) {
+            Loop::cancel($this->watcher);
+
             $this->run(function () {
                 // do nothing
             });
