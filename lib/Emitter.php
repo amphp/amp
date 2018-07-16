@@ -32,6 +32,9 @@ final class Emitter
             /** @var boolean */
             public $complete = false;
 
+            /** @var \Throwable|null */
+            public $exception;
+
             /** @var mixed[] */
             public $values = [];
 
@@ -63,6 +66,10 @@ final class Emitter
                 if (!$state->complete) {
                     $state->waiting = new Deferred;
                     Task::await($state->waiting->awaitable());
+                }
+
+                if ($state->exception) {
+                    throw $state->exception;
                 }
 
                 if (\array_key_exists($state->position, $state->values)) {
@@ -151,6 +158,7 @@ final class Emitter
     public function fail(\Throwable $reason): void
     {
         $this->state->complete = true;
+        $this->state->exception = $reason;
 
         if ($this->state->waiting !== null) {
             /** @var Deferred $waiting */
