@@ -23,6 +23,12 @@ TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
     protected function runLoop()
     {
         Loop::run();
+
+        if (count($this)) {
+            $this->run(function () {
+                // do nothing
+            });
+        }
     }
 
     protected function stopLoop()
