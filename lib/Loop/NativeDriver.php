@@ -2,10 +2,8 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
-use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\rethrow;
+use Concurrent\Awaitable;
+use function Amp\rethrow;
 
 class NativeDriver extends Driver
 {
@@ -78,7 +76,7 @@ class NativeDriver extends Driver
 
             try {
                 while (!$this->timerQueue->isEmpty()) {
-                    list($watcher, $expiration) = $this->timerQueue->top();
+                    [$watcher, $expiration] = $this->timerQueue->top();
 
                     $id = $watcher->id;
 
@@ -104,16 +102,11 @@ class NativeDriver extends Driver
                     try {
                         // Execute the timer.
                         $result = ($watcher->callback)($id, $watcher->data);
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
-
-                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        if ($result instanceof Awaitable) {
                             rethrow($result);
                         }
-                    } catch (\Throwable $exception) {
-                        $this->error($exception);
+                    } catch (\Throwable $e) {
+                        $this->error($e);
                     }
                 }
             } finally {
@@ -176,20 +169,11 @@ class NativeDriver extends Driver
 
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
-
-                        if ($result === null) {
-                            continue;
-                        }
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
-
-                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        if ($result instanceof Awaitable) {
                             rethrow($result);
                         }
-                    } catch (\Throwable $exception) {
-                        $this->error($exception);
+                    } catch (\Throwable $e) {
+                        $this->error($e);
                     }
                 }
             }
@@ -207,21 +191,13 @@ class NativeDriver extends Driver
 
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
-
-                        if ($result === null) {
-                            continue;
-                        }
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
-
-                        if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        if ($result instanceof Awaitable) {
                             rethrow($result);
                         }
-                    } catch (\Throwable $exception) {
-                        $this->error($exception);
+                    } catch (\Throwable $e) {
+                        $this->error($e);
                     }
+
                 }
             }
 
@@ -239,7 +215,7 @@ class NativeDriver extends Driver
     private function getTimeout()
     {
         while (!$this->timerQueue->isEmpty()) {
-            list($watcher, $expiration) = $this->timerQueue->top();
+            [$watcher, $expiration] = $this->timerQueue->top();
 
             $id = $watcher->id;
 
@@ -369,20 +345,11 @@ class NativeDriver extends Driver
 
             try {
                 $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Awaitable) {
                     rethrow($result);
                 }
-            } catch (\Throwable $exception) {
-                $this->error($exception);
+            } catch (\Throwable $e) {
+                $this->error($e);
             }
         }
     }

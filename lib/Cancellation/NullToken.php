@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp;
+namespace Amp\Cancellation;
 
 /**
  * A NullCancellationToken can be used to avoid conditionals to check whether a token has been provided.
@@ -25,7 +25,7 @@ namespace Amp;
  *
  * instead.
  */
-final class NullCancellationToken implements CancellationToken
+final class NullToken implements Token
 {
     /** @inheritdoc */
     public function subscribe(callable $callback): string
@@ -34,7 +34,7 @@ final class NullCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function unsubscribe(string $id)
+    public function unsubscribe(string $id): void
     {
         // nothing to do
     }
@@ -46,7 +46,7 @@ final class NullCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function throwIfRequested()
+    public function throwIfRequested(): void
     {
         // nothing to do
     }

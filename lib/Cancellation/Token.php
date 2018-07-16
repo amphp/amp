@@ -1,11 +1,11 @@
 <?php
 
-namespace Amp;
+namespace Amp\Cancellation;
 
 /**
  * Cancellation tokens are simple objects that allow registering handlers to subscribe to cancellation requests.
  */
-interface CancellationToken
+interface Token
 {
     /**
      * Subscribes a new handler to be invoked on a cancellation request.
@@ -29,7 +29,7 @@ interface CancellationToken
      *
      * @return void
      */
-    public function unsubscribe(string $id);
+    public function unsubscribe(string $id): void;
 
     /**
      * Returns whether cancellation has been requested yet.
@@ -42,6 +42,8 @@ interface CancellationToken
      * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
      *
      * @return void
+     *
+     * @throws CancelledException
      */
-    public function throwIfRequested();
+    public function throwIfRequested(): void;
 }

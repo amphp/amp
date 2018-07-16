@@ -2,10 +2,8 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
-use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\rethrow;
+use Concurrent\Awaitable;
+use function Amp\rethrow;
 
 class EventDriver extends Driver
 {
@@ -38,16 +36,7 @@ class EventDriver extends Driver
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Awaitable) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
@@ -64,16 +53,7 @@ class EventDriver extends Driver
 
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Awaitable) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
@@ -84,16 +64,7 @@ class EventDriver extends Driver
         $this->signalCallback = function ($signum, $what, Watcher $watcher) {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Awaitable) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {

@@ -16,7 +16,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
      *     "callback?"
      */
-    public function testSetErrorWithSuggestion()
+    public function testSetErrorWithSuggestion(): void
     {
         $struct = new StructTestFixture;
         $struct->callbac = function () {
@@ -28,7 +28,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
      *     "callback?"
      */
-    public function testGetErrorWithSuggestion()
+    public function testGetErrorWithSuggestion(): void
     {
         $struct = new StructTestFixture;
         $test = $struct->callbac;
@@ -38,7 +38,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
      * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
      */
-    public function testSetErrorWithoutSuggestion()
+    public function testSetErrorWithoutSuggestion(): void
     {
         $struct = new StructTestFixture;
         $struct->callZZZZZZZZZZZ = "test";
@@ -48,7 +48,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
      * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
      */
-    public function testGetErrorWithoutSuggestion()
+    public function testGetErrorWithoutSuggestion(): void
     {
         $struct = new StructTestFixture;
         $test = $struct->callZZZZZZZZZZZ;
@@ -58,13 +58,13 @@ class StructTest extends \PHPUnit\Framework\TestCase
      * @expectedException \Error
      * @expectedExceptionMessage Amp\Test\StructTestFixture property "__propertySuggestThreshold" does not exist
      */
-    public function testSuggestionIgnoresPropertyStartingWithUnderscore()
+    public function testSuggestionIgnoresPropertyStartingWithUnderscore(): void
     {
         $struct = new StructTestFixture;
         $struct->__propertySuggestThreshold;
     }
 
-    public function testSetErrorWithoutSuggestionBecauseUnderscore()
+    public function testSetErrorWithoutSuggestionBecauseUnderscore(): void
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);
@@ -74,7 +74,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
         $struct->foofoofoofoofoofoofoofoobar = "test";
     }
 
-    public function testGetErrorWithoutSuggestionBecauseUnderscore()
+    public function testGetErrorWithoutSuggestionBecauseUnderscore(): void
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);

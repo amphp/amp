@@ -2,10 +2,8 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
-use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\rethrow;
+use Concurrent\Awaitable;
+use function Amp\rethrow;
 
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
@@ -114,16 +112,7 @@ abstract class Driver
 
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Awaitable) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {

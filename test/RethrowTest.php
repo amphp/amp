@@ -2,56 +2,22 @@
 
 namespace Amp\Test;
 
-use Amp\Failure;
 use Amp\Loop;
-use Amp\Promise;
-use PHPUnit\Framework\TestCase;
-use function React\Promise\reject;
+use Amp\PHPUnit\TestCase;
+use Amp\PHPUnit\TestException;
+use Concurrent\Deferred;
+use function Amp\delay;
+use function Amp\rethrow;
 
 class RethrowTest extends TestCase
 {
-    public function testRethrow()
+    public function testRethrow(): void
     {
-        $exception = new \Exception;
+        $exception = new TestException;
 
-        try {
-            Loop::run(function () use ($exception) {
-                $promise = new Failure($exception);
+        Loop::setErrorHandler($this->createCallback(1));
 
-                Promise\rethrow($promise);
-            });
-        } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail('Failed promise reason should be thrown from loop');
-    }
-
-    /**
-     * @depends testRethrow
-     */
-    public function testReactPromise()
-    {
-        $exception = new \Exception;
-
-        try {
-            Loop::run(function () use ($exception) {
-                $promise = reject($exception);
-
-                Promise\rethrow($promise);
-            });
-        } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail('Failed promise reason should be thrown from loop');
-    }
-
-    public function testNonPromise()
-    {
-        $this->expectException(\TypeError::class);
-        Promise\rethrow(42);
+        rethrow(Deferred::error($exception));
+        delay(1);
     }
 }

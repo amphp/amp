@@ -1,9 +1,6 @@
 <?php
 
-namespace Amp;
-
-use React\Promise\PromiseInterface as ReactPromise;
-use function Amp\Promise\rethrow;
+namespace Amp\Cancellation;
 
 /**
  * A cancellation token source provides a mechanism to cancel operations.
@@ -35,17 +32,18 @@ use function Amp\Promise\rethrow;
  * }
  * ```
  *
- * @see CancellationToken
+ * @see Token
  * @see CancelledException
  */
-final class CancellationTokenSource
+final class TokenSource
 {
     private $token;
     private $onCancel;
 
     public function __construct()
     {
-        $this->token = new class($this->onCancel) implements CancellationToken {
+        $this->token = new class($this->onCancel) implements Token
+        {
             /** @var string */
             private $nextId = "a";
 
@@ -53,7 +51,7 @@ final class CancellationTokenSource
             private $callbacks = [];
 
             /** @var \Throwable|null */
-            private $exception = null;
+            private $exception;
 
             public function __construct(&$onCancel)
             {
@@ -64,29 +62,9 @@ final class CancellationTokenSource
                     $this->callbacks = [];
 
                     foreach ($callbacks as $callback) {
-                        $this->invokeCallback($callback);
+                        $callback($this->exception);
                     }
                 };
-            }
-
-            private function invokeCallback($callback)
-            {
-                // No type declaration to prevent exception outside the try!
-                try {
-                    $result = $callback($this->exception);
-
-                    if ($result instanceof \Generator) {
-                        $result = new Coroutine($result);
-                    }
-
-                    if ($result instanceof Promise || $result instanceof ReactPromise) {
-                        rethrow($result);
-                    }
-                } catch (\Throwable $exception) {
-                    Loop::defer(static function () use ($exception) {
-                        throw $exception;
-                    });
-                }
             }
 
             public function subscribe(callable $callback): string
@@ -94,7 +72,7 @@ final class CancellationTokenSource
                 $id = $this->nextId++;
 
                 if ($this->exception) {
-                    $this->invokeCallback($callback);
+                    $callback($this->exception);
                 } else {
                     $this->callbacks[$id] = $callback;
                 }
@@ -102,26 +80,26 @@ final class CancellationTokenSource
                 return $id;
             }
 
-            public function unsubscribe(string $id)
+            public function unsubscribe(string $id): void
             {
                 unset($this->callbacks[$id]);
             }
 
             public function isRequested(): bool
             {
-                return isset($this->exception);
+                return $this->exception !== null;
             }
 
-            public function throwIfRequested()
+            public function throwIfRequested(): void
             {
-                if (isset($this->exception)) {
+                if ($this->exception !== null) {
                     throw $this->exception;
                 }
             }
         };
     }
 
-    public function getToken(): CancellationToken
+    public function getToken(): Token
     {
         return $this->token;
     }
@@ -129,7 +107,7 @@ final class CancellationTokenSource
     /**
      * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
      */
-    public function cancel(\Throwable $previous = null)
+    public function cancel(\Throwable $previous = null): void
     {
         if ($this->onCancel === null) {
             return;
@@ -137,6 +115,6 @@ final class CancellationTokenSource
 
         $onCancel = $this->onCancel;
         $this->onCancel = null;
-        $onCancel(new CancelledException($previous));
+        $onCancel(new CancelledException("The operation was cancelled", $previous));
     }
 }

@@ -1,16 +1,19 @@
 <?php
 
-namespace Amp;
+namespace Amp\Cancellation;
+
+use Amp\Loop;
+use Amp\TimeoutException;
 
 /**
  * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
  */
-final class TimeoutCancellationToken implements CancellationToken
+final class TimeoutToken implements Token
 {
     /** @var string */
     private $watcher;
 
-    /** @var \Amp\CancellationToken */
+    /** @var Token */
     private $token;
 
     /**
@@ -18,7 +21,7 @@ final class TimeoutCancellationToken implements CancellationToken
      */
     public function __construct(int $timeout)
     {
-        $source = new CancellationTokenSource;
+        $source = new TokenSource;
         $this->token = $source->getToken();
 
         $this->watcher = Loop::delay($timeout, static function () use ($source) {
@@ -46,7 +49,7 @@ final class TimeoutCancellationToken implements CancellationToken
     /**
      * {@inheritdoc}
      */
-    public function unsubscribe(string $id)
+    public function unsubscribe(string $id): void
     {
         $this->token->unsubscribe($id);
     }
@@ -62,7 +65,7 @@ final class TimeoutCancellationToken implements CancellationToken
     /**
      * {@inheritdoc}
      */
-    public function throwIfRequested()
+    public function throwIfRequested(): void
     {
         $this->token->throwIfRequested();
     }

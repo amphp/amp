@@ -38,7 +38,7 @@
         "concurrent-php/async-api": "dev-master"
     },
     "require-dev": {
-        "amphp/phpunit-util": "^1",
+        "amphp/phpunit-util": "dev-ext-task",
         "react/promise": "^2",
         "friendsofphp/php-cs-fixer": "^2.3",
         "phpunit/phpunit": "^6.0.9",
@@ -69,7 +69,7 @@
     },
     "config": {
         "platform": {
-            "php": "7.0.0"
+            "php": "7.2.0"
         }
     },
     "scripts": {
