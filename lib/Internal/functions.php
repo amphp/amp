@@ -13,7 +13,10 @@ TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
 
     public function __construct()
     {
-        $this->dispatch = \Closure::fromCallable([$this, 'dispatch']);
+        $this->dispatch = function () {
+            $this->watcher = null;
+            $this->dispatch();
+        };
     }
 
     protected function activate()
@@ -23,19 +26,19 @@ TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
 
     protected function runLoop()
     {
-        Loop::run();
-
-        if (count($this)) {
-            Loop::cancel($this->watcher);
-
-            $this->run(function () {
-                // do nothing
-            });
+        if ($this->watcher !== null) {
+            $this->watcher = Loop::defer($this->dispatch);
         }
+
+        Loop::run();
     }
 
     protected function stopLoop()
     {
+        if ($this->watcher !== null) {
+            Loop::cancel($this->watcher);
+        }
+
         Loop::stop();
     }
 });
