@@ -2,46 +2,9 @@
 
 namespace Amp\Internal;
 
-use Amp\Loop;
-use Concurrent\LoopTaskScheduler;
 use Concurrent\TaskScheduler;
 
-TaskScheduler::setDefaultScheduler(new class extends LoopTaskScheduler
-{
-    private $dispatch;
-    private $watcher;
-
-    public function __construct()
-    {
-        $this->dispatch = function () {
-            $this->watcher = null;
-            $this->dispatch();
-        };
-    }
-
-    protected function activate()
-    {
-        $this->watcher = Loop::defer($this->dispatch);
-    }
-
-    protected function runLoop()
-    {
-        if ($this->watcher !== null) {
-            $this->watcher = Loop::defer($this->dispatch);
-        }
-
-        Loop::run();
-    }
-
-    protected function stopLoop()
-    {
-        if ($this->watcher !== null) {
-            Loop::cancel($this->watcher);
-        }
-
-        Loop::stop();
-    }
-});
+TaskScheduler::setDefaultScheduler(new Scheduler);
 
 /**
  * Creates a `TypeError` with a standardized error message.
