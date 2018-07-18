@@ -81,7 +81,9 @@ final class Emitter
 
     public function __destruct()
     {
-        $this->fail(new CancelledException("The operation was cancelled, because the emitter was GCed without completing"));
+        if (!$this->state->complete) {
+            $this->fail(new CancelledException("The operation was cancelled, because the emitter was garbage collected without completing"));
+        }
     }
 
     /**
