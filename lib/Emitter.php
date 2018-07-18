@@ -49,11 +49,7 @@ final class Emitter
         };
 
         $this->iterator = (static function () use (&$state) {
-            while (!$state->complete || $state->values) {
-                if ($state->waiting !== null) {
-                    throw new \Error("Can't move to the next element while another operation is pending");
-                }
-
+            while (true) {
                 if (isset($state->backpressure[$state->position])) {
                     /** @var Deferred $deferred */
                     $deferred = $state->backpressure[$state->position];
@@ -63,18 +59,22 @@ final class Emitter
 
                 ++$state->position;
 
-                if (!$state->complete) {
+                if (!\array_key_exists($state->position, $state->values)) {
+                    if ($state->exception) {
+                        throw $state->exception;
+                    }
+
+                    if ($state->complete) {
+                        return;
+                    }
+
                     $state->waiting = new Deferred;
-                    Task::await($state->waiting->awaitable());
+                    if (!Task::await($state->waiting->awaitable())) {
+                        return;
+                    }
                 }
 
-                if ($state->exception) {
-                    throw $state->exception;
-                }
-
-                if (\array_key_exists($state->position, $state->values)) {
-                    yield null => $state->values[$state->position];
-                }
+                yield $state->values[$state->position];
             }
         })();
     }
@@ -139,7 +139,11 @@ final class Emitter
     public function complete(): void
     {
         if ($this->state->complete) {
-            throw new \Error("Emitters can only be completed once");
+            if ($this->exception === null) {
+                throw new \Error("Emitters has already been completed");
+            } else {
+                throw new \Error("Emitters has already been failed");
+            }
         }
 
         $this->state->complete = true;
@@ -159,6 +163,14 @@ final class Emitter
      */
     public function fail(\Throwable $reason): void
     {
+        if ($this->state->complete) {
+            if ($this->exception === null) {
+                throw new \Error("Emitters has already been completed");
+            } else {
+                throw new \Error("Emitters has already been failed");
+            }
+        }
+
         $this->state->complete = true;
         $this->state->exception = $reason;
 
