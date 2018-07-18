@@ -4,7 +4,7 @@ namespace Amp\Internal;
 
 use Concurrent\TaskScheduler;
 
-TaskScheduler::setDefaultScheduler(new Scheduler);
+TaskScheduler::setDefaultScheduler($GLOBALS["__amp_scheduler"] = new Scheduler);
 
 /**
  * Creates a `TypeError` with a standardized error message.
