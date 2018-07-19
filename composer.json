@@ -2,6 +2,8 @@
     "name": "amphp/amp",
     "homepage": "http://amphp.org/amp",
     "description": "A non-blocking concurrency framework for PHP applications.",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "keywords": [
         "async",
         "asynchronous",
