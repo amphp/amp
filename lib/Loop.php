@@ -36,18 +36,19 @@ final class Loop
     public static function set(Driver $driver)
     {
         try {
-            self::$driver = new class extends Driver {
-                protected function activate(array $watchers)
+            self::$driver = new class extends Driver
+            {
+                protected function activate(array $watchers): void
                 {
                     throw new \Error("Can't activate watcher during garbage collection.");
                 }
 
-                protected function dispatch(bool $blocking)
+                protected function dispatch(bool $blocking): void
                 {
                     throw new \Error("Can't dispatch during garbage collection.");
                 }
 
-                protected function deactivate(Watcher $watcher)
+                protected function deactivate(Watcher $watcher): void
                 {
                     // do nothing
                 }

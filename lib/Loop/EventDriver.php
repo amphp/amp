@@ -76,7 +76,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         parent::cancel($watcherId);
 
@@ -117,7 +117,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         $active = self::$activeSignals;
 
@@ -149,7 +149,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(): void
     {
         $this->handle->stop();
         parent::stop();
@@ -166,7 +166,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
@@ -175,7 +175,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
@@ -251,7 +251,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->del();

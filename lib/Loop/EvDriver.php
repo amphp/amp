@@ -82,20 +82,6 @@ class EvDriver extends Driver
         };
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function cancel(string $watcherId)
-    {
-        parent::cancel($watcherId);
-        unset($this->events[$watcherId]);
-    }
-
-    public static function isSupported(): bool
-    {
-        return \extension_loaded("ev");
-    }
-
     public function __destruct()
     {
         foreach ($this->events as $event) {
@@ -112,7 +98,21 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function cancel(string $watcherId): void
+    {
+        parent::cancel($watcherId);
+        unset($this->events[$watcherId]);
+    }
+
+    public static function isSupported(): bool
+    {
+        return \extension_loaded("ev");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function run(): void
     {
         $active = self::$activeSignals;
 
@@ -144,7 +144,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(): void
     {
         $this->handle->stop();
         parent::stop();
@@ -161,7 +161,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
@@ -169,7 +169,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         foreach ($watchers as $watcher) {
             if (!isset($this->events[$id = $watcher->id])) {
@@ -187,7 +187,7 @@ class EvDriver extends Driver
                         $interval = $watcher->value / self::MILLISEC_PER_SEC;
                         $this->events[$id] = $this->handle->timer(
                             $interval,
-                            $watcher->type & Watcher::REPEAT ? $interval : 0,
+                            ($watcher->type & Watcher::REPEAT) ? $interval : 0,
                             $this->timerCallback,
                             $watcher
                         );
@@ -215,7 +215,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();

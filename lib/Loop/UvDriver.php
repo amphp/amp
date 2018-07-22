@@ -107,7 +107,7 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         parent::cancel($watcherId);
 
@@ -148,7 +148,7 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
@@ -156,7 +156,7 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         foreach ($watchers as $watcher) {
             $id = $watcher->id;
@@ -179,8 +179,8 @@ class UvDriver extends Driver
                     $this->watchers[$eventId][$id] = $watcher;
 
                     $flags = 0;
-                    foreach ($this->watchers[$eventId] as $watcher) {
-                        $flags |= $watcher->enabled ? $watcher->type : 0;
+                    foreach ($this->watchers[$eventId] as $innerWatcher) {
+                        $flags |= $innerWatcher->enabled ? $innerWatcher->type : 0;
                     }
                     \uv_poll_start($event, $flags, $this->ioCallback);
                     break;
@@ -198,7 +198,7 @@ class UvDriver extends Driver
                     \uv_timer_start(
                         $event,
                         $watcher->value,
-                        $watcher->type & Watcher::REPEAT ? $watcher->value : 0,
+                        ($watcher->type & Watcher::REPEAT) ? $watcher->value : 0,
                         $this->timerCallback
                     );
                     break;
@@ -226,7 +226,7 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         $id = $watcher->id;
 
@@ -244,8 +244,8 @@ class UvDriver extends Driver
             case Watcher::READABLE:
             case Watcher::WRITABLE:
                 $flags = 0;
-                foreach ($this->watchers[(int) $event] as $watcher) {
-                    $flags |= $watcher->enabled ? $watcher->type : 0;
+                foreach ($this->watchers[(int) $event] as $innerWatcher) {
+                    $flags |= $innerWatcher->enabled ? $innerWatcher->type : 0;
                 }
 
                 if ($flags) {

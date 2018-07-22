@@ -63,7 +63,7 @@ class NativeDriver extends Driver
         return null;
     }
 
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->selectStreams(
             $this->readStreams,
@@ -126,7 +126,7 @@ class NativeDriver extends Driver
      * @param resource[] $write
      * @param int        $timeout
      */
-    private function selectStreams(array $read, array $write, $timeout)
+    private function selectStreams(array $read, array $write, $timeout): void
     {
         $timeout /= self::MILLISEC_PER_SEC;
 
@@ -212,7 +212,7 @@ class NativeDriver extends Driver
     /**
      * @return int Milliseconds until next timer expires or -1 if there are no pending times.
      */
-    private function getTimeout()
+    private function getTimeout(): int
     {
         while (!$this->timerQueue->isEmpty()) {
             [$watcher, $expiration] = $this->timerQueue->top();
@@ -239,7 +239,7 @@ class NativeDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
@@ -291,7 +291,7 @@ class NativeDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         switch ($watcher->type) {
             case Watcher::READABLE:
@@ -336,7 +336,7 @@ class NativeDriver extends Driver
     /**
      * @param int $signo
      */
-    private function handleSignal(int $signo)
+    private function handleSignal(int $signo): void
     {
         foreach ($this->signalWatchers[$signo] as $watcher) {
             if (!isset($this->signalWatchers[$signo][$watcher->id])) {

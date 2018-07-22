@@ -16,22 +16,22 @@ use function Amp\rethrow;
 abstract class Driver
 {
     // Don't use 1e3 / 1e6, they result in a float instead of int
-    const MILLISEC_PER_SEC = 1000;
-    const MICROSEC_PER_SEC = 1000000;
+    public const MILLISEC_PER_SEC = 1000;
+    public const MICROSEC_PER_SEC = 1000000;
 
     /** @var string */
     private $nextId = "a";
 
-    /** @var \Amp\Loop\Watcher[] */
+    /** @var Watcher[] */
     private $watchers = [];
 
-    /** @var \Amp\Loop\Watcher[] */
+    /** @var Watcher[] */
     private $enableQueue = [];
 
-    /** @var \Amp\Loop\Watcher[] */
+    /** @var Watcher[] */
     private $deferQueue = [];
 
-    /** @var \Amp\Loop\Watcher[] */
+    /** @var Watcher[] */
     private $nextTickQueue = [];
 
     /** @var callable|null */
@@ -58,7 +58,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         $this->running = true;
 
@@ -77,7 +77,7 @@ abstract class Driver
     /**
      * @return bool True if no enabled and referenced watchers remain in the loop.
      */
-    private function isEmpty()
+    private function isEmpty(): bool
     {
         foreach ($this->watchers as $watcher) {
             if ($watcher->enabled && $watcher->referenced) {
@@ -91,7 +91,7 @@ abstract class Driver
     /**
      * Executes a single tick of the event loop.
      */
-    private function tick()
+    private function tick(): void
     {
         if (empty($this->deferQueue)) {
             $this->deferQueue = $this->nextTickQueue;
@@ -126,16 +126,16 @@ abstract class Driver
     /**
      * Activates (enables) all the given watchers.
      *
-     * @param \Amp\Loop\Watcher[] $watchers
+     * @param Watcher[] $watchers
      */
-    abstract protected function activate(array $watchers);
+    abstract protected function activate(array $watchers): void;
 
     /**
      * Dispatches any pending read/write, timer, and signal events.
      *
      * @param bool $blocking
      */
-    abstract protected function dispatch(bool $blocking);
+    abstract protected function dispatch(bool $blocking): void;
 
     /**
      * Stop the event loop.
@@ -145,7 +145,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         $this->running = false;
     }
@@ -364,7 +364,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function enable(string $watcherId)
+    public function enable(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
@@ -392,14 +392,14 @@ abstract class Driver
     /**
      * Cancel a watcher.
      *
-     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
+     * This will detach the event loop from all resources that are associated to the watcher. After this operation the
      * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         $this->disable($watcherId);
         unset($this->watchers[$watcherId]);
@@ -418,7 +418,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function disable(string $watcherId)
+    public function disable(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -457,9 +457,9 @@ abstract class Driver
     /**
      * Deactivates (disables) the given watcher.
      *
-     * @param \Amp\Loop\Watcher $watcher
+     * @param Watcher $watcher
      */
-    abstract protected function deactivate(Watcher $watcher);
+    abstract protected function deactivate(Watcher $watcher): void;
 
     /**
      * Reference a watcher.
@@ -473,7 +473,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function reference(string $watcherId)
+    public function reference(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
@@ -492,7 +492,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function unreference(string $watcherId)
+    public function unreference(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -515,7 +515,7 @@ abstract class Driver
      *
      * @return void
      */
-    final public function setState(string $key, $value)
+    final public function setState(string $key, $value): void
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -539,7 +539,7 @@ abstract class Driver
      */
     final public function getState(string $key)
     {
-        return isset($this->registry[$key]) ? $this->registry[$key] : null;
+        return $this->registry[$key] ?? null;
     }
 
     /**
@@ -554,9 +554,9 @@ abstract class Driver
      * @param callable (\Throwable|\Exception $error)|null $callback The callback to execute. `null` will clear the
      *     current handler.
      *
-     * @return callable(\Throwable|\Exception $error)|null The previous handler, `null` if there was none.
+     * @return callable|null The previous handler, `null` if there was none.
      */
-    public function setErrorHandler(callable $callback = null)
+    public function setErrorHandler(callable $callback = null): ?callable
     {
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
@@ -570,7 +570,7 @@ abstract class Driver
      *
      * @throws \Throwable If no error handler has been set.
      */
-    protected function error(\Throwable $exception)
+    protected function error(\Throwable $exception): void
     {
         if ($this->errorHandler === null) {
             throw $exception;
@@ -596,7 +596,7 @@ abstract class Driver
      *
      * @return array
      */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         // @codeCoverageIgnoreStart
         return $this->getInfo();
@@ -684,7 +684,7 @@ abstract class Driver
             "on_readable" => $onReadable,
             "on_writable" => $onWritable,
             "on_signal" => $onSignal,
-            "running" => (bool) $this->running,
+            "running" => $this->running,
         ];
     }
 }

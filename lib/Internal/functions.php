@@ -7,6 +7,33 @@ use Concurrent\TaskScheduler;
 TaskScheduler::register(new Scheduler);
 
 /**
+ * Formats a stacktrace obtained via `debug_backtrace()`.
+ *
+ * @param array $trace Output of `debug_backtrace()`.
+ *
+ * @return string Formatted stacktrace.
+ *
+ * @codeCoverageIgnore
+ * @internal
+ */
+function formatStacktrace(array $trace): string
+{
+    return \implode("\n", \array_map(function ($e, $i) {
+        $line = "#{$i} ";
+
+        if (isset($e["file"])) {
+            $line .= "{$e['file']}:{$e['line']} ";
+        }
+
+        if (isset($e["type"])) {
+            $line .= $e["class"] . $e["type"];
+        }
+
+        return $line . $e["function"] . "()";
+    }, $trace, \array_keys($trace)));
+}
+
+/**
  * Creates a `TypeError` with a standardized error message.
  *
  * @param string[] $expected Expected types.

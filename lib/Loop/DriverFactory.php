@@ -33,7 +33,7 @@ class DriverFactory
         return new NativeDriver;
     }
 
-    private function createDriverFromEnv()
+    private function createDriverFromEnv(): ?Driver
     {
         $driver = \getenv("AMP_LOOP_DRIVER");
 
