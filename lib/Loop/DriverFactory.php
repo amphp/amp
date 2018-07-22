@@ -3,6 +3,7 @@
 namespace Amp\Loop;
 
 // @codeCoverageIgnoreStart
+
 class DriverFactory
 {
     /**
@@ -13,6 +14,17 @@ class DriverFactory
      * @throws \Error If an invalid class has been specified via AMP_LOOP_DRIVER
      */
     public function create(): Driver
+    {
+        $driver = $this->doCreate();
+
+        if (\class_exists(\PHPUnit\TextUI\Command::class, false)) {
+            return new TracingDriver($driver);
+        }
+
+        return $driver;
+    }
+
+    private function doCreate(): Driver
     {
         if ($driver = $this->createDriverFromEnv()) {
             return $driver;
