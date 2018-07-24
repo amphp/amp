@@ -24,7 +24,7 @@ before_install:
 install:
   - travis/install-async.sh
   - # Disabled due to segfaults: travis/install-uv.sh
-  - travis/install-ev.sh
+  - # Disabled due to segfaults: travis/install-ev.sh
   - travis/install-event.sh
 
   - composer update -n --prefer-dist
