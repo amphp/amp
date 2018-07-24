@@ -25,6 +25,7 @@ before_install:
   - phpenv config-rm xdebug.ini || echo "No xdebug config."
 
 install:
+  - travis/install-async.sh
   - travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
