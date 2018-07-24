@@ -151,7 +151,11 @@ class EventDriver extends Driver
      */
     public function stop(): void
     {
-        $this->handle->stop();
+        // Might be called if a stop() call happens during __destruct (which has an undefined order)
+        if ($this->handle !== null) {
+            $this->handle->stop();
+        }
+
         parent::stop();
     }
 

@@ -27,6 +27,7 @@ final class TimeoutToken implements Token
         $this->watcher = Loop::delay($timeout, static function () use ($source) {
             $source->cancel(new TimeoutException);
         });
+
         Loop::unreference($this->watcher);
     }
 

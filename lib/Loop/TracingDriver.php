@@ -142,6 +142,11 @@ class TracingDriver extends Driver
         $this->driver->getHandle();
     }
 
+    public function getInfo(): array
+    {
+        return $this->driver->getInfo();
+    }
+
     public function getDump(): string
     {
         $dump = "";
