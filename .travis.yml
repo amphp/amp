@@ -23,7 +23,7 @@ before_install:
 
 install:
   - travis/install-async.sh
-  - travis/install-uv.sh
+  - # Disabled due to segfaults: travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
 
