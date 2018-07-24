@@ -42,8 +42,7 @@ final class TokenSource
 
     public function __construct()
     {
-        $this->token = new class($this->onCancel) implements Token
-        {
+        $this->token = new class($this->onCancel) implements Token {
             /** @var string */
             private $nextId = "a";
 

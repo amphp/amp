@@ -36,8 +36,7 @@ final class Loop
     public static function set(Driver $driver)
     {
         try {
-            self::$driver = new class extends Driver
-            {
+            self::$driver = new class extends Driver {
                 protected function activate(array $watchers): void
                 {
                     throw new \Error("Can't activate watcher during garbage collection.");

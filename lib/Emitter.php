@@ -25,8 +25,7 @@ final class Emitter
     {
         // Use a separate class for shared state, so __destruct works as expected.
         // The iterator below doesn't have a reference to the Emitter instance.
-        $this->state = $state = new class
-        {
+        $this->state = $state = new class {
             use Struct;
 
             /** @var boolean */
@@ -139,11 +138,7 @@ final class Emitter
     public function complete(): void
     {
         if ($this->state->complete) {
-            if ($this->exception === null) {
-                throw new \Error("Emitters has already been completed");
-            } else {
-                throw new \Error("Emitters has already been failed");
-            }
+            throw new \Error("Emitters has already been " . ($this->state->exception === null ? "completed" : "failed"));
         }
 
         $this->state->complete = true;
@@ -164,11 +159,7 @@ final class Emitter
     public function fail(\Throwable $reason): void
     {
         if ($this->state->complete) {
-            if ($this->exception === null) {
-                throw new \Error("Emitters has already been completed");
-            } else {
-                throw new \Error("Emitters has already been failed");
-            }
+            throw new \Error("Emitters has already been " . ($this->state->exception === null ? "completed" : "failed"));
         }
 
         $this->state->complete = true;

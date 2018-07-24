@@ -197,7 +197,6 @@ class NativeDriver extends Driver
                     } catch (\Throwable $e) {
                         $this->error($e);
                     }
-
                 }
             }
 

@@ -13,9 +13,9 @@ use function Amp\delay;
 function printWithTime(string $message): void
 {
     static $start = null;
-    $start = $start ?? microtime(true);
+    $start = $start ?? \microtime(true);
 
-    printf("%' 4d ms ", round((microtime(true) - $start) * 1000));
+    \printf("%' 4d ms ", \round((\microtime(true) - $start) * 1000));
 
     print $message . PHP_EOL;
 }
