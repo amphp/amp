@@ -8,6 +8,7 @@ use Amp\Emitter;
 use Amp\PHPUnit\TestCase;
 use Amp\PHPUnit\TestException;
 use Concurrent\Task;
+use function Amp\rethrow;
 
 class CancellationTest extends TestCase
 {
@@ -15,7 +16,7 @@ class CancellationTest extends TestCase
     {
         $emitter = new Emitter;
 
-        Task::async(function () use ($emitter, $token) {
+        rethrow(Task::async(function () use ($emitter, $token) {
             $running = true;
 
             $token->subscribe(function () use (&$running) {
@@ -28,7 +29,7 @@ class CancellationTest extends TestCase
             }
 
             $emitter->complete();
-        });
+        }));
 
         return $emitter->extractIterator();
     }
