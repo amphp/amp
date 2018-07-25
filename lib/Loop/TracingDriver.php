@@ -30,7 +30,7 @@ class TracingDriver extends Driver
     {
         $cancelTraces = &$this->cancelTraces;
         $id = $this->driver->defer(static function ($watcherId, ...$args) use ($callback, &$cancelTraces) {
-            $this->cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+            $cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
             return $callback($watcherId, ...$args);
         }, $data);
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
@@ -41,7 +41,7 @@ class TracingDriver extends Driver
     {
         $cancelTraces = &$this->cancelTraces;
         $id = $this->driver->delay($delay, static function ($watcherId, ...$args) use ($callback, &$cancelTraces) {
-            $this->cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+            $cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
             return $callback($watcherId, ...$args);
         }, $data);
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
