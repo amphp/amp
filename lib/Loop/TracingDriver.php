@@ -85,7 +85,7 @@ class TracingDriver extends Driver
     public function cancel(string $watcherId): void
     {
         $this->driver->cancel($watcherId);
-        $this->creationTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+        $this->cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
     }
 
     public function disable(string $watcherId): void
