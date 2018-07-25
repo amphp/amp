@@ -28,8 +28,6 @@ class TaskTest extends TestCase
 
     public function testAsyncMultiAwait(): void
     {
-        $this->markTestSkipped("Segfaults"); // see https://github.com/concurrent-php/ext-async/issues/45
-
         Task::async(function () use (&$awaitable) {
             $awaitable = Task::async('Amp\\delay', 100);
         });
