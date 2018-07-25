@@ -21,6 +21,7 @@ final class Scheduler extends LoopTaskScheduler
 
     protected function activate(): void
     {
+        \assert($this->watcher === null);
         $this->watcher = Loop::defer($this->dispatch);
     }
 
