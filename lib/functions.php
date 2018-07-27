@@ -441,6 +441,34 @@ namespace Amp\Promise
 
         return $result;
     }
+
+    /**
+     * Wraps a promise into another promise, altering the exception or result
+     *
+     * @param Promise $promise
+     * @param callable $callback
+     * @return Promise
+     */
+    function wrap(Promise $promise, callable $callback): Promise
+    {
+        $deferred = new Deferred();
+
+        $newPromise = $deferred->promise();
+
+        $promise->onResolve(function (\Throwable $exception = null, $result) use ($deferred, $callback) {
+            try {
+                $result = $callback($exception, $result);
+            } catch (\Throwable $exception) {
+                $deferred->fail($exception);
+
+                return;
+            }
+
+            $deferred->resolve($result);
+        });
+
+        return $newPromise;
+    }
 }
 
 namespace Amp\Iterator
