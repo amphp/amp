@@ -172,6 +172,10 @@ class EventDriver extends Driver
      */
     protected function dispatch(bool $blocking): void
     {
+        if ($this->handle === null) {
+            return;
+        }
+
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
         $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
     }
