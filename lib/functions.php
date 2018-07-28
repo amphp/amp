@@ -51,6 +51,8 @@ namespace Amp
      * @param int       $timeout Timeout in milliseconds.
      *
      * @return Awaitable
+     *
+     * @throws TimeoutException
      */
     function timeout($awaitable, int $timeout): Awaitable
     {
