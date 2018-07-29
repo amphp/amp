@@ -4,9 +4,9 @@ namespace Amp;
 
 use Amp\Loop\Driver;
 use Amp\Loop\DriverFactory;
+use Amp\Loop\GarbageCollectionDriver;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
-use Amp\Loop\Watcher;
 
 /**
  * Accessor to allow global access to the event loop.
@@ -33,30 +33,10 @@ final class Loop
      *
      * @param Driver $driver
      */
-    public static function set(Driver $driver)
+    public static function set(Driver $driver): void
     {
         try {
-            self::$driver = new class extends Driver {
-                protected function activate(array $watchers): void
-                {
-                    throw new \Error("Can't activate watcher during garbage collection.");
-                }
-
-                protected function dispatch(bool $blocking): void
-                {
-                    throw new \Error("Can't dispatch during garbage collection.");
-                }
-
-                protected function deactivate(Watcher $watcher): void
-                {
-                    // do nothing
-                }
-
-                public function getHandle()
-                {
-                    return null;
-                }
-            };
+            self::$driver = new GarbageCollectionDriver;
 
             \gc_collect_cycles();
         } finally {
@@ -75,7 +55,7 @@ final class Loop
      *
      * @return void
      */
-    public static function run(callable $callback = null)
+    public static function run(callable $callback = null): void
     {
         if ($callback) {
             self::$driver->defer($callback);
@@ -92,7 +72,7 @@ final class Loop
      *
      * @return void
      */
-    public static function stop()
+    public static function stop(): void
     {
         self::$driver->stop();
     }
@@ -244,7 +224,7 @@ final class Loop
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public static function enable(string $watcherId)
+    public static function enable(string $watcherId): void
     {
         self::$driver->enable($watcherId);
     }
@@ -262,9 +242,9 @@ final class Loop
      *
      * @return void
      */
-    public static function disable(string $watcherId)
+    public static function disable(string $watcherId): void
     {
-        if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
+        if (\PHP_VERSION_ID < 70200 && self::$driver !== null) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
             return;
@@ -276,16 +256,16 @@ final class Loop
     /**
      * Cancel a watcher.
      *
-     * This will detatch the event loop from all resources that are associated to the watcher. After this operation the
+     * This will detach the event loop from all resources that are associated to the watcher. After this operation the
      * watcher is permanently invalid. Calling this function MUST NOT fail, even if passed an invalid watcher.
      *
      * @param string $watcherId The watcher identifier.
      *
      * @return void
      */
-    public static function cancel(string $watcherId)
+    public static function cancel(string $watcherId): void
     {
-        if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
+        if (\PHP_VERSION_ID < 70200 && self::$driver !== null) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
             return;
@@ -306,7 +286,7 @@ final class Loop
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public static function reference(string $watcherId)
+    public static function reference(string $watcherId): void
     {
         self::$driver->reference($watcherId);
     }
@@ -321,7 +301,7 @@ final class Loop
      *
      * @return void
      */
-    public static function unreference(string $watcherId)
+    public static function unreference(string $watcherId): void
     {
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
@@ -346,7 +326,7 @@ final class Loop
      *
      * @return void
      */
-    public static function setState(string $key, $value)
+    public static function setState(string $key, $value): void
     {
         self::$driver->setState($key, $value);
     }
@@ -383,7 +363,7 @@ final class Loop
      *
      * @return callable(\Throwable $error)|null The previous handler, `null` if there was none.
      */
-    public static function setErrorHandler(callable $callback = null)
+    public static function setErrorHandler(callable $callback = null): ?callable
     {
         return self::$driver->setErrorHandler($callback);
     }
