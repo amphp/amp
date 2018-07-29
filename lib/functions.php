@@ -82,4 +82,56 @@ namespace Amp
 
         return $deferred->awaitable();
     }
+
+    function some(array $awaitables, int $required = 1)
+    {
+        if ($required < 0) {
+            throw new \Error("Number of promises required must be non-negative");
+        }
+
+        $pending = \count($awaitables);
+
+        if ($required > $pending) {
+            throw new \Error("Too few promises provided");
+        }
+        if (empty($awaitables)) {
+            return [[], []];
+        }
+
+        $values = [];
+        $errors = [];
+
+        foreach ($awaitables as $key => $awaitable) {
+            $values[$key] = null;
+            $errors[$key] = null;
+        }
+
+        return Deferred::combine($awaitables, function (
+            Deferred $deferred,
+            bool $last,
+            $key,
+            ?\Throwable $error,
+            $value
+        ) use (
+            &$values,
+            &$errors,
+            $required
+        ) {
+            if ($error) {
+                $errors[$key] = $error;
+                unset($values[$key]);
+            } else {
+                $values[$key] = $value;
+                unset($errors[$key]);
+            }
+
+            if ($last) {
+                if (\count($values) < $required) {
+                    $deferred->fail(new MultiReasonException($errors));
+                } else {
+                    $deferred->resolve([$errors, $values]);
+                }
+            }
+        });
+    }
 }
