@@ -185,6 +185,10 @@ class EventDriver extends Driver
      */
     protected function activate(array $watchers): void
     {
+        if ($this->handle === null) {
+            return;
+        }
+
         $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
 
         foreach ($watchers as $watcher) {
