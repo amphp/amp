@@ -21,11 +21,23 @@ final class Emitter
     /** @var \Iterator|null */
     private $iterator;
 
+    /** @var string */
+    private $createFile;
+
+    /** @var int */
+    private $createLine;
+
     public function __construct()
     {
+        $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+        $createFrame = $trace[0];
+        $this->createFile = $createFrame["file"];
+        $this->createLine = $createFrame["line"];
+
         // Use a separate class for shared state, so __destruct works as expected.
         // The iterator below doesn't have a reference to the Emitter instance.
-        $this->state = $state = new class {
+        $this->state = $state = new class
+        {
             use Struct;
 
             /** @var boolean */
@@ -81,7 +93,7 @@ final class Emitter
     public function __destruct()
     {
         if (!$this->state->complete) {
-            $this->fail(new CancelledException("The operation was cancelled, because the emitter was garbage collected without completing"));
+            $this->fail(new CancelledException("The operation was cancelled, because the emitter was garbage collected without completing, created in {$this->createFile}:{$this->createLine}"));
         }
     }
 
