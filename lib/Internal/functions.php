@@ -2,10 +2,6 @@
 
 namespace Amp\Internal;
 
-use Concurrent\TaskScheduler;
-
-TaskScheduler::register(new Scheduler);
-
 /**
  * Formats a stacktrace obtained via `debug_backtrace()`.
  *

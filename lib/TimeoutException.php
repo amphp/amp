@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * Thrown if a promise doesn't resolve within a specified timeout.
  *
- * @see \Amp\Promise\timeout()
+ * @see \Amp\timeout()
  */
 class TimeoutException extends \Exception
 {

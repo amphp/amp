@@ -30,9 +30,8 @@ final class Emitter
     public function __construct()
     {
         $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-        $createFrame = $trace[0];
-        $this->createFile = $createFrame["file"];
-        $this->createLine = $createFrame["line"];
+        $this->createFile = $trace[0]["file"];
+        $this->createLine = $trace[0]["line"];
 
         // Use a separate class for shared state, so __destruct works as expected.
         // The iterator below doesn't have a reference to the Emitter instance.

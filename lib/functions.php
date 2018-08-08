@@ -6,16 +6,13 @@ namespace Amp
     use Concurrent\Awaitable;
     use Concurrent\Deferred;
     use Concurrent\Task;
+    use Concurrent\Timer;
+    use function Concurrent\race;
 
     function delay(int $msDelay): void
     {
-        $deferred = new Deferred;
-
-        Loop::delay($msDelay, function () use ($deferred) {
-            $deferred->resolve(null);
-        });
-
-        Task::await($deferred->awaitable());
+        $timer = new Timer($msDelay);
+        $timer->awaitTimeout();
     }
 
     /**
@@ -29,20 +26,16 @@ namespace Amp
      */
     function rethrow(Awaitable $awaitable)
     {
-        // Use Deferred::combine to save a new fiber instance
-        Deferred::combine([$awaitable], function (Deferred $deferred, $last, $key, $error) {
-            $deferred->resolve(); // dummy resolve
-
+        // Use Deferred::transform to save a new fiber instance
+        Deferred::transform($awaitable, function ($error) {
             if ($error) {
-                Loop::defer(function () use ($error) {
-                    throw $error;
-                });
+                \trigger_error("Uncaught exception: " . (string) $error, \E_USER_ERROR);
             }
         });
     }
 
     /**
-     * Creates an artificial timeout for any `Promise`.
+     * Creates an artificial timeout for any `Awaitable`.
      *
      * If the timeout expires before the awaitable is resolved, the returned awaitable fails with an instance of
      * `Amp\TimeoutException`.
@@ -54,33 +47,16 @@ namespace Amp
      *
      * @throws TimeoutException
      */
-    function timeout($awaitable, int $timeout): Awaitable
+    function timeout(Awaitable $awaitable, int $timeout): Awaitable
     {
-        $deferred = new Deferred;
+        $timeoutAwaitable = Task::async(function () use ($timeout) {
+            $timer = new Timer($timeout);
+            $timer->awaitTimeout();
 
-        $watcher = Loop::delay($timeout, function () use (&$deferred) {
-            $temp = $deferred; // prevent double resolve
-            $deferred = null;
-            $temp->fail(new TimeoutException);
+            throw new TimeoutException("Operation timed out");
         });
 
-        Task::async(function () use (&$deferred, $awaitable, $watcher) {
-            try {
-                $value = Task::await($awaitable);
-
-                if ($deferred !== null) {
-                    Loop::cancel($watcher);
-                    $deferred->resolve($value);
-                }
-            } catch (\Throwable $e) {
-                if ($deferred !== null) {
-                    Loop::cancel($watcher);
-                    $deferred->fail($e);
-                }
-            }
-        });
-
-        return $deferred->awaitable();
+        return Task::await(race([$awaitable, $timeoutAwaitable]));
     }
 
     function some(array $awaitables, int $required = 1)
