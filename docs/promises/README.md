@@ -38,7 +38,7 @@ That's where promises come into play.
 They're simple placeholders that are returned and allow a callback (or several callbacks) to be registered.
 
 ```php
-doSomething()->onResolve(function ($error, $value)) {
+doSomething()->onResolve(function ($error, $value) {
     if ($error) {
         /* ... */
     } else {
