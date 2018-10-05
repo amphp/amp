@@ -451,6 +451,7 @@ namespace Amp\Iterator
     use Amp\Iterator;
     use Amp\Producer;
     use Amp\Promise;
+    use function Amp\call;
     use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
 
@@ -615,5 +616,24 @@ namespace Amp\Iterator
         });
 
         return $emitter->iterate();
+    }
+
+    /**
+     * Collects all items from an iterator into an array.
+     *
+     * @param Iterator $iterator
+     *
+     * @return Promise<array>
+     */
+    function collect(Iterator $iterator): Promise
+    {
+        return call(function () use ($iterator) {
+            $array = [];
+            while (yield $iterator->advance()) {
+                $array[] = $iterator->getCurrent();
+            }
+
+            return $array;
+        });
     }
 }
