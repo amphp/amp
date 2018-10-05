@@ -571,49 +571,27 @@ namespace Amp\Iterator
             }
         }
 
-        $emitter = new Emitter;
-        $previous = [];
-        $promise = Promise\all($previous);
+        return new Producer(function (callable $emit) use ($iterators) {
+            $exception = null;
+            foreach ($iterators as $iterator) {
+                try {
+                    while (yield $iterator->advance()) {
+                        if ($exception !== null) {
+                            continue;
+                        }
 
-        $coroutine = coroutine(function (Iterator $iterator, callable $emit) {
-            while (yield $iterator->advance()) {
-                yield $emit($iterator->getCurrent());
-            }
-        });
-
-        foreach ($iterators as $iterator) {
-            $emit = coroutine(function ($value) use ($emitter, $promise) {
-                static $pending = true, $failed = false;
-
-                if ($failed) {
-                    return;
-                }
-
-                if ($pending) {
-                    try {
-                        yield $promise;
-                        $pending = false;
-                    } catch (\Throwable $exception) {
-                        $failed = true;
-                        return; // Prior iterator failed.
+                        yield $emit($iterator->getCurrent());
+                    }
+                } catch (\Throwable $e) {
+                    if ($exception === null) {
+                        $exception = $e;
                     }
                 }
-
-                yield $emitter->emit($value);
-            });
-            $previous[] = $coroutine($iterator, $emit);
-            $promise = Promise\all($previous);
-        }
-
-        $promise->onResolve(function ($exception) use ($emitter) {
-            if ($exception) {
-                $emitter->fail($exception);
-                return;
             }
 
-            $emitter->complete();
+            if ($exception !== null) {
+                throw $exception;
+            }
         });
-
-        return $emitter->iterate();
     }
 }
