@@ -3,37 +3,34 @@
 namespace Amp\Test;
 
 use Amp\TimeoutException;
+use Concurrent\AsyncTestCase;
 use Concurrent\Deferred;
 use Concurrent\Task;
-use PHPUnit\Framework\TestCase;
 use function Amp\delay;
 use function Amp\timeout;
 
-class TimeoutTest extends TestCase
+class TimeoutTest extends AsyncTestCase
 {
-    public function testSuccessfulPromise(): void
+    public function testSuccessful(): void
     {
         $value = 1;
 
-        $awaitable = Deferred::value($value);
-        $awaitable = timeout($awaitable, 100);
-
-        $this->assertSame($value, Task::await($awaitable));
+        $this->assertSame($value, timeout(Deferred::value($value), 100));
     }
 
-    public function testFailedPromise(): void
+    public function testFailure(): void
     {
         $exception = new \Exception;
 
         $awaitable = Deferred::error($exception);
-        $awaitable = timeout($awaitable, 100);
 
         $this->expectExceptionObject($exception);
-        Task::await($awaitable);
+
+        timeout($awaitable, 100);
     }
 
     /**
-     * @depends testSuccessfulPromise
+     * @depends testSuccessful
      */
     public function testFastPending(): void
     {
@@ -45,11 +42,11 @@ class TimeoutTest extends TestCase
             return $value;
         });
 
-        $this->assertSame($value, Task::await(timeout($awaitable, 100)));
+        $this->assertSame($value, timeout($awaitable, 100));
     }
 
     /**
-     * @depends testSuccessfulPromise
+     * @depends testSuccessful
      */
     public function testSlowPending(): void
     {
@@ -64,7 +61,7 @@ class TimeoutTest extends TestCase
         $this->expectException(TimeoutException::class);
 
         try {
-            Task::await(timeout($awaitable, 100));
+            timeout($awaitable, 100);
         } finally {
             Task::await($awaitable); // await to clear pending watchers
         }

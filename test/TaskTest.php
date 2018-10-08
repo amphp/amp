@@ -2,11 +2,11 @@
 
 namespace Amp\Test;
 
-use Amp\PHPUnit\TestCase;
+use Concurrent\AsyncTestCase;
 use Concurrent\Task;
 use function Amp\delay;
 
-class TaskTest extends TestCase
+class TaskTest extends AsyncTestCase
 {
     public function testSequentialAwait(): void
     {

@@ -5,8 +5,8 @@ namespace Amp;
 /**
  * A "safe" struct trait for public property aggregators.
  *
- * This trait is intended to make using public properties a little safer by throwing when
- * nonexistent property names are read or written.
+ * This trait is intended to make using public properties a little safer by throwing when nonexistent property names are
+ * read or written.
  */
 trait Struct
 {
@@ -15,6 +15,13 @@ trait Struct
      * name when generating error messages.
      */
     private $__propertySuggestThreshold = 70;
+
+    public function __isset(string $property)
+    {
+        throw new \Error(
+            $this->generateStructPropertyError($property)
+        );
+    }
 
     public function __get(string $property)
     {
@@ -30,13 +37,20 @@ trait Struct
         );
     }
 
+    public function __unset(string $property)
+    {
+        throw new \Error(
+            $this->generateStructPropertyError($property)
+        );
+    }
+
     private function generateStructPropertyError(string $property): string
     {
         $suggestion = $this->suggestPropertyName($property);
-        $suggestStr = ($suggestion == "") ? "" : " ... did you mean \"{$suggestion}?\"";
+        $suggestStr = $suggestion === "" ? "" : " ... did you mean '{$suggestion}'?";
 
         return \sprintf(
-            "%s property \"%s\" does not exist%s",
+            "%s property '%s' does not exist%s",
             \str_replace("\0", "@", \get_class($this)), // Handle anonymous class names.
             $property,
             $suggestStr

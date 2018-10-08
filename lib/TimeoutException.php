@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Thrown if a promise doesn't resolve within a specified timeout.
+ * Thrown if an awaitable doesn't resolve within a specified timeout.
  *
  * @see \Amp\timeout()
  */

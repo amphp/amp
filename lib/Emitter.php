@@ -2,7 +2,6 @@
 
 namespace Amp;
 
-use Amp\Cancellation\CancelledException;
 use Concurrent\Awaitable;
 use Concurrent\Deferred;
 use Concurrent\Task;
@@ -58,7 +57,7 @@ final class Emitter
             public $waiting;
         };
 
-        $this->iterator = (static function () use (&$state) {
+        $this->iterator = (static function () use ($state) {
             while (true) {
                 if (isset($state->backpressure[$state->position])) {
                     /** @var Deferred $deferred */
@@ -92,7 +91,7 @@ final class Emitter
     public function __destruct()
     {
         if (!$this->state->complete) {
-            $this->fail(new CancelledException("The operation was cancelled, because the emitter was garbage collected without completing, created in {$this->createFile}:{$this->createLine}"));
+            $this->fail(new \Error("The emitter was garbage collected without completing, created in {$this->createFile}:{$this->createLine}"));
         }
     }
 
@@ -106,7 +105,7 @@ final class Emitter
     public function extractIterator(): \Iterator
     {
         if ($this->iterator === null) {
-            throw new \Error("The emitter's iterator can only be extracted once!");
+            throw new \Error("The emitter's iterator can only be extracted once");
         }
 
         $iterator = $this->iterator;
@@ -131,7 +130,7 @@ final class Emitter
         }
 
         $this->state->values[] = $value;
-        $this->state->backpressure[] = $pressure = new Deferred;
+        $this->state->backpressure[] = $backpressure = new Deferred;
 
         if ($this->state->waiting !== null) {
             /** @var Deferred $waiting */
@@ -140,7 +139,7 @@ final class Emitter
             $waiting->resolve(true);
         }
 
-        Task::await($pressure->awaitable());
+        Task::await($backpressure->awaitable());
     }
 
     /**
@@ -149,7 +148,7 @@ final class Emitter
     public function complete(): void
     {
         if ($this->state->complete) {
-            throw new \Error("Emitters has already been " . ($this->state->exception === null ? "completed" : "failed"));
+            throw new \Error("Emitter has already been " . ($this->state->exception === null ? "completed" : "failed"));
         }
 
         $this->state->complete = true;
@@ -170,7 +169,7 @@ final class Emitter
     public function fail(\Throwable $reason): void
     {
         if ($this->state->complete) {
-            throw new \Error("Emitters has already been " . ($this->state->exception === null ? "completed" : "failed"));
+            throw new \Error("Emitter has already been " . ($this->state->exception === null ? "completed" : "failed"));
         }
 
         $this->state->complete = true;

@@ -43,11 +43,11 @@ namespace Amp
      * @param Awaitable $awaitable Awaitable to which the timeout is applied.
      * @param int       $timeout Timeout in milliseconds.
      *
-     * @return Awaitable
+     * @return mixed
      *
      * @throws TimeoutException
      */
-    function timeout(Awaitable $awaitable, int $timeout): Awaitable
+    function timeout(Awaitable $awaitable, int $timeout)
     {
         $timeoutAwaitable = Task::async(function () use ($timeout) {
             $timer = new Timer($timeout);
@@ -62,16 +62,11 @@ namespace Amp
     function some(array $awaitables, int $required = 1)
     {
         if ($required < 0) {
-            throw new \Error("Number of promises required must be non-negative");
+            throw new \Error("Number of awaitables required must be non-negative, was '{$required}'");
         }
 
-        $pending = \count($awaitables);
-
-        if ($required > $pending) {
-            throw new \Error("Too few promises provided");
-        }
         if (empty($awaitables)) {
-            return [[], []];
+            throw new \Error("Array of awaitables can't be empty");
         }
 
         $values = [];
@@ -88,11 +83,7 @@ namespace Amp
             $key,
             ?\Throwable $error,
             $value
-        ) use (
-            &$values,
-            &$errors,
-            $required
-        ) {
+        ) use (&$values, &$errors, $required) {
             if ($error) {
                 $errors[$key] = $error;
                 unset($values[$key]);

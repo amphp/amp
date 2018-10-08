@@ -40,11 +40,8 @@
         "concurrent-php/async-api": "dev-master"
     },
     "require-dev": {
-        "amphp/phpunit-util": "dev-ext-async",
-        "react/promise": "^2",
-        "friendsofphp/php-cs-fixer": "^2.3",
-        "phpunit/phpunit": "^6.0.9",
-        "phpstan/phpstan": "^0.8.5"
+        "friendsofphp/php-cs-fixer": "^2.13",
+        "phpunit/phpunit": "^6.0.9"
     },
     "autoload": {
         "psr-4": {

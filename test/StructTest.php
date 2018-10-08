@@ -2,6 +2,8 @@
 
 namespace Amp\Test;
 
+use PHPUnit\Framework\TestCase;
+
 class StructTestFixture
 {
     use \Amp\Struct;
@@ -9,11 +11,11 @@ class StructTestFixture
     public $_foofoofoofoofoofoofoofoobar;
 }
 
-class StructTest extends \PHPUnit\Framework\TestCase
+class StructTest extends TestCase
 {
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
+     * @expectedExceptionMessage Amp\Test\StructTestFixture property 'callbac' does not exist ... did you mean
      *     "callback?"
      */
     public function testSetErrorWithSuggestion(): void
@@ -25,7 +27,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
+     * @expectedExceptionMessage Amp\Test\StructTestFixture property 'callbac' does not exist ... did you mean
      *     "callback?"
      */
     public function testGetErrorWithSuggestion(): void
@@ -36,7 +38,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
+     * @expectedExceptionMessage Amp\Test\StructTestFixture property 'callZZZZZZZZZZZ' does not exist
      */
     public function testSetErrorWithoutSuggestion(): void
     {
@@ -46,7 +48,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
+     * @expectedExceptionMessage Amp\Test\StructTestFixture property 'callZZZZZZZZZZZ' does not exist
      */
     public function testGetErrorWithoutSuggestion(): void
     {
@@ -56,7 +58,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "__propertySuggestThreshold" does not exist
+     * @expectedExceptionMessage Amp\Test\StructTestFixture property '__propertySuggestThreshold' does not exist
      */
     public function testSuggestionIgnoresPropertyStartingWithUnderscore(): void
     {
@@ -68,7 +70,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);
-        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property 'foofoofoofoofoofoofoofoobar' does not exist$)");
 
         $struct = new StructTestFixture;
         $struct->foofoofoofoofoofoofoofoobar = "test";
@@ -78,7 +80,7 @@ class StructTest extends \PHPUnit\Framework\TestCase
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);
-        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property 'foofoofoofoofoofoofoofoobar' does not exist$)");
 
         $struct = new StructTestFixture;
         $struct->foofoofoofoofoofoofoofoobar;
