@@ -73,6 +73,8 @@ class NativeDriver extends Driver
             $blocking ? $this->getTimeout() : 0
         );
 
+        $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+
         if (!empty($this->timerExpires)) {
             $scheduleQueue = [];
 
@@ -265,8 +267,6 @@ class NativeDriver extends Driver
      */
     protected function activate(array $watchers)
     {
-        $now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
-
         foreach ($watchers as $watcher) {
             switch ($watcher->type) {
                 case Watcher::READABLE:
@@ -308,8 +308,6 @@ class NativeDriver extends Driver
                 // @codeCoverageIgnoreEnd
             }
         }
-
-        $this->now = $now;
     }
 
     /**
