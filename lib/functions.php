@@ -224,6 +224,47 @@ namespace Amp\Promise
     }
 
     /**
+     * Creates an artificial timeout for any `Promise`.
+     *
+     * If the promise is resolved before the timeout expires, the result is returned
+     *
+     * If the timeout expires before the promise is resolved, a default value is returned
+     *
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
+     * @param int                                          $timeout Timeout in milliseconds.
+     * @param mixed                                        $default
+     *
+     * @return \Amp\Promise
+     *
+     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     */
+    function timeoutWithDefault($promise, int $timeout, $default = null): Promise
+    {
+        if (!$promise instanceof Promise) {
+            if ($promise instanceof ReactPromise) {
+                $promise = adapt($promise);
+            } else {
+                throw createTypeError([Promise::class, ReactPromise::class], $promise);
+            }
+        }
+
+        $promise = timeout($promise, $timeout);
+
+        $deferred = new Deferred();
+        $newPromise = $deferred->promise();
+
+        $promise->onResolve(function ($exception, $value) use ($deferred, $default) {
+            if ($exception) {
+                $deferred->resolve($default);
+            } else {
+                $deferred->resolve($value);
+            }
+        });
+
+        return $newPromise;
+    }
+
+    /**
      * Adapts any object with a done(callable $onFulfilled, callable $onRejected) or then(callable $onFulfilled,
      * callable $onRejected) method to a promise usable by components depending on placeholders implementing
      * \AsyncInterop\Promise.
