@@ -11,41 +11,96 @@ use RuntimeException;
  * **Example**
  *
  * ```php
- * $countdownEvent = new \Amp\CountdownBarrier(2);
- * $countdownEvent->signal();
- * $countdownEvent->signal(); // promise is now resolved
+ * $countdownBarrier = new \Amp\CountdownBarrier(2);
+ * $countdownBarrier->signal();
+ * $countdownBarrier->signal(); // promise is now resolved
  * ```
  */
 final class CountdownBarrier
 {
     /** @var int */
-    private $counter;
+    private $initialCount;
+    /** @var int */
+    private $currentCount;
     /** @var Deferred */
     private $deferred;
 
-    public function __construct(int $counter)
+    public function __construct(int $initialCount)
     {
-        if ($counter < 1) {
+        if ($initialCount < 1) {
             throw new InvalidArgumentException('Counter must be positive');
         }
 
-        $this->counter = $counter;
+        $this->initialCount = $initialCount;
+        $this->currentCount = $initialCount;
         $this->deferred = new Deferred();
     }
 
-    /**
-     * @return void
-     */
-    public function signal()
+    public function signal(int $signalCount = 1): bool
     {
-        if (0 === $this->counter) {
-            throw new RuntimeException('CountdownEvent already resolved');
+        if ($signalCount < 1) {
+            throw new InvalidArgumentException('Signal count must be greater or equals 1');
         }
 
-        --$this->counter;
+        if (0 === $this->currentCount) {
+            throw new RuntimeException('CountdownBarrier already resolved');
+        }
 
-        if (0 === $this->counter) {
+        $this->currentCount -= $signalCount;
+
+        if (0 === $this->currentCount) {
             $this->deferred->resolve(true);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param int $signalCount
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     */
+    public function addCount(int $signalCount = 1)
+    {
+        if ($signalCount < 1) {
+            throw new InvalidArgumentException('Signal count must be greater or equals 1');
+        }
+
+        if (0 === $this->currentCount) {
+            throw new RuntimeException('CountdownBarrier already resolved');
+        }
+
+        $this->currentCount += $signalCount;
+    }
+
+    /**
+     * @param int $signalCount
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     */
+    public function reset(int $signalCount = null)
+    {
+        if (null !== $signalCount && $signalCount < 1) {
+            throw new InvalidArgumentException('Signal count must be null, greater or equals 1');
+        }
+
+        if (0 === $this->currentCount) {
+            $this->deferred = new Deferred();
+        }
+
+        if (null === $signalCount) {
+            $this->currentCount = $this->initialCount;
+        } else {
+            $this->initialCount = $signalCount;
+            $this->currentCount = $this->initialCount;
         }
     }
 
