@@ -248,20 +248,23 @@ namespace Amp\Promise
             }
         }
 
-        $promise = timeout($promise, $timeout);
+        $deferred = new Deferred;
 
-        $deferred = new Deferred();
-        $newPromise = $deferred->promise();
+        $watcher = Loop::delay($timeout, function () use (&$deferred, $default) {
+            $temp = $deferred; // prevent double resolve
+            $deferred = null;
+            $temp->resolve($default);
+        });
+        Loop::unreference($watcher);
 
-        $promise->onResolve(function ($exception, $value) use ($deferred, $default) {
-            if ($exception) {
-                $deferred->resolve($default);
-            } else {
-                $deferred->resolve($value);
+        $promise->onResolve(function ($exception) use (&$deferred, $promise, $watcher) {
+            if ($deferred !== null) {
+                Loop::cancel($watcher);
+                $deferred->resolve($promise);
             }
         });
 
-        return $newPromise;
+        return $deferred->promise();
     }
 
     /**

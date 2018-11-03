@@ -35,20 +35,23 @@ class TimeoutWithDefaultTest extends \PHPUnit\Framework\TestCase
     {
         Loop::run(function () {
             $exception = new \Exception;
-            $expected = 2;
 
             $promise = new Failure($exception);
 
-            $promise = Promise\timeoutWithDefault($promise, 100, $expected);
+            $promise = Promise\timeoutWithDefault($promise, 100, 2);
             $this->assertInstanceOf(Promise::class, $promise);
 
             $callback = function ($exception, $value) use (&$actual) {
-                $actual = $value;
+                if ($exception) {
+                    $actual = $exception;
+                } else {
+                    $actual = $value;
+                }
             };
 
             $promise->onResolve($callback);
 
-            $this->assertEquals($expected, $actual);
+            $this->assertSame($exception, $actual);
         });
     }
 
