@@ -4,8 +4,7 @@ namespace Amp\Test;
 
 use Amp\CountdownBarrier;
 use Amp\Loop;
-use InvalidArgumentException;
-use RuntimeException;
+use Error;
 
 class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
 {
@@ -44,7 +43,7 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
             $this->countdownBarrier->signal();
             $this->countdownBarrier->signal();
 
-            $this->expectException(RuntimeException::class);
+            $this->expectException(Error::class);
             $this->countdownBarrier->signal();
         });
     }
@@ -68,14 +67,14 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
 
     public function testSignalWithInvalidCount()
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(Error::class);
 
         $this->countdownBarrier->signal(0);
     }
 
     public function testInvalidSignalCountInConstructor()
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(Error::class);
         new CountdownBarrier(0);
     }
 
@@ -118,7 +117,7 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
 
     public function testResetWithInvalidSignalCount()
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(Error::class);
 
         $this->countdownBarrier->reset(0);
     }
@@ -173,7 +172,8 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
 
     public function testAddCountWithInvalidSignalCount()
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(Error::class);
+        $this->expectExceptionMessage('Signal count must be greater or equals 1');
 
         $this->countdownBarrier->addCount(0);
     }
@@ -183,7 +183,8 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
         $this->countdownBarrier->signal();
         $this->countdownBarrier->signal();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(Error::class);
+        $this->expectExceptionMessage('CountdownBarrier already resolved');
 
         $this->countdownBarrier->addCount(1);
     }
