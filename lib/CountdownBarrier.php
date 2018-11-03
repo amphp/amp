@@ -6,7 +6,7 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * A countdown event is a promise that is resolved when it was signaled n times.
+ * A countdown barrier returns a promise that is resolved when it was signaled n times.
  *
  * **Example**
  *
