@@ -95,7 +95,6 @@ namespace Amp
 namespace Amp\Promise
 {
 
-    use function Amp\call;
     use Amp\Deferred;
     use Amp\Failure;
     use Amp\Loop;
@@ -104,9 +103,8 @@ namespace Amp\Promise
     use Amp\Success;
     use Amp\TimeoutException;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\call;
     use function Amp\Internal\createTypeError;
-    use RuntimeException;
-    use TypeError;
 
     /**
      * Registers a callback that will forward the failure reason to the event loop's error handler if the promise fails.
@@ -249,7 +247,7 @@ namespace Amp\Promise
         return call(function () use ($promise, $default) {
             try {
                 return yield $promise;
-            } catch (TimeoutException $excetpion) {
+            } catch (TimeoutException $exception) {
                 return $default;
             }
         });
