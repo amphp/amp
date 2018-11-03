@@ -2,19 +2,19 @@
 
 namespace Amp\Test;
 
-use Amp\CountdownEvent;
+use Amp\CountdownBarrier;
 use Amp\Loop;
 use InvalidArgumentException;
 use RuntimeException;
 
-class CountdownEventTest extends \PHPUnit\Framework\TestCase
+class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
 {
-    /** @var \Amp\CountdownEvent */
+    /** @var \Amp\CountdownBarrier */
     private $countdownEvent;
 
     public function setUp()
     {
-        $this->countdownEvent = new CountdownEvent(2);
+        $this->countdownEvent = new CountdownBarrier(2);
     }
 
     public function testSignaledTwoTimes()
@@ -22,7 +22,7 @@ class CountdownEventTest extends \PHPUnit\Framework\TestCase
         Loop::run(function () {
             $testedValue = null;
 
-            $this->countdownEvent->onResolve(function ($exception, $value) use (&$testedValue) {
+            $this->countdownEvent->promise()->onResolve(function ($exception, $value) use (&$testedValue) {
                 $testedValue = $value;
             });
 
@@ -52,6 +52,6 @@ class CountdownEventTest extends \PHPUnit\Framework\TestCase
     public function testInvalidCounter()
     {
         $this->expectException(InvalidArgumentException::class);
-        new CountdownEvent(0);
+        new CountdownBarrier(0);
     }
 }

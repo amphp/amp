@@ -6,17 +6,17 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * A countdown event is a promise that is resolved when it was signaled n times
+ * A countdown event is a promise that is resolved when it was signaled n times.
  *
  * **Example**
  *
  * ```php
- * $countdownEvent = new CountdownEvent(2);
+ * $countdownEvent = new \Amp\CountdownBarrier(2);
  * $countdownEvent->signal();
  * $countdownEvent->signal(); // promise is now resolved
  * ```
  */
-final class CountdownEvent implements Promise
+final class CountdownBarrier
 {
     /** @var int */
     private $counter;
@@ -50,10 +50,10 @@ final class CountdownEvent implements Promise
     }
 
     /**
-     * {@inheritdoc}
+     * @return \Amp\Promise
      */
-    public function onResolve(callable $onResolved)
+    public function promise(): Promise
     {
-        $this->deferred->promise()->onResolve($onResolved);
+        return $this->deferred->promise();
     }
 }
