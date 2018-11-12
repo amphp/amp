@@ -1307,7 +1307,7 @@ abstract class DriverTest extends TestCase
                 $loop->stop();
             });
         });
-        $this->assertTrue($t + 0.1 > \microtime(1));
+        $this->assertGreaterThan(\microtime(1), $t + 0.1);
     }
 
     public function testDeferEnabledInNextTick()
