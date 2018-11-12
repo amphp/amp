@@ -227,7 +227,7 @@ class PromiseTest extends \PHPUnit\Framework\TestCase
         if (!$ex) {
             $promise->onResolve(function ($e, $v) use (&$invoked) {
                 $invoked = true;
-                $this->assertFalse($v instanceof Promise);
+                $this->assertNotInstanceOf(Promise::class, $v);
             });
             $this->assertTrue($invoked);
         }
