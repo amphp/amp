@@ -15,6 +15,10 @@ The primary way an application interacts with the event loop is to schedule even
 
 The event loop can be stopped at any time while running. When `Loop::stop()` is invoked the event loop will return control to the userland script at the end of the current tick of the event loop. This method may be used to yield control from the event loop even if events or watchable IO streams are still pending.
 
+## `now()`
+
+Returns the current 'loop time' in millisecond increments. The value returned by this method does not necessarily correlate to wall-clock time, rather the value is meant to be used in relative comparisons to prior values returned by this method (e.g.: interval calculations, expiration times, etc.). The value returned by this method is only updated once per loop tick. This method is a faster alternative to `time()` and `microtime()`, which require a system call.
+
 ## Timer Watchers
 
 Amp exposes several ways to schedule timer watchers. Let's look at some details for each function.
