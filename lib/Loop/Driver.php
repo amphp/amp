@@ -607,7 +607,7 @@ abstract class Driver
      */
     public function now(): int
     {
-        if ($this->nowUpdateNeeded) {
+        if ($this->nowUpdateNeeded || !$this->running) {
             $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
             $this->nowUpdateNeeded = false;
         }
