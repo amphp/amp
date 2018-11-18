@@ -72,6 +72,25 @@ class CountdownBarrierTest extends \PHPUnit\Framework\TestCase
         $this->countdownBarrier->signal(0);
     }
 
+    public function testSignalTooHighCount()
+    {
+        $this->expectException(Error::class);
+
+        $this->countdownBarrier->signal(3);
+    }
+
+    public function testGetCurrentCount()
+    {
+        $this->countdownBarrier->signal();
+        $this->assertEquals(1, $this->countdownBarrier->getCurrentCount());
+    }
+
+    public function testGetInitialCount()
+    {
+        $this->countdownBarrier->signal();
+        $this->assertEquals(2, $this->countdownBarrier->getInitialCount());
+    }
+
     public function testInvalidSignalCountInConstructor()
     {
         $this->expectException(Error::class);

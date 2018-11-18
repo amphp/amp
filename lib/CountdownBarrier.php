@@ -35,6 +35,16 @@ final class CountdownBarrier
         $this->deferred = new Deferred();
     }
 
+    public function getCurrentCount(): int
+    {
+        return $this->currentCount;
+    }
+
+    public function getInitialCount(): int
+    {
+        return $this->initialCount;
+    }
+
     public function signal(int $signalCount = 1): bool
     {
         if ($signalCount < 1) {
@@ -43,6 +53,10 @@ final class CountdownBarrier
 
         if (0 === $this->currentCount) {
             throw new Error('CountdownBarrier already resolved');
+        }
+
+        if ($signalCount > $this->currentCount) {
+            throw new Error('Signal count cannot be greater than current count');
         }
 
         $this->currentCount -= $signalCount;
