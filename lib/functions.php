@@ -96,12 +96,14 @@ namespace Amp\Promise
 {
 
     use Amp\Deferred;
+    use Amp\Failure;
     use Amp\Loop;
     use Amp\MultiReasonException;
     use Amp\Promise;
     use Amp\Success;
     use Amp\TimeoutException;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\call;
     use function Amp\Internal\createTypeError;
 
     /**
@@ -221,6 +223,34 @@ namespace Amp\Promise
         });
 
         return $deferred->promise();
+    }
+
+    /**
+     * Creates an artificial timeout for any `Promise`.
+     *
+     * If the promise is resolved before the timeout expires, the result is returned
+     *
+     * If the timeout expires before the promise is resolved, a default value is returned
+     *
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
+     * @param int                                          $timeout Timeout in milliseconds.
+     * @param mixed                                        $default
+     *
+     * @return \Amp\Promise
+     *
+     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     */
+    function timeoutWithDefault($promise, int $timeout, $default = null): Promise
+    {
+        $promise = timeout($promise, $timeout);
+
+        return call(function () use ($promise, $default) {
+            try {
+                return yield $promise;
+            } catch (TimeoutException $exception) {
+                return $default;
+            }
+        });
     }
 
     /**
