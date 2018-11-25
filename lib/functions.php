@@ -625,7 +625,7 @@ namespace Amp\Iterator
      *
      * @return Promise<array>
      */
-    function collect(Iterator $iterator): Promise
+    function toArray(Iterator $iterator): Promise
     {
         return call(function () use ($iterator) {
             $array = [];
