@@ -257,7 +257,7 @@ namespace Amp\Promise
      * This function is the same as some() with the notable exception that it will never fail even
      * if all promises in the array resolve unsuccessfully.
      *
-     * @param Promise[] $promises
+     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises
      *
      * @return \Amp\Promise
      *
@@ -273,7 +273,7 @@ namespace Amp\Promise
      * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
      * the array of promises.
      *
-     * @param \Amp\Promise[] $promises Array of only promises.
+     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
      *
      * @return \Amp\Promise
      *
@@ -324,7 +324,7 @@ namespace Amp\Promise
     /**
      * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
      *
-     * @param \Amp\Promise[] $promises Array of only promises.
+     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
      *
      * @return \Amp\Promise
      *
@@ -377,7 +377,7 @@ namespace Amp\Promise
      *
      * The returned promise will only fail if the given number of required promises fail.
      *
-     * @param \Amp\Promise[] $promises Array of only promises.
+     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
      * @param int            $required Number of promises that must succeed for the returned promise to succeed.
      *
      * @return \Amp\Promise
@@ -445,11 +445,11 @@ namespace Amp\Promise
     /**
      * Wraps a promise into another promise, altering the exception or result
      *
-     * @param Promise $promise
+     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
      * @param callable $callback
      * @return Promise
      */
-    function wrap(Promise $promise, callable $callback): Promise
+    function wrap($promise, callable $callback): Promise
     {
         $deferred = new Deferred();
 
