@@ -6,17 +6,17 @@ use Amp\Iterator;
 use Amp\PHPUnit\TestCase;
 use function Amp\Promise\wait;
 
-class CollectTest extends TestCase
+class IteratorToArrayTest extends TestCase
 {
-    public function testCollect()
+    public function testNonEmpty()
     {
         $iterator = Iterator\fromIterable(["abc", "foo", "bar"], 5);
-        $this->assertSame(["abc", "foo", "bar"], wait(Iterator\collect($iterator)));
+        $this->assertSame(["abc", "foo", "bar"], wait(Iterator\toArray($iterator)));
     }
 
     public function testEmpty()
     {
         $iterator = Iterator\fromIterable([], 5);
-        $this->assertSame([], wait(Iterator\collect($iterator)));
+        $this->assertSame([], wait(Iterator\toArray($iterator)));
     }
 }
