@@ -451,6 +451,12 @@ namespace Amp\Promise
      */
     function wrap($promise, callable $callback): Promise
     {
+        if ($promise instanceof ReactPromise) {
+            $promise = adapt($promise);
+        } elseif (!$promise instanceof Promise) {
+            throw createTypeError([Promise::class, ReactPromise::class], $promise);
+        }
+
         $deferred = new Deferred();
 
         $newPromise = $deferred->promise();
