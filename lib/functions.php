@@ -443,7 +443,7 @@ namespace Amp\Promise
     }
 
     /**
-     * Wraps a promise into another promise, altering the exception or result
+     * Wraps a promise into another promise, altering the exception or result.
      *
      * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
      * @param callable $callback
