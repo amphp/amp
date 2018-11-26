@@ -34,7 +34,7 @@ class EventDriver extends Driver
     private $nowUpdateNeeded = false;
 
     /** @var int Internal timestamp for now. */
-    private $now = 0;
+    private $now;
 
     /** @var int Loop time offset from microtime() */
     private $nowOffset;
@@ -43,6 +43,8 @@ class EventDriver extends Driver
     {
         $this->handle = new \EventBase;
         $this->nowOffset = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now = \random_int(0, $this->nowOffset);
+        $this->nowOffset -= $this->now;
 
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
