@@ -459,8 +459,6 @@ namespace Amp\Promise
 
         $deferred = new Deferred();
 
-        $newPromise = $deferred->promise();
-
         $promise->onResolve(function (\Throwable $exception = null, $result) use ($deferred, $callback) {
             try {
                 $result = $callback($exception, $result);
@@ -473,7 +471,7 @@ namespace Amp\Promise
             $deferred->resolve($result);
         });
 
-        return $newPromise;
+        return $deferred->promise();
     }
 }
 
