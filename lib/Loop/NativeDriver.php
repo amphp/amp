@@ -34,7 +34,7 @@ class NativeDriver extends Driver
     private $nowUpdateNeeded = false;
 
     /** @var int Internal timestamp for now. */
-    private $now = 0;
+    private $now;
 
     /** @var int Loop time offset from microtime() */
     private $nowOffset;
@@ -47,6 +47,8 @@ class NativeDriver extends Driver
         $this->timerQueue = new \SplPriorityQueue();
         $this->signalHandling = \extension_loaded("pcntl");
         $this->nowOffset = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now = \random_int(0, $this->nowOffset);
+        $this->nowOffset -= $this->now;
     }
 
     /**
@@ -125,6 +127,10 @@ class NativeDriver extends Driver
                     try {
                         // Execute the timer.
                         $result = ($watcher->callback)($id, $watcher->data);
+
+                        if ($result === null) {
+                            continue;
+                        }
 
                         if ($result instanceof \Generator) {
                             $result = new Coroutine($result);

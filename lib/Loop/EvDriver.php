@@ -31,7 +31,7 @@ class EvDriver extends Driver
     private $signals = [];
 
     /** @var int Internal timestamp for now. */
-    private $now = 0;
+    private $now;
 
     /** @var bool */
     private $nowUpdateNeeded = false;
@@ -43,6 +43,8 @@ class EvDriver extends Driver
     {
         $this->handle = new \EvLoop;
         $this->nowOffset = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->now = \random_int(0, $this->nowOffset);
+        $this->nowOffset -= $this->now;
 
         if (self::$activeSignals === null) {
             self::$activeSignals = &$this->signals;
