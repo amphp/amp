@@ -5,6 +5,7 @@ namespace Amp\Loop;
 use Amp\Coroutine;
 use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
 class EvDriver extends Driver
@@ -36,13 +37,13 @@ class EvDriver extends Driver
     /** @var bool */
     private $nowUpdateNeeded = false;
 
-    /** @var int Loop time offset from microtime() */
+    /** @var int Loop time offset */
     private $nowOffset;
 
     public function __construct()
     {
         $this->handle = new \EvLoop;
-        $this->nowOffset = (int) (\microtime(true) * self::MILLISEC_PER_SEC);
+        $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
         $this->nowOffset -= $this->now;
 
@@ -203,7 +204,7 @@ class EvDriver extends Driver
     public function now(): int
     {
         if ($this->nowUpdateNeeded) {
-            $this->now = (int) (\microtime(true) * self::MILLISEC_PER_SEC) - $this->nowOffset;
+            $this->now = getCurrentTime() - $this->nowOffset;
             $this->nowUpdateNeeded = false;
         }
 

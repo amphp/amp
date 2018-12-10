@@ -51,3 +51,18 @@ function createTypeError(array $expected, $given): \TypeError
 
     return new \TypeError("{$expectedType}; {$givenType} given");
 }
+
+/**
+ * Returns the current time relative to an arbitrary point in time.
+ *
+ * @return int Time in milliseconds.
+ */
+function getCurrentTime(): int
+{
+    if (\PHP_VERSION_ID >= 70300) {
+        list($seconds, $nanoseconds) = \hrtime(false);
+        return $seconds * 1000 + $nanoseconds / 1000000;
+    }
+
+    return (int) (\microtime(true) * 1000);
+}
