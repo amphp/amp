@@ -1,3 +1,13 @@
+2.1.0
+-----
+
+ - Make use of `hrtime()` as monotonic time source if available (PHP 7.3)
+ - Added `Amp\Iterator\toArray()`
+ - Added `Amp\Promise\timeoutWithDefault()` (#245)
+ - Added `Amp\Promise\wrap()` (#234)
+ - Added `Amp\Loop::now()`
+ - Fixed stale `NativeDriver::$now` values (#243)
+
 ### 2.0.7
 
  - Fixed recording of stack traces for double resolution in case `AMP_DEBUG` was not set as environment variable, defaulting to `0` now. (#217)
