@@ -55,8 +55,8 @@ class LoopTest extends TestCase
                 $new = Loop::now();
 
                 // Allow a few milliseconds of inaccuracy.
-                $this->assertGreaterThanOrEqual($now - 5, $new);
-                $this->assertLessThanOrEqual($now + 5, $new);
+                $this->assertGreaterThanOrEqual($now - 1, $new);
+                $this->assertLessThanOrEqual($now + 10, $new);
 
                 // Same time should be returned from later call.
                 $this->assertSame($new, Loop::now());

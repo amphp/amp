@@ -276,7 +276,7 @@ class NativeDriver extends Driver
                 continue;
             }
 
-            $expiration -= getCurrentTime();
+            $expiration -= $this->now();
 
             if ($expiration < 0) {
                 return 0;
