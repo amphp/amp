@@ -17,7 +17,7 @@ The event loop can be stopped at any time while running. When `Loop::stop()` is 
 
 ## `now()`
 
-Returns the current 'loop time' in millisecond increments. The value returned by this method does not necessarily correlate to wall-clock time, rather the value is meant to be used in relative comparisons to prior values returned by this method (e.g.: interval calculations, expiration times, etc.). The value returned by this method is only updated once per loop tick. This method is a faster alternative to `time()` and `microtime()`, which require a system call.
+Returns the current 'loop time' in millisecond increments. The value returned by this method does not necessarily correlate to wall-clock time, rather the value is meant to be used in relative comparisons to prior values returned by this method (e.g.: interval calculations, expiration times, etc.). The value returned by this method is only updated once per loop tick.
 
 ## Timer Watchers
 
