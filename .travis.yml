@@ -29,6 +29,9 @@ install:
 
   - composer update -n --prefer-dist
 
+  - wget https://cs.sensiolabs.org/download/php-cs-fixer-v2.phar -O php-cs-fixer
+  - chmox +x php-cs-fixer
+
   - mkdir -p coverage/cov coverage/bin
   - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
   - chmod +x coverage/bin/phpcov
@@ -39,7 +42,7 @@ script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --verbose --group memoryleak
   - phpdbg -qrr vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
-  - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
+  - PHP_CS_FIXER_IGNORE_ENV=1 ./php-cs-fixer --diff --dry-run -v fix
 
 after_script:
   - curl -OL https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.0/coveralls.phar
