@@ -13,7 +13,7 @@ class MultiReasonException extends \Exception
      */
     public function __construct(array $reasons, string $message = null)
     {
-        parent::__construct($message ?: "Multiple errors encountered");
+        parent::__construct($message ?? "Multiple errors encountered");
 
         $this->reasons = $reasons;
     }
