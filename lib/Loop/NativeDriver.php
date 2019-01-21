@@ -166,10 +166,15 @@ class NativeDriver extends Driver
         $timeout /= self::MILLISEC_PER_SEC;
 
         if (!empty($read) || !empty($write)) { // Use stream_select() if there are any streams in the loop.
-            if ($timeout >= 0) {
+            if ($timeout == 0) {
+                $seconds = 0;
+                $microseconds = 0;
+            } elseif ($timeout > 0) {
+                $this->nowUpdateNeeded = true;
                 $seconds = (int) $timeout;
                 $microseconds = (int) (($timeout - $seconds) * self::MICROSEC_PER_SEC);
             } else {
+                $this->nowUpdateNeeded = true;
                 $seconds = null;
                 $microseconds = null;
             }
@@ -258,6 +263,7 @@ class NativeDriver extends Driver
 
         if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
             \usleep($timeout * self::MICROSEC_PER_SEC);
+            $this->nowUpdateNeeded = true;
         }
     }
 
