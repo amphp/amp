@@ -22,10 +22,7 @@ class NativeDriver extends Driver
     /** @var \Amp\Loop\Watcher[][] */
     private $writeWatchers = [];
 
-    /** @var int[] */
-    private $timerExpires = [];
-
-    /** @var \SplPriorityQueue */
+    /** @var Internal\TimerQueue */
     private $timerQueue;
 
     /** @var \Amp\Loop\Watcher[][] */
@@ -45,7 +42,7 @@ class NativeDriver extends Driver
 
     public function __construct()
     {
-        $this->timerQueue = new \SplPriorityQueue();
+        $this->timerQueue = new Internal\TimerQueue;
         $this->signalHandling = \extension_loaded("pcntl");
         $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
@@ -97,56 +94,48 @@ class NativeDriver extends Driver
             $blocking ? $this->getTimeout() : 0
         );
 
-        if (!empty($this->timerExpires)) {
-            $scheduleQueue = [];
+        $scheduleQueue = [];
 
-            try {
-                while (!$this->timerQueue->isEmpty()) {
-                    list($watcher, $expiration) = $this->timerQueue->top();
+        try {
+            while (!$this->timerQueue->isEmpty()) {
+                list($watcher, $expiration) = $this->timerQueue->peek();
 
-                    $id = $watcher->id;
+                if ($expiration > $this->now()) { // Timer at top of queue has not expired.
+                    break;
+                }
 
-                    if (!isset($this->timerExpires[$id]) || $expiration !== $this->timerExpires[$id]) {
-                        $this->timerQueue->extract(); // Timer was removed from queue.
+                $this->timerQueue->extract();
+
+                if ($watcher->type & Watcher::REPEAT) {
+                    $expiration = $this->now() + $watcher->value;
+                    $scheduleQueue[] = [$watcher, $expiration];
+                } else {
+                    $this->cancel($watcher->id);
+                }
+
+                try {
+                    // Execute the timer.
+                    $result = ($watcher->callback)($watcher->id, $watcher->data);
+
+                    if ($result === null) {
                         continue;
                     }
 
-                    if ($this->timerExpires[$id] > $this->now()) { // Timer at top of queue has not expired.
-                        break;
+                    if ($result instanceof \Generator) {
+                        $result = new Coroutine($result);
                     }
 
-                    $this->timerQueue->extract();
-
-                    if ($watcher->type & Watcher::REPEAT) {
-                        $expiration = $this->now() + $watcher->value;
-                        $this->timerExpires[$watcher->id] = $expiration;
-                        $scheduleQueue[] = [$watcher, $expiration];
-                    } else {
-                        $this->cancel($id);
+                    if ($result instanceof Promise || $result instanceof ReactPromise) {
+                        rethrow($result);
                     }
-
-                    try {
-                        // Execute the timer.
-                        $result = ($watcher->callback)($id, $watcher->data);
-
-                        if ($result === null) {
-                            continue;
-                        }
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
-
-                        if ($result instanceof Promise || $result instanceof ReactPromise) {
-                            rethrow($result);
-                        }
-                    } catch (\Throwable $exception) {
-                        $this->error($exception);
-                    }
+                } catch (\Throwable $exception) {
+                    $this->error($exception);
                 }
-            } finally {
-                foreach ($scheduleQueue as $item) {
-                    $this->timerQueue->insert($item, -$item[1]);
+            }
+        } finally {
+            foreach ($scheduleQueue as list($watcher, $expiration)) {
+                if ($watcher->enabled) {
+                    $this->timerQueue->insert($watcher, $expiration);
                 }
             }
         }
@@ -266,23 +255,14 @@ class NativeDriver extends Driver
      */
     private function getTimeout(): int
     {
-        while (!$this->timerQueue->isEmpty()) {
-            list($watcher, $expiration) = $this->timerQueue->top();
+        if (!$this->timerQueue->isEmpty()) {
+            list($watcher, $expiration) = $this->timerQueue->peek();
 
-            $id = $watcher->id;
-
-            if (!isset($this->timerExpires[$id]) || $expiration !== $this->timerExpires[$id]) {
-                $this->timerQueue->extract(); // Timer was removed from queue.
-                continue;
-            }
-
-            $expiration -= $this->now();
+            $expiration -= getCurrentTime() - $this->nowOffset;
 
             if ($expiration < 0) {
                 return 0;
             }
-
-            $this->nowUpdateNeeded = true; // Loop will block, so trigger now update after blocking.
 
             return $expiration;
         }
@@ -312,8 +292,7 @@ class NativeDriver extends Driver
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
                     $expiration = $this->now() + $watcher->value;
-                    $this->timerExpires[$watcher->id] = $expiration;
-                    $this->timerQueue->insert([$watcher, $expiration], -$expiration);
+                    $this->timerQueue->insert($watcher, $expiration);
                     break;
 
                 case Watcher::SIGNAL:
@@ -362,7 +341,7 @@ class NativeDriver extends Driver
 
             case Watcher::DELAY:
             case Watcher::REPEAT:
-                unset($this->timerExpires[$watcher->id]);
+                $this->timerQueue->remove($watcher);
                 break;
 
             case Watcher::SIGNAL:
