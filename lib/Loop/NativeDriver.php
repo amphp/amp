@@ -161,20 +161,15 @@ class NativeDriver extends Driver
      * @param resource[] $write
      * @param int        $timeout
      */
-    private function selectStreams(array $read, array $write, $timeout)
+    private function selectStreams(array $read, array $write, int $timeout)
     {
         $timeout /= self::MILLISEC_PER_SEC;
 
         if (!empty($read) || !empty($write)) { // Use stream_select() if there are any streams in the loop.
-            if ($timeout == 0) {
-                $seconds = 0;
-                $microseconds = 0;
-            } elseif ($timeout > 0) {
-                $this->nowUpdateNeeded = true;
+            if ($timeout >= 0) {
                 $seconds = (int) $timeout;
                 $microseconds = (int) (($timeout - $seconds) * self::MICROSEC_PER_SEC);
             } else {
-                $this->nowUpdateNeeded = true;
                 $seconds = null;
                 $microseconds = null;
             }
@@ -263,14 +258,13 @@ class NativeDriver extends Driver
 
         if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
             \usleep($timeout * self::MICROSEC_PER_SEC);
-            $this->nowUpdateNeeded = true;
         }
     }
 
     /**
      * @return int Milliseconds until next timer expires or -1 if there are no pending times.
      */
-    private function getTimeout()
+    private function getTimeout(): int
     {
         while (!$this->timerQueue->isEmpty()) {
             list($watcher, $expiration) = $this->timerQueue->top();
@@ -287,6 +281,8 @@ class NativeDriver extends Driver
             if ($expiration < 0) {
                 return 0;
             }
+
+            $this->nowUpdateNeeded = true; // Loop will block, so trigger now update after blocking.
 
             return $expiration;
         }
