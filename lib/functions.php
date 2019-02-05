@@ -50,7 +50,7 @@ namespace Amp
      * coroutine. If the function throws, a failed promise will be returned.
      *
      * @param callable(mixed ...$args): mixed $callback
-     * @param array ...$args Arguments to pass to the function.
+     * @param mixed ...$args Arguments to pass to the function.
      *
      * @return \Amp\Promise
      */
@@ -82,7 +82,7 @@ namespace Amp
      * throws or returns a failing promise, the failure is forwarded to the loop error handler.
      *
      * @param callable $callback
-     * @param array    ...$args
+     * @param mixed    ...$args
      *
      * @throws \TypeError
      */
