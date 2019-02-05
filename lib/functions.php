@@ -49,7 +49,7 @@ namespace Amp
      * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
      * coroutine. If the function throws, a failed promise will be returned.
      *
-     * @param callable(mixed ...$args): mixed $callback
+     * @param callable(mixed ...$args):\Generator|mixed $callback
      * @param mixed ...$args Arguments to pass to the function.
      *
      * @return \Amp\Promise
@@ -81,7 +81,7 @@ namespace Amp
      * Calls the given function. If the function returns a Generator, it will be run as a coroutine. If the function
      * throws or returns a failing promise, the failure is forwarded to the loop error handler.
      *
-     * @param callable $callback
+     * @param callable(mixed ...$args):\Generator|mixed $callback
      * @param mixed    ...$args
      *
      * @throws \TypeError
