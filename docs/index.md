@@ -22,6 +22,6 @@ The weak link when managing concurrency is humans; we simply don't think asynchr
 
 ## Contents
 
-Amp provides an [event loop](./event-loop/README.md), [promises](./promises/README.md) and [asynchronous iterators](./iterators/README.md) as building blocks for (fully) asynchronous libraries and applications. [Coroutines](./coroutines/README.md) make asynchronous code feel as synchronous as synchronous code.
+Amp provides an [event loop](./event-loop/README.md), [promises](./promises/README.md) and [asynchronous iterators](./iterators/README.md) as building blocks for (fully) asynchronous libraries and applications. [Coroutines](./coroutines/README.md) make asynchronous code feel as synchronous code.
 
 Start with the [Introduction to Event Loops](./event-loop/).
