@@ -37,8 +37,8 @@
     },
     "require-dev": {
         "amphp/phpunit-util": "^1",
+        "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",
-        "friendsofphp/php-cs-fixer": "^2.3",
         "phpunit/phpunit": "^6.0.9",
         "phpstan/phpstan": "^0.8.5"
     },
