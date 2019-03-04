@@ -174,13 +174,7 @@ class NativeDriver extends Driver
                     return;
                 }
 
-                $error = \error_get_last();
-
-                if (\strpos($error["message"], "unable to select") !== 0) {
-                    return;
-                }
-
-                $this->error(new \Exception($error["message"]));
+                $this->error(new \RuntimeException(\error_get_last()["message"]));
             }
 
             foreach ($read as $stream) {
