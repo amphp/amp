@@ -13,6 +13,7 @@ use Amp\Success;
 use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
+use function Amp\call;
 
 class CoroutineTest extends TestCase
 {
@@ -474,6 +475,37 @@ class CoroutineTest extends TestCase
         });
 
         $this->assertSame($exception, $reason);
+    }
+
+    /**
+     * @depends testGeneratorThrowingExceptionWithFinallyFailsCoroutine
+     */
+    public function testGeneratorThrowingExceptionWithFinallyBlockAndReturnThrowing()
+    {
+        $exception = new \Exception;
+
+        $generator = function () use ($exception) {
+            yield new Success;
+
+            return call(function () use ($exception) {
+                return new class($exception)
+                {
+                    private $exception;
+
+                    public function __construct(\Throwable $exception)
+                    {
+                        $this->exception = $exception;
+                    }
+
+                    public function __destruct()
+                    {
+                        throw $this->exception;
+                    }
+                };
+            });
+        };
+
+        new Coroutine($generator());
     }
 
     /**
