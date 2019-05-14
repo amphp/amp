@@ -36,6 +36,7 @@
         "php": ">=7"
     },
     "require-dev": {
+        "ext-json": "*",
         "amphp/phpunit-util": "^1",
         "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",

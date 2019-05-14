@@ -3,10 +3,9 @@
 namespace Amp\Test;
 
 use Amp\Iterator;
-use Amp\PHPUnit\TestCase;
 use function Amp\Promise\wait;
 
-class IteratorToArrayTest extends TestCase
+class IteratorToArrayTest extends BaseTest
 {
     public function testNonEmpty()
     {

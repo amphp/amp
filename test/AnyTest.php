@@ -8,7 +8,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 
-class AnyTest extends \PHPUnit\Framework\TestCase
+class AnyTest extends BaseTest
 {
     public function testEmptyArray()
     {

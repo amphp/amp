@@ -10,7 +10,7 @@ use Amp\Promise;
 use Amp\Success;
 use React\Promise\FulfilledPromise;
 
-class FirstTest extends \PHPUnit\Framework\TestCase
+class FirstTest extends BaseTest
 {
     /**
      * @expectedException \Error

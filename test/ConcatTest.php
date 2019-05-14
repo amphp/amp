@@ -7,7 +7,7 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
-class ConcatTest extends \PHPUnit\Framework\TestCase
+class ConcatTest extends BaseTest
 {
     public function getArrays()
     {

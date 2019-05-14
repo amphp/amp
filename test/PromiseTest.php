@@ -13,7 +13,7 @@ class Promise implements \Amp\Promise
     }
 }
 
-class PromiseTest extends \PHPUnit\Framework\TestCase
+class PromiseTest extends BaseTest
 {
     private $originalErrorHandler;
 
@@ -34,18 +34,6 @@ class PromiseTest extends \PHPUnit\Framework\TestCase
             [$promise, 'resolve'],
             [$promise, 'fail'],
         ];
-    }
-
-    public function setUp()
-    {
-        $this->originalErrorHandler = Loop::setErrorHandler(function ($e) {
-            throw $e;
-        });
-    }
-
-    public function tearDown()
-    {
-        Loop::setErrorHandler($this->originalErrorHandler);
     }
 
     public function provideSuccessValues()

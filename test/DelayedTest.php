@@ -4,8 +4,9 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Loop;
+use function Amp\Promise\wait;
 
-class DelayedTest extends \PHPUnit\Framework\TestCase
+class DelayedTest extends BaseTest
 {
     public function testDelayed()
     {
@@ -13,10 +14,10 @@ class DelayedTest extends \PHPUnit\Framework\TestCase
         $value = "test";
         $start = \microtime(true);
 
-        Loop::run(function () use (&$result, $time, $value) {
+        Loop::run(static function () use (&$result, $time, $value) {
             $promise = new Delayed($time, $value);
 
-            $callback = function ($exception, $value) use (&$result) {
+            $callback = static function ($exception, $value) use (&$result) {
                 $result = $value;
             };
 
@@ -34,11 +35,11 @@ class DelayedTest extends \PHPUnit\Framework\TestCase
         $start = \microtime(true);
 
         $invoked = false;
-        Loop::run(function () use (&$invoked, $time, $value) {
+        Loop::run(static function () use (&$invoked, $time, $value, &$promise) {
             $promise = new Delayed($time, $value);
             $promise->unreference();
 
-            $callback = function ($exception, $value) use (&$invoked) {
+            $callback = static function () use (&$invoked) {
                 $invoked = true;
             };
 
@@ -47,6 +48,10 @@ class DelayedTest extends \PHPUnit\Framework\TestCase
 
         $this->assertLessThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
         $this->assertFalse($invoked);
+
+        // clear watcher
+        $promise->reference();
+        wait($promise);
     }
 
     /**
@@ -59,12 +64,12 @@ class DelayedTest extends \PHPUnit\Framework\TestCase
         $start = \microtime(true);
 
         $invoked = false;
-        Loop::run(function () use (&$invoked, $time, $value) {
+        Loop::run(static function () use (&$invoked, $time, $value) {
             $promise = new Delayed($time, $value);
             $promise->unreference();
             $promise->reference();
 
-            $callback = function ($exception, $value) use (&$invoked) {
+            $callback = static function ($exception, $value) use (&$invoked) {
                 $invoked = true;
             };
 

@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Promise;
 
-class WrapTest extends \PHPUnit\Framework\TestCase
+class WrapTest extends BaseTest
 {
     public function testSuccess()
     {

@@ -8,7 +8,6 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
 class Producer
@@ -20,7 +19,7 @@ class Producer
     }
 }
 
-class ProducerTraitTest extends TestCase
+class ProducerTraitTest extends BaseTest
 {
     /** @var \Amp\Test\Producer */
     private $producer;

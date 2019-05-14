@@ -33,7 +33,7 @@ class PromiseMock
     }
 }
 
-class AdaptTest extends \PHPUnit\Framework\TestCase
+class AdaptTest extends BaseTest
 {
     public function testThenCalled()
     {

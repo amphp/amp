@@ -9,7 +9,7 @@ class StructTestFixture
     public $_foofoofoofoofoofoofoofoobar;
 }
 
-class StructTest extends \PHPUnit\Framework\TestCase
+class StructTest extends BaseTest
 {
     /**
      * @expectedException \Error

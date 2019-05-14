@@ -20,7 +20,7 @@ class CallableMaker
     }
 }
 
-class CallableMakerTest extends \PHPUnit\Framework\TestCase
+class CallableMakerTest extends BaseTest
 {
     /** @var \Amp\Test\CallableMaker */
     private $maker;

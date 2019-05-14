@@ -5,11 +5,10 @@ namespace Amp\Test;
 use Amp\Failure;
 use Amp\LazyPromise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class LazyPromiseTest extends TestCase
+class LazyPromiseTest extends BaseTest
 {
     public function testPromisorNotCalledOnConstruct()
     {

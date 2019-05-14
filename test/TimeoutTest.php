@@ -9,7 +9,7 @@ use Amp\Promise;
 use Amp\Success;
 use function React\Promise\resolve;
 
-class TimeoutTest extends \PHPUnit\Framework\TestCase
+class TimeoutTest extends BaseTest
 {
     public function testSuccessfulPromise()
     {

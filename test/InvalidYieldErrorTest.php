@@ -4,7 +4,7 @@ namespace Amp\Test;
 
 use Amp\InvalidYieldError;
 
-class InvalidYieldErrorTest extends \PHPUnit\Framework\TestCase
+class InvalidYieldErrorTest extends BaseTest
 {
     public function testWithInvalidGenerator()
     {

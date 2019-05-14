@@ -13,9 +13,9 @@ class Placeholder
     }
 }
 
-class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
+class PlaceholderTraitTest extends BaseTest
 {
-    /** @var \Amp\Test\Placeholder */
+    /** @var Placeholder */
     private $placeholder;
 
     public function setUp()
@@ -29,8 +29,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $value;
+            ++$invoked;
         };
 
         $this->placeholder->onResolve($callback);
@@ -50,8 +50,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $value;
+            ++$invoked;
         };
 
         $this->placeholder->onResolve($callback);
@@ -73,8 +73,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $value;
+            ++$invoked;
         };
 
         $this->placeholder->resolve($value);
@@ -94,8 +94,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $value;
+            ++$invoked;
         };
 
         $this->placeholder->resolve($value);
@@ -118,8 +118,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
             $expected = new \Exception;
 
             Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                ++$invoked;
                 $this->assertSame($expected, $exception);
+                ++$invoked;
             });
 
             $callback = function () use ($expected) {
@@ -144,8 +144,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
             $expected = new \Exception;
 
             Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                ++$invoked;
                 $this->assertSame($expected, $exception);
+                ++$invoked;
             });
 
             $callback = function () use ($expected) {
@@ -166,8 +166,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $exception;
+            ++$invoked;
         };
 
         $this->placeholder->onResolve($callback);
@@ -187,8 +187,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $exception;
+            ++$invoked;
         };
 
         $this->placeholder->onResolve($callback);
@@ -210,8 +210,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $exception;
+            ++$invoked;
         };
 
         $this->placeholder->fail($exception);
@@ -231,8 +231,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
 
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked, &$result) {
-            ++$invoked;
             $result = $exception;
+            ++$invoked;
         };
 
         $this->placeholder->fail($exception);
@@ -255,8 +255,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
             $expected = new \Exception;
 
             Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                ++$invoked;
                 $this->assertSame($expected, $exception);
+                ++$invoked;
             });
 
             $callback = function () use ($expected) {
@@ -281,8 +281,8 @@ class PlaceholderTraitTest extends \PHPUnit\Framework\TestCase
             $expected = new \Exception;
 
             Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                ++$invoked;
                 $this->assertSame($expected, $exception);
+                ++$invoked;
             });
 
             $callback = function () use ($expected) {
