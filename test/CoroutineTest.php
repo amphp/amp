@@ -487,8 +487,7 @@ class CoroutineTest extends BaseTest
             yield new Success;
 
             return call(function () use ($exception) {
-                return new class($exception)
-                {
+                return new class($exception) {
                     private $exception;
 
                     public function __construct(\Throwable $exception)
