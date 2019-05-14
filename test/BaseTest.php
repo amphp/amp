@@ -25,7 +25,7 @@ abstract class BaseTest extends TestCase
 
         try {
             wait(new Delayed(0));
-        } catch (\Error $e) {
+        } catch (\Throwable $e) {
             $errors[] = (string) $e;
 
             goto retry;
