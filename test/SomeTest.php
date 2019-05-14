@@ -8,10 +8,9 @@ use Amp\Loop;
 use Amp\MultiReasonException;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise;
 
-class SomeTest extends TestCase
+class SomeTest extends BaseTest
 {
     public function testEmptyArray()
     {

@@ -5,11 +5,10 @@ namespace Amp\Test;
 use Amp\CancelledException;
 use Amp\Delayed;
 use Amp\Loop;
-use Amp\PHPUnit\TestCase;
 use Amp\TimeoutCancellationToken;
 use Amp\TimeoutException;
 
-class TimeoutCancellationTokenTest extends TestCase
+class TimeoutCancellationTokenTest extends BaseTest
 {
     public function testTimeout()
     {

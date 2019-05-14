@@ -15,103 +15,16 @@ final class Coroutine implements Promise
 {
     use Internal\Placeholder;
 
-    /** @var \Generator */
-    private $generator;
-
-    /** @var callable(\Throwable|null $exception, mixed $value): void */
-    private $onResolve;
-
-    /** @var bool Used to control iterative coroutine continuation. */
-    private $immediate = true;
-
-    /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
-    private $exception;
-
-    /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
-    private $value;
-
-    /**
-     * @param \Generator $generator
-     */
-    public function __construct(\Generator $generator)
-    {
-        $this->generator = $generator;
-
-        try {
-            $yielded = $this->generator->current();
-
-            if (!$yielded instanceof Promise) {
-                if (!$this->generator->valid()) {
-                    $this->resolve($this->generator->getReturn());
-                    return;
-                }
-
-                $yielded = $this->transform($yielded);
-            }
-        } catch (\Throwable $exception) {
-            $this->fail($exception);
-            return;
-        }
-
-        /**
-         * @param \Throwable|null $exception Exception to be thrown into the generator.
-         * @param mixed           $value Value to be sent into the generator.
-         */
-        $this->onResolve = function ($exception, $value) {
-            $this->exception = $exception;
-            $this->value = $value;
-
-            if (!$this->immediate) {
-                $this->immediate = true;
-                return;
-            }
-
-            try {
-                do {
-                    if ($this->exception) {
-                        // Throw exception at current execution point.
-                        $yielded = $this->generator->throw($this->exception);
-                    } else {
-                        // Send the new value and execute to next yield statement.
-                        $yielded = $this->generator->send($this->value);
-                    }
-
-                    if (!$yielded instanceof Promise) {
-                        if (!$this->generator->valid()) {
-                            $this->resolve($this->generator->getReturn());
-                            $this->onResolve = null;
-                            return;
-                        }
-
-                        $yielded = $this->transform($yielded);
-                    }
-
-                    $this->immediate = false;
-                    $yielded->onResolve($this->onResolve);
-                } while ($this->immediate);
-
-                $this->immediate = true;
-            } catch (\Throwable $exception) {
-                $this->fail($exception);
-                $this->onResolve = null;
-            } finally {
-                $this->exception = null;
-                $this->value = null;
-            }
-        };
-
-        $yielded->onResolve($this->onResolve);
-    }
-
     /**
      * Attempts to transform the non-promise yielded from the generator into a promise, otherwise returns an instance
      * `Amp\Failure` failed with an instance of `Amp\InvalidYieldError`.
      *
-     * @param mixed $yielded Non-promise yielded from generator.
+     * @param mixed      $yielded Non-promise yielded from generator.
+     * @param \Generator $generator No type for performance, we already know the type.
      *
-     * @return \Amp\Promise
+     * @return Promise
      */
-    private function transform($yielded): Promise
+    private static function transform($yielded, $generator): Promise
     {
         try {
             if (\is_array($yielded)) {
@@ -128,7 +41,7 @@ final class Coroutine implements Promise
         }
 
         return new Failure(new InvalidYieldError(
-            $this->generator,
+            $generator,
             \sprintf(
                 "Unexpected yield; Expected an instance of %s or %s or an array of such instances",
                 Promise::class,
@@ -136,5 +49,116 @@ final class Coroutine implements Promise
             ),
             $exception ?? null
         ));
+    }
+
+    /**
+     * @param \Generator $generator
+     */
+    public function __construct(\Generator $generator)
+    {
+        try {
+            $yielded = $generator->current();
+
+            if (!$yielded instanceof Promise) {
+                if (!$generator->valid()) {
+                    $this->resolve($generator->getReturn());
+                    return;
+                }
+
+                $yielded = self::transform($yielded, $generator);
+            }
+        } catch (\Throwable $exception) {
+            $this->fail($exception);
+            return;
+        }
+
+        /** @var bool Used to control iterative coroutine continuation. */
+        $immediate = true;
+
+        /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
+        $exception = null;
+
+        /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
+        $value = null;
+
+        /**
+         * @param \Throwable|null $e Exception to be thrown into the generator.
+         * @param mixed           $v Value to be sent into the generator.
+         */
+        $onResolve = function ($e, $v) use ($generator, &$exception, &$value, &$immediate, &$onResolve) {
+            $exception = $e;
+            $value = $v;
+
+            if (!$immediate) {
+                $immediate = true;
+                return;
+            }
+
+            try {
+                do {
+                    if ($exception) {
+                        // Throw exception at current execution point.
+                        $yielded = $generator->throw($exception);
+                    } else {
+                        // Send the new value and execute to next yield statement.
+                        $yielded = $generator->send($value);
+                    }
+
+                    if (!$yielded instanceof Promise) {
+                        if (!$generator->valid()) {
+                            $this->resolve($generator->getReturn());
+                            $onResolve = null;
+                            return;
+                        }
+
+                        $yielded = self::transform($yielded, $generator);
+                    }
+
+                    $immediate = false;
+                    $yielded->onResolve($onResolve);
+                } while ($immediate);
+
+                $immediate = true;
+            } catch (\Throwable $exception) {
+                try {
+                    $this->fail($exception);
+                    $onResolve = null;
+                } catch (\Throwable $e) {
+                    Loop::defer(static function () use ($e) {
+                        throw $e;
+                    });
+                }
+            } finally {
+                try {
+                    $exception = null;
+                    $value = null;
+                } catch (\Throwable $e) {
+                    Loop::defer(static function () use ($e) {
+                        throw $e;
+                    });
+                }
+            }
+        };
+
+        try {
+            $yielded->onResolve($onResolve);
+
+            unset($generator, $yielded, $exception, $value, $immediate, $onResolve);
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
+            });
+        }
+    }
+
+    public function __destruct()
+    {
+        try {
+            $this->result = null;
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
+            });
+        }
     }
 }

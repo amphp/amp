@@ -9,10 +9,9 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 
-class CallTest extends TestCase
+class CallTest extends BaseTest
 {
     public function testCallWithFunctionReturningPromise()
     {

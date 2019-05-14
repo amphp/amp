@@ -10,12 +10,11 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
 use function Amp\call;
 
-class CoroutineTest extends TestCase
+class CoroutineTest extends BaseTest
 {
     const TIMEOUT = 100;
 
@@ -505,7 +504,23 @@ class CoroutineTest extends TestCase
             });
         };
 
-        new Coroutine($generator());
+        try {
+            new Coroutine($generator());
+        } catch (\Throwable $e) {
+            $this->fail("Caught exception that shouldn't be thrown at that place.");
+        }
+
+        $this->expectExceptionObject($exception);
+
+        try {
+            Promise\wait(new Delayed(0)); // make loop tick once to throw errors from loop
+        } catch (\Error $e) {
+            if ($e->getMessage() === "Loop exceptionally stopped without resolving the promise") {
+                throw $e->getPrevious();
+            }
+
+            throw $e;
+        }
     }
 
     /**

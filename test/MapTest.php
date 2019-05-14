@@ -8,7 +8,7 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
 
-class MapTest extends \PHPUnit\Framework\TestCase
+class MapTest extends BaseTest
 {
     public function testNoValuesEmitted()
     {

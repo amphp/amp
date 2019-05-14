@@ -7,9 +7,8 @@ use Amp\Delayed;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use PHPUnit\Framework\TestCase;
 
-class ProducerTest extends TestCase
+class ProducerTest extends BaseTest
 {
     const TIMEOUT = 100;
 

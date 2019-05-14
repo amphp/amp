@@ -9,10 +9,9 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use function React\Promise\resolve;
 
-class WaitTest extends TestCase
+class WaitTest extends BaseTest
 {
     public function testWaitOnSuccessfulPromise()
     {

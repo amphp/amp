@@ -9,7 +9,7 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Success;
 
-class IteratorFromIterableTest extends \PHPUnit\Framework\TestCase
+class IteratorFromIterableTest extends BaseTest
 {
     const TIMEOUT = 10;
 

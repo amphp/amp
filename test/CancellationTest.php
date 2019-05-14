@@ -6,12 +6,11 @@ use Amp\CancellationToken;
 use Amp\CancellationTokenSource;
 use Amp\Emitter;
 use Amp\Loop;
-use Amp\PHPUnit\TestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Success;
 use function Amp\asyncCall;
 
-class CancellationTest extends TestCase
+class CancellationTest extends BaseTest
 {
     private function createAsyncIterator(CancellationToken $cancellationToken)
     {

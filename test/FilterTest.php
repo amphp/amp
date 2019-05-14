@@ -7,9 +7,8 @@ use Amp\Iterator;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use PHPUnit\Framework\TestCase;
 
-class FilterTest extends TestCase
+class FilterTest extends BaseTest
 {
     public function testNoValuesEmitted()
     {

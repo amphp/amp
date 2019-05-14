@@ -5,10 +5,9 @@ namespace Amp\Test;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Promise;
-use PHPUnit\Framework\TestCase;
 use function React\Promise\reject;
 
-class RethrowTest extends TestCase
+class RethrowTest extends BaseTest
 {
     public function testRethrow()
     {

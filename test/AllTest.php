@@ -6,10 +6,9 @@ use Amp\Delayed;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use PHPUnit\Framework\TestCase;
 use React\Promise\FulfilledPromise;
 
-class AllTest extends TestCase
+class AllTest extends BaseTest
 {
     public function testEmptyArray()
     {

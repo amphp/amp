@@ -7,7 +7,7 @@ use Amp\Promise;
 use Amp\Success;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class SuccessTest extends \PHPUnit\Framework\TestCase
+class SuccessTest extends BaseTest
 {
     /**
      * @expectedException \Error

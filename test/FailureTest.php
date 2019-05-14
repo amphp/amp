@@ -6,7 +6,7 @@ use Amp\Failure;
 use Amp\Loop;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
-class FailureTest extends \PHPUnit\Framework\TestCase
+class FailureTest extends BaseTest
 {
     /**
      * @expectedException \TypeError
