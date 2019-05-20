@@ -95,48 +95,42 @@ final class Coroutine implements Promise
             }
 
             try {
-                do {
-                    if ($exception) {
-                        // Throw exception at current execution point.
-                        $yielded = $generator->throw($exception);
-                    } else {
-                        // Send the new value and execute to next yield statement.
-                        $yielded = $generator->send($value);
-                    }
-
-                    if (!$yielded instanceof Promise) {
-                        if (!$generator->valid()) {
-                            $this->resolve($generator->getReturn());
-                            $onResolve = null;
-                            return;
+                try {
+                    do {
+                        if ($exception) {
+                            // Throw exception at current execution point.
+                            $yielded = $generator->throw($exception);
+                        } else {
+                            // Send the new value and execute to next yield statement.
+                            $yielded = $generator->send($value);
                         }
 
-                        $yielded = self::transform($yielded, $generator);
-                    }
+                        if (!$yielded instanceof Promise) {
+                            if (!$generator->valid()) {
+                                $this->resolve($generator->getReturn());
+                                $onResolve = null;
+                                return;
+                            }
 
-                    $immediate = false;
-                    $yielded->onResolve($onResolve);
-                } while ($immediate);
+                            $yielded = self::transform($yielded, $generator);
+                        }
 
-                $immediate = true;
-            } catch (\Throwable $exception) {
-                try {
+                        $immediate = false;
+                        $yielded->onResolve($onResolve);
+                    } while ($immediate);
+
+                    $immediate = true;
+                } catch (\Throwable $exception) {
                     $this->fail($exception);
                     $onResolve = null;
-                } catch (\Throwable $e) {
-                    Loop::defer(static function () use ($e) {
-                        throw $e;
-                    });
-                }
-            } finally {
-                try {
+                } finally {
                     $exception = null;
                     $value = null;
-                } catch (\Throwable $e) {
-                    Loop::defer(static function () use ($e) {
-                        throw $e;
-                    });
                 }
+            } catch (\Throwable $e) {
+                Loop::defer(static function () use ($e) {
+                    throw $e;
+                });
             }
         };
 
