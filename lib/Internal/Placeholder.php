@@ -155,4 +155,15 @@ trait Placeholder
     {
         $this->resolve(new Failure($reason));
     }
+
+    public function __destruct()
+    {
+        try {
+            $this->result = null;
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
+            });
+        }
+    }
 }
