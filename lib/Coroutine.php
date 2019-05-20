@@ -72,20 +72,20 @@ final class Coroutine implements Promise
             return;
         }
 
-        /** @var bool Used to control iterative coroutine continuation. */
-        $immediate = true;
-
-        /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
-        $exception = null;
-
-        /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
-        $value = null;
-
         /**
          * @param \Throwable|null $e Exception to be thrown into the generator.
          * @param mixed           $v Value to be sent into the generator.
          */
-        $onResolve = function ($e, $v) use ($generator, &$exception, &$value, &$immediate, &$onResolve) {
+        $onResolve = function ($e, $v) use ($generator, &$onResolve) {
+            /** @var bool Used to control iterative coroutine continuation. */
+            static $immediate = true;
+
+            /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
+            static $exception;
+
+            /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
+            static $value;
+
             $exception = $e;
             $value = $v;
 
@@ -137,7 +137,7 @@ final class Coroutine implements Promise
         try {
             $yielded->onResolve($onResolve);
 
-            unset($generator, $yielded, $exception, $value, $immediate, $onResolve);
+            unset($generator, $yielded, $onResolve);
         } catch (\Throwable $e) {
             Loop::defer(static function () use ($e) {
                 throw $e;
