@@ -61,8 +61,10 @@ function getCurrentTime(): int
 {
     if (\PHP_VERSION_ID >= 70300) {
         list($seconds, $nanoseconds) = \hrtime(false);
-        return $seconds * 1000 + $nanoseconds / 1000000;
+        $time = (int) ($seconds * 1000 + $nanoseconds / 1000000);
+    } else {
+        $time = (int) (\microtime(true) * 1000);
     }
 
-    return (int) (\microtime(true) * 1000);
+    return $time < 0 ? -$time : $time;
 }
