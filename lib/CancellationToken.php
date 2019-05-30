@@ -42,6 +42,8 @@ interface CancellationToken
      * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
      *
      * @return void
+     *
+     * @throws CancelledException
      */
     public function throwIfRequested();
 }
