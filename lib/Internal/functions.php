@@ -59,12 +59,24 @@ function createTypeError(array $expected, $given): \TypeError
  */
 function getCurrentTime(): int
 {
+    static $startTime;
+
     if (\PHP_VERSION_ID >= 70300) {
         list($seconds, $nanoseconds) = \hrtime(false);
-        $time = (int) ($seconds * 1000 + $nanoseconds / 1000000);
+        $now = $seconds * 1000 + $nanoseconds / 1000000;
     } else {
-        $time = (int) (\microtime(true) * 1000);
+        $now = \microtime(true) * 1000;
     }
 
-    return $time < 0 ? -$time : $time;
+    $time = (int) $now;
+
+    if ($time < 0) {
+        if ($startTime === null) {
+            $startTime = $now;
+        }
+
+        $time = (int) ($now - $startTime);
+    }
+
+    return $time;
 }
