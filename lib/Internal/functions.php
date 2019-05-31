@@ -60,19 +60,45 @@ function createTypeError(array $expected, $given): \TypeError
 function getCurrentTime(): int
 {
     static $startTime;
+    static $nextWarning;
 
     if (\PHP_INT_SIZE === 4) {
         if ($startTime === null) {
             $startTime = \PHP_VERSION_ID >= 70300 ? \hrtime(false)[0] : \time();
+            $nextWarning = \PHP_INT_MAX - 86400 * 7;
         }
 
         if (\PHP_VERSION_ID >= 70300) {
             list($seconds, $nanoseconds) = \hrtime(false);
             $seconds -= $startTime;
+
+            if ($seconds >= $nextWarning) {
+                $timeToOverflow = (\PHP_INT_MAX - $seconds * 1000) / 1000;
+                \trigger_error(
+                    "getCurrentTime() will overflow in $timeToOverflow seconds, please restart the process before that. " .
+                    "You're using a 32 bit version of PHP, so time will overflow about every 24 days. Regular restarts are required.",
+                    \E_USER_WARNING
+                );
+
+                $nextWarning += 600; // every 10 minutes
+            }
+
             return (int) ($seconds * 1000 + $nanoseconds / 1000000);
         }
 
-        return ((\microtime(true) - $startTime) * 1000);
+        $seconds = \microtime(true) - $startTime;
+        if ($seconds >= $nextWarning) {
+            $timeToOverflow = (\PHP_INT_MAX - $seconds * 1000) / 1000;
+            \trigger_error(
+                "getCurrentTime() will overflow in $timeToOverflow seconds, please restart the process before that. " .
+                "You're using a 32 bit version of PHP, so time will overflow about every 24 days. Regular restarts are required.",
+                \E_USER_WARNING
+            );
+
+            $nextWarning += 600; // every 10 minutes
+        }
+
+        return $seconds * 1000;
     }
 
     if (\PHP_VERSION_ID >= 70300) {
