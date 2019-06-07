@@ -66,11 +66,10 @@ class NativeDriver extends Driver
         if (!$this->signalHandling) {
             throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
         }
-
-        if (!$this->manualSignalHandling && !pcntl_async_signals()) {
-            pcntl_async_signals(true);
+        if (!$this->manualSignalHandling && !\pcntl_async_signals()) {
+            \pcntl_async_signals(true);
         }
-        
+
         return parent::onSignal($signo, $callback, $data);
     }
 
