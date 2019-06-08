@@ -50,7 +50,7 @@ class NativeDriver extends Driver
     {
         $this->timerQueue = new Internal\TimerQueue;
         $this->signalHandling = \extension_loaded("pcntl");
-        $this->manualSignalHandling = !(\PHP_MAJOR_VERSION >= 7 && \PHP_MINOR_VERSION >= 1);
+        $this->manualSignalHandling = PHP_VERSION_ID < 70100;
         $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
         $this->nowOffset -= $this->now;
