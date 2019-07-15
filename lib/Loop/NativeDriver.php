@@ -43,14 +43,10 @@ class NativeDriver extends Driver
     /** @var bool */
     private $signalHandling;
 
-    /** @var bool */
-    private $manualSignalHandling;
-
     public function __construct()
     {
         $this->timerQueue = new Internal\TimerQueue;
         $this->signalHandling = \extension_loaded("pcntl");
-        $this->manualSignalHandling = PHP_VERSION_ID < 70100 || !\pcntl_async_signals();
         $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
         $this->nowOffset -= $this->now;
@@ -66,7 +62,6 @@ class NativeDriver extends Driver
         if (!$this->signalHandling) {
             throw new UnsupportedFeatureException("Signal handling requires the pcntl extension");
         }
-        $this->manualSignalHandling = PHP_VERSION_ID < 70100 || !\pcntl_async_signals();
 
         return parent::onSignal($signo, $callback, $data);
     }
@@ -148,7 +143,7 @@ class NativeDriver extends Driver
             }
         }
 
-        if ($this->signalHandling && $this->manualSignalHandling) {
+        if ($this->signalHandling) {
             \pcntl_signal_dispatch();
         }
     }
