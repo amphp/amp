@@ -113,17 +113,6 @@ namespace Amp
     {
         return new Delayed($milliseconds);
     }
-    /**
-     * Sleeps for the specified number of microseconds.
-     *
-     * @param numeric $microseconds
-     *
-     * @return Promise
-     */
-    function usleep($microseconds): Promise
-    {
-        return new Delayed($microseconds / 1000);
-    }
 }
 
 namespace Amp\Promise
