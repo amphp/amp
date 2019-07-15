@@ -90,6 +90,40 @@ namespace Amp
     {
         Promise\rethrow(call($callback, ...$args));
     }
+
+    /**
+     * Sleeps for the specified number of seconds.
+     *
+     * @param numeric $seconds
+     *
+     * @return Promise
+     */
+    function sleep($seconds): Promise
+    {
+        return new Delayed($seconds * 1000);
+    }
+    /**
+     * Sleeps for the specified number of milliseconds.
+     *
+     * @param numeric $milliseconds
+     *
+     * @return Promise
+     */
+    function msleep($milliseconds): Promise
+    {
+        return new Delayed($milliseconds);
+    }
+    /**
+     * Sleeps for the specified number of microseconds.
+     *
+     * @param numeric $microseconds
+     *
+     * @return Promise
+     */
+    function usleep($microseconds): Promise
+    {
+        return new Delayed($microseconds / 1000);
+    }
 }
 
 namespace Amp\Promise
