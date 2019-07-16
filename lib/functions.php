@@ -92,24 +92,13 @@ namespace Amp
     }
 
     /**
-     * Sleeps for the specified number of seconds.
-     *
-     * @param numeric $seconds
-     *
-     * @return Promise
-     */
-    function sleep($seconds): Promise
-    {
-        return new Delayed($seconds * 1000);
-    }
-    /**
      * Sleeps for the specified number of milliseconds.
      *
-     * @param numeric $milliseconds
+     * @param int $milliseconds
      *
      * @return Promise
      */
-    function msleep($milliseconds): Promise
+    function sleep(int $milliseconds): Promise
     {
         return new Delayed($milliseconds);
     }
