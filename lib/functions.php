@@ -96,9 +96,9 @@ namespace Amp
      *
      * @param int $milliseconds
      *
-     * @return Promise
+     * @return Delayed
      */
-    function sleep(int $milliseconds): Promise
+    function sleep(int $milliseconds): Delayed
     {
         return new Delayed($milliseconds);
     }
