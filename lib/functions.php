@@ -98,7 +98,7 @@ namespace Amp
      *
      * @return Delayed
      */
-    function sleep(int $milliseconds): Delayed
+    function delay(int $milliseconds): Promise
     {
         return new Delayed($milliseconds);
     }
