@@ -90,6 +90,18 @@ namespace Amp
     {
         Promise\rethrow(call($callback, ...$args));
     }
+
+    /**
+     * Sleeps for the specified number of milliseconds.
+     *
+     * @param int $milliseconds
+     *
+     * @return Delayed
+     */
+    function delay(int $milliseconds): Promise
+    {
+        return new Delayed($milliseconds);
+    }
 }
 
 namespace Amp\Promise
