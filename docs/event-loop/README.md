@@ -19,12 +19,12 @@ The event loop should be accessed through the methods provided by `Amp\Loop`. On
 
 Amp offers different event loop implementations based on various backends. All implementations extend `Amp\Loop\Driver`. Each behaves exactly the same way from an external API perspective. The main differences have to do with underlying performance characteristics. The current implementations are listed here:
 
-| Class                     | Extension                                              |
-| ------------------------- | ------------------------------------------------------ |
-| `Amp\Loop\NativeDriver`     | –                                                    |
-| `Amp\Loop\EvDriver`         | [`pecl/ev`](https://pecl.php.net/package/ev)             |
-| `Amp\Loop\EventDriver`      | [`pecl/event`](https://pecl.php.net/package/event) |
-| `Amp\Loop\UvDriver`         | [`php-uv`](https://github.com/bwoebi/php-uv)             |
+| Class                     | Extension                                              | Repository |
+| ------------------------- | ------------------------------------------------------ | ---------- |
+| `Amp\Loop\NativeDriver`   | –                                                      | -          |
+| `Amp\Loop\EvDriver`       | [`pecl/ev`](https://pecl.php.net/package/ev)           | [`php-ev`](https://bitbucket.org/osmanov/pecl-ev) |
+| `Amp\Loop\EventDriver`    | [`pecl/event`](https://pecl.php.net/package/event)     | [`pecl-event`](https://bitbucket.org/osmanov/pecl-event) |
+| `Amp\Loop\UvDriver`       | [`pecl/uv`](https://pecl.php.net/package/uv)           | [`php-uv`](https://github.com/bwoebi/php-uv) |
 
 It's not important to choose one implementation for your application. Amp will automatically select the best available driver. It's perfectly fine to have one of the extensions in production while relying on the `NativeDriver` locally for development.
 
