@@ -22,7 +22,7 @@ Amp offers different event loop implementations based on various backends. All i
 | Class                     | Extension                                              | Repository |
 | ------------------------- | ------------------------------------------------------ | ---------- |
 | `Amp\Loop\NativeDriver`   | –                                                      | -          |
-| `Amp\Loop\EvDriver`       | [`pecl/ev`](https://pecl.php.net/package/ev)           | [`php-ev`](https://github.com/lvht/php-ev) |
+| `Amp\Loop\EvDriver`       | [`pecl/ev`](https://pecl.php.net/package/ev)           | [`php-ev`](https://bitbucket.org/osmanov/pecl-ev) |
 | `Amp\Loop\EventDriver`    | [`pecl/event`](https://pecl.php.net/package/event)     | [`pecl-event`](https://bitbucket.org/osmanov/pecl-event) |
 | `Amp\Loop\UvDriver`       | [`pecl/uv`](https://pecl.php.net/package/uv)           | [`php-uv`](https://github.com/bwoebi/php-uv) |
 
