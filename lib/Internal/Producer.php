@@ -54,6 +54,12 @@ trait Producer
         ++$this->position;
 
         if (\array_key_exists($this->position, $this->values)) {
+            if (isset($this->backPressure[$this->position])) {
+                $future = $this->backPressure[$this->position];
+                unset($this->backPressure[$this->position]);
+                $future->resolve();
+            }
+
             return new Success(true);
         }
 
@@ -62,6 +68,14 @@ trait Producer
         }
 
         $this->waiting = new Deferred;
+        $this->waiting->promise()->onResolve(function () {
+            if (isset($this->backPressure[$this->position])) {
+                $future = $this->backPressure[$this->position];
+                unset($this->backPressure[$this->position]);
+                $future->resolve();
+            }
+        });
+
         return $this->waiting->promise();
     }
 
