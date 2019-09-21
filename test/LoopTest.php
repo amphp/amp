@@ -25,8 +25,11 @@ class LoopTest extends BaseTest
     public function testOnReadable()
     {
         Loop::run(function () {
-            $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-                STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+            $ends = \stream_socket_pair(
+                \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                STREAM_SOCK_STREAM,
+                STREAM_IPPROTO_IP
+            );
             \fwrite($ends[0], "trigger readability watcher");
 
             Loop::onReadable($ends[1], function ($watcher) {
