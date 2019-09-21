@@ -42,7 +42,7 @@
         "react/promise": "^2",
         "phpunit/phpunit": "^6.0.9 | ^7",
         "phpstan/phpstan": "^0.8.5",
-        "pcov/clobber": "^2"
+        "pcov/clobber": "^1"
     },
     "autoload": {
         "psr-4": {
