@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-wget https://github.com/libuv/libuv/archive/v1.24.1.zip -O /tmp/libuv.tar.gz -q &
+set -e
+
+wget https://github.com/libuv/libuv/archive/v1.24.1.tar.gz -O /tmp/libuv.tar.gz -q &
 wget https://github.com/bwoebi/php-uv/archive/master.tar.gz -O /tmp/php-uv.tar.gz -q &
 wait
 
