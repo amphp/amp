@@ -42,8 +42,8 @@ install:
 
 script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
-  - php vendor/bin/phpunit --verbose --group memoryleak
-  - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
+  - php vendor/bin/phpunit --verbose --debug --group memoryleak
+  - php vendor/bin/phpunit --verbose --debug --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
