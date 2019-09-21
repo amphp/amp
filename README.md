@@ -74,11 +74,11 @@ Examples can be found in the [`./examples`](./examples) directory of this reposi
 
 `amphp/amp` follows the [semver](http://semver.org/) semantic versioning specification like all other `amphp` packages.
 
-##### v2.x
+##### 2.x
 
 Supported. We don't have plans to release v3, yet.
 
-##### v1.x
+##### 1.x
 
 No longer supported. We stopped providing bug fixes 2017-12-31 and stopped providing security fixes 2018-12-31.
 
