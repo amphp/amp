@@ -5,7 +5,7 @@ language: php
 addons:
   apt:
     packages:
-    - libevent-dev
+      - libevent-dev
 
 php:
   - 7.0
@@ -31,6 +31,7 @@ install:
   - travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
+  - travis/install-pcov.sh
 
   - composer update -n --prefer-dist
 
@@ -43,7 +44,7 @@ install:
 script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --verbose --group memoryleak
-  - phpdbg -qrr vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
+  - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
