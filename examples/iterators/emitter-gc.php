@@ -23,7 +23,6 @@ Loop::run(function () {
 
     $iterator = $emitter->iterate();
     yield $iterator->advance();
-    yield $iterator->advance();
     yield new Amp\Delayed(0);
 
     unset($emitter, $iterator);
