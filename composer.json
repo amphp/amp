@@ -41,8 +41,7 @@
         "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",
         "phpunit/phpunit": "^6.0.9 | ^7",
-        "phpstan/phpstan": "^0.8.5",
-        "pcov/clobber": "^1"
+        "phpstan/phpstan": "^0.8.5"
     },
     "autoload": {
         "psr-4": {
