@@ -25,7 +25,7 @@ env:
   - AMP_DEBUG=true
 
 before_install:
-  - php travis/change-composer.php
+  - php travis/change-composer.php drop-config
   - phpenv config-rm xdebug.ini || echo "No xdebug config."
 
 install:
@@ -36,8 +36,7 @@ install:
 
   - composer update -n --prefer-dist
 
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} != "7.0" ]]; then composer require pcov/clobber ^1; fi
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} != "7.0" ]]; then vendor/bin/pcov clobber; fi
+  - php travis/change-composer.php configure-pcov
 
   - mkdir -p coverage/cov coverage/bin
   - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
