@@ -1,3 +1,25 @@
+### 2.2.1
+
+ - Fixed backpressure release on `Emitter::emit()`, the backpressure is now released as soon as the value is consumed, instead of the next value being requested.
+
+2.2.0
+-----
+
+ - Added `CombinedCancellationToken`
+ - Added `delay()` as shortcut for `new Delayed`
+
+### 2.1.2
+
+ - Fixed issue where the loop time in `NativeDriver` was not refreshed after waiting for I/O streams (#256)
+ - Fixed compatibility issue of `NativeDriver` with `pcntl_async_signals()` (#264)
+ - A custom queue is now used for timers in `NativeDriver` to allow cancelled timers to be garbage collected immediately instead of after their original expiration time (#220)
+ - Resolving a promise with an object that throws when destructed will now forward that exception to the event loop error handler (#271)
+ - Fixed loop time to support 32-bit systems (#252, #273)
+
+### 2.1.1
+
+ - Fixed a bug in NativeDriver causing 100% CPU usage when any timers were used (#251)
+
 2.1.0
 -----
 
