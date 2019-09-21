@@ -5,7 +5,7 @@ language: php
 addons:
   apt:
     packages:
-    - libevent-dev
+      - libevent-dev
 
 php:
   - 7.0
@@ -25,7 +25,7 @@ env:
   - AMP_DEBUG=true
 
 before_install:
-  - phpenv config-rm xdebug.ini || echo "No xdebug config."
+  - php travis/change-composer.php drop-config
 
 install:
   - travis/install-uv.sh
@@ -43,7 +43,7 @@ install:
 script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --verbose --group memoryleak
-  - phpdbg -qrr vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
+  - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:

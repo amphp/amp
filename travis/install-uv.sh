@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-wget https://github.com/libuv/libuv/archive/v1.x.tar.gz -O /tmp/libuv.tar.gz -q &
+set -e
+
+wget https://github.com/libuv/libuv/archive/v1.24.1.tar.gz -O /tmp/libuv.tar.gz -q &
 wget https://github.com/bwoebi/php-uv/archive/master.tar.gz -O /tmp/php-uv.tar.gz -q &
 wait
 
@@ -10,14 +12,14 @@ mkdir php-uv && tar -xf /tmp/php-uv.tar.gz -C php-uv --strip-components=1
 pushd libuv;
 ./autogen.sh
 ./configure --prefix=$(dirname `pwd`)/libuv-install
-make
+make -j4
 make install
 popd
 
 pushd php-uv
 phpize
 ./configure --with-uv=$(dirname `pwd`)/libuv-install
-make
+make -j4
 make install
 popd
 

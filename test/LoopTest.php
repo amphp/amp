@@ -25,7 +25,11 @@ class LoopTest extends BaseTest
     public function testOnReadable()
     {
         Loop::run(function () {
-            $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+            $ends = \stream_socket_pair(
+                \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                STREAM_SOCK_STREAM,
+                STREAM_IPPROTO_IP
+            );
             \fwrite($ends[0], "trigger readability watcher");
 
             Loop::onReadable($ends[1], function ($watcher) {
@@ -57,7 +61,7 @@ class LoopTest extends BaseTest
 
                 // Allow a few milliseconds of inaccuracy.
                 $this->assertGreaterThanOrEqual($now - 1, $new);
-                $this->assertLessThanOrEqual($now + 10, $new);
+                $this->assertLessThanOrEqual($now + 100, $new);
 
                 // Same time should be returned from later call.
                 $this->assertSame($new, Loop::now());
