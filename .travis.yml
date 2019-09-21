@@ -26,17 +26,13 @@ env:
 
 before_install:
   - php travis/change-composer.php drop-config
-  - phpenv config-rm xdebug.ini || echo "No xdebug config."
 
 install:
   - travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
-  - travis/install-pcov.sh
 
   - composer update -n --prefer-dist
-
-  - php travis/change-composer.php configure-pcov
 
   - mkdir -p coverage/cov coverage/bin
   - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
