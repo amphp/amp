@@ -36,6 +36,8 @@ install:
 
   - composer update -n --prefer-dist
 
+  - vendor/bin/pcov clobber
+
   - mkdir -p coverage/cov coverage/bin
   - wget https://phar.phpunit.de/phpcov.phar -O coverage/bin/phpcov
   - chmod +x coverage/bin/phpcov
