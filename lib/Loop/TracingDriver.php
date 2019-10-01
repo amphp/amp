@@ -36,6 +36,7 @@ final class TracingDriver extends Driver
 
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
@@ -48,38 +49,47 @@ final class TracingDriver extends Driver
 
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
     public function repeat(int $interval, callable $callback, $data = null): string
     {
         $id = $this->driver->repeat($interval, $callback, $data);
+
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
     public function onReadable($stream, callable $callback, $data = null): string
     {
         $id = $this->driver->onReadable($stream, $callback, $data);
+
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
     public function onWritable($stream, callable $callback, $data = null): string
     {
         $id = $this->driver->onWritable($stream, $callback, $data);
+
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
     public function onSignal(int $signo, callable $callback, $data = null): string
     {
         $id = $this->driver->onSignal($signo, $callback, $data);
+
         $this->creationTraces[$id] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
         $this->enabledWatchers[$id] = true;
+
         return $id;
     }
 
@@ -100,6 +110,7 @@ final class TracingDriver extends Driver
     {
         $this->driver->cancel($watcherId);
         $this->creationTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+
         unset($this->enabledWatchers[$watcherId], $this->unreferencedWatchers[$watcherId]);
     }
 
@@ -156,6 +167,26 @@ final class TracingDriver extends Driver
         return \rtrim($dump);
     }
 
+    public function getInfo(): array
+    {
+        return $this->driver->getInfo();
+    }
+
+    public function __debugInfo()
+    {
+        return $this->driver->__debugInfo();
+    }
+
+    public function now(): int
+    {
+        return $this->driver->now();
+    }
+
+    protected function error(\Throwable $exception)
+    {
+        $this->driver->error($exception);
+    }
+
     /** @inheritdoc */
     protected function activate(array $watchers)
     {
@@ -177,7 +208,7 @@ final class TracingDriver extends Driver
     private function getCreationTrace(string $watcher): string
     {
         if (!isset($this->creationTraces[$watcher])) {
-            new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
+            throw new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
         }
 
         return $this->creationTraces[$watcher];
