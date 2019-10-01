@@ -89,8 +89,10 @@ class TracingDriver extends Driver
             $this->driver->enable($watcherId);
             $this->enabledWatchers[$watcherId] = true;
         } catch (InvalidWatcherError $e) {
-            throw new InvalidWatcherError($watcherId,
-                $e->getMessage() . "\r\n\r\n== Creation Trace =====\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\n== Cancel Trace =====\r\n" . $this->getCreationTrace($watcherId));
+            throw new InvalidWatcherError(
+                $watcherId,
+                $e->getMessage() . "\r\n\r\nCreation Trace:\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\nCancel Trace:\r\n" . $this->getCancelTrace($watcherId)
+            );
         }
     }
 
@@ -113,8 +115,10 @@ class TracingDriver extends Driver
             $this->driver->reference($watcherId);
             unset($this->unreferencedWatchers[$watcherId]);
         } catch (InvalidWatcherError $e) {
-            throw new InvalidWatcherError($watcherId,
-                $e->getMessage() . "\r\n\r\nCreation Trace: " . $this->getCreationTrace($watcherId));
+            throw new InvalidWatcherError(
+                $watcherId,
+                $e->getMessage() . "\r\n\r\nCreation Trace:\r\n" . $this->getCreationTrace($watcherId)
+            );
         }
     }
 
