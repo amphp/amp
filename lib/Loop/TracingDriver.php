@@ -4,7 +4,7 @@ namespace Amp\Loop;
 
 use function Amp\Internal\formatStacktrace;
 
-class TracingDriver extends Driver
+final class TracingDriver extends Driver
 {
     private $driver;
     private $enabledWatchers = [];
