@@ -3,9 +3,9 @@ layout: docs
 title: Iterator Transformation
 permalink: /iterators/transformation
 ---
-Amp provides two common transformation helpers for iterators: `map` and `filter`.
+Amp provides some common transformation helpers for iterators: `map`, `filter` and `toArray`.
 
-Further primitives are very easy to implement using `Producer` with those two as examples.
+Further primitives are very easy to implement using `Producer` with these as examples.
 
 ## `map()`
 
@@ -14,3 +14,7 @@ Further primitives are very easy to implement using `Producer` with those two as
 ## `filter()`
 
 `filter()` accepts an `Iterator` and a `callable` `$filter`. If `$filter($value)` returns `false` the value gets filtered, otherwise the value is retained in the resulting `Iterator`.
+
+## `toArray()`
+
+`toArray()` accepts an `Iterator` and returns a `Promise` which resolves to an array of all the items from the iterator.
