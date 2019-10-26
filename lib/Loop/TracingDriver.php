@@ -101,7 +101,7 @@ final class TracingDriver extends Driver
         } catch (InvalidWatcherError $e) {
             throw new InvalidWatcherError(
                 $watcherId,
-                $e->getMessage() . "\r\n\r\nCreation Trace:\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\nCancel Trace:\r\n" . $this->getCancelTrace($watcherId)
+                $e->getMessage() . "\r\n\r\n" . $this->getTraces($watcherId)
             );
         }
     }
@@ -109,7 +109,10 @@ final class TracingDriver extends Driver
     public function cancel(string $watcherId)
     {
         $this->driver->cancel($watcherId);
-        $this->creationTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+
+        if (!isset($this->cancelTraces[$watcherId])) {
+            $this->cancelTraces[$watcherId] = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+        }
 
         unset($this->enabledWatchers[$watcherId], $this->unreferencedWatchers[$watcherId]);
     }
@@ -128,7 +131,7 @@ final class TracingDriver extends Driver
         } catch (InvalidWatcherError $e) {
             throw new InvalidWatcherError(
                 $watcherId,
-                $e->getMessage() . "\r\n\r\nCreation Trace:\r\n" . $this->getCreationTrace($watcherId)
+                $e->getMessage() . "\r\n\r\n" . $this->getTraces($watcherId)
             );
         }
     }
@@ -205,10 +208,16 @@ final class TracingDriver extends Driver
         // nothing to do in a decorator
     }
 
+    private function getTraces(string $watcherId): string
+    {
+        return "Creation Trace:\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\n" .
+            "Cancellation Trace:\r\n" . $this->getCancelTrace($watcherId);
+    }
+
     private function getCreationTrace(string $watcher): string
     {
         if (!isset($this->creationTraces[$watcher])) {
-            throw new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
+            return 'No creation trace, yet.';
         }
 
         return $this->creationTraces[$watcher];
@@ -217,7 +226,7 @@ final class TracingDriver extends Driver
     private function getCancelTrace(string $watcher): string
     {
         if (!isset($this->cancelTraces[$watcher])) {
-            throw new InvalidWatcherError($watcher, "An invalid watcher has been used: " . $watcher);
+            return 'No cancellation trace, yet.';
         }
 
         return $this->cancelTraces[$watcher];
