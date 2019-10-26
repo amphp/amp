@@ -30,7 +30,7 @@ final class Emitter
     }
 
     /**
-     * @return \Amp\Promise
+     * @return \Amp\Iterator
      */
     public function iterate(): Iterator
     {
