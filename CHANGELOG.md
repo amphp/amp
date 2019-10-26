@@ -1,3 +1,16 @@
+### 2.3.2
+
+ - Fixed cancellation trace recording in `TracingDriver`
+
+### 2.3.1
+
+ - Fixed `TracingDriver` not overriding all methods.
+
+2.3.0
+-----
+
+ - Added `TracingDriver` to debug (hanging) tests / applications. The environment variable `AMP_DEBUG_TRACE_WATCHERS=true` can be set to automatically create a `TracingDriver` wrapping the actual driver. `TracingDriver::dump()` can be used to dump all enabled, referenced watchers keeping the loop running.
+
 ### 2.2.1
 
  - Fixed backpressure release on `Emitter::emit()`, the backpressure is now released as soon as the value is consumed, instead of the next value being requested.
