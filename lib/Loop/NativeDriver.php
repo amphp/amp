@@ -101,13 +101,11 @@ class NativeDriver extends Driver
 
         try {
             while (!$this->timerQueue->isEmpty()) {
-                list($watcher, $expiration) = $this->timerQueue->peek();
+                $watcher = $this->timerQueue->extract($this->now());
 
-                if ($expiration > $this->now()) { // Timer at top of queue has not expired.
+                if ($watcher === null) { // Timer at top of queue has not expired.
                     break;
                 }
-
-                $this->timerQueue->extract();
 
                 if ($watcher->type & Watcher::REPEAT) {
                     $expiration = $this->now() + $watcher->value;
@@ -259,7 +257,7 @@ class NativeDriver extends Driver
     private function getTimeout(): int
     {
         if (!$this->timerQueue->isEmpty()) {
-            list($watcher, $expiration) = $this->timerQueue->peek();
+            $expiration = $this->timerQueue->peek();
 
             $expiration -= getCurrentTime() - $this->nowOffset;
 
