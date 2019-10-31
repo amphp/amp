@@ -50,7 +50,7 @@ final class TimerQueue
     }
 
     /**
-     * Removes the given watcher from the queue. Time complexity: O(1).
+     * Removes the given watcher from the queue. Time complexity: O(log(n)).
      *
      * @param Watcher $watcher
      *
@@ -78,7 +78,7 @@ final class TimerQueue
     public function extract(int $now)
     {
         if (empty($this->data)) {
-            throw new \Error('No data left in the heap.');
+            return null;
         }
 
         $data = $this->data[0];
@@ -90,6 +90,16 @@ final class TimerQueue
         $this->removeAndRebuild(0);
 
         return $data->watcher;
+    }
+
+    /**
+     * Returns the expiration time value at the top of the heap. Time complexity: O(1).
+     *
+     * @return int|null Expiration time of the watcher at the top of the heap or null if the heap is empty.
+     */
+    public function peek()
+    {
+        return isset($this->data[0]) ? $this->data[0]->expiration : -1;
     }
 
     /**
@@ -129,29 +139,5 @@ final class TimerQueue
 
             $node = $swap;
         }
-    }
-
-    /**
-     * Returns the expiration time value at the top of the heap. Time complexity: O(1).
-     *
-     * @return int Expiration time of the watcher at the top of the heap.
-     */
-    public function peek(): int
-    {
-        if (empty($this->data)) {
-            throw new \Error('No data in the heap.');
-        }
-
-        return $this->data[0]->expiration;
-    }
-
-    /**
-     * Determines if the heap is empty.
-     *
-     * @return  bool
-     */
-    public function isEmpty(): bool
-    {
-        return empty($this->data);
     }
 }
