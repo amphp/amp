@@ -82,7 +82,7 @@ namespace Amp
      * throws or returns a failing promise, the failure is forwarded to the loop error handler.
      *
      * @param callable(mixed ...$args):\Generator|mixed $callback
-     * @param mixed    ...$args
+     * @param mixed ...$args
      *
      * @throws \TypeError
      */
@@ -102,13 +102,22 @@ namespace Amp
     {
         return new Delayed($milliseconds);
     }
+
+    /**
+     * Returns the current time relative to an arbitrary point in time.
+     *
+     * @return int Time in milliseconds.
+     */
+    function getCurrentTime(): int
+    {
+        return Internal\getCurrentTime();
+    }
 }
 
 namespace Amp\Promise
 {
 
     use Amp\Deferred;
-    use Amp\Failure;
     use Amp\Loop;
     use Amp\MultiReasonException;
     use Amp\Promise;
@@ -124,7 +133,7 @@ namespace Amp\Promise
      * Use this function if you neither return the promise nor handle a possible error yourself to prevent errors from
      * going entirely unnoticed.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to register the handler on.
+     * @param Promise|ReactPromise $promise Promise to register the handler on.
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
@@ -151,7 +160,7 @@ namespace Amp\Promise
      * Use this function only in synchronous contexts to wait for an asynchronous operation. Use coroutines and yield to
      * await promise resolution in a fully asynchronous application instead.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to wait for.
+     * @param Promise|ReactPromise $promise Promise to wait for.
      *
      * @return mixed Promise success value.
      *
@@ -201,10 +210,10 @@ namespace Amp\Promise
      * If the timeout expires before the promise is resolved, the returned promise fails with an instance of
      * `Amp\TimeoutException`.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
-     * @param int                                          $timeout Timeout in milliseconds.
+     * @param Promise|ReactPromise $promise Promise to which the timeout is applied.
+     * @param int                  $timeout Timeout in milliseconds.
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
@@ -244,11 +253,11 @@ namespace Amp\Promise
      *
      * If the timeout expires before the promise is resolved, a default value is returned
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise Promise to which the timeout is applied.
-     * @param int                                          $timeout Timeout in milliseconds.
-     * @param mixed                                        $default
+     * @param Promise|ReactPromise $promise Promise to which the timeout is applied.
+     * @param int                  $timeout Timeout in milliseconds.
+     * @param mixed                $default
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
@@ -272,7 +281,7 @@ namespace Amp\Promise
      *
      * @param object $promise Object with a done() or then() method.
      *
-     * @return \Amp\Promise Promise resolved by the $thenable object.
+     * @return Promise Promise resolved by the $thenable object.
      *
      * @throws \Error If the provided object does not have a then() method.
      */
@@ -299,9 +308,9 @@ namespace Amp\Promise
      * This function is the same as some() with the notable exception that it will never fail even
      * if all promises in the array resolve unsuccessfully.
      *
-     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises
+     * @param Promise[]|ReactPromise[] $promises
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \Error If a non-Promise is in the array.
      */
@@ -315,9 +324,9 @@ namespace Amp\Promise
      * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
      * the array of promises.
      *
-     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
+     * @param Promise[]|ReactPromise[] $promises Array of only promises.
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \Error If a non-Promise is in the array.
      */
@@ -366,9 +375,9 @@ namespace Amp\Promise
     /**
      * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
      *
-     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
+     * @param Promise[]|ReactPromise[] $promises Array of only promises.
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \Error If the array is empty or a non-Promise is in the array.
      */
@@ -419,10 +428,11 @@ namespace Amp\Promise
      *
      * The returned promise will only fail if the given number of required promises fail.
      *
-     * @param \Amp\Promise[]|\React\Promise\PromiseInterface[] $promises Array of only promises.
-     * @param int            $required Number of promises that must succeed for the returned promise to succeed.
+     * @param Promise[]|ReactPromise[] $promises Array of only promises.
+     * @param int                      $required Number of promises that must succeed for the
+     *     returned promise to succeed.
      *
-     * @return \Amp\Promise
+     * @return Promise
      *
      * @throws \Error If a non-Promise is in the array.
      */
@@ -487,8 +497,9 @@ namespace Amp\Promise
     /**
      * Wraps a promise into another promise, altering the exception or result.
      *
-     * @param \Amp\Promise|\React\Promise\PromiseInterface $promise
-     * @param callable $callback
+     * @param Promise|ReactPromise $promise
+     * @param callable             $callback
+     *
      * @return Promise
      */
     function wrap($promise, callable $callback): Promise
