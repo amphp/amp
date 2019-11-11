@@ -1,3 +1,8 @@
+2.4.0
+-----
+
+ - Added `getCurrentTime()` as public API, providing millisecond timestamps for runtime measurements with special support for 32 bit systems. Returned timestamps are relative to an arbitrary point in time, so this API is only suitable to compare two timestamps generated in the same process.
+
 ### 2.3.2
 
  - Fixed cancellation trace recording in `TracingDriver`
