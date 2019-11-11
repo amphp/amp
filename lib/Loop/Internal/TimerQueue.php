@@ -99,7 +99,7 @@ final class TimerQueue
      */
     public function peek()
     {
-        return isset($this->data[0]) ? $this->data[0]->expiration : -1;
+        return isset($this->data[0]) ? $this->data[0]->expiration : null;
     }
 
     /**
