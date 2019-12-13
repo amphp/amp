@@ -25,11 +25,7 @@ final class TimerQueue
      */
     public function insert(Watcher $watcher, int $expiration)
     {
-        $entry = new class {
-            public $watcher;
-            public $expiration;
-        };
-
+        $entry = new \stdClass;
         $entry->watcher = $watcher;
         $entry->expiration = $expiration;
 
