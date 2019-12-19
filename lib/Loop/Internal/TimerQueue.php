@@ -34,7 +34,12 @@ final class TimerQueue
         $this->pointers[$watcher->id] = $node;
 
         while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
+            \assert(isset($this->data[$parent]));
+
             $temp = $this->data[$parent];
+
+            \assert($temp instanceof \stdClass);
+
             $this->data[$node] = $temp;
             $this->pointers[$temp->watcher->id] = $node;
 
@@ -42,6 +47,8 @@ final class TimerQueue
             $this->pointers[$watcher->id] = $parent;
 
             $node = $parent;
+
+            \assert($node === 0 || (isset($this->data[($node - 1) >> 1]) && $this->data[($node - 1) >> 1] instanceof \stdClass));
         }
     }
 
@@ -105,6 +112,9 @@ final class TimerQueue
      */
     private function removeAndRebuild(int $node)
     {
+        \assert(isset($this->data[$node]));
+        \assert($this->data[$node] instanceof \stdClass);
+
         $length = \count($this->data) - 1;
         $id = $this->data[$node]->watcher->id;
         $left = $this->data[$node] = $this->data[$length];
@@ -124,8 +134,20 @@ final class TimerQueue
                 break;
             }
 
+            \assert(isset($this->data[$node]));
+            \assert(isset($this->data[$swap]));
+
+            \assert($this->data[$node] instanceof \stdClass);
+            \assert($this->data[$swap] instanceof \stdClass);
+
             $left = $this->data[$node];
             $right = $this->data[$swap];
+
+            \assert(isset($this->pointers[$right->watcher->id]));
+            \assert(isset($this->pointers[$left->watcher->id]));
+
+            \assert(\is_int($this->pointers[$right->watcher->id]));
+            \assert(\is_int($this->pointers[$left->watcher->id]));
 
             $this->data[$node] = $right;
             $this->pointers[$right->watcher->id] = $node;
