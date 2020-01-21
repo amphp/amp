@@ -15,6 +15,17 @@ final class TimerQueue
     /** @var int[] */
     private $pointers;
 
+    /** @var resource|null */
+    private $log;
+
+    public function __construct()
+    {
+        if ($path = \getenv("AMP_LOG_TIMER_QUEUE_PATH")) {
+            $this->log = \fopen($path, 'wb');
+        }
+    }
+
+
     /**
      * Inserts the watcher into the queue. Time complexity: O(log(n)).
      *
@@ -25,6 +36,8 @@ final class TimerQueue
      */
     public function insert(Watcher $watcher, int $expiration)
     {
+        $this->log("i" . \pack('N', $expiration) . $watcher->id . "\n");
+
         $entry = new \stdClass;
         $entry->watcher = $watcher;
         $entry->expiration = $expiration;
@@ -61,6 +74,8 @@ final class TimerQueue
      */
     public function remove(Watcher $watcher)
     {
+        $this->log("r{$watcher->id}\n");
+
         $id = $watcher->id;
 
         if (!isset($this->pointers[$id])) {
@@ -80,6 +95,8 @@ final class TimerQueue
      */
     public function extract(int $now)
     {
+        $this->log("e" . \pack('N', $now) . "\n");
+
         if (empty($this->data)) {
             return null;
         }
@@ -156,6 +173,13 @@ final class TimerQueue
             $this->pointers[$left->watcher->id] = $swap;
 
             $node = $swap;
+        }
+    }
+
+    private function log(string $log)
+    {
+        if ($this->log) {
+            \fwrite($this->log, $log);
         }
     }
 }
