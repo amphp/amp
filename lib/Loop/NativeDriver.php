@@ -170,7 +170,7 @@ class NativeDriver extends Driver
 
                 $error = \error_get_last();
 
-                if (\strpos($error["message"], "unable to select") !== 0) {
+                if (\strpos($error["message"] ?? '', "unable to select") !== 0) {
                     return;
                 }
 
