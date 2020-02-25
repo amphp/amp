@@ -4,6 +4,8 @@ namespace Amp;
 
 /**
  * Defines an asynchronous iterator over a set of values that is designed to be used within a coroutine.
+ *
+ * @template-covariant TValue
  */
 interface Iterator
 {
@@ -21,7 +23,7 @@ interface Iterator
     /**
      * Gets the last emitted value or throws an exception if the iterator has completed.
      *
-     * @return mixed Value emitted from the iterator.
+     * @return TValue Value emitted from the iterator.
      *
      * @throws \Error If the iterator has resolved or advance() was not called before calling this method.
      * @throws \Throwable The exception used to fail the iterator.
