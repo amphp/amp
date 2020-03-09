@@ -10,11 +10,11 @@ final class TimeoutCancellationToken implements CancellationToken
     /** @var string */
     private $watcher;
 
-    /** @var \Amp\CancellationToken */
+    /** @var CancellationToken */
     private $token;
 
     /**
-     * @param int $timeout Milliseconds until cancellation is requested.
+     * @param int    $timeout Milliseconds until cancellation is requested.
      * @param string $message Message for TimeoutException. Default is "Operation timed out".
      */
     public function __construct(int $timeout, string $message = "Operation timed out")
@@ -22,9 +22,11 @@ final class TimeoutCancellationToken implements CancellationToken
         $source = new CancellationTokenSource;
         $this->token = $source->getToken();
 
-        $this->watcher = Loop::delay($timeout, static function () use ($source, $message) {
-            $source->cancel(new TimeoutException($message));
+        $exception = new TimeoutException($message);
+        $this->watcher = Loop::delay($timeout, static function () use ($source, $exception) {
+            $source->cancel($exception);
         });
+
         Loop::unreference($this->watcher);
     }
 
