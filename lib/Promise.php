@@ -23,8 +23,8 @@ interface Promise
      * Note: You shouldn't implement this interface yourself. Instead, provide a method that returns a promise for the
      * operation you're implementing. Objects other than pure placeholders implementing it are a very bad idea.
      *
-     * @param callable(\Throwable|null $reason, TValue|null $value) $onResolved `$reason` shall be `null` on
-     *     success, `$value` shall be `null` on failure.
+     * @param callable(\Throwable|null, TValue|null) $onResolved The first argument shall
+     *     be `null` on success, while the second shall be `null` on failure.
      *
      * @return void
      */
