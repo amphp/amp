@@ -27,6 +27,8 @@ interface Promise
      *     be `null` on success, while the second shall be `null` on failure.
      *
      * @return void
+     *
+     * @psalm-mutation-free
      */
     public function onResolve(callable $onResolved);
 }
