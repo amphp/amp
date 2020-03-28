@@ -32,21 +32,32 @@ final class Loop
      * Sets the driver to be used for `Loop::run()`.
      *
      * @param Driver $driver
+     *
+     * @return void
      */
     public static function set(Driver $driver)
     {
         try {
             self::$driver = new class extends Driver {
+                /**
+                 * @return void
+                 */
                 protected function activate(array $watchers)
                 {
                     throw new \Error("Can't activate watcher during garbage collection.");
                 }
 
+                /**
+                 * @return void
+                 */
                 protected function dispatch(bool $blocking)
                 {
                     throw new \Error("Can't dispatch during garbage collection.");
                 }
 
+                /**
+                 * @return void
+                 */
                 protected function deactivate(Watcher $watcher)
                 {
                     // do nothing

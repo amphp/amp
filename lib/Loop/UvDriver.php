@@ -34,6 +34,14 @@ class UvDriver extends Driver
     {
         $this->handle = \uv_loop_new();
 
+        /**
+         * @param $event
+         * @param $status
+         * @param $events
+         * @param $resource
+         *
+         * @return void
+         */
         $this->ioCallback = function ($event, $status, $events, $resource) {
             $watchers = $this->watchers[(int) $event];
 
@@ -78,6 +86,11 @@ class UvDriver extends Driver
             }
         };
 
+        /**
+         * @param $event
+         *
+         * @return void
+         */
         $this->timerCallback = function ($event) {
             $watcher = $this->watchers[(int) $event][0];
 
@@ -110,6 +123,12 @@ class UvDriver extends Driver
             }
         };
 
+        /**
+         * @param $event
+         * @param $signo
+         *
+         * @return void
+         */
         $this->signalCallback = function ($event, $signo) {
             $watcher = $this->watchers[(int) $event][0];
 
@@ -185,6 +204,8 @@ class UvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function dispatch(bool $blocking)
     {
@@ -194,6 +215,8 @@ class UvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function activate(array $watchers)
     {
@@ -264,6 +287,8 @@ class UvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function deactivate(Watcher $watcher)
     {

@@ -6,10 +6,15 @@ use function Amp\Internal\formatStacktrace;
 
 final class TracingDriver extends Driver
 {
+    /** @var Driver */
     private $driver;
+    /** @var true[] */
     private $enabledWatchers = [];
+    /** @var true[] */
     private $unreferencedWatchers = [];
+    /** @var string[] */
     private $creationTraces = [];
+    /** @var string[] */
     private $cancelTraces = [];
 
     public function __construct(Driver $driver)
@@ -190,19 +195,31 @@ final class TracingDriver extends Driver
         $this->driver->error($exception);
     }
 
-    /** @inheritdoc */
+    /**
+     * @inheritdoc
+     *
+     * @return void
+     */
     protected function activate(array $watchers)
     {
         // nothing to do in a decorator
     }
 
-    /** @inheritdoc */
+    /**
+     * @inheritdoc
+     *
+     * @return void
+     */
     protected function dispatch(bool $blocking)
     {
         // nothing to do in a decorator
     }
 
-    /** @inheritdoc */
+    /**
+     * @inheritdoc
+     *
+     * @return void
+     */
     protected function deactivate(Watcher $watcher)
     {
         // nothing to do in a decorator

@@ -48,6 +48,11 @@ class EvDriver extends Driver
             self::$activeSignals = &$this->signals;
         }
 
+        /**
+         * @param \EvIO $event
+         *
+         * @return void
+         */
         $this->ioCallback = function (\EvIO $event) {
             /** @var Watcher $watcher */
             $watcher = $event->data;
@@ -71,6 +76,11 @@ class EvDriver extends Driver
             }
         };
 
+        /**
+         * @param \EvTimer $event
+         *
+         * @return void
+         */
         $this->timerCallback = function (\EvTimer $event) {
             /** @var Watcher $watcher */
             $watcher = $event->data;
@@ -103,6 +113,11 @@ class EvDriver extends Driver
             }
         };
 
+        /**
+         * @param \EvSignal $event
+         *
+         * @return void
+         */
         $this->signalCallback = function (\EvSignal $event) {
             /** @var Watcher $watcher */
             $watcher = $event->data;
@@ -216,6 +231,8 @@ class EvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function dispatch(bool $blocking)
     {
@@ -225,6 +242,8 @@ class EvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function activate(array $watchers)
     {
@@ -285,6 +304,8 @@ class EvDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function deactivate(Watcher $watcher)
     {

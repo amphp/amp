@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <psalm
         totallyTyped="false"
-        errorLevel="3"
+        errorLevel="2"
         phpVersion="7.0"
         resolveFromConfigFile="true"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -27,6 +27,30 @@
                 <directory name="lib"/>
             </errorLevel>
         </StringIncrement>
+
+        <RedundantConditionGivenDocblockType>
+            <errorLevel type="suppress">
+                <directory name="lib"/>
+            </errorLevel>
+        </RedundantConditionGivenDocblockType>
+
+        <DocblockTypeContradiction>
+            <errorLevel type="suppress">
+                <directory name="lib"/>
+            </errorLevel>
+        </DocblockTypeContradiction>
+
+        <MissingClosureParamType>
+            <errorLevel type="suppress">
+                <directory name="lib"/>
+            </errorLevel>
+        </MissingClosureParamType>
+
+        <MissingClosureReturnType>
+            <errorLevel type="suppress">
+                <directory name="lib"/>
+            </errorLevel>
+        </MissingClosureReturnType>
     </issueHandlers>
 
     <stubs>

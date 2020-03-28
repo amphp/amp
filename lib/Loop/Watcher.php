@@ -6,6 +6,8 @@ use Amp\Struct;
 
 /**
  * @template TValue as (int|resource|null)
+ *
+ * @psalm-suppress MissingConstructor
  */
 class Watcher
 {

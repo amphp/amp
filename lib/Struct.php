@@ -16,6 +16,11 @@ trait Struct
      */
     private $__propertySuggestThreshold = 70;
 
+    /**
+     * @param string $property
+     *
+     * @psalm-return no-return
+     */
     public function __get(string $property)
     {
         throw new \Error(
@@ -23,6 +28,12 @@ trait Struct
         );
     }
 
+    /**
+     * @param string $property
+     * @param mixed  $value
+     *
+     * @psalm-return no-return
+     */
     public function __set(string $property, $value)
     {
         throw new \Error(
@@ -49,6 +60,7 @@ trait Struct
         $bestMatch = "";
         $bestMatchPercentage = 0;
 
+        /** @psalm-suppress RawObjectIteration */
         foreach ($this as $property => $value) {
             // Never suggest properties that begin with an underscore
             if ($property[0] === "_") {

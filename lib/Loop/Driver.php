@@ -142,6 +142,8 @@ abstract class Driver
      * Activates (enables) all the given watchers.
      *
      * @param Watcher[] $watchers
+     *
+     * @return void
      */
     abstract protected function activate(array $watchers);
 
@@ -149,6 +151,8 @@ abstract class Driver
      * Dispatches any pending read/write, timer, and signal events.
      *
      * @param bool $blocking
+     *
+     * @return void
      */
     abstract protected function dispatch(bool $blocking);
 
@@ -484,6 +488,8 @@ abstract class Driver
      * Deactivates (disables) the given watcher.
      *
      * @param Watcher $watcher
+     *
+     * @return void
      */
     abstract protected function deactivate(Watcher $watcher);
 

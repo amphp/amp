@@ -52,6 +52,13 @@ class EventDriver extends Driver
             self::$activeSignals = &$this->signals;
         }
 
+        /**
+         * @param         $resource
+         * @param         $what
+         * @param Watcher $watcher
+         *
+         * @return void
+         */
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
             \assert(\is_resource($watcher->value));
 
@@ -74,6 +81,13 @@ class EventDriver extends Driver
             }
         };
 
+        /**
+         * @param         $resource
+         * @param         $what
+         * @param Watcher $watcher
+         *
+         * @return void
+         */
         $this->timerCallback = function ($resource, $what, Watcher $watcher) {
             \assert(\is_int($watcher->value));
 
@@ -102,6 +116,13 @@ class EventDriver extends Driver
             }
         };
 
+        /**
+         * @param         $signum
+         * @param         $what
+         * @param Watcher $watcher
+         *
+         * @return void
+         */
         $this->signalCallback = function ($signum, $what, Watcher $watcher) {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
@@ -232,6 +253,8 @@ class EventDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function dispatch(bool $blocking)
     {
@@ -241,6 +264,8 @@ class EventDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function activate(array $watchers)
     {
@@ -328,6 +353,8 @@ class EventDriver extends Driver
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     protected function deactivate(Watcher $watcher)
     {

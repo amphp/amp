@@ -41,6 +41,9 @@ class DriverFactory
         return $driver;
     }
 
+    /**
+     * @return Driver|null
+     */
     private function createDriverFromEnv()
     {
         $driver = \getenv("AMP_LOOP_DRIVER");
