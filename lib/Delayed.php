@@ -4,6 +4,9 @@ namespace Amp;
 
 /**
  * Creates a promise that resolves itself with a given value after a number of milliseconds.
+ *
+ * @template-covariant TReturn
+ * @template-implements Promise<TReturn>
  */
 final class Delayed implements Promise
 {
@@ -13,8 +16,8 @@ final class Delayed implements Promise
     private $watcher;
 
     /**
-     * @param int   $time Milliseconds before succeeding the promise.
-     * @param mixed $value Succeed the promise with this value.
+     * @param int     $time Milliseconds before succeeding the promise.
+     * @param TReturn $value Succeed the promise with this value.
      */
     public function __construct(int $time, $value = null)
     {

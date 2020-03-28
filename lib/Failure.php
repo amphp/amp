@@ -6,6 +6,8 @@ use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Creates a failed promise using the given exception.
+ *
+ * @template-implements Promise<?>
  */
 final class Failure implements Promise
 {

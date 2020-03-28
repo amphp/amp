@@ -49,10 +49,13 @@ namespace Amp
      * Calls the given function, always returning a promise. If the function returns a Generator, it will be run as a
      * coroutine. If the function throws, a failed promise will be returned.
      *
-     * @param callable(mixed ...$args):\Generator|mixed $callback
+     * @template TReturn
+     *
+     * @param callable(mixed ...$args):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
+     *     $callback
      * @param mixed ...$args Arguments to pass to the function.
      *
-     * @return \Amp\Promise
+     * @return Promise<TReturn>
      */
     function call(callable $callback, ...$args): Promise
     {
@@ -81,8 +84,13 @@ namespace Amp
      * Calls the given function. If the function returns a Generator, it will be run as a coroutine. If the function
      * throws or returns a failing promise, the failure is forwarded to the loop error handler.
      *
-     * @param callable(mixed ...$args):\Generator|mixed $callback
+     * @template TReturn
+     *
+     * @param callable(mixed ...$args):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
+     *     $callback
      * @param mixed ...$args
+     *
+     * @return void
      *
      * @throws \TypeError
      */
@@ -98,7 +106,7 @@ namespace Amp
      *
      * @return Delayed
      */
-    function delay(int $milliseconds): Promise
+    function delay(int $milliseconds): Delayed
     {
         return new Delayed($milliseconds);
     }

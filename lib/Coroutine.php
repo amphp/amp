@@ -59,8 +59,8 @@ final class Coroutine implements Promise
 
     /**
      * @param \Generator $generator
-     * @psalm-param \Generator<mixed, Promise|ReactPromise|array<array-key, Promise|ReactPromise>, mixed, TReturn>
-     *     $generator
+     * @psalm-param \Generator<mixed,Promise|ReactPromise|array<array-key,
+     *     Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn> $generator
      */
     public function __construct(\Generator $generator)
     {
