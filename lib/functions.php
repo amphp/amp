@@ -342,9 +342,7 @@ namespace Amp\Promise
      * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
      * the array of promises.
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
-     *
-     * @psalm-param array<array-key, Promise|ReactPromise> $promises
+     * @param array<array-key, Promise|ReactPromise> $promises
      *
      * @return Promise
      *
@@ -740,12 +738,9 @@ namespace Amp\Iterator
      *
      * @template TValue
      *
-     * @param Iterator $iterator
+     * @param Iterator<TValue> $iterator
      *
-     * @psalm-param Iterator<TValue> $iterator
-     *
-     * @return Promise
-     * @psalm-return Promise<array<array-key, TValue>>
+     * @return Promise<array<array-key, TValue>>
      */
     function toArray(Iterator $iterator): Promise
     {
