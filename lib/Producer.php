@@ -14,7 +14,7 @@ final class Producer implements Iterator
     use CallableMaker, Internal\Producer;
 
     /**
-     * @param callable(callable(TValue $value): Promise $emit): \Generator $producer
+     * @param callable(callable(TValue):Promise):\Generator $producer
      *
      * @throws \Error Thrown if the callable does not return a Generator.
      */

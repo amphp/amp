@@ -10,7 +10,7 @@ namespace Amp;
 class TimeoutException extends \Exception
 {
     /**
-     * @param string|null $message Exception message.
+     * @param string $message Exception message.
      */
     public function __construct(string $message = "Operation timed out")
     {

@@ -252,7 +252,7 @@ class NativeDriver extends Driver
         }
 
         if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
-            \usleep($timeout * self::MICROSEC_PER_SEC);
+            \usleep((int) ($timeout * self::MICROSEC_PER_SEC));
         }
     }
 

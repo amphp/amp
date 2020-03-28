@@ -76,7 +76,7 @@ trait Producer
     /**
      * {@inheritdoc}
      *
-     * @return Promise<TValue>
+     * @return TValue
      */
     public function getCurrent()
     {
