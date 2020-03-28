@@ -2,12 +2,19 @@
 
 namespace Amp;
 
+/**
+ * @template-covariant TValue
+ * @template-implements Iterator<TValue>
+ */
 final class Producer implements Iterator
 {
+    /**
+     * @use Internal\Producer<TValue>
+     */
     use CallableMaker, Internal\Producer;
 
     /**
-     * @param callable(callable(mixed $value): Promise $emit): \Generator $producer
+     * @param callable(callable(TValue $value): Promise $emit): \Generator $producer
      *
      * @throws \Error Thrown if the callable does not return a Generator.
      */

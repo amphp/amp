@@ -15,6 +15,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  * before emitting values.
  *
  * @internal
+ * @template-covariant TValue
  */
 trait Producer
 {
@@ -41,6 +42,8 @@ trait Producer
 
     /**
      * {@inheritdoc}
+     *
+     * @return Promise<bool>
      */
     public function advance(): Promise
     {
@@ -72,6 +75,8 @@ trait Producer
 
     /**
      * {@inheritdoc}
+     *
+     * @return Promise<TValue>
      */
     public function getCurrent()
     {
