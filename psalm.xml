@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <psalm
         totallyTyped="false"
-        errorLevel="5"
+        errorLevel="4"
         phpVersion="7.0"
         resolveFromConfigFile="true"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

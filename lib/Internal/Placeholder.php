@@ -70,9 +70,11 @@ trait Placeholder
         }
 
         if (!$this->onResolved instanceof ResolutionQueue) {
+            /** @psalm-suppress InternalClass */
             $this->onResolved = new ResolutionQueue($this->onResolved);
         }
 
+        /** @psalm-suppress InternalMethod */
         $this->onResolved->push($onResolved);
     }
 

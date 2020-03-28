@@ -33,7 +33,6 @@ final class Coroutine implements Promise
 
         try {
             if (\is_array($yielded)) {
-                /** @var array<array-key, Promise|ReactPromise> $yielded */
                 return Promise\all($yielded);
             }
 

@@ -171,6 +171,7 @@ class UvDriver extends Driver
      */
     public function now(): int
     {
+        /** @psalm-suppress TooManyArguments */
         return \uv_now($this->handle);
     }
 
@@ -187,6 +188,7 @@ class UvDriver extends Driver
      */
     protected function dispatch(bool $blocking)
     {
+        /** @psalm-suppress TooManyArguments */
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
     }
 

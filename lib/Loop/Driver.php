@@ -134,6 +134,7 @@ abstract class Driver
             }
         }
 
+        /** @psalm-suppress RedundantCondition */
         $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
     }
 

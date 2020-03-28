@@ -7,7 +7,8 @@ use React\Promise\PromiseInterface as ReactPromise;
 /**
  * Creates a failed promise using the given exception.
  *
- * @template-implements Promise<?>
+ * @template-covariant TValue
+ * @template-implements Promise<TValue>
  */
 final class Failure implements Promise
 {

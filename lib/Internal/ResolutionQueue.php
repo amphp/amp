@@ -11,7 +11,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  * Stores a set of functions to be invoked when a promise is resolved.
  *
  * @internal
- * @psalm-internal Amp
+ * @psalm-internal Amp\Internal
  */
 class ResolutionQueue
 {
