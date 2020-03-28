@@ -42,6 +42,7 @@ class EventDriver extends Driver
 
     public function __construct()
     {
+        /** @psalm-suppress TooFewArguments https://github.com/JetBrains/phpstorm-stubs/pull/763 */
         $this->handle = new \EventBase;
         $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
@@ -173,6 +174,7 @@ class EventDriver extends Driver
         self::$activeSignals = &$this->signals;
 
         foreach ($this->signals as $event) {
+            /** @psalm-suppress TooFewArguments https://github.com/JetBrains/phpstorm-stubs/pull/763 */
             $event->add();
         }
 
@@ -186,6 +188,7 @@ class EventDriver extends Driver
             self::$activeSignals = &$active;
 
             foreach ($active as $event) {
+                /** @psalm-suppress TooFewArguments https://github.com/JetBrains/phpstorm-stubs/pull/763 */
                 $event->add();
             }
         }
@@ -300,6 +303,7 @@ class EventDriver extends Driver
                 // no break
 
                 default:
+                    /** @psalm-suppress TooFewArguments https://github.com/JetBrains/phpstorm-stubs/pull/763 */
                     $this->events[$id]->add();
                     break;
             }

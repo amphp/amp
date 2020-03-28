@@ -13,8 +13,8 @@ class InvalidWatcherError extends \Error
     private $watcherId;
 
     /**
-     * @param string      $watcherId The watcher identifier.
-     * @param string|null $message The exception message.
+     * @param string $watcherId The watcher identifier.
+     * @param string $message The exception message.
      */
     public function __construct(string $watcherId, string $message)
     {

@@ -42,7 +42,7 @@ class Watcher
     /**
      * Watcher-dependent value storage. Stream for IO watchers, signal number for signal watchers, interval for timers.
      *
-     * @var mixed
+     * @var resource|int
      */
     public $value;
 }

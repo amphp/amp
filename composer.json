@@ -41,7 +41,8 @@
         "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",
         "phpunit/phpunit": "^6.0.9 | ^7",
-        "phpstan/phpstan": "^0.8.5"
+        "vimeo/psalm": "^3.9@dev",
+        "jetbrains/phpstorm-stubs": "^2019.3"
     },
     "autoload": {
         "psr-4": {
@@ -64,11 +65,6 @@
     "extra": {
         "branch-alias": {
             "dev-master": "2.x-dev"
-        }
-    },
-    "config": {
-        "platform": {
-            "php": "7.0.0"
         }
     },
     "scripts": {

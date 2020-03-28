@@ -25,6 +25,8 @@ final class Delayed implements Promise
 
     /**
      * References the internal watcher in the event loop, keeping the loop running while this promise is pending.
+     *
+     * @return void
      */
     public function reference()
     {
@@ -34,6 +36,8 @@ final class Delayed implements Promise
     /**
      * Unreferences the internal watcher in the event loop, allowing the loop to stop while this promise is pending if
      * no other events are pending in the loop.
+     *
+     * @return void
      */
     public function unreference()
     {

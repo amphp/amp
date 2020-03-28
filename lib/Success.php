@@ -7,6 +7,9 @@ use React\Promise\PromiseInterface as ReactPromise;
 /**
  * Creates a successful promise using the given value (which can be any value except an object implementing
  * `Amp\Promise` or `React\Promise\PromiseInterface`).
+ *
+ * @template-covariant TValue
+ * @template-implements Promise<TValue>
  */
 final class Success implements Promise
 {
@@ -15,6 +18,8 @@ final class Success implements Promise
 
     /**
      * @param mixed $value Anything other than a Promise object.
+     *
+     * @psalm-param TValue $value
      *
      * @throws \Error If a promise is given as the value.
      */

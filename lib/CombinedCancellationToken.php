@@ -4,16 +4,22 @@ namespace Amp;
 
 final class CombinedCancellationToken implements CancellationToken
 {
+    /** @var array{0: CancellationToken, 1: string}[] */
     private $tokens = [];
 
+    /** @var string */
     private $nextId = "a";
+
+    /** @var callable[] */
     private $callbacks = [];
+
+    /** @var CancelledException|null */
     private $exception;
 
     public function __construct(CancellationToken ...$tokens)
     {
         foreach ($tokens as $token) {
-            $id = $token->subscribe(function ($exception) {
+            $id = $token->subscribe(function (CancelledException $exception) {
                 $this->exception = $exception;
 
                 $callbacks = $this->callbacks;

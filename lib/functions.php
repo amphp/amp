@@ -326,9 +326,13 @@ namespace Amp\Promise
      *
      * @param Promise[]|ReactPromise[] $promises Array of only promises.
      *
+     * @psalm-param array<array-key, Promise|ReactPromise> $promises
+     *
      * @return Promise
      *
      * @throws \Error If a non-Promise is in the array.
+     *
+     * @psalm-assert (Promise|ReactPromise)[] $promises
      */
     function all(array $promises): Promise
     {
@@ -706,14 +710,21 @@ namespace Amp\Iterator
     /**
      * Collects all items from an iterator into an array.
      *
+     * @template TValue
+     *
      * @param Iterator $iterator
      *
-     * @return Promise<array>
+     * @psalm-param Iterator<TValue> $iterator
+     *
+     * @return Promise
+     * @psalm-return Promise<array<array-key, TValue>>
      */
     function toArray(Iterator $iterator): Promise
     {
-        return call(function () use ($iterator) {
+        return call(static function () use ($iterator) {
+            /** @psalm-var list $array */
             $array = [];
+
             while (yield $iterator->advance()) {
                 $array[] = $iterator->getCurrent();
             }

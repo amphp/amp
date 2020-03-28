@@ -4,6 +4,7 @@ namespace Amp;
 
 // @codeCoverageIgnoreStart
 if (\PHP_VERSION_ID < 70100) {
+    /** @psalm-suppress DuplicateClass */
     trait CallableMaker
     {
         /** @var \ReflectionClass */
@@ -19,6 +20,8 @@ if (\PHP_VERSION_ID < 70100) {
          * @param string $method Instance method name.
          *
          * @return callable
+         *
+         * @psalm-suppress MixedInferredReturnType
          */
         private function callableFromInstanceMethod(string $method): callable
         {
@@ -39,6 +42,8 @@ if (\PHP_VERSION_ID < 70100) {
          * @param string $method Static method name.
          *
          * @return callable
+         *
+         * @psalm-suppress MixedInferredReturnType
          */
         private static function callableFromStaticMethod(string $method): callable
         {
@@ -53,6 +58,7 @@ if (\PHP_VERSION_ID < 70100) {
         }
     }
 } else {
+    /** @psalm-suppress DuplicateClass */
     trait CallableMaker
     {
         /**

@@ -13,8 +13,8 @@ interface CancellationToken
      * This handler might be invoked immediately in case the token has already been cancelled. Returned generators will
      * automatically be run as coroutines. Any unhandled exceptions will be throw into the event loop.
      *
-     * @param callable $callback Callback to be invoked on a cancellation request. Will receive a `CancelledException`
-     * as first argument that may be used to fail the operation's promise.
+     * @param callable(CancelledException) $callback Callback to be invoked on a cancellation request. Will receive a
+     * `CancelledException` as first argument that may be used to fail the operation's promise.
      *
      * @return string Identifier that can be used to cancel the subscription.
      */

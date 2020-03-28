@@ -10,6 +10,9 @@ use React\Promise\PromiseInterface as ReactPromise;
  * When a promise is yielded, execution of the generator is interrupted until the promise is resolved. A success
  * value is sent into the generator, while a failure reason is thrown into the generator. Using a coroutine,
  * asynchronous code can be written without callbacks and be structured like synchronous code.
+ *
+ * @template-covariant TReturn
+ * @template-implements Promise<TReturn>
  */
 final class Coroutine implements Promise
 {
@@ -26,8 +29,11 @@ final class Coroutine implements Promise
      */
     private static function transform($yielded, $generator): Promise
     {
+        $exception = null; // initialize here, see https://github.com/vimeo/psalm/issues/2951
+
         try {
             if (\is_array($yielded)) {
+                /** @var array<array-key, Promise|ReactPromise> $yielded */
                 return Promise\all($yielded);
             }
 
@@ -47,12 +53,14 @@ final class Coroutine implements Promise
                 Promise::class,
                 ReactPromise::class
             ),
-            $exception ?? null
+            $exception
         ));
     }
 
     /**
      * @param \Generator $generator
+     * @psalm-param \Generator<mixed, Promise|ReactPromise|array<array-key, Promise|ReactPromise>, mixed, TReturn>
+     *     $generator
      */
     public function __construct(\Generator $generator)
     {
@@ -75,18 +83,24 @@ final class Coroutine implements Promise
         /**
          * @param \Throwable|null $e Exception to be thrown into the generator.
          * @param mixed           $v Value to be sent into the generator.
+         *
+         * @return void
+         *
+         * @psalm-suppress MissingClosureParamType
+         * @psalm-suppress MissingClosureReturnType
          */
-        $onResolve = function ($e, $v) use ($generator, &$onResolve) {
-            /** @var bool Used to control iterative coroutine continuation. */
+        $onResolve = function (\Throwable $e = null, $v) use ($generator, &$onResolve) {
+            /** @var bool $immediate Used to control iterative coroutine continuation. */
             static $immediate = true;
 
-            /** @var \Throwable|null Promise failure reason when executing next coroutine step, null at all other times. */
+            /** @var \Throwable|null $exception Promise failure reason when executing next coroutine step, null at all other times. */
             static $exception;
 
-            /** @var mixed Promise success value when executing next coroutine step, null at all other times. */
+            /** @var mixed $value Promise success value when executing next coroutine step, null at all other times. */
             static $value;
 
             $exception = $e;
+            /** @psalm-suppress MixedAssignment */
             $value = $v;
 
             if (!$immediate) {

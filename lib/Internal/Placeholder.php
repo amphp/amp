@@ -22,7 +22,9 @@ trait Placeholder
     /** @var mixed */
     private $result;
 
-    /** @var callable|ResolutionQueue|null */
+    /** @var ResolutionQueue|null|callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
+     *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
+     *     mixed>|null)|callable(\Throwable|null, mixed): void */
     private $onResolved;
 
     /** @var null|array */
@@ -40,6 +42,7 @@ trait Placeholder
             }
 
             try {
+                /** @var mixed $result */
                 $result = $onResolved(null, $this->result);
 
                 if ($result === null) {
@@ -73,8 +76,21 @@ trait Placeholder
         $this->onResolved->push($onResolved);
     }
 
+    public function __destruct()
+    {
+        try {
+            $this->result = null;
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
+            });
+        }
+    }
+
     /**
      * @param mixed $value
+     *
+     * @return void
      *
      * @throws \Error Thrown if the promise has already been resolved.
      */
@@ -127,6 +143,7 @@ trait Placeholder
         }
 
         try {
+            /** @var mixed $result */
             $result = $onResolved(null, $this->result);
             $onResolved = null; // allow garbage collection of $onResolved, to catch any exceptions from destructors
 
@@ -150,20 +167,11 @@ trait Placeholder
 
     /**
      * @param \Throwable $reason Failure reason.
+     *
+     * @return void
      */
     private function fail(\Throwable $reason)
     {
         $this->resolve(new Failure($reason));
-    }
-
-    public function __destruct()
-    {
-        try {
-            $this->result = null;
-        } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e) {
-                throw $e;
-            });
-        }
     }
 }

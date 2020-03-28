@@ -8,9 +8,9 @@ use Amp\Promise;
  * Wraps a Promise instance that has public methods to resolve and fail the promise into an object that only allows
  * access to the public API methods.
  */
-class PrivatePromise implements Promise
+final class PrivatePromise implements Promise
 {
-    /** @var \Amp\Promise */
+    /** @var Promise */
     private $promise;
 
     public function __construct(Promise $promise)

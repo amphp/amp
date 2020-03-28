@@ -5,7 +5,8 @@ namespace Amp\Internal;
 /**
  * Formats a stacktrace obtained via `debug_backtrace()`.
  *
- * @param array $trace Output of `debug_backtrace()`.
+ * @param array<array{file?: string, line: int, type?: string, class: string, function: string}> $trace Output of
+ *     `debug_backtrace()`.
  *
  * @return string Formatted stacktrace.
  *
@@ -14,7 +15,7 @@ namespace Amp\Internal;
  */
 function formatStacktrace(array $trace): string
 {
-    return \implode("\n", \array_map(function ($e, $i) {
+    return \implode("\n", \array_map(static function ($e, $i) {
         $line = "#{$i} ";
 
         if (isset($e["file"])) {
@@ -59,7 +60,9 @@ function createTypeError(array $expected, $given): \TypeError
  */
 function getCurrentTime(): int
 {
+    /** @var int|null $startTime */
     static $startTime;
+    /** @var int|null $nextWarning */
     static $nextWarning;
 
     if (\PHP_INT_SIZE === 4) {
@@ -81,6 +84,7 @@ function getCurrentTime(): int
                     \E_USER_WARNING
                 );
 
+                /** @psalm-suppress PossiblyNullOperand */
                 $nextWarning += 600; // every 10 minutes
             }
 
@@ -96,10 +100,11 @@ function getCurrentTime(): int
                 \E_USER_WARNING
             );
 
+            /** @psalm-suppress PossiblyNullOperand */
             $nextWarning += 600; // every 10 minutes
         }
 
-        return $seconds * 1000;
+        return (int) ($seconds * 1000);
         // @codeCoverageIgnoreEnd
     }
 
@@ -108,5 +113,5 @@ function getCurrentTime(): int
         return (int) ($seconds * 1000 + $nanoseconds / 1000000);
     }
 
-    return (\microtime(true) * 1000);
+    return (int) (\microtime(true) * 1000);
 }

@@ -11,18 +11,25 @@ use React\Promise\PromiseInterface as ReactPromise;
  * Stores a set of functions to be invoked when a promise is resolved.
  *
  * @internal
+ * @psalm-internal Amp
  */
 class ResolutionQueue
 {
-    /** @var callable[] */
+    /** @var array<array-key, callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
+     *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
+     *     mixed>|null) | callable(\Throwable|null, mixed): void> */
     private $queue = [];
 
     /**
      * @param callable|null $callback Initial callback to add to queue.
+     *
+     * @psalm-param null|callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
+     *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
+     *     mixed>|null) | callable(\Throwable|null, mixed): void $callback
      */
     public function __construct(callable $callback = null)
     {
-        if (null !== $callback) {
+        if ($callback !== null) {
             $this->push($callback);
         }
     }
@@ -31,6 +38,12 @@ class ResolutionQueue
      * Unrolls instances of self to avoid blowing up the call stack on resolution.
      *
      * @param callable $callback
+     *
+     * @psalm-param callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
+     *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
+     *     mixed>|null) | callable(\Throwable|null, mixed): void $callback
+     *
+     * @return void
      */
     public function push(callable $callback)
     {
@@ -47,6 +60,8 @@ class ResolutionQueue
      *
      * @param \Throwable|null $exception
      * @param mixed           $value
+     *
+     * @return void
      */
     public function __invoke($exception, $value)
     {

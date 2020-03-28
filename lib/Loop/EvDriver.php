@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace Amp\Loop;
 
@@ -13,30 +13,27 @@ class EvDriver extends Driver
     /** @var \EvSignal[]|null */
     private static $activeSignals;
 
+    public static function isSupported(): bool
+    {
+        return \extension_loaded("ev");
+    }
+
     /** @var \EvLoop */
     private $handle;
-
     /** @var \EvWatcher[] */
     private $events = [];
-
     /** @var callable */
     private $ioCallback;
-
     /** @var callable */
     private $timerCallback;
-
     /** @var callable */
     private $signalCallback;
-
     /** @var \EvSignal[] */
     private $signals = [];
-
     /** @var int Internal timestamp for now. */
     private $now;
-
     /** @var bool */
     private $nowUpdateNeeded = false;
-
     /** @var int Loop time offset */
     private $nowOffset;
 
@@ -52,7 +49,7 @@ class EvDriver extends Driver
         }
 
         $this->ioCallback = function (\EvIO $event) {
-            /** @var \Amp\Loop\Watcher $watcher */
+            /** @var Watcher $watcher */
             $watcher = $event->data;
 
             try {
@@ -75,7 +72,7 @@ class EvDriver extends Driver
         };
 
         $this->timerCallback = function (\EvTimer $event) {
-            /** @var \Amp\Loop\Watcher $watcher */
+            /** @var Watcher $watcher */
             $watcher = $event->data;
 
             if ($watcher->type & Watcher::DELAY) {
@@ -107,7 +104,7 @@ class EvDriver extends Driver
         };
 
         $this->signalCallback = function (\EvSignal $event) {
-            /** @var \Amp\Loop\Watcher $watcher */
+            /** @var Watcher $watcher */
             $watcher = $event->data;
 
             try {
@@ -139,14 +136,10 @@ class EvDriver extends Driver
         unset($this->events[$watcherId]);
     }
 
-    public static function isSupported(): bool
-    {
-        return \extension_loaded("ev");
-    }
-
     public function __destruct()
     {
         foreach ($this->events as $event) {
+            /** @psalm-suppress all */
             if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
                 $event->stop();
             }
@@ -241,7 +234,12 @@ class EvDriver extends Driver
                         break;
 
                     case Watcher::WRITABLE:
-                        $this->events[$id] = $this->handle->io($watcher->value, \Ev::WRITE, $this->ioCallback, $watcher);
+                        $this->events[$id] = $this->handle->io(
+                            $watcher->value,
+                            \Ev::WRITE,
+                            $this->ioCallback,
+                            $watcher
+                        );
                         break;
 
                     case Watcher::DELAY:
@@ -249,7 +247,7 @@ class EvDriver extends Driver
                         $interval = $watcher->value / self::MILLISEC_PER_SEC;
                         $this->events[$id] = $this->handle->timer(
                             $interval,
-                            $watcher->type & Watcher::REPEAT ? $interval : 0,
+                            ($watcher->type & Watcher::REPEAT) ? $interval : 0,
                             $this->timerCallback,
                             $watcher
                         );

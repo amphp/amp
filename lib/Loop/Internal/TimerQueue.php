@@ -9,11 +9,11 @@ use Amp\Loop\Watcher;
  */
 final class TimerQueue
 {
-    /** @var object[] */
+    /** @var TimerQueueEntry[] */
     private $data = [];
 
     /** @var int[] */
-    private $pointers;
+    private $pointers = [];
 
     /**
      * Inserts the watcher into the queue. Time complexity: O(log(n)).
@@ -25,13 +25,7 @@ final class TimerQueue
      */
     public function insert(Watcher $watcher, int $expiration)
     {
-        $entry = new class {
-            public $watcher;
-            public $expiration;
-        };
-
-        $entry->watcher = $watcher;
-        $entry->expiration = $expiration;
+        $entry = new TimerQueueEntry($watcher, $expiration);
 
         $node = \count($this->data);
         $this->data[$node] = $entry;

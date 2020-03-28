@@ -26,6 +26,7 @@ final class Failure implements Promise
     public function onResolve(callable $onResolved)
     {
         try {
+            /** @var mixed $result */
             $result = $onResolved($this->exception, null);
 
             if ($result === null) {

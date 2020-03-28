@@ -40,12 +40,17 @@ use function Amp\Promise\rethrow;
  */
 final class CancellationTokenSource
 {
+    /** @var CancellationToken */
     private $token;
+
+    /** @var callable|null */
     private $onCancel;
 
     public function __construct()
     {
-        $this->token = new class($this->onCancel) implements CancellationToken {
+        $onCancel = null;
+
+        $this->token = new class($onCancel) implements CancellationToken {
             /** @var string */
             private $nextId = "a";
 
@@ -53,10 +58,15 @@ final class CancellationTokenSource
             private $callbacks = [];
 
             /** @var \Throwable|null */
-            private $exception = null;
+            private $exception;
 
+            /**
+             * @param mixed $onCancel
+             * @param-out callable $onCancel
+             */
             public function __construct(&$onCancel)
             {
+                /** @psalm-suppress MissingClosureReturnType We still support PHP 7.0 */
                 $onCancel = function (\Throwable $exception) {
                     $this->exception = $exception;
 
@@ -69,13 +79,20 @@ final class CancellationTokenSource
                 };
             }
 
-            private function invokeCallback($callback)
+            /**
+             * @param callable $callback
+             *
+             * @return void
+             */
+            private function invokeCallback(callable $callback)
             {
                 // No type declaration to prevent exception outside the try!
                 try {
+                    /** @var mixed $result */
                     $result = $callback($this->exception);
 
                     if ($result instanceof \Generator) {
+                        /** @psalm-var \Generator<mixed, Promise|ReactPromise|(Promise|ReactPromise)[], mixed, mixed> $result */
                         $result = new Coroutine($result);
                     }
 
@@ -119,6 +136,8 @@ final class CancellationTokenSource
                 }
             }
         };
+
+        $this->onCancel = $onCancel;
     }
 
     public function getToken(): CancellationToken
@@ -128,6 +147,8 @@ final class CancellationTokenSource
 
     /**
      * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
+     *
+     * @return void
      */
     public function cancel(\Throwable $previous = null)
     {
