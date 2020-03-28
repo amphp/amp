@@ -145,7 +145,10 @@ trait Placeholder
         }
 
         try {
-            /** @var mixed $result */
+            /**
+             * @var mixed $result
+             * @psalm-suppress PossiblyInvalidMethodCall https://github.com/vimeo/psalm/issues/3033
+             */
             $result = $onResolved(null, $this->result);
             $onResolved = null; // allow garbage collection of $onResolved, to catch any exceptions from destructors
 

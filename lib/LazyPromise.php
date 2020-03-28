@@ -12,7 +12,7 @@ final class LazyPromise implements Promise
     /** @var callable|null */
     private $promisor;
 
-    /** @var \Amp\Promise|null */
+    /** @var Promise|null */
     private $promise;
 
     /**
@@ -30,10 +30,14 @@ final class LazyPromise implements Promise
     public function onResolve(callable $onResolved)
     {
         if ($this->promise === null) {
+            \assert($this->promisor !== null);
+
             $provider = $this->promisor;
             $this->promisor = null;
             $this->promise = call($provider);
         }
+
+        \assert($this->promise !== null);
 
         $this->promise->onResolve($onResolved);
     }

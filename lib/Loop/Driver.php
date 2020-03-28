@@ -182,6 +182,7 @@ abstract class Driver
      */
     public function defer(callable $callback, $data = null): string
     {
+        /** @psalm-var Watcher<null> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::DEFER;
         $watcher->id = $this->nextId++;
@@ -216,10 +217,12 @@ abstract class Driver
             throw new \Error("Delay must be greater than or equal to zero");
         }
 
+        /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::DELAY;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
+        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $delay;
         $watcher->data = $data;
 
@@ -251,10 +254,12 @@ abstract class Driver
             throw new \Error("Interval must be greater than or equal to zero");
         }
 
+        /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::REPEAT;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
+        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $interval;
         $watcher->data = $data;
 
@@ -285,10 +290,12 @@ abstract class Driver
      */
     public function onReadable($stream, callable $callback, $data = null): string
     {
+        /** @psalm-var Watcher<resource> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::READABLE;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
+        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $stream;
         $watcher->data = $data;
 
@@ -319,10 +326,12 @@ abstract class Driver
      */
     public function onWritable($stream, callable $callback, $data = null): string
     {
+        /** @psalm-var Watcher<resource> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
+        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $stream;
         $watcher->data = $data;
 
@@ -354,10 +363,12 @@ abstract class Driver
      */
     public function onSignal(int $signo, callable $callback, $data = null): string
     {
+        /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::SIGNAL;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
+        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $signo;
         $watcher->data = $data;
 

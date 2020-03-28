@@ -157,6 +157,8 @@ class EvDriver extends Driver
     {
         $active = self::$activeSignals;
 
+        \assert($active !== null);
+
         foreach ($active as $event) {
             $event->stop();
         }
@@ -230,10 +232,14 @@ class EvDriver extends Driver
             if (!isset($this->events[$id = $watcher->id])) {
                 switch ($watcher->type) {
                     case Watcher::READABLE:
+                        \assert(\is_resource($watcher->value));
+
                         $this->events[$id] = $this->handle->io($watcher->value, \Ev::READ, $this->ioCallback, $watcher);
                         break;
 
                     case Watcher::WRITABLE:
+                        \assert(\is_resource($watcher->value));
+
                         $this->events[$id] = $this->handle->io(
                             $watcher->value,
                             \Ev::WRITE,
@@ -244,6 +250,8 @@ class EvDriver extends Driver
 
                     case Watcher::DELAY:
                     case Watcher::REPEAT:
+                        \assert(\is_int($watcher->value));
+
                         $interval = $watcher->value / self::MILLISEC_PER_SEC;
                         $this->events[$id] = $this->handle->timer(
                             $interval,
@@ -254,6 +262,8 @@ class EvDriver extends Driver
                         break;
 
                     case Watcher::SIGNAL:
+                        \assert(\is_int($watcher->value));
+
                         $this->events[$id] = $this->handle->signal($watcher->value, $this->signalCallback, $watcher);
                         break;
 
@@ -267,6 +277,7 @@ class EvDriver extends Driver
             }
 
             if ($watcher->type === Watcher::SIGNAL) {
+                /** @psalm-suppress PropertyTypeCoercion */
                 $this->signals[$id] = $this->events[$id];
             }
         }

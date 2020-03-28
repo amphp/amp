@@ -217,6 +217,8 @@ class NativeDriver extends Driver
                 }
             }
 
+            \assert(\is_array($write)); // See https://github.com/vimeo/psalm/issues/3036
+
             foreach ($write as $stream) {
                 $streamId = (int) $stream;
                 if (!isset($this->writeWatchers[$streamId])) {

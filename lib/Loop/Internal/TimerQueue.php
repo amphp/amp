@@ -21,6 +21,8 @@ final class TimerQueue
      * @param Watcher $watcher
      * @param int     $expiration
      *
+     * @psalm-param Watcher<int> $watcher
+     *
      * @return void
      */
     public function insert(Watcher $watcher, int $expiration)
@@ -32,6 +34,8 @@ final class TimerQueue
         $this->pointers[$watcher->id] = $node;
 
         while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
+            \assert(isset($parent)); // see https://github.com/vimeo/psalm/issues/3034
+
             $temp = $this->data[$parent];
             $this->data[$node] = $temp;
             $this->pointers[$temp->watcher->id] = $node;
@@ -47,6 +51,8 @@ final class TimerQueue
      * Removes the given watcher from the queue. Time complexity: O(log(n)).
      *
      * @param Watcher $watcher
+     *
+     * @psalm-param Watcher<int> $watcher
      *
      * @return void
      */
@@ -68,6 +74,8 @@ final class TimerQueue
      * @param int $now Current loop time.
      *
      * @return Watcher|null Expired watcher at the top of the heap or null if the watcher has not expired.
+     *
+     * @psalm-return Watcher<int>|null
      */
     public function extract(int $now)
     {

@@ -53,6 +53,8 @@ class EventDriver extends Driver
         }
 
         $this->ioCallback = function ($resource, $what, Watcher $watcher) {
+            \assert(\is_resource($watcher->value));
+
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
@@ -73,6 +75,8 @@ class EventDriver extends Driver
         };
 
         $this->timerCallback = function ($resource, $what, Watcher $watcher) {
+            \assert(\is_int($watcher->value));
+
             if ($watcher->type & Watcher::DELAY) {
                 $this->cancel($watcher->id);
             } else {
@@ -167,6 +171,8 @@ class EventDriver extends Driver
     {
         $active = self::$activeSignals;
 
+        \assert($active !== null);
+
         foreach ($active as $event) {
             $event->del();
         }
@@ -244,6 +250,8 @@ class EventDriver extends Driver
             if (!isset($this->events[$id = $watcher->id])) {
                 switch ($watcher->type) {
                     case Watcher::READABLE:
+                        \assert(\is_resource($watcher->value));
+
                         $this->events[$id] = new \Event(
                             $this->handle,
                             $watcher->value,
@@ -254,6 +262,8 @@ class EventDriver extends Driver
                         break;
 
                     case Watcher::WRITABLE:
+                        \assert(\is_resource($watcher->value));
+
                         $this->events[$id] = new \Event(
                             $this->handle,
                             $watcher->value,
@@ -265,6 +275,8 @@ class EventDriver extends Driver
 
                     case Watcher::DELAY:
                     case Watcher::REPEAT:
+                        \assert(\is_int($watcher->value));
+
                         $this->events[$id] = new \Event(
                             $this->handle,
                             -1,
@@ -275,6 +287,8 @@ class EventDriver extends Driver
                         break;
 
                     case Watcher::SIGNAL:
+                        \assert(\is_int($watcher->value));
+
                         $this->events[$id] = new \Event(
                             $this->handle,
                             $watcher->value,
@@ -294,6 +308,8 @@ class EventDriver extends Driver
             switch ($watcher->type) {
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
+                    \assert(\is_int($watcher->value));
+
                     $interval = $watcher->value - ($now - $this->now());
                     $this->events[$id]->add($interval > 0 ? $interval / self::MILLISEC_PER_SEC : 0);
                     break;
