@@ -44,7 +44,7 @@ script:
   - php vendor/bin/phpunit --verbose --group memoryleak
   - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
-  - vendor/bin/psalm
+  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then vendor/bin/psalm; else echo "Skipped psalm static analysis"; fi
 
 after_script:
   - curl -OL https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.0/coveralls.phar
