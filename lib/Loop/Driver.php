@@ -226,7 +226,6 @@ abstract class Driver
         $watcher->type = Watcher::DELAY;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
-        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $delay;
         $watcher->data = $data;
 
@@ -263,7 +262,6 @@ abstract class Driver
         $watcher->type = Watcher::REPEAT;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
-        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $interval;
         $watcher->data = $data;
 
@@ -299,7 +297,6 @@ abstract class Driver
         $watcher->type = Watcher::READABLE;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
-        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $stream;
         $watcher->data = $data;
 
@@ -335,7 +332,6 @@ abstract class Driver
         $watcher->type = Watcher::WRITABLE;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
-        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $stream;
         $watcher->data = $data;
 
@@ -372,7 +368,6 @@ abstract class Driver
         $watcher->type = Watcher::SIGNAL;
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
-        /** @psalm-suppress InvalidPropertyAssignmentValue https://github.com/vimeo/psalm/issues/3035 */
         $watcher->value = $signo;
         $watcher->data = $data;
 

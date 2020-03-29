@@ -34,8 +34,6 @@ final class TimerQueue
         $this->pointers[$watcher->id] = $node;
 
         while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
-            \assert(isset($parent)); // see https://github.com/vimeo/psalm/issues/3034
-
             $temp = $this->data[$parent];
             $this->data[$node] = $temp;
             $this->pointers[$temp->watcher->id] = $node;
