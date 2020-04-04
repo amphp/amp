@@ -6,13 +6,15 @@ namespace Amp;
  * Deferred is a container for a promise that is resolved using the resolve() and fail() methods of this object.
  * The contained promise may be accessed using the promise() method. This object should not be part of a public
  * API, but used internally to create and resolve a promise.
+ *
+ * @template TValue
  */
 final class Deferred
 {
-    /** @var Promise Has public resolve and fail methods. */
+    /** @var Promise<TValue> Has public resolve and fail methods. */
     private $resolver;
 
-    /** @var Promise Hides placeholder methods */
+    /** @var Promise<TValue> Hides placeholder methods */
     private $promise;
 
     public function __construct()
@@ -28,7 +30,7 @@ final class Deferred
     }
 
     /**
-     * @return Promise
+     * @return Promise<TValue>
      */
     public function promise(): Promise
     {
@@ -39,6 +41,8 @@ final class Deferred
      * Fulfill the promise with the given value.
      *
      * @param mixed $value
+     *
+     * @psalm-param TValue $value
      *
      * @return void
      */
