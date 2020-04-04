@@ -42,7 +42,7 @@ final class Deferred
      *
      * @param mixed $value
      *
-     * @psalm-param TValue $value
+     * @psalm-param TValue|Promise<TValue> $value
      *
      * @return void
      */
