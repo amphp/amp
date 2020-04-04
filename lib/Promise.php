@@ -6,6 +6,7 @@ namespace Amp;
  * Representation of the future value of an asynchronous operation.
  *
  * @template-covariant TValue
+ * @psalm-yield TValue
  */
 interface Promise
 {

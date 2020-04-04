@@ -9,6 +9,7 @@
         xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
 >
     <projectFiles>
+        <directory name="examples"/>
         <directory name="lib"/>
         <ignoreFiles>
             <directory name="vendor"/>
@@ -24,6 +25,7 @@
 
         <StringIncrement>
             <errorLevel type="suppress">
+                <directory name="examples"/>
                 <directory name="lib"/>
             </errorLevel>
         </StringIncrement>
@@ -42,12 +44,14 @@
 
         <MissingClosureParamType>
             <errorLevel type="suppress">
+                <directory name="examples"/>
                 <directory name="lib"/>
             </errorLevel>
         </MissingClosureParamType>
 
         <MissingClosureReturnType>
             <errorLevel type="suppress">
+                <directory name="examples"/>
                 <directory name="lib"/>
             </errorLevel>
         </MissingClosureReturnType>

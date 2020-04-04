@@ -3,11 +3,12 @@
 
 use Amp\Deferred;
 use Amp\Loop;
+use Amp\Promise;
 
 require_once __DIR__ . "/../../vendor/autoload.php";
 
 /**
- * @return \Amp\Promise<string>
+ * @return Promise<string>
  */
 function jobSuccess()
 {
@@ -22,7 +23,7 @@ function jobSuccess()
 }
 
 /**
- * @return \Amp\Promise<string>
+ * @return Promise<string>
  */
 function jobFail()
 {

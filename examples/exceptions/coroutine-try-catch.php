@@ -3,10 +3,14 @@
 
 use Amp\Deferred;
 use Amp\Loop;
+use Amp\Promise;
 
 require_once __DIR__ . "/../../vendor/autoload.php";
 
-function asyncOperation()
+/**
+ * @return Promise<string>
+ */
+function asyncOperation(): Promise
 {
     $def = new Deferred();
 

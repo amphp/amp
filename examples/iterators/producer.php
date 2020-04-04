@@ -9,7 +9,7 @@ use Amp\Producer;
 
 Loop::run(function () {
     try {
-        $iterator = new Producer(function (callable $emit) {
+        $iterator = new Producer(function (callable $emit): \Generator {
             yield $emit(1);
             yield $emit(new Delayed(500, 2));
             yield $emit(3);
@@ -28,6 +28,6 @@ Loop::run(function () {
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Exception $exception) {
-        \printf("Exception: %s\n", $exception);
+        \printf("Exception: %s\n", (string) $exception);
     }
 });

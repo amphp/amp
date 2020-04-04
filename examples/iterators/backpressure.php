@@ -34,6 +34,6 @@ Loop::run(function () {
             yield new Delayed(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {
-        \printf("Exception: %s\n", $exception);
+        \printf("Exception: %s\n", (string) $exception);
     }
 });
