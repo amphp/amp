@@ -24,8 +24,9 @@ final class TimeoutCancellationToken implements CancellationToken
         $source = new CancellationTokenSource;
         $this->token = $source->getToken();
 
-        $trace = formatStacktrace(\debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS));
+        $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
         $this->watcher = Loop::delay($timeout, static function () use ($source, $message, $trace) {
+            $trace = formatStacktrace($trace);
             $source->cancel(new TimeoutException("$message\r\nTimeoutCancellationToken was created here:\r\n$trace"));
         });
 
