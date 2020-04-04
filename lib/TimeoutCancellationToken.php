@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use function Amp\Internal\formatStacktrace;
+
 /**
  * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
  */
@@ -10,11 +12,11 @@ final class TimeoutCancellationToken implements CancellationToken
     /** @var string */
     private $watcher;
 
-    /** @var \Amp\CancellationToken */
+    /** @var CancellationToken */
     private $token;
 
     /**
-     * @param int $timeout Milliseconds until cancellation is requested.
+     * @param int    $timeout Milliseconds until cancellation is requested.
      * @param string $message Message for TimeoutException. Default is "Operation timed out".
      */
     public function __construct(int $timeout, string $message = "Operation timed out")
@@ -22,9 +24,12 @@ final class TimeoutCancellationToken implements CancellationToken
         $source = new CancellationTokenSource;
         $this->token = $source->getToken();
 
-        $this->watcher = Loop::delay($timeout, static function () use ($source, $message) {
-            $source->cancel(new TimeoutException($message));
+        $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
+        $this->watcher = Loop::delay($timeout, static function () use ($source, $message, $trace) {
+            $trace = formatStacktrace($trace);
+            $source->cancel(new TimeoutException("$message\r\nTimeoutCancellationToken was created here:\r\n$trace"));
         });
+
         Loop::unreference($this->watcher);
     }
 
