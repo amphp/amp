@@ -14,10 +14,10 @@ namespace Amp
      *
      * @template TReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
-     *     $callback
+     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
      *
-     * @return callable(...mixed):Promise<TReturn>
+     * @return callable
+     * @psalm-return (TReturn is Promise ? (callable(...mixed): TReturn) : (callable(...mixed):Promise<TReturn>))
      *
      * @see asyncCoroutine()
      */
@@ -37,10 +37,10 @@ namespace Amp
      *
      * @template TReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
-     *     $callback
+     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
      *
-     * @return callable(...mixed): void
+     * @return callable
+     * @psalm-return callable(...mixed): void
      *
      * @see coroutine()
      */
@@ -57,11 +57,11 @@ namespace Amp
      *
      * @template TReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
-     *     $callback
+     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
      * @param mixed ...$args Arguments to pass to the function.
      *
-     * @return Promise<TReturn>
+     * @return Promise
+     * @psalm-return (TReturn is Promise ? TReturn : Promise<TReturn>)
      */
     function call(callable $callback, ...$args): Promise
     {
@@ -92,9 +92,8 @@ namespace Amp
      *
      * @template TReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,Promise<TReturn>|ReactPromise|TReturn>|Promise<TReturn>|ReactPromise|TReturn)
-     *     $callback
-     * @param mixed ...$args
+     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
+     * @param mixed ...$args Arguments to pass to the function.
      *
      * @return void
      *
