@@ -109,6 +109,16 @@ final class Loop
     }
 
     /**
+     * Returns true if the event loop is running, false if it is stopped.
+     *
+     * @return bool True if the event loop is running, false if it is stopped.
+     */
+    public static function isRunning(): bool
+    {
+        return self::$driver->isRunning();
+    }
+
+    /**
      * Defer the execution of a callback.
      *
      * The deferred callable MUST be executed before any other type of watcher in a tick. Order of enabling MUST be

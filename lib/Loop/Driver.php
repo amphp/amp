@@ -77,6 +77,14 @@ abstract class Driver
     }
 
     /**
+     * @return bool True if the event loop is running, false if it is stopped.
+     */
+    public function isRunning(): bool
+    {
+        return $this->running;
+    }
+
+    /**
      * @return bool True if no enabled and referenced watchers remain in the loop.
      */
     private function isEmpty(): bool

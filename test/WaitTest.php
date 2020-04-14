@@ -45,15 +45,13 @@ class WaitTest extends BaseTest
      */
     public function testWaitOnPendingPromise()
     {
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $promise = new Delayed(100, $value);
+        $promise = new Delayed(100, $value);
 
-            $result = Promise\wait($promise);
+        $result = Promise\wait($promise);
 
-            $this->assertSame($value, $result);
-        });
+        $this->assertSame($value, $result);
     }
 
     /**
@@ -96,5 +94,15 @@ class WaitTest extends BaseTest
     {
         $this->expectException(\TypeError::class);
         Promise\wait(42);
+    }
+
+    public function testWithinRunningEventLoop()
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Cannot call');
+
+        Loop::run(function () {
+            Promise\wait(new Success);
+        });
     }
 }

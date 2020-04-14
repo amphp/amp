@@ -2,7 +2,6 @@
 
 namespace Amp
 {
-
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
@@ -129,7 +128,6 @@ namespace Amp
 
 namespace Amp\Promise
 {
-
     use Amp\Deferred;
     use Amp\Loop;
     use Amp\MultiReasonException;
@@ -175,9 +173,11 @@ namespace Amp\Promise
      * Use this function only in synchronous contexts to wait for an asynchronous operation. Use coroutines and yield to
      * await promise resolution in a fully asynchronous application instead.
      *
-     * @param Promise|ReactPromise $promise Promise to wait for.
+     * @template TReturn
      *
-     * @return mixed Promise success value.
+     * @param Promise<TReturn>|ReactPromise $promise Promise to wait for.
+     *
+     * @return TReturn Promise success value.
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      * @throws \Error If the event loop stopped without the $promise being resolved.
@@ -185,6 +185,10 @@ namespace Amp\Promise
      */
     function wait($promise)
     {
+        if (Loop::isRunning()) {
+            throw new \Error("Cannot call " . __FUNCTION__ . "() within a running event loop");
+        }
+
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);
@@ -553,7 +557,6 @@ namespace Amp\Promise
 
 namespace Amp\Iterator
 {
-
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Iterator;
