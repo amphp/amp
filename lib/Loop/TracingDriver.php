@@ -27,6 +27,11 @@ final class TracingDriver extends Driver
         $this->driver->run();
     }
 
+    public function isRunning(): bool
+    {
+        return $this->driver->isRunning();
+    }
+
     public function stop()
     {
         $this->driver->stop();

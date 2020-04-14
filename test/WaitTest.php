@@ -98,11 +98,13 @@ class WaitTest extends BaseTest
 
     public function testWithinRunningEventLoop()
     {
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Cannot call');
-
-        Loop::run(function () {
+        $invoked = false;
+        Loop::run(function () use (&$invoked) {
             Promise\wait(new Success);
+            Loop::defer(function () use (&$invoked) {
+                $invoked = true;
+            });
         });
+        $this->assertTrue($invoked);
     }
 }

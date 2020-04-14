@@ -39,8 +39,8 @@ abstract class Driver
     /** @var callable(\Throwable):void|null */
     private $errorHandler;
 
-    /** @var bool */
-    private $running = false;
+    /** @var int */
+    private $nesting = 0;
 
     /** @var array */
     private $registry = [];
@@ -62,17 +62,17 @@ abstract class Driver
      */
     public function run()
     {
-        $this->running = true;
+        $nesting = $this->nesting++;
 
         try {
-            while ($this->running) {
+            while ($nesting < $this->nesting) {
                 if ($this->isEmpty()) {
                     return;
                 }
                 $this->tick();
             }
         } finally {
-            $this->stop();
+            $this->nesting = \min($nesting, $this->nesting);
         }
     }
 
@@ -81,7 +81,7 @@ abstract class Driver
      */
     public function isRunning(): bool
     {
-        return $this->running;
+        return $this->nesting > 0;
     }
 
     /**
@@ -143,7 +143,7 @@ abstract class Driver
         }
 
         /** @psalm-suppress RedundantCondition */
-        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
+        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->nesting > 0 && !$this->isEmpty());
     }
 
     /**
@@ -174,7 +174,7 @@ abstract class Driver
      */
     public function stop()
     {
-        $this->running = false;
+        $this->nesting = \max(0, $this->nesting - 1);
     }
 
     /**
@@ -734,7 +734,7 @@ abstract class Driver
             "on_readable" => $onReadable,
             "on_writable" => $onWritable,
             "on_signal" => $onSignal,
-            "running" => (bool) $this->running,
+            "running" => $this->nesting > 0,
         ];
     }
 }

@@ -185,10 +185,6 @@ namespace Amp\Promise
      */
     function wait($promise)
     {
-        if (Loop::isRunning()) {
-            throw new \Error("Cannot call " . __FUNCTION__ . "() within a running event loop");
-        }
-
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = adapt($promise);

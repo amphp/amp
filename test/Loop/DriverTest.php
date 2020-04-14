@@ -87,7 +87,10 @@ abstract class DriverTest extends TestCase
                 echo 5;
                 $loop->defer(function () use ($loop) {
                     echo 6;
-                    $loop->stop();
+                    while ($loop->isRunning()) {
+                        // Stop all nested loops.
+                        $loop->stop();
+                    }
                     $loop->defer(function () {
                         $this->fail("A loop stopped at all levels must not execute further defers");
                     });
