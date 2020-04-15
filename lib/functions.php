@@ -196,9 +196,11 @@ namespace Amp\Promise
         $resolved = false;
 
         try {
-            Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
-                $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
-                    Loop::stop();
+            $driver = Loop::get();
+            $driver->execute(static function (callable $stop) use (&$resolved, &$value, &$exception, $promise) {
+                $promise->onResolve(static function ($e, $v) use (&$resolved, &$value, &$exception, $stop) {
+                    $stop();
+
                     $resolved = true;
                     $exception = $e;
                     $value = $v;

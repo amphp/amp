@@ -27,6 +27,11 @@ final class TracingDriver extends Driver
         $this->driver->run();
     }
 
+    public function execute(callable $callback)
+    {
+        $this->driver->execute($callback);
+    }
+
     public function stop()
     {
         $this->driver->stop();
