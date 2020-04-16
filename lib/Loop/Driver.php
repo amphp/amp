@@ -79,11 +79,13 @@ abstract class Driver
     /**
      * Run the event loop with an explicit stop handle.
      *
-     * This method is intended for Amp\Promise\wait only and NOT exposed as method in Amp\Loop.
+     * This method is intended for {@see \Amp\Promise\wait()} only and NOT exposed as method in {@see \Amp\Loop}.
+     *
+     * @param callable $callback Callback is given a callable as the only parameter that is used to stop the event loop.
      *
      * @return void
-     * @see Driver::run()
      *
+     * @see Driver::run()
      */
     public function execute(callable $callback)
     {
