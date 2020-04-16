@@ -27,9 +27,9 @@ final class TracingDriver extends Driver
         $this->driver->run();
     }
 
-    public function execute(callable $callback)
+    public function delegate(): DelegateLoop
     {
-        $this->driver->execute($callback);
+        return $this->driver->delegate();
     }
 
     public function stop()

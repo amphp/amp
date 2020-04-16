@@ -81,27 +81,27 @@ abstract class Driver
      *
      * This method is intended for {@see \Amp\Promise\wait()} only and NOT exposed as method in {@see \Amp\Loop}.
      *
-     * @param callable $callback Callback is given a callable as the only parameter that is used to stop the event loop.
-     *
-     * @return void
+     * @return DelegateLoop
      *
      * @see Driver::run()
      */
-    public function execute(callable $callback)
+    public function delegate(): DelegateLoop
     {
-        $running = true;
+        return new DelegateLoop(
+            function () use (&$running) {
+                $running = true;
+                while ($running) {
+                    if ($this->isEmpty()) {
+                        return;
+                    }
 
-        $callback(static function () use (&$running) {
-            $running = false;
-        });
-
-        while ($running) {
-            if ($this->isEmpty()) {
-                return;
+                    $this->tick();
+                }
+            },
+            static function () use (&$running) {
+                $running = false;
             }
-
-            $this->tick();
-        }
+        );
     }
 
     /**
