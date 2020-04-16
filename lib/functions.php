@@ -199,17 +199,17 @@ namespace Amp\Promise
 
         try {
             $driver = Loop::get();
-            $delegate = $driver->delegate();
+            $control = $driver->createControl();
 
-            $promise->onResolve(static function ($e, $v) use (&$resolved, &$value, &$exception, $delegate) {
-                $delegate->stop();
+            $promise->onResolve(static function ($e, $v) use (&$resolved, &$value, &$exception, $control) {
+                $control->stop();
 
                 $resolved = true;
                 $exception = $e;
                 $value = $v;
             });
 
-            $delegate->run();
+            $control->run();
         } catch (\Throwable $throwable) {
             throw new \Error("Loop exceptionally stopped without resolving the promise", 0, $throwable);
         }

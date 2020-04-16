@@ -77,17 +77,17 @@ abstract class Driver
     }
 
     /**
-     * Run the event loop with an explicit stop handle.
+     * Create a control that can be used to start and stop a specific iteration of the driver loop.
      *
      * This method is intended for {@see \Amp\Promise\wait()} only and NOT exposed as method in {@see \Amp\Loop}.
      *
-     * @return DelegateLoop
+     * @return DriverControl
      *
      * @see Driver::run()
      */
-    public function delegate(): DelegateLoop
+    public function createControl(): DriverControl
     {
-        return new DelegateLoop(
+        return new DriverControl(
             function () use (&$running) {
                 $running = true;
                 while ($running) {

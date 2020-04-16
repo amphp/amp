@@ -27,9 +27,9 @@ final class TracingDriver extends Driver
         $this->driver->run();
     }
 
-    public function delegate(): DelegateLoop
+    public function createControl(): DriverControl
     {
-        return $this->driver->delegate();
+        return $this->driver->createControl();
     }
 
     public function stop()

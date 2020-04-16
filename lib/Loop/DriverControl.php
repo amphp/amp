@@ -2,7 +2,7 @@
 
 namespace Amp\Loop;
 
-final class DelegateLoop
+final class DriverControl
 {
     private $run;
     private $stop;
