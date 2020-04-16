@@ -2,24 +2,23 @@
 
 namespace Amp\Loop;
 
-final class DriverControl
+interface DriverControl
 {
-    private $run;
-    private $stop;
+    /**
+     * Run the driver event loop.
+     *
+     * @return void
+     *
+     * @see Driver::run()
+     */
+    public function run();
 
-    public function __construct(callable $run, callable $stop)
-    {
-        $this->run = $run;
-        $this->stop = $stop;
-    }
-
-    public function run()
-    {
-        ($this->run)();
-    }
-
-    public function stop()
-    {
-        ($this->stop)();
-    }
+    /**
+     * Stop the driver event loop.
+     *
+     * @return void
+     *
+     * @see Driver::stop()
+     */
+    public function stop();
 }

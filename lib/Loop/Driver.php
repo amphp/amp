@@ -87,21 +87,37 @@ abstract class Driver
      */
     public function createControl(): DriverControl
     {
-        return new DriverControl(
-            function () use (&$running) {
-                $running = true;
-                while ($running) {
-                    if ($this->isEmpty()) {
-                        return;
-                    }
-
-                    $this->tick();
+        return new class(function () use (&$running) {
+            $running = true;
+            while ($running) {
+                if ($this->isEmpty()) {
+                    return;
                 }
-            },
-            static function () use (&$running) {
-                $running = false;
+
+                $this->tick();
             }
-        );
+        }, static function () use (&$running) {
+            $running = false;
+        }) implements DriverControl {
+            private $run;
+            private $stop;
+
+            public function __construct(callable $run, callable $stop)
+            {
+                $this->run = $run;
+                $this->stop = $stop;
+            }
+
+            public function run()
+            {
+                ($this->run)();
+            }
+
+            public function stop()
+            {
+                ($this->stop)();
+            }
+        };
     }
 
     /**
