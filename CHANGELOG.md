@@ -1,3 +1,19 @@
+### 2.4.3
+
+ - Improved types for `Amp\call`
+ - Improved types for `Deferred::resolve()` (#307)
+
+### 2.4.2
+
+ - Provide useful exception trace in `TimeoutCancellationToken` (#303)
+ - Add parameter for custom timeout message (#299)
+ - Add psalm annotations for improved static analysis
+
+### 2.4.1
+
+ - Fixed undefined index warning when `stream_select()` fails but `error_get_last()` returns `null`.
+
+
 2.4.0
 -----
 
