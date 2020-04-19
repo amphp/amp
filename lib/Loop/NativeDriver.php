@@ -361,6 +361,8 @@ class NativeDriver extends Driver
                 break;
 
             case Watcher::SIGNAL:
+                \assert(\is_int($watcher->value));
+
                 if (isset($this->signalWatchers[$watcher->value])) {
                     unset($this->signalWatchers[$watcher->value][$watcher->id]);
 

@@ -13,11 +13,14 @@ namespace Amp
      * Use this function to create a coroutine-aware callable for a promise-aware callback caller.
      *
      * @template TReturn
+     * @template TGeneratorReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
+     * @param callable(...mixed):mixed $callback
      *
      * @return callable
-     * @psalm-return (TReturn is Promise ? (callable(...mixed): TReturn) : (callable(...mixed):Promise<TReturn>))
+     * @psalm-return callable(...mixed):Promise
+     *
+     * @todo Fix return type once https://github.com/vimeo/psalm/issues/3071 has been fixed
      *
      * @see asyncCoroutine()
      */
@@ -36,11 +39,12 @@ namespace Amp
      * Use this function to create a coroutine-aware callable for a non-promise-aware callback caller.
      *
      * @template TReturn
+     * @template TGeneratorReturn
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
+     * @param callable(...mixed):mixed $callback
      *
      * @return callable
-     * @psalm-return callable(...mixed): void
+     * @psalm-return callable(...mixed):void
      *
      * @see coroutine()
      */
@@ -56,12 +60,19 @@ namespace Amp
      * coroutine. If the function throws, a failed promise will be returned.
      *
      * @template TReturn
+     * @template TReturnPromise
+     * @template TGenerator
+     * @template TGeneratorPromise
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
+     * @formatter:off
+     *
+     * @param callable(...mixed):(TReturn|Promise<TReturnPromise>|\Generator<mixed, mixed, mixed, TGenerator|Promise<TGeneratorPromise>>) $callback
      * @param mixed ...$args Arguments to pass to the function.
      *
      * @return Promise
-     * @psalm-return (TReturn is Promise ? TReturn : Promise<TReturn>)
+     * @psalm-return (TReturn is Promise ? Promise<TReturnPromise> : (TReturn is \Generator ? (TGenerator is Promise ? Promise<TGeneratorPromise> : Promise<TGenerator>) : Promise<TReturn>))
+     *
+     * @formatter:on
      */
     function call(callable $callback, ...$args): Promise
     {
@@ -91,11 +102,18 @@ namespace Amp
      * throws or returns a failing promise, the failure is forwarded to the loop error handler.
      *
      * @template TReturn
+     * @template TReturnPromise
+     * @template TGenerator
+     * @template TGeneratorPromise
      *
-     * @param callable(...mixed):(\Generator<mixed,Promise|ReactPromise|array<array-key, Promise|ReactPromise>,mixed,TReturn>|TReturn) $callback
+     * @formatter:off
+     *
+     * @param callable(...mixed):(TReturn|Promise<TReturnPromise>|\Generator<mixed, mixed, mixed, TGenerator|Promise<TGeneratorPromise>>) $callback
      * @param mixed ...$args Arguments to pass to the function.
      *
      * @return void
+     *
+     * @formatter:on
      *
      * @throws \TypeError
      */
@@ -345,13 +363,15 @@ namespace Amp\Promise
      *
      * @param Promise[]|ReactPromise[] $promises Array of only promises.
      *
-     * @psalm-param array<array-key, Promise|ReactPromise> $promises
-     *
      * @return Promise
      *
      * @throws \Error If a non-Promise is in the array.
      *
-     * @psalm-assert (Promise|ReactPromise)[] $promises
+     * @template TValue
+     *
+     * @psalm-param array<array-key, Promise<TValue>|ReactPromise> $promises
+     * @psalm-assert array<array-key, Promise<TValue>|ReactPromise> $promises $promises
+     * @psalm-return Promise<array<array-key, TValue>>
      */
     function all(array $promises): Promise
     {
