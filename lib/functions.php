@@ -212,15 +212,20 @@ namespace Amp\Promise
         }
 
         $resolved = false;
+        $running = false;
 
         try {
-            $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
-                Loop::stop();
+            $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception, &$running) {
+                if ($running) {
+                    Loop::stop();
+                }
 
                 $resolved = true;
                 $exception = $e;
                 $value = $v;
             });
+
+            $running = true;
 
             while (!$resolved && Loop::getInfo()['enabled_watchers']['referenced'] > 0) {
                 Loop::run();
