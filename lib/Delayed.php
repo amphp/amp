@@ -12,7 +12,7 @@ final class Delayed implements Promise
 {
     use Internal\Placeholder;
 
-    /** @var string Event loop watcher identifier. */
+    /** @var string|null Event loop watcher identifier. */
     private $watcher;
 
     /**
@@ -22,6 +22,7 @@ final class Delayed implements Promise
     public function __construct(int $time, $value = null)
     {
         $this->watcher = Loop::delay($time, function () use ($value) {
+            $this->watcher = null;
             $this->resolve($value);
         });
     }
@@ -33,7 +34,9 @@ final class Delayed implements Promise
      */
     public function reference()
     {
-        Loop::reference($this->watcher);
+        if ($this->watcher !== null) {
+            Loop::reference($this->watcher);
+        }
     }
 
     /**
@@ -44,6 +47,8 @@ final class Delayed implements Promise
      */
     public function unreference()
     {
-        Loop::unreference($this->watcher);
+        if ($this->watcher !== null) {
+            Loop::unreference($this->watcher);
+        }
     }
 }
