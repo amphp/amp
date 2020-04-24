@@ -30,25 +30,29 @@ final class Delayed implements Promise
     /**
      * References the internal watcher in the event loop, keeping the loop running while this promise is pending.
      *
-     * @return void
+     * @return self
      */
-    public function reference()
+    public function reference(): self
     {
         if ($this->watcher !== null) {
             Loop::reference($this->watcher);
         }
+
+        return $this;
     }
 
     /**
      * Unreferences the internal watcher in the event loop, allowing the loop to stop while this promise is pending if
      * no other events are pending in the loop.
      *
-     * @return void
+     * @return self
      */
-    public function unreference()
+    public function unreference(): self
     {
         if ($this->watcher !== null) {
             Loop::unreference($this->watcher);
         }
+
+        return $this;
     }
 }
