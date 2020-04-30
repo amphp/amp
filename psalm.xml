@@ -10,6 +10,9 @@
 >
     <projectFiles>
         <directory name="examples"/>
+        <ignoreFiles>
+            <directory name="examples/psalm"/>
+        </ignoreFiles>
         <directory name="lib"/>
         <ignoreFiles>
             <directory name="vendor"/>
