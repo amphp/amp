@@ -8,7 +8,6 @@ use function Amp\Promise\wait;
  */
 function accept(string $param)
 {
-
 }
 
 $coroutine = coroutine(function (): \Generator {
@@ -19,5 +18,3 @@ $coroutine = coroutine(function (): \Generator {
 
 // psalm-expect InvalidScalarArgument
 accept(wait($coroutine()));
-
-

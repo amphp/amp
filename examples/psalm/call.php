@@ -9,7 +9,6 @@ use function Amp\Promise\wait;
  */
 function accept(string $param)
 {
-
 }
 
 $coroutine = call(function (): \Generator {
@@ -44,5 +43,3 @@ accept(wait(call(function (): \Generator {
 accept(wait(call(function (): string {
     return 'foobar';
 })));
-
-
