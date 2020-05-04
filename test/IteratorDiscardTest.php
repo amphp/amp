@@ -8,7 +8,7 @@ use function Amp\Iterator\discard;
 
 class IteratorDiscardTest extends AsyncTestCase
 {
-    public function testEmpty()
+    public function testEmpty(): \Generator
     {
         $this->assertSame(0, yield discard(Iterator\fromIterable([])));
     }
