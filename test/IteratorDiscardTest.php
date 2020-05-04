@@ -13,7 +13,7 @@ class IteratorDiscardTest extends AsyncTestCase
         $this->assertSame(0, yield discard(Iterator\fromIterable([])));
     }
 
-    public function testCount()
+    public function testCount(): \Generator
     {
         $this->assertSame(3, yield discard(Iterator\fromIterable(['a', 1, false], 1)));
     }
