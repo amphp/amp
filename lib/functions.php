@@ -776,7 +776,7 @@ namespace Amp\Iterator
      */
     function discard(Iterator $iterator): Promise
     {
-        return call(static function () use ($iterator) {
+        return call(static function () use ($iterator): \Generator {
             $count = 0;
 
             while (yield $iterator->advance()) {
