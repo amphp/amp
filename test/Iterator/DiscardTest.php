@@ -1,12 +1,12 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Iterator;
 
 use Amp\Iterator;
 use Amp\PHPUnit\AsyncTestCase;
 use function Amp\Iterator\discard;
 
-class IteratorDiscardTest extends AsyncTestCase
+class DiscardTest extends AsyncTestCase
 {
     public function testEmpty(): \Generator
     {

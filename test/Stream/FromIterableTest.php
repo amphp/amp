@@ -1,15 +1,16 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Stream;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Iterator;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
+use Amp\Stream;
 use Amp\Success;
+use Amp\Test\BaseTest;
 
-class IteratorFromIterableTest extends BaseTest
+class FromIterableTest extends BaseTest
 {
     const TIMEOUT = 10;
 
@@ -17,10 +18,10 @@ class IteratorFromIterableTest extends BaseTest
     {
         Loop::run(function () {
             $expected = \range(1, 3);
-            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Success(3)]);
+            $iterator = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
         });
     }
@@ -29,10 +30,10 @@ class IteratorFromIterableTest extends BaseTest
     {
         Loop::run(function () {
             $exception = new \Exception;
-            $iterator = Iterator\fromIterable([new Failure($exception), new Failure($exception)]);
+            $iterator = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
 
             try {
-                yield $iterator->advance();
+                yield $iterator->continue();
             } catch (\Exception $reason) {
                 $this->assertSame($exception, $reason);
             }
@@ -44,11 +45,11 @@ class IteratorFromIterableTest extends BaseTest
         Loop::run(function () {
             $exception = new TestException;
             $expected = \range(1, 2);
-            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+            $iterator = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
             try {
-                while (yield $iterator->advance()) {
-                    $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+                while (list($value) = yield $iterator->continue()) {
+                    $this->assertSame(\array_shift($expected), $value);
                 }
                 $this->fail("A failed promise in the iterable should fail the iterator and be thrown from advance()");
             } catch (TestException $reason) {
@@ -63,10 +64,10 @@ class IteratorFromIterableTest extends BaseTest
     {
         Loop::run(function () {
             $expected = \range(1, 4);
-            $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
+            $iterator = Stream\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
         });
     }
@@ -81,10 +82,10 @@ class IteratorFromIterableTest extends BaseTest
                 }
             })();
 
-            $iterator = Iterator\fromIterable($generator);
+            $iterator = Stream\fromIterable($generator);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
 
             $this->assertEmpty($expected);
@@ -92,12 +93,13 @@ class IteratorFromIterableTest extends BaseTest
     }
 
     /**
-     * @expectedException \TypeError
      * @dataProvider provideInvalidIteratorArguments
      */
     public function testInvalid($arg)
     {
-        Iterator\fromIterable($arg);
+        $this->expectException(\TypeError::class);
+
+        Stream\fromIterable($arg);
     }
 
     public function provideInvalidIteratorArguments()
@@ -116,11 +118,11 @@ class IteratorFromIterableTest extends BaseTest
     {
         Loop::run(function () {
             $count = 3;
-            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
+            $iterator = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
 
             $i = 0;
-            while (yield $iterator->advance()) {
-                $this->assertSame(++$i, $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(++$i, $value);
             }
 
             $this->assertSame($count, $i);
@@ -134,9 +136,9 @@ class IteratorFromIterableTest extends BaseTest
     {
         $count = 5;
         Loop::run(function () use ($count) {
-            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
+            $iterator = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
 
-            for ($i = 0; yield $iterator->advance(); ++$i) {
+            for ($i = 0; list($value) = yield $iterator->continue(); ++$i) {
                 yield new Delayed(self::TIMEOUT * 2);
             }
 

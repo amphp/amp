@@ -1,11 +1,12 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Iterator;
 
 use Amp\Iterator;
+use Amp\Test\BaseTest;
 use function Amp\Promise\wait;
 
-class IteratorToArrayTest extends BaseTest
+class ToArrayTest extends BaseTest
 {
     public function testNonEmpty()
     {

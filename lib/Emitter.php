@@ -9,6 +9,8 @@ namespace Amp;
  * iterator.
  *
  * @template TValue
+ *
+ * @deprecated Use {@see StreamSource} and {@see Stream} instead of {@see Emitter} and {@see Iterator}.
  */
 final class Emitter
 {
