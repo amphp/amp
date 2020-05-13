@@ -60,7 +60,7 @@ final class AsyncGenerator implements Stream
      */
     public function transform(): TransformationStream
     {
-        return new TransformationStream($this);
+        return $this->generator->transform();
     }
 
     /**

@@ -51,6 +51,6 @@ class AutoDisposingStream implements Stream
      */
     public function transform(): TransformationStream
     {
-        return new TransformationStream($this);
+        return $this->stream->transform();
     }
 }
