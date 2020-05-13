@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 class Yielder implements Stream
 {
     use \Amp\Internal\Yielder {
-        stream as public;
+        createStream as public;
     }
 }
 
@@ -32,7 +32,7 @@ class YielderTraitTest extends TestCase
             $value = 'Yielded Value';
 
             $promise = $this->source->yield($value);
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
 
             $this->assertSame([$value, 0], yield $stream->continue());
 
@@ -60,7 +60,7 @@ class YielderTraitTest extends TestCase
     {
         Loop::run(function () {
             $this->source->yield(null);
-            $this->assertSame([null, 0], yield $this->source->stream()->continue());
+            $this->assertSame([null, 0], yield $this->source->createStream()->continue());
         });
     }
 
@@ -95,12 +95,12 @@ class YielderTraitTest extends TestCase
 
     public function testDoubleStart()
     {
-        $stream = $this->source->stream();
+        $stream = $this->source->createStream();
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('A stream may be started only once');
 
-        $stream = $this->source->stream();
+        $stream = $this->source->createStream();
     }
 
     public function testYieldAfterContinue()
@@ -108,7 +108,7 @@ class YielderTraitTest extends TestCase
         Loop::run(function () {
             $value = 'Yielded Value';
 
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
 
             $promise = $stream->continue();
             $this->assertInstanceOf(Promise::class, $promise);
@@ -122,7 +122,7 @@ class YielderTraitTest extends TestCase
     public function testContinueAfterComplete()
     {
         Loop::run(function () {
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
 
             $this->source->complete();
 
@@ -136,7 +136,7 @@ class YielderTraitTest extends TestCase
     public function testContinueAfterFail()
     {
         Loop::run(function () {
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
 
             $this->source->fail(new \Exception('Stream failed'));
 
@@ -154,7 +154,7 @@ class YielderTraitTest extends TestCase
     public function testCompleteAfterContinue()
     {
         Loop::run(function () {
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
 
             $promise = $stream->continue();
             $this->assertInstanceOf(Promise::class, $promise);
@@ -167,7 +167,7 @@ class YielderTraitTest extends TestCase
 
     public function testDestroyingStreamRelievesBackPressure()
     {
-        $stream = $this->source->stream();
+        $stream = $this->source->createStream();
 
         $invoked = 0;
         $onResolved = function () use (&$invoked) {
@@ -199,7 +199,7 @@ class YielderTraitTest extends TestCase
         $this->expectExceptionMessage('The stream has been disposed');
 
         Loop::run(function () {
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
             $promise = $this->source->yield(1);
             $stream->dispose();
             $this->assertNull(yield $promise);
@@ -214,7 +214,7 @@ class YielderTraitTest extends TestCase
         $this->expectExceptionMessage('The stream has been disposed');
 
         Loop::run(function () {
-            $stream = $this->source->stream();
+            $stream = $this->source->createStream();
             $promise = $this->source->yield(1);
             unset($stream);
             $this->assertNull(yield $promise);
