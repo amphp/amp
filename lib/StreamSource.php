@@ -18,7 +18,7 @@ final class StreamSource
     {
         $this->stream = new class implements Stream {
             use Internal\Yielder {
-                stream as public;
+                createStream as public;
             }
         };
     }
@@ -33,7 +33,7 @@ final class StreamSource
     public function stream(): Stream
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
-        return $this->stream->stream();
+        return $this->stream->createStream();
     }
 
     /**

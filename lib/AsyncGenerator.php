@@ -24,7 +24,7 @@ final class AsyncGenerator implements Stream
     {
         $source = new class implements Internal\GeneratorStream {
             use Internal\Yielder {
-                generate as public;
+                createGenerator as public;
             }
         };
 
@@ -52,7 +52,15 @@ final class AsyncGenerator implements Stream
             $source->complete();
         });
 
-        $this->generator = $source->generate();
+        $this->generator = $source->createGenerator();
+    }
+
+    /**
+     * @return TransformationStream<TValue>
+     */
+    public function transform(): TransformationStream
+    {
+        return new TransformationStream($this);
     }
 
     /**

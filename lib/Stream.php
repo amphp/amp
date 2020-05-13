@@ -25,4 +25,11 @@ interface Stream
      * @return void
      */
     public function dispose();
+
+    /**
+     * Returns a stream object with fluent transformation methods.
+     *
+     * @return TransformationStream
+     */
+    public function transform(): TransformationStream;
 }

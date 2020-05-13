@@ -5,6 +5,7 @@ namespace Amp\Internal;
 use Amp\Deferred;
 use Amp\DisposedException;
 use Amp\Failure;
+use Amp\TransformationStream;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
@@ -130,7 +131,12 @@ trait Yielder
         return $deferred->promise();
     }
 
-    private function stream(): Stream
+    public function transform(): TransformationStream
+    {
+        return new TransformationStream($this);
+    }
+
+    private function createStream(): Stream
     {
         \assert($this instanceof Stream, \sprintf("Users of this trait must implement %s to call %s", Stream::class, __METHOD__));
 
@@ -147,7 +153,7 @@ trait Yielder
         return new AutoDisposingStream($this);
     }
 
-    private function generate(): GeneratorStream
+    private function createGenerator(): GeneratorStream
     {
         \assert($this instanceof GeneratorStream, \sprintf("Users of this trait must implement %s to call %s", GeneratorStream::class, __METHOD__));
 
