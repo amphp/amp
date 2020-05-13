@@ -92,10 +92,21 @@ final class AsyncGenerator implements Stream
     }
 
     /**
+     * Notifies the generator that the consumer is no longer interested in the generator output.
+     *
+     * @return void
+     */
+    public function dispose()
+    {
+        $this->generator->dispose();
+    }
+
+    /**
      * @return Promise<TReturn>
      */
     public function getReturn(): Promise
     {
         return $this->coroutine;
     }
+
 }

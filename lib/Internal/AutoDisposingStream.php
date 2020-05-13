@@ -14,23 +14,19 @@ use Amp\Stream;
  * @template-covariant TValue
  * @template-implements Stream<TValue>
  */
-class DisposableStream implements Stream
+class AutoDisposingStream implements Stream
 {
     /** @var Stream<TValue> */
     private $stream;
 
-    /** @var callable */
-    private $dispose;
-
-    public function __construct(Stream $stream, callable $dispose)
+    public function __construct(Stream $stream)
     {
         $this->stream = $stream;
-        $this->dispose = $dispose;
     }
 
     public function __destruct()
     {
-        ($this->dispose)();
+        $this->stream->dispose();
     }
 
     /**
@@ -39,5 +35,13 @@ class DisposableStream implements Stream
     public function continue(): Promise
     {
         return $this->stream->continue();
+    }
+
+    /**
+     * @return void
+     */
+    public function dispose()
+    {
+        $this->stream->dispose();
     }
 }
