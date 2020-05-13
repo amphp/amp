@@ -18,4 +18,11 @@ interface Stream
      * @throws \Throwable The exception used to fail the stream.
      */
     public function continue(): Promise;
+
+    /**
+     * Disposes of the stream, indicating the consumer is no longer interested in the stream output.
+     *
+     * @return void
+     */
+    public function dispose();
 }

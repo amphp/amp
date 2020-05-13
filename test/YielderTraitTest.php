@@ -201,6 +201,21 @@ class YielderTraitTest extends TestCase
         Loop::run(function () {
             $stream = $this->source->stream();
             $promise = $this->source->yield(1);
+            $stream->dispose();
+            $this->assertNull(yield $promise);
+            yield $this->source->yield(1);
+        });
+    }
+
+
+    public function testYieldAfterDestruct()
+    {
+        $this->expectException(DisposedException::class);
+        $this->expectExceptionMessage('The stream has been disposed');
+
+        Loop::run(function () {
+            $stream = $this->source->stream();
+            $promise = $this->source->yield(1);
             unset($stream);
             $this->assertNull(yield $promise);
             yield $this->source->yield(1);

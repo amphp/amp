@@ -144,7 +144,7 @@ trait Yielder
          * @psalm-suppress InvalidArgument
          * @psalm-suppress InternalClass
          */
-        return new DisposableStream($this, $this->makeDisposeCallable());
+        return new AutoDisposingStream($this);
     }
 
     private function generate(): GeneratorStream
@@ -161,18 +161,16 @@ trait Yielder
          * @psalm-suppress InvalidArgument
          * @psalm-suppress InternalClass
          */
-        return new DisposableGenerator($this, $this->makeDisposeCallable());
+        return new AutoDisposingGenerator($this);
     }
 
-    private function makeDisposeCallable(): callable
+    public function dispose()
     {
-        return function () {
-            if ($this->result) {
-                return; // Stream already completed or failed.
-            }
+        if ($this->result) {
+            return; // Stream already completed or failed.
+        }
 
-            $this->finalize(new Failure(new DisposedException), true);
-        };
+        $this->finalize(new Failure(new DisposedException), true);
     }
 
     /**

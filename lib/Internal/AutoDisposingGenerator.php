@@ -15,14 +15,14 @@ use Amp\Promise;
  *
  * @template-implements GeneratorStream<TValue, TSend>
  */
-class DisposableGenerator extends DisposableStream implements GeneratorStream
+class AutoDisposingGenerator extends AutoDisposingStream implements GeneratorStream
 {
     /** @var GeneratorStream<TValue, TSend> */
     private $generator;
 
-    public function __construct(GeneratorStream $generator, callable $dispose)
+    public function __construct(GeneratorStream $generator)
     {
-        parent::__construct($generator, $dispose);
+        parent::__construct($generator);
         $this->generator = $generator;
     }
 
