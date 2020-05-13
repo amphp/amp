@@ -1,12 +1,13 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Stream;
 
+use Amp\AsyncGenerator;
 use Amp\Delayed;
-use Amp\Iterator;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
-use Amp\Producer;
+use Amp\Stream;
+use Amp\Test\BaseTest;
 
 class MergeTest extends BaseTest
 {
@@ -28,14 +29,14 @@ class MergeTest extends BaseTest
     public function testMerge(array $iterators, array $expected)
     {
         Loop::run(function () use ($iterators, $expected) {
-            $iterators = \array_map(function (array $iterator): Iterator {
-                return Iterator\fromIterable($iterator);
+            $iterators = \array_map(function (array $iterator): Stream {
+                return Stream\fromIterable($iterator);
             }, $iterators);
 
-            $iterator = Iterator\merge($iterators);
+            $iterator = Stream\merge($iterators);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
         });
     }
@@ -43,7 +44,7 @@ class MergeTest extends BaseTest
     /**
      * @depends testMerge
      */
-    public function testMergeWithDelayedEmits()
+    public function testMergeWithDelayedYields()
     {
         Loop::run(function () {
             $iterators = [];
@@ -51,22 +52,22 @@ class MergeTest extends BaseTest
             $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
             $expected = [1, 4, 5, 2, 6, 3];
 
-            $iterators[] = new Producer(function (callable $emit) use ($values1) {
+            $iterators[] = new AsyncGenerator(function (callable $yield) use ($values1) {
                 foreach ($values1 as $value) {
-                    yield $emit($value);
+                    yield $yield(yield $value);
                 }
             });
 
-            $iterators[] = new Producer(function (callable $emit) use ($values2) {
+            $iterators[] = new AsyncGenerator(function (callable $yield) use ($values2) {
                 foreach ($values2 as $value) {
-                    yield $emit($value);
+                    yield $yield(yield $value);
                 }
             });
 
-            $iterator = Iterator\merge($iterators);
+            $iterator = Stream\merge($iterators);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+            while (list($value) = yield $iterator->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
         });
     }
@@ -74,19 +75,19 @@ class MergeTest extends BaseTest
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedIterator()
+    public function testMergeWithFailedStream()
     {
         Loop::run(function () {
             $exception = new TestException;
-            $producer = new Producer(function (callable $emit) use ($exception) {
-                yield $emit(1); // Emit once before failing.
+            $generator = new AsyncGenerator(function (callable $yield) use ($exception) {
+                yield $yield(1); // Emit once before failing.
                 throw $exception;
             });
 
-            $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
+            $iterator = Stream\merge([$generator, Stream\fromIterable(\range(1, 5))]);
 
             try {
-                while (yield $iterator->advance()) ;
+                while (yield $iterator->continue()) ;
                 $this->fail("The exception used to fail the iterator should be thrown from advance()");
             } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
@@ -94,11 +95,10 @@ class MergeTest extends BaseTest
         });
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonIterator()
+    public function testNonStream()
     {
-        Iterator\merge([1]);
+        $this->expectException(\TypeError::class);
+
+        Stream\merge([1]);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Amp
 {
-
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
@@ -146,7 +145,6 @@ namespace Amp
 
 namespace Amp\Promise
 {
-
     use Amp\Deferred;
     use Amp\Loop;
     use Amp\MultiReasonException;
@@ -578,12 +576,12 @@ namespace Amp\Promise
 
 namespace Amp\Iterator
 {
-
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Iterator;
     use Amp\Producer;
     use Amp\Promise;
+    use Amp\Stream;
     use function Amp\call;
     use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
@@ -797,11 +795,11 @@ namespace Amp\Iterator
      * @psalm-param Iterator<TValue> $iterator
      *
      * @return Promise
-     * @psalm-return Promise<array<array-key, TValue>>
+     * @psalm-return Promise<array<int, TValue>>
      */
     function toArray(Iterator $iterator): Promise
     {
-        return call(static function () use ($iterator) {
+        return call(static function () use ($iterator): \Generator {
             /** @psalm-var list $array */
             $array = [];
 
@@ -810,6 +808,274 @@ namespace Amp\Iterator
             }
 
             return $array;
+        });
+    }
+
+    function fromStream(Stream $stream): Iterator
+    {
+        return new Producer(function (callable $emit) use ($stream): \Generator {
+            while (null !== $value = $stream->continue()) {
+                yield $emit($value);
+            }
+        });
+    }
+}
+
+namespace Amp\Stream
+{
+    use Amp\AsyncGenerator;
+    use Amp\Delayed;
+    use Amp\Iterator;
+    use Amp\Promise;
+    use Amp\Stream;
+    use Amp\StreamSource;
+    use function Amp\call;
+    use function Amp\coroutine;
+    use function Amp\Internal\createTypeError;
+
+    /**
+     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
+     * promise fails, the returned stream will fail with the same reason.
+     *
+     * @param array|\Traversable $iterable Elements to yield.
+     * @param int                $delay Delay between elements yielded in milliseconds.
+     *
+     * @return Stream
+     *
+     * @throws \TypeError If the argument is not an array or instance of \Traversable.
+     */
+    function fromIterable(/* iterable */
+        $iterable,
+        int $delay = 0
+    ): Stream {
+        if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
+            throw createTypeError(["array", "Traversable"], $iterable);
+        }
+
+        if ($delay) {
+            return new AsyncGenerator(static function (callable $yield) use ($iterable, $delay) {
+                foreach ($iterable as $value) {
+                    yield new Delayed($delay);
+                    yield $yield($value instanceof Promise ? yield $value : $value);
+                }
+            });
+        }
+
+        return new AsyncGenerator(static function (callable $yield) use ($iterable) {
+            foreach ($iterable as $value) {
+                yield $yield($value instanceof Promise ? yield $value : $value);
+            }
+        });
+    }
+
+    /**
+     * @template TValue
+     * @template TReturn
+     *
+     * @param Stream $stream
+     * @param callable (TValue $value, int $key): TReturn $onYield
+     *
+     * @psalm-param Stream<TValue> $stream
+     *
+     * @return Stream
+     *
+     * @psalm-return Stream<TReturn>
+     */
+    function map(Stream $stream, callable $onYield): Stream
+    {
+        return new AsyncGenerator(static function (callable $yield) use ($stream, $onYield) {
+            while (list($value, $key) = yield $stream->continue()) {
+                yield $yield($onYield($value, $key));
+            }
+        });
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param Stream $stream
+     * @param callable(TValue $value, int $key):bool $filter
+     *
+     * @psalm-param Stream<TValue> $stream
+     *
+     * @return Stream
+     *
+     * @psalm-return Stream<TValue>
+     */
+    function filter(Stream $stream, callable $filter): Stream
+    {
+        return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
+            while (list($value, $key) = yield $stream->continue()) {
+                if ($filter($value, $key)) {
+                    yield $yield($value, $key);
+                }
+            }
+        });
+    }
+
+    /**
+     * Creates a stream that yields values emitted from any stream in the array of streams.
+     *
+     * @param Stream[] $streams
+     *
+     * @return Stream
+     */
+    function merge(array $streams): Stream
+    {
+        $source = new StreamSource;
+        $result = $source->stream();
+
+        $coroutine = coroutine(static function (Stream $stream) use (&$source) {
+            while ((list($value) = yield $stream->continue()) && $source !== null) {
+                yield $source->yield($value);
+            }
+        });
+
+        $coroutines = [];
+        foreach ($streams as $stream) {
+            if (!$stream instanceof Stream) {
+                throw createTypeError([Stream::class], $stream);
+            }
+
+            $coroutines[] = $coroutine($stream);
+        }
+
+        Promise\all($coroutines)->onResolve(static function ($exception) use (&$source) {
+            $temp = $source;
+            $source = null;
+
+            if ($exception) {
+                $temp->fail($exception);
+            } else {
+                $temp->complete();
+            }
+        });
+
+        return $result;
+    }
+
+    /**
+     * Concatenates the given streams into a single stream, yielding values from a single stream at a time. The
+     * prior stream must complete before values are yielded from any subsequent streams. Streams are concatenated
+     * in the order given (iteration order of the array).
+     *
+     * @param Stream[] $streams
+     *
+     * @return Stream
+     */
+    function concat(array $streams): Stream
+    {
+        foreach ($streams as $stream) {
+            if (!$stream instanceof Stream) {
+                throw createTypeError([Stream::class], $stream);
+            }
+        }
+
+        $source = new StreamSource;
+        $previous = [];
+        $promise = Promise\all($previous);
+
+        $coroutine = coroutine(static function (Stream $stream, callable $yield) {
+            while (list($value) = yield $stream->continue()) {
+                yield $yield($value);
+            }
+        });
+
+        foreach ($streams as $iterator) {
+            $emit = coroutine(static function ($value) use ($source, $promise) {
+                static $pending = true, $failed = false;
+
+                if ($failed) {
+                    return;
+                }
+
+                if ($pending) {
+                    try {
+                        yield $promise;
+                        $pending = false;
+                    } catch (\Throwable $exception) {
+                        $failed = true;
+                        return; // Prior iterator failed.
+                    }
+                }
+
+                yield $source->yield($value);
+            });
+            $previous[] = $coroutine($iterator, $emit);
+            $promise = Promise\all($previous);
+        }
+
+        $promise->onResolve(static function ($exception) use ($source) {
+            if ($exception) {
+                $source->fail($exception);
+                return;
+            }
+
+            $source->complete();
+        });
+
+        return $source->stream();
+    }
+
+    /**
+     * Discards all remaining items and returns the number of discarded items.
+     *
+     * @template TValue
+     *
+     * @param Stream $stream
+     *
+     * @psalm-param Stream<TValue> $stream
+     *
+     * @return Promise<int>
+     *
+     * @psalm-return Promise<int>
+     */
+    function discard(Stream $stream): Promise
+    {
+        return call(static function () use ($stream): \Generator {
+            $count = 0;
+
+            while (yield $stream->continue()) {
+                $count++;
+            }
+
+            return $count;
+        });
+    }
+
+    /**
+     * Collects all items from a stream into an array.
+     *
+     * @template TValue
+     *
+     * @param Stream $stream
+     *
+     * @psalm-param Stream<TValue> $stream
+     *
+     * @return Promise
+     *
+     * @psalm-return Promise<array<int, TValue>>
+     */
+    function toArray(Stream $stream): Promise
+    {
+        return call(static function () use ($stream): \Generator {
+            /** @psalm-var list $array */
+            $array = [];
+
+            while (list($value) = yield $stream->continue()) {
+                $array[] = $value;
+            }
+
+            return $array;
+        });
+    }
+
+    function fromIterator(Iterator $iterator): Stream
+    {
+        return new AsyncGenerator(function (callable $yield) use ($iterator): \Generator {
+            while (yield $iterator->advance()) {
+                yield $yield($iterator->getCurrent());
+            }
         });
     }
 }

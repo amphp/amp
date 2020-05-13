@@ -1,14 +1,15 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\Test\Iterator;
 
 use Amp\Emitter;
 use Amp\Iterator;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
+use Amp\Test\BaseTest;
 
-class MapTest extends BaseTest
+class FilterTest extends BaseTest
 {
     public function testNoValuesEmitted()
     {
@@ -16,7 +17,7 @@ class MapTest extends BaseTest
         Loop::run(function () use (&$invoked) {
             $emitter = new Emitter;
 
-            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 
@@ -33,21 +34,21 @@ class MapTest extends BaseTest
         Loop::run(function () {
             $count = 0;
             $values = [1, 2, 3];
+            $expected = [1, 3];
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
 
-            $iterator = Iterator\map($producer, function ($value) use (&$count) {
+            $iterator = Iterator\filter($producer, function ($value) use (&$count) {
                 ++$count;
-                return $value + 1;
+                return $value & 1;
             });
 
             while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($values) + 1, $iterator->getCurrent());
+                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
-
             $this->assertSame(3, $count);
         });
     }
@@ -55,25 +56,24 @@ class MapTest extends BaseTest
     /**
      * @depends testValuesEmitted
      */
-    public function testOnNextCallbackThrows()
+    public function testCallbackThrows()
     {
         Loop::run(function () {
             $values = [1, 2, 3];
             $exception = new TestException;
-
             $producer = new Producer(function (callable $emit) use ($values) {
                 foreach ($values as $value) {
                     yield $emit($value);
                 }
             });
 
-            $iterator = Iterator\map($producer, function () use ($exception) {
+            $iterator = Iterator\filter($producer, function () use ($exception) {
                 throw $exception;
             });
 
             try {
                 yield $iterator->advance();
-                $this->fail("The exception thrown from the map callback should be thrown from advance()");
+                $this->fail("The exception thrown from the filter callback should be thrown from advance()");
             } catch (TestException $reason) {
                 $this->assertSame($reason, $exception);
             }
@@ -87,7 +87,7 @@ class MapTest extends BaseTest
             $exception = new TestException;
             $emitter = new Emitter;
 
-            $iterator = Iterator\map($emitter->iterate(), function ($value) use (&$invoked) {
+            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
                 $invoked = true;
             });
 

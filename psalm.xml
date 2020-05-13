@@ -58,6 +58,26 @@
                 <directory name="lib"/>
             </errorLevel>
         </MissingClosureReturnType>
+
+        <!-- Iterator is deprecated -->
+        <DeprecatedClass>
+            <errorLevel type="suppress">
+                <directory name="examples/iterators"/>
+                <file name="lib/Emitter.php"/>
+                <file name="lib/functions.php"/>
+                <file name="lib/Internal/PrivateIterator.php"/>
+            </errorLevel>
+        </DeprecatedClass>
+
+        <!-- Iterator is deprecated -->
+        <DeprecatedInterface>
+            <errorLevel type="suppress">
+                <directory name="examples/iterators"/>
+                <file name="lib/Emitter.php"/>
+                <file name="lib/functions.php"/>
+                <file name="lib/Internal/PrivateIterator.php"/>
+            </errorLevel>
+        </DeprecatedInterface>
     </issueHandlers>
 
     <stubs>

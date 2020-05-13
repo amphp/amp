@@ -5,6 +5,10 @@ namespace Amp;
 /**
  * @template-covariant TValue
  * @template-implements Iterator<TValue>
+ *
+ * @deprecated Use {@see AsyncGenerator} instead.
+ *
+ * @psalm-suppress DeprecatedInterface
  */
 final class Producer implements Iterator
 {
