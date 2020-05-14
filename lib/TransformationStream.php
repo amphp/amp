@@ -39,12 +39,12 @@ final class TransformationStream implements Stream
         return new self($this->apply($operator));
     }
 
-    private function apply(callable $operator): self
+    private function apply(callable $operator): Stream
     {
         $stream = $operator($this);
 
-        if ($stream instanceof Stream) {
-            throw new \TypeError('$operator must return an instance of ' . Stream::class);
+        if (!$stream instanceof Stream) {
+            throw new \TypeError('$operator callback must return an instance of ' . Stream::class);
         }
 
         return $stream;
