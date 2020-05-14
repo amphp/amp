@@ -56,17 +56,15 @@ final class AsyncGenerator implements Stream
     }
 
     /**
-     * @return TransformationStream<TValue>
+     * @inheritDoc
      */
-    public function transform(): TransformationStream
+    public function transform(callable $operator = null): TransformationStream
     {
-        return $this->generator->transform();
+        return $this->generator->transform($operator);
     }
 
     /**
-     * Continues the async generator, resolving the back-pressure promise with null.
-     *
-     * @return Promise<array>
+     * @inheritDoc
      */
     public function continue(): Promise
     {

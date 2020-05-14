@@ -131,9 +131,9 @@ trait Yielder
         return $deferred->promise();
     }
 
-    public function transform(): TransformationStream
+    public function transform(callable $operator = null): TransformationStream
     {
-        return new TransformationStream($this);
+        return new TransformationStream($this, $operator);
     }
 
     private function createStream(): Stream

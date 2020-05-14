@@ -31,7 +31,7 @@ class AutoDisposingStream implements Stream
     }
 
     /**
-     * @return Promise<array>
+     * @inheritDoc
      */
     public function continue(): Promise
     {
@@ -39,7 +39,7 @@ class AutoDisposingStream implements Stream
     }
 
     /**
-     * @return void
+     * @inheritDoc
      */
     public function dispose()
     {
@@ -47,10 +47,10 @@ class AutoDisposingStream implements Stream
     }
 
     /**
-     * @return TransformationStream
+     * @inheritDoc
      */
-    public function transform(): TransformationStream
+    public function transform(callable $operator = null): TransformationStream
     {
-        return $this->stream->transform();
+        return $this->stream->transform($operator);
     }
 }

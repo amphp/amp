@@ -29,7 +29,9 @@ interface Stream
     /**
      * Returns a stream object with fluent transformation methods.
      *
+     * @param callable(TransformationStream):Stream $operator
+     *
      * @return TransformationStream
      */
-    public function transform(): TransformationStream;
+    public function transform(callable $operator = null): TransformationStream;
 }
