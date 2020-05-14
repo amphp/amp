@@ -11,9 +11,13 @@ final class TransformationStream implements Stream
     /** @var Stream<TValue> */
     private $stream;
 
-    public function __construct(Stream $stream)
+    public function __construct(Stream $stream, callable $operator = null)
     {
-        $this->stream = $stream;
+        $this->stream = $stream instanceof self ? $stream->stream : $stream;
+
+        if ($operator !== null) {
+            $this->stream = $this->apply($operator);
+        }
     }
 
     public function continue(): Promise
@@ -26,9 +30,24 @@ final class TransformationStream implements Stream
         $this->stream->dispose();
     }
 
-    public function transform(): self
+    public function transform(callable $operator = null): self
     {
-        return $this;
+        if ($operator === null) {
+            return $this;
+        }
+
+        return new self($this->apply($operator));
+    }
+
+    private function apply(callable $operator): self
+    {
+        $stream = $operator($this);
+
+        if ($stream instanceof Stream) {
+            throw new \TypeError('$operator must return an instance of ' . Stream::class);
+        }
+
+        return $stream;
     }
 
     /**
@@ -87,7 +106,7 @@ final class TransformationStream implements Stream
         return new self(new AsyncGenerator(function (callable $yield) use ($count) {
             $skipped = 0;
             while (list($value) = yield $this->stream->continue()) {
-                if (++$skipped < $count) {
+                if (++$skipped <= $count) {
                     continue;
                 }
 

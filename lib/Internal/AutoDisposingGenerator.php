@@ -27,11 +27,7 @@ class AutoDisposingGenerator extends AutoDisposingStream implements GeneratorStr
     }
 
     /**
-     * @param mixed $value
-     *
-     * @psalm-param TSend $value
-     *
-     * @return Promise<array>
+     * @inheritDoc
      */
     public function send($value): Promise
     {
@@ -39,9 +35,7 @@ class AutoDisposingGenerator extends AutoDisposingStream implements GeneratorStr
     }
 
     /**
-     * @param \Throwable $exception
-     *
-     * @return Promise<array>
+     * @inheritDoc
      */
     public function throw(\Throwable $exception): Promise
     {
