@@ -58,14 +58,6 @@ final class AsyncGenerator implements Stream
     /**
      * @inheritDoc
      */
-    public function transform(callable $operator = null): TransformationStream
-    {
-        return $this->generator->transform($operator);
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function continue(): Promise
     {
         return $this->generator->continue();
@@ -114,5 +106,4 @@ final class AsyncGenerator implements Stream
     {
         return $this->coroutine;
     }
-
 }

@@ -5,7 +5,6 @@ namespace Amp\Internal;
 use Amp\Deferred;
 use Amp\DisposedException;
 use Amp\Failure;
-use Amp\TransformationStream;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
@@ -19,7 +18,6 @@ use React\Promise\PromiseInterface as ReactPromise;
  *
  * @template TValue
  * @template TSend
- * @template TReturn
  */
 trait Yielder
 {
@@ -60,7 +58,9 @@ trait Yielder
     private $used = false;
 
     /**
-     * @return Promise<array>
+     * @return Promise<array|null>
+     *
+     * @psalm-return Promise<list<TValue>|null>
      */
     public function continue(): Promise
     {
@@ -72,7 +72,9 @@ trait Yielder
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<array>
+     * @return Promise<array|null>
+     *
+     * @psalm-return Promise<list<TValue>|null>
      */
     public function send($value): Promise
     {
@@ -86,7 +88,9 @@ trait Yielder
     /**
      * @param \Throwable $exception
      *
-     * @return Promise<array>
+     * @return Promise<array|null>
+     *
+     * @psalm-return Promise<list<TValue>|null>
      */
     public function throw(\Throwable $exception): Promise
     {
@@ -98,9 +102,13 @@ trait Yielder
     }
 
     /**
-     * @param Promise<TSend|null> $promise
+     * @param Promise<mixed> $promise
      *
-     * @return Promise<array>
+     * @psalm-param Promise<TSend|null>
+     *
+     * @return Promise<array|null>
+     *
+     * @psalm-return Promise<list<TValue>|null>
      */
     private function next(Promise $promise): Promise
     {
@@ -129,11 +137,6 @@ trait Yielder
         $this->waiting[$position] = $deferred = new Deferred;
 
         return $deferred->promise();
-    }
-
-    public function transform(callable $operator = null): TransformationStream
-    {
-        return new TransformationStream($this, $operator);
     }
 
     private function createStream(): Stream
