@@ -13,7 +13,9 @@ interface Stream
      * Succeeds with a tuple of the yielded value and key or null if the stream has completed. If the stream fails,
      * the returned promise will fail with the same exception.
      *
-     * @return Promise<array>
+     * @return Promise<array|null>
+     *
+     * @psalm-return Promise<list<TValue>|null>
      *
      * @throws \Throwable The exception used to fail the stream.
      */
@@ -25,13 +27,4 @@ interface Stream
      * @return void
      */
     public function dispose();
-
-    /**
-     * Returns a stream object with fluent transformation methods.
-     *
-     * @param callable(TransformationStream):Stream $operator
-     *
-     * @return TransformationStream
-     */
-    public function transform(callable $operator = null): TransformationStream;
 }

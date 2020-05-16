@@ -2,7 +2,6 @@
 
 namespace Amp\Internal;
 
-use Amp\TransformationStream;
 use Amp\Promise;
 use Amp\Stream;
 
@@ -44,13 +43,5 @@ class AutoDisposingStream implements Stream
     public function dispose()
     {
         $this->stream->dispose();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function transform(callable $operator = null): TransformationStream
-    {
-        return $this->stream->transform($operator);
     }
 }
