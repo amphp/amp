@@ -4,14 +4,13 @@ namespace Amp\Test\Stream;
 
 use Amp\AsyncGenerator;
 use Amp\Delayed;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Stream;
-use Amp\Test\BaseTest;
 
-class MergeTest extends BaseTest
+class MergeTest extends AsyncTestCase
 {
-    public function getArrays()
+    public function getArrays(): array
     {
         return [
             [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
@@ -23,22 +22,20 @@ class MergeTest extends BaseTest
     /**
      * @dataProvider getArrays
      *
-     * @param array $iterators
+     * @param array $streams
      * @param array $expected
      */
-    public function testMerge(array $iterators, array $expected)
+    public function testMerge(array $streams, array $expected)
     {
-        Loop::run(function () use ($iterators, $expected) {
-            $iterators = \array_map(function (array $iterator): Stream {
-                return Stream\fromIterable($iterator);
-            }, $iterators);
+        $streams = \array_map(static function (array $iterator): Stream {
+            return Stream\fromIterable($iterator);
+        }, $streams);
 
-            $iterator = Stream\merge($iterators);
+        $stream = Stream\merge($streams);
 
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
-            }
-        });
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
     }
 
     /**
@@ -46,30 +43,28 @@ class MergeTest extends BaseTest
      */
     public function testMergeWithDelayedYields()
     {
-        Loop::run(function () {
-            $iterators = [];
-            $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
-            $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
-            $expected = [1, 4, 5, 2, 6, 3];
+        $streams = [];
+        $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
+        $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
+        $expected = [1, 4, 5, 2, 6, 3];
 
-            $iterators[] = new AsyncGenerator(function (callable $yield) use ($values1) {
-                foreach ($values1 as $value) {
-                    yield $yield(yield $value);
-                }
-            });
-
-            $iterators[] = new AsyncGenerator(function (callable $yield) use ($values2) {
-                foreach ($values2 as $value) {
-                    yield $yield(yield $value);
-                }
-            });
-
-            $iterator = Stream\merge($iterators);
-
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
+        $streams[] = new AsyncGenerator(function (callable $yield) use ($values1) {
+            foreach ($values1 as $value) {
+                yield $yield(yield $value);
             }
         });
+
+        $streams[] = new AsyncGenerator(function (callable $yield) use ($values2) {
+            foreach ($values2 as $value) {
+                yield $yield(yield $value);
+            }
+        });
+
+        $stream = Stream\merge($streams);
+
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
     }
 
     /**
@@ -77,28 +72,30 @@ class MergeTest extends BaseTest
      */
     public function testMergeWithFailedStream()
     {
-        Loop::run(function () {
-            $exception = new TestException;
-            $generator = new AsyncGenerator(function (callable $yield) use ($exception) {
-                yield $yield(1); // Emit once before failing.
-                throw $exception;
-            });
-
-            $iterator = Stream\merge([$generator, Stream\fromIterable(\range(1, 5))]);
-
-            try {
-                while (yield $iterator->continue()) ;
-                $this->fail("The exception used to fail the iterator should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($exception, $reason);
-            }
+        $exception = new TestException;
+        $generator = new AsyncGenerator(static function (callable $yield) use ($exception) {
+            yield $yield(1); // Emit once before failing.
+            throw $exception;
         });
+
+        $stream = Stream\merge([$generator, Stream\fromIterable(\range(1, 5))]);
+
+        try {
+            /** @noinspection PhpStatementHasEmptyBodyInspection */
+            while (yield $stream->continue()) {
+                ;
+            }
+            $this->fail("The exception used to fail the stream should be thrown from continue()");
+        } catch (TestException $reason) {
+            $this->assertSame($exception, $reason);
+        }
     }
 
     public function testNonStream()
     {
         $this->expectException(\TypeError::class);
 
+        /** @noinspection PhpParamsInspection */
         Stream\merge([1]);
     }
 }
