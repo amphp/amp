@@ -3,54 +3,44 @@
 namespace Amp\Test\Stream;
 
 use Amp\AsyncGenerator;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Stream;
 use Amp\StreamSource;
-use Amp\Test\BaseTest;
 
-class MapTest extends BaseTest
+class MapTest extends AsyncTestCase
 {
     public function testNoValuesEmitted()
     {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $source = new StreamSource;
+        $source = new StreamSource;
 
-            $iterator = Stream\map($source->stream(), function ($value) use (&$invoked) {
-                $invoked = true;
-            });
+        /** @noinspection PhpUnusedLocalVariableInspection */
+        $stream = Stream\map($source->stream(), $this->createCallback(0));
 
-            $this->assertInstanceOf(Stream::class, $iterator);
-
-            $source->complete();
-        });
-
-        $this->assertFalse($invoked);
+        $source->complete();
     }
 
     public function testValuesEmitted()
     {
-        Loop::run(function () {
-            $count = 0;
-            $values = [1, 2, 3];
-            $generator = new AsyncGenerator(function (callable $yield) use ($values) {
-                foreach ($values as $value) {
-                    yield $yield($value);
-                }
-            });
-
-            $iterator = Stream\map($generator, function ($value) use (&$count) {
-                ++$count;
-                return $value + 1;
-            });
-
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($values) + 1, $value);
+        $count = 0;
+        $values = [1, 2, 3];
+        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+            foreach ($values as $value) {
+                yield $yield($value);
             }
-
-            $this->assertSame(3, $count);
         });
+
+        $stream = Stream\map($generator, static function ($value) use (&$count) {
+            ++$count;
+
+            return $value + 1;
+        });
+
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($values) + 1, $value);
+        }
+
+        $this->assertSame(3, $count);
     }
 
     /**
@@ -58,50 +48,35 @@ class MapTest extends BaseTest
      */
     public function testOnNextCallbackThrows()
     {
-        Loop::run(function () {
-            $values = [1, 2, 3];
-            $exception = new TestException;
+        $values = [1, 2, 3];
+        $exception = new TestException;
 
-            $generator = new AsyncGenerator(function (callable $yield) use ($values) {
-                foreach ($values as $value) {
-                    yield $yield($value);
-                }
-            });
-
-            $iterator = Stream\map($generator, function () use ($exception) {
-                throw $exception;
-            });
-
-            try {
-                yield $iterator->continue();
-                $this->fail("The exception thrown from the map callback should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($reason, $exception);
+        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+            foreach ($values as $value) {
+                yield $yield($value);
             }
         });
+
+        $stream = Stream\map($generator, static function () use ($exception) {
+            throw $exception;
+        });
+
+        $this->expectExceptionObject($exception);
+
+        yield $stream->continue();
     }
 
     public function testStreamFails()
     {
-        Loop::run(function () {
-            $invoked = false;
-            $exception = new TestException;
-            $source = new StreamSource;
+        $exception = new TestException;
+        $source = new StreamSource;
 
-            $iterator = Stream\map($source->stream(), function ($value) use (&$invoked) {
-                $invoked = true;
-            });
+        $iterator = Stream\map($source->stream(), $this->createCallback(0));
 
-            $source->fail($exception);
+        $source->fail($exception);
 
-            try {
-                yield $iterator->continue();
-                $this->fail("The exception used to fail the iterator should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($reason, $exception);
-            }
+        $this->expectExceptionObject($exception);
 
-            $this->assertFalse($invoked);
-        });
+        yield $iterator->continue();
     }
 }

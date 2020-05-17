@@ -4,92 +4,84 @@ namespace Amp\Test\Stream;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Stream;
 use Amp\Success;
-use Amp\Test\BaseTest;
 
-class FromIterableTest extends BaseTest
+class FromIterableTest extends AsyncTestCase
 {
     const TIMEOUT = 10;
 
     public function testSuccessfulPromises()
     {
-        Loop::run(function () {
-            $expected = \range(1, 3);
-            $iterator = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
+        $expected = \range(1, 3);
+        $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
-            }
-        });
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
     }
 
     public function testFailedPromises()
     {
-        Loop::run(function () {
-            $exception = new \Exception;
-            $iterator = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
+        $exception = new \Exception;
+        $iterator = Stream\fromIterable([new Failure($exception), new Failure($exception)]);
 
-            try {
-                yield $iterator->continue();
-            } catch (\Exception $reason) {
-                $this->assertSame($exception, $reason);
-            }
-        });
+        $this->expectExceptionObject($exception);
+
+        yield $iterator->continue();
     }
 
     public function testMixedPromises()
     {
-        Loop::run(function () {
-            $exception = new TestException;
-            $expected = \range(1, 2);
-            $iterator = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+        $exception = new TestException;
+        $expected = \range(1, 2);
+        $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
-            try {
-                while (list($value) = yield $iterator->continue()) {
-                    $this->assertSame(\array_shift($expected), $value);
-                }
-                $this->fail("A failed promise in the iterable should fail the iterator and be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($exception, $reason);
+        try {
+            while (list($value) = yield $stream->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
+            $this->fail("A failed promise in the iterable should fail the stream and be thrown from continue()");
+        } catch (TestException $reason) {
+            $this->assertSame($exception, $reason);
+        }
 
-            $this->assertEmpty($expected);
-        });
+        $this->assertEmpty($expected);
     }
 
     public function testPendingPromises()
     {
-        Loop::run(function () {
-            $expected = \range(1, 4);
-            $iterator = Stream\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
+        $expected = \range(1, 4);
+        $stream = Stream\fromIterable([
+            new Delayed(30, 1),
+            new Delayed(10, 2),
+            new Delayed(20, 3),
+            new Success(4),
+        ]);
 
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
-            }
-        });
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
     }
 
     public function testTraversable()
     {
-        Loop::run(function () {
-            $expected = \range(1, 4);
-            $generator = (function () {
-                foreach (\range(1, 4) as $value) {
-                    yield $value;
-                }
-            })();
-
-            $iterator = Stream\fromIterable($generator);
-
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
+        $expected = \range(1, 4);
+        $generator = (static function () {
+            foreach (\range(1, 4) as $value) {
+                yield $value;
             }
+        })();
 
-            $this->assertEmpty($expected);
-        });
+        $stream = Stream\fromIterable($generator);
+
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
+
+        $this->assertEmpty($expected);
     }
 
     /**
@@ -102,7 +94,7 @@ class FromIterableTest extends BaseTest
         Stream\fromIterable($arg);
     }
 
-    public function provideInvalidIteratorArguments()
+    public function provideInvalidIteratorArguments(): array
     {
         return [
             [null],
@@ -116,17 +108,15 @@ class FromIterableTest extends BaseTest
 
     public function testInterval()
     {
-        Loop::run(function () {
-            $count = 3;
-            $iterator = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
+        $count = 3;
+        $stream = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
 
-            $i = 0;
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(++$i, $value);
-            }
+        $i = 0;
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(++$i, $value);
+        }
 
-            $this->assertSame($count, $i);
-        });
+        $this->assertSame($count, $i);
     }
 
     /**
@@ -135,14 +125,12 @@ class FromIterableTest extends BaseTest
     public function testSlowConsumer()
     {
         $count = 5;
-        Loop::run(function () use ($count) {
-            $iterator = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
+        $stream = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
 
-            for ($i = 0; list($value) = yield $iterator->continue(); ++$i) {
-                yield new Delayed(self::TIMEOUT * 2);
-            }
+        for ($i = 0; list($value) = yield $stream->continue(); ++$i) {
+            yield new Delayed(self::TIMEOUT * 2);
+        }
 
-            $this->assertSame($count, $i);
-        });
+        $this->assertSame($count, $i);
     }
 }

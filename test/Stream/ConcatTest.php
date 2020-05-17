@@ -3,14 +3,13 @@
 namespace Amp\Test\Stream;
 
 use Amp\AsyncGenerator;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Stream;
-use Amp\Test\BaseTest;
 
-class ConcatTest extends BaseTest
+class ConcatTest extends AsyncTestCase
 {
-    public function getArrays()
+    public function getArrays(): array
     {
         return [
             [[\range(1, 3), \range(4, 6)], \range(1, 6)],
@@ -27,17 +26,15 @@ class ConcatTest extends BaseTest
      */
     public function testConcat(array $iterators, array $expected)
     {
-        Loop::run(function () use ($iterators, $expected) {
-            $iterators = \array_map(function (array $iterator): Stream {
-                return Stream\fromIterable($iterator);
-            }, $iterators);
+        $iterators = \array_map(static function (array $iterator): Stream {
+            return Stream\fromIterable($iterator);
+        }, $iterators);
 
-            $iterator = Stream\concat($iterators);
+        $stream = Stream\concat($iterators);
 
-            while (list($value) = yield $iterator->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
-            }
-        });
+        while (list($value) = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
+        }
     }
 
     /**
@@ -45,33 +42,37 @@ class ConcatTest extends BaseTest
      */
     public function testConcatWithFailedStream()
     {
-        Loop::run(function () {
-            $exception = new TestException;
-            $expected = \range(1, 6);
-            $generator = new AsyncGenerator(function (callable $yield) use ($exception) {
-                yield $yield(6); // Emit once before failing.
-                throw $exception;
-            });
+        $exception = new TestException;
+        $expected = \range(1, 6);
+        $generator = new AsyncGenerator(static function (callable $yield) use ($exception) {
+            yield $yield(6); // Emit once before failing.
+            throw $exception;
+        });
 
-            $iterator = Stream\concat([Stream\fromIterable(\range(1, 5)), $generator, Stream\fromIterable(\range(7, 10))]);
+        $stream = Stream\concat([
+            Stream\fromIterable(\range(1, 5)),
+            $generator,
+            Stream\fromIterable(\range(7, 10)),
+        ]);
 
-            try {
-                while (list($value) = yield $iterator->continue()) {
-                    $this->assertSame(\array_shift($expected), $value);
-                }
-                $this->fail("The exception used to fail the iterator should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($exception, $reason);
+        try {
+            while (list($value) = yield $stream->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
 
-            $this->assertEmpty($expected);
-        });
+            $this->fail("The exception used to fail the stream should be thrown from continue()");
+        } catch (TestException $reason) {
+            $this->assertSame($exception, $reason);
+        }
+
+        $this->assertEmpty($expected);
     }
 
     public function testNonStream()
     {
         $this->expectException(\TypeError::class);
 
+        /** @noinspection PhpParamsInspection */
         Stream\concat([1]);
     }
 }

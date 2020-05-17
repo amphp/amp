@@ -2,21 +2,20 @@
 
 namespace Amp\Test\Stream;
 
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Stream;
-use Amp\Test\BaseTest;
-use function Amp\Promise\wait;
 
-class ToArrayTest extends BaseTest
+class ToArrayTest extends AsyncTestCase
 {
     public function testNonEmpty()
     {
-        $iterator = Stream\fromIterable(["abc", "foo", "bar"], 5);
-        $this->assertSame(["abc", "foo", "bar"], wait(Stream\toArray($iterator)));
+        $stream = Stream\fromIterable(["abc", "foo", "bar"], 5);
+        $this->assertSame(["abc", "foo", "bar"], yield Stream\toArray($stream));
     }
 
     public function testEmpty()
     {
-        $iterator = Stream\fromIterable([], 5);
-        $this->assertSame([], wait(Stream\toArray($iterator)));
+        $stream = Stream\fromIterable([], 5);
+        $this->assertSame([], yield Stream\toArray($stream));
     }
 }
