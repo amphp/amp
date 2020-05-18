@@ -10,12 +10,13 @@ namespace Amp;
 interface Stream
 {
     /**
-     * Succeeds with a tuple of the yielded value and key or null if the stream has completed. If the stream fails,
-     * the returned promise will fail with the same exception.
+     * Succeeds with a single element array containing the yielded value if the stream has yielded a value. If the
+     * stream completes the promise resolves with null. If the stream fails, the returned promise will fail with the
+     * same exception.
      *
-     * @return Promise<array|null>
+     * @return Promise<array> Resolves with null if the stream has completed.
      *
-     * @psalm-return Promise<list<TValue>|null>
+     * @psalm-return Promise<list<TValue>>
      *
      * @throws \Throwable The exception used to fail the stream.
      */

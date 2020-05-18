@@ -71,6 +71,8 @@ final class AsyncGenerator implements Stream
      * @psalm-param TSend $value
      *
      * @return Promise<array>
+     *
+     * @psalm-return Promise<list<TValue>>
      */
     public function send($value): Promise
     {
@@ -83,6 +85,8 @@ final class AsyncGenerator implements Stream
      * @param \Throwable $exception Exception to throw into the async generator.
      *
      * @return Promise<array>
+     *
+     * @psalm-return Promise<list<TValue>>
      */
     public function throw(\Throwable $exception): Promise
     {

@@ -34,7 +34,7 @@ class YielderTraitTest extends TestCase
             $promise = $this->source->yield($value);
             $stream = $this->source->createStream();
 
-            $this->assertSame([$value, 0], yield $stream->continue());
+            $this->assertSame([$value], yield $stream->continue());
 
             $this->assertInstanceOf(Promise::class, $promise);
             $this->assertNull(yield $promise);
@@ -60,7 +60,7 @@ class YielderTraitTest extends TestCase
     {
         Loop::run(function () {
             $this->source->yield(null);
-            $this->assertSame([null, 0], yield $this->source->createStream()->continue());
+            $this->assertSame([null], yield $this->source->createStream()->continue());
         });
     }
 
@@ -115,7 +115,7 @@ class YielderTraitTest extends TestCase
 
             $this->assertNull(yield $this->source->yield($value));
 
-            $this->assertSame([$value, 0], yield $promise);
+            $this->assertSame([$value], yield $promise);
         });
     }
 

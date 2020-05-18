@@ -30,7 +30,7 @@ class AsyncGeneratorTest extends BaseTest
                 yield $yield($value);
             });
 
-            $this->assertSame([$value, 0], yield $generator->continue());
+            $this->assertSame([$value], yield $generator->continue());
         });
     }
 
@@ -43,7 +43,7 @@ class AsyncGeneratorTest extends BaseTest
                 $result = yield $yield($value);
             });
 
-            $this->assertSame([$value, 0], yield $generator->continue());
+            $this->assertSame([$value], yield $generator->continue());
             $this->assertNull(yield $generator->send($send));
             $this->assertSame($result, $send);
         });
@@ -62,7 +62,7 @@ class AsyncGeneratorTest extends BaseTest
             $promise1 = $generator->continue();
             $promise2 = $generator->send($send);
 
-            $this->assertSame([$value, 0], yield $promise1);
+            $this->assertSame([$value], yield $promise1);
             $this->assertNull(yield $promise2);
             $this->assertSame($result, $send);
         });
@@ -84,7 +84,7 @@ class AsyncGeneratorTest extends BaseTest
             $promise1 = $generator->continue();
             $promise2 = $generator->throw($exception);
 
-            $this->assertSame([$value, 0], yield $promise1);
+            $this->assertSame([$value], yield $promise1);
             $this->assertNull(yield $promise2);
             $this->assertSame($result, $exception);
         });
@@ -104,7 +104,7 @@ class AsyncGeneratorTest extends BaseTest
                 }
             });
 
-            $this->assertSame([$value, 0], yield $generator->continue());
+            $this->assertSame([$value], yield $generator->continue());
             $this->assertNull(yield $generator->throw($exception));
             $this->assertSame($result, $exception);
         });
@@ -147,7 +147,7 @@ class AsyncGeneratorTest extends BaseTest
                 return $value;
             });
 
-            $this->assertSame([null, 0], yield $generator->continue());
+            $this->assertSame([null], yield $generator->continue());
             $this->assertNull(yield $generator->continue());
             $this->assertSame($value, yield $generator->getReturn());
         });

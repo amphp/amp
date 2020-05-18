@@ -3,12 +3,12 @@
 namespace Amp\Test\Stream;
 
 use Amp\AsyncGenerator;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Stream;
 use Amp\StreamSource;
-use Amp\Test\BaseTest;
 
-class FilterTest extends BaseTest
+class FilterTest extends AsyncTestCase
 {
     public function testNoValuesEmitted()
     {
