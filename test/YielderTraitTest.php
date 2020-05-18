@@ -7,6 +7,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
+use Amp\YieldedValue;
 use PHPUnit\Framework\TestCase;
 
 class Yielder implements Stream
@@ -34,7 +35,11 @@ class YielderTraitTest extends TestCase
             $promise = $this->source->yield($value);
             $stream = $this->source->createStream();
 
-            $this->assertSame([$value], yield $stream->continue());
+            $yielded = yield $stream->continue();
+
+            $this->assertInstanceOf(YieldedValue::class, $yielded);
+
+            $this->assertSame($value, $yielded->unwrap());
 
             $this->assertInstanceOf(Promise::class, $promise);
             $this->assertNull(yield $promise);
@@ -60,7 +65,7 @@ class YielderTraitTest extends TestCase
     {
         Loop::run(function () {
             $this->source->yield(null);
-            $this->assertSame([null], yield $this->source->createStream()->continue());
+            $this->assertNull((yield $this->source->createStream()->continue())->unwrap());
         });
     }
 
@@ -115,7 +120,7 @@ class YielderTraitTest extends TestCase
 
             $this->assertNull(yield $this->source->yield($value));
 
-            $this->assertSame([$value], yield $promise);
+            $this->assertSame($value, (yield $promise)->unwrap());
         });
     }
 

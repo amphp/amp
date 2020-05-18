@@ -9,6 +9,7 @@ use Amp\Loop;
 
 Loop::run(function () {
     try {
+        /** @psalm-var AsyncGenerator<int, void, void> $stream */
         $stream = new AsyncGenerator(function (callable $yield): \Generator {
             yield $yield(1);
             yield $yield(yield new Delayed(500, 2));
@@ -32,9 +33,7 @@ Loop::run(function () {
                 break;
             }
 
-            list($value, $key) = $yielded;
-
-            \printf("Async generator yielded %d\n", $value);
+            \printf("Async generator yielded %d\n", $yielded->unwrap());
         }
     } catch (\Exception $exception) {
         \printf("Exception: %s\n", (string) $exception);

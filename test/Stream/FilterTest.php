@@ -38,8 +38,8 @@ class FilterTest extends AsyncTestCase
             return $value & 1;
         });
 
-        while (list($value) = yield $iterator->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+        while ($value = yield $iterator->continue()) {
+            $this->assertSame(\array_shift($expected), $value->unwrap());
         }
 
         $this->assertSame(3, $count);

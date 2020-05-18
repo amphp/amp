@@ -18,7 +18,7 @@ final class AsyncGenerator implements Stream
     /**
      * @param callable(callable(TValue):Promise<TSend>):\Generator $callable
      *
-     * @throws \Error Thrown if the callable does not return a Generator.
+     * @throws \TypeError Thrown if the callable does not return a Generator.
      */
     public function __construct(callable $callable)
     {
@@ -65,14 +65,17 @@ final class AsyncGenerator implements Stream
 
     /**
      * Sends a value to the async generator, resolving the back-pressure promise with the given value.
+     * The first yielded value must be retrieved using {@see continue()}.
      *
      * @param mixed $value Value to send to the async generator.
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null> Resolves with null if the stream has completed.
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
+     *
+     * @throws \Error If the first yielded value has not been retrieved using {@see continue()}.
      */
     public function send($value): Promise
     {
@@ -81,12 +84,15 @@ final class AsyncGenerator implements Stream
 
     /**
      * Throws an exception into the async generator, failing the back-pressure promise with the given exception.
+     * The first yielded value must be retrieved using {@see continue()}.
      *
      * @param \Throwable $exception Exception to throw into the async generator.
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null> Resolves with null if the stream has completed.
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
+     *
+     * @throws \Error If the first yielded value has not been retrieved using {@see continue()}.
      */
     public function throw(\Throwable $exception): Promise
     {
@@ -104,7 +110,9 @@ final class AsyncGenerator implements Stream
     }
 
     /**
-     * @return Promise<TReturn>
+     * @return Promise<mixed>
+     *
+     * @psalm-return Promise<TReturn>
      */
     public function getReturn(): Promise
     {

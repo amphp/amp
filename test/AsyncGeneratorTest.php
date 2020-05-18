@@ -7,6 +7,7 @@ use Amp\Deferred;
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
+use Amp\YieldedValue;
 
 class AsyncGeneratorTest extends BaseTest
 {
@@ -14,7 +15,7 @@ class AsyncGeneratorTest extends BaseTest
 
     public function testNonGeneratorCallable()
     {
-        $this->expectException(\Error::class);
+        $this->expectException(\TypeError::class);
         $this->expectExceptionMessage('The callable did not return a Generator');
 
         new AsyncGenerator(function () {
@@ -30,7 +31,11 @@ class AsyncGeneratorTest extends BaseTest
                 yield $yield($value);
             });
 
-            $this->assertSame([$value], yield $generator->continue());
+            $yielded = yield $generator->continue();
+
+            $this->assertInstanceOf(YieldedValue::class, $yielded);
+
+            $this->assertSame($value, $yielded->unwrap());
         });
     }
 
@@ -43,7 +48,7 @@ class AsyncGeneratorTest extends BaseTest
                 $result = yield $yield($value);
             });
 
-            $this->assertSame([$value], yield $generator->continue());
+            $this->assertSame($value, (yield $generator->continue())->unwrap());
             $this->assertNull(yield $generator->send($send));
             $this->assertSame($result, $send);
         });
@@ -62,7 +67,7 @@ class AsyncGeneratorTest extends BaseTest
             $promise1 = $generator->continue();
             $promise2 = $generator->send($send);
 
-            $this->assertSame([$value], yield $promise1);
+            $this->assertSame($value, (yield $promise1)->unwrap());
             $this->assertNull(yield $promise2);
             $this->assertSame($result, $send);
         });
@@ -84,7 +89,7 @@ class AsyncGeneratorTest extends BaseTest
             $promise1 = $generator->continue();
             $promise2 = $generator->throw($exception);
 
-            $this->assertSame([$value], yield $promise1);
+            $this->assertSame($value, (yield $promise1)->unwrap());
             $this->assertNull(yield $promise2);
             $this->assertSame($result, $exception);
         });
@@ -104,7 +109,7 @@ class AsyncGeneratorTest extends BaseTest
                 }
             });
 
-            $this->assertSame([$value], yield $generator->continue());
+            $this->assertSame($value, (yield $generator->continue())->unwrap());
             $this->assertNull(yield $generator->throw($exception));
             $this->assertSame($result, $exception);
         });
@@ -147,7 +152,7 @@ class AsyncGeneratorTest extends BaseTest
                 return $value;
             });
 
-            $this->assertSame([null], yield $generator->continue());
+            $this->assertNull((yield $generator->continue())->unwrap());
             $this->assertNull(yield $generator->continue());
             $this->assertSame($value, yield $generator->getReturn());
         });
@@ -193,8 +198,8 @@ class AsyncGeneratorTest extends BaseTest
                 $time = \microtime(true) - $time;
             });
 
-            while (list($value) = yield $generator->continue()) {
-                $output .= $value;
+            while ($yielded = yield $generator->continue()) {
+                $output .= $yielded->unwrap();
                 yield new Delayed(self::TIMEOUT);
             }
         });

@@ -9,6 +9,7 @@ use Amp\Loop;
 
 Loop::run(function () {
     try {
+        /** @psalm-var AsyncGenerator<int, int, int> $generator */
         $generator = new AsyncGenerator(function (callable $yield): \Generator {
             $value = yield $yield(0);
             $value = yield $yield(yield new Delayed(500, $value));
@@ -24,13 +25,16 @@ Loop::run(function () {
         });
 
         // Use AsyncGenerator::continue() to get the first yielded value.
-        list($value, $key) = yield $generator->continue();
-        \printf("Async Generator yielded %d\n", $value);
-
-        // Use AsyncGenerator::send() to send values into the generator and get the next yielded value.
-        while (list($value, $key) = yield $generator->send($value + 1)) {
+        if ($value = yield $generator->continue()) {
+            $value = $value->unwrap();
             \printf("Async Generator yielded %d\n", $value);
-            yield new Delayed(100); // Listener consumption takes 100 ms.
+
+            // Use AsyncGenerator::send() to send values into the generator and get the next yielded value.
+            while ($value = yield $generator->send($value + 1)) {
+                $value = $value->unwrap();
+                \printf("Async Generator yielded %d\n", $value);
+                yield new Delayed(100); // Listener consumption takes 100 ms.
+            }
         }
 
         \printf("Async Generator returned %d\n", yield $generator->getReturn());

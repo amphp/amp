@@ -33,8 +33,8 @@ class MergeTest extends AsyncTestCase
 
         $stream = Stream\merge($streams);
 
-        while (list($value) = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+        while ($value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value->unwrap());
         }
     }
 
@@ -62,8 +62,8 @@ class MergeTest extends AsyncTestCase
 
         $stream = Stream\merge($streams);
 
-        while (list($value) = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+        while ($value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value->unwrap());
         }
     }
 
