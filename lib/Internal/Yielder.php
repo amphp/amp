@@ -40,9 +40,6 @@ trait Yielder
     private $waiting = [];
 
     /** @var int */
-    private $nextKey = 0;
-
-    /** @var int */
     private $consumePosition = 0;
 
     /** @var int */
@@ -58,9 +55,9 @@ trait Yielder
     private $used = false;
 
     /**
-     * @return Promise<array|null>
+     * @return Promise<array>
      *
-     * @psalm-return Promise<list<TValue>|null>
+     * @psalm-return Promise<list<TValue>>
      */
     public function continue(): Promise
     {
@@ -72,9 +69,9 @@ trait Yielder
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<array|null>
+     * @return Promise<array>
      *
-     * @psalm-return Promise<list<TValue>|null>
+     * @psalm-return Promise<list<TValue>>
      */
     public function send($value): Promise
     {
@@ -88,9 +85,9 @@ trait Yielder
     /**
      * @param \Throwable $exception
      *
-     * @return Promise<array|null>
+     * @return Promise<array>
      *
-     * @psalm-return Promise<list<TValue>|null>
+     * @psalm-return Promise<list<TValue>>
      */
     public function throw(\Throwable $exception): Promise
     {
@@ -104,11 +101,11 @@ trait Yielder
     /**
      * @param Promise<mixed> $promise
      *
-     * @psalm-param Promise<TSend|null>
+     * @psalm-param Promise<TSend|null> $promise
      *
-     * @return Promise<array|null>
+     * @return Promise<array>
      *
-     * @psalm-return Promise<list<TValue>|null>
+     * @psalm-return Promise<list<TValue>>
      */
     private function next(Promise $promise): Promise
     {
@@ -123,11 +120,11 @@ trait Yielder
             $this->sendValues[$position - 1] = $promise;
         }
 
-        if (isset($this->yieldedValues[$position])) {
-            $tuple = $this->yieldedValues[$position];
+        if (\array_key_exists($position, $this->yieldedValues)) {
+            $value = $this->yieldedValues[$position];
             unset($this->yieldedValues[$position]);
 
-            return new Success($tuple);
+            return new Success([$value]);
         }
 
         if ($this->result) {
@@ -190,11 +187,11 @@ trait Yielder
      *
      * @psalm-param TValue $value
      *
-     * @return Promise<TSend> Resolves with the key of the yielded value once the value has been consumed. Fails with
-     *                        the failure reason if the {@see fail()} is called, or with {@see DisposedException} if the
-     *                        stream is destroyed.
+     * @return Promise<mixed> Resolves with the sent value once the value has been consumed. Fails with the failure
+     *                        reason if the {@see fail()} is called, or with {@see DisposedException} if the stream
+     *                        is destroyed.
      *
-     * @psalm-return Promise<TSend>
+     * @psalm-return Promise<TSend|null>
      *
      * @throws \Error If the stream has completed.
      */
@@ -212,14 +209,12 @@ trait Yielder
             throw new \TypeError("Streams cannot yield promises");
         }
 
-        $key = $this->nextKey++;
-        $tuple = [$value, $key];
         $position = $this->yieldPosition++;
 
         if (isset($this->waiting[$position])) {
             $deferred = $this->waiting[$position];
             unset($this->waiting[$position]);
-            $deferred->resolve($tuple);
+            $deferred->resolve([$value]);
 
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {
@@ -228,7 +223,7 @@ trait Yielder
                 return $promise;
             }
         } else {
-            $this->yieldedValues[$position] = $tuple;
+            $this->yieldedValues[$position] = $value;
         }
 
         $this->backPressure[$position] = $deferred = new Deferred;

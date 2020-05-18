@@ -811,10 +811,21 @@ namespace Amp\Iterator
         });
     }
 
+    /**
+     * @template TValue
+     *
+     * @param Stream $stream
+     *
+     * @psalm-param Stream<TValue> $stream
+     *
+     * @return Iterator
+     *
+     * @psalm-return Iterator<TValue>
+     */
     function fromStream(Stream $stream): Iterator
     {
         return new Producer(function (callable $emit) use ($stream): \Generator {
-            while (null !== $value = $stream->continue()) {
+            while (null !== $value = yield $stream->continue()) {
                 yield $emit($value);
             }
         });
@@ -837,10 +848,16 @@ namespace Amp\Stream
      * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
      * promise fails, the returned stream will fail with the same reason.
      *
+     * @template TValue
+     *
      * @param array|\Traversable $iterable Elements to yield.
      * @param int                $delay Delay between elements yielded in milliseconds.
      *
+     * @psalm-param iterable<TValue> $iterable
+     *
      * @return Stream
+     *
+     * @psalm-return Stream<TValue>
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
@@ -873,7 +890,7 @@ namespace Amp\Stream
      * @template TReturn
      *
      * @param Stream $stream
-     * @param callable (TValue $value, int $key): TReturn $onYield
+     * @param callable(TValue $value):TReturn $onYield
      *
      * @psalm-param Stream<TValue> $stream
      *
@@ -884,8 +901,8 @@ namespace Amp\Stream
     function map(Stream $stream, callable $onYield): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $onYield) {
-            while (list($value, $key) = yield $stream->continue()) {
-                yield $yield($onYield($value, $key));
+            while (list($value) = yield $stream->continue()) {
+                yield $yield($onYield($value));
             }
         });
     }
@@ -894,7 +911,7 @@ namespace Amp\Stream
      * @template TValue
      *
      * @param Stream $stream
-     * @param callable(TValue $value, int $key):bool $filter
+     * @param callable(TValue $value):bool $filter
      *
      * @psalm-param Stream<TValue> $stream
      *
@@ -905,9 +922,9 @@ namespace Amp\Stream
     function filter(Stream $stream, callable $filter): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
-            while (list($value, $key) = yield $stream->continue()) {
-                if ($filter($value, $key)) {
-                    yield $yield($value, $key);
+            while (list($value) = yield $stream->continue()) {
+                if ($filter($value)) {
+                    yield $yield($value);
                 }
             }
         });
@@ -1027,8 +1044,6 @@ namespace Amp\Stream
      * @psalm-param Stream<TValue> $stream
      *
      * @return Promise<int>
-     *
-     * @psalm-return Promise<int>
      */
     function discard(Stream $stream): Promise
     {
@@ -1059,7 +1074,7 @@ namespace Amp\Stream
     function toArray(Stream $stream): Promise
     {
         return call(static function () use ($stream): \Generator {
-            /** @psalm-var list $array */
+            /** @psalm-var list<TValue> $array */
             $array = [];
 
             while (list($value) = yield $stream->continue()) {
@@ -1070,6 +1085,19 @@ namespace Amp\Stream
         });
     }
 
+    /**
+     * Converts an instance of the deprecated {@see Iterator} into an instance of {@see Stream}.
+     *
+     * @template TValue
+     *
+     * @param Iterator $iterator
+     *
+     * @psalm-param Iterator<TValue> $iterator
+     *
+     * @return Stream
+     *
+     * @psalm-return Stream<TValue>
+     */
     function fromIterator(Iterator $iterator): Stream
     {
         return new AsyncGenerator(function (callable $yield) use ($iterator): \Generator {
