@@ -10,6 +10,7 @@ use function Amp\asyncCall;
 
 Loop::run(function () {
     try {
+        /** @psalm-var StreamSource<int> $source */
         $source = new StreamSource;
         $stream = $source->stream();
 
@@ -27,8 +28,8 @@ Loop::run(function () {
             $source->complete();
         }, $source);
 
-        while (list($value, $key) = yield $stream->continue()) {
-            \printf("Stream source yielded %d\n", $value);
+        while ($value = yield $stream->continue()) {
+            \printf("Stream source yielded %d\n", $value->unwrap());
             yield new Delayed(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {

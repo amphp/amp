@@ -9,6 +9,7 @@ use Amp\StreamSource;
 
 Loop::run(function () {
     try {
+        /** @psalm-var StreamSource<int> $source */
         $source = new StreamSource;
 
         Loop::defer(function () use ($source) {
@@ -28,8 +29,8 @@ Loop::run(function () {
 
         $stream = $source->stream();
 
-        while (list($value, $key) = yield $stream->continue()) {
-            \printf("Stream source yielded %d\n", $value);
+        while ($value = yield $stream->continue()) {
+            \printf("Stream source yielded %d\n", $value->unwrap());
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {

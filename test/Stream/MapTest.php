@@ -36,8 +36,8 @@ class MapTest extends AsyncTestCase
             return $value + 1;
         });
 
-        while (list($value) = yield $stream->continue()) {
-            $this->assertSame(\array_shift($values) + 1, $value);
+        while ($value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($values) + 1, $value->unwrap());
         }
 
         $this->assertSame(3, $count);

@@ -8,6 +8,7 @@ use Amp\Failure;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
+use Amp\YieldedValue;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
@@ -55,9 +56,9 @@ trait Yielder
     private $used = false;
 
     /**
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     public function continue(): Promise
     {
@@ -69,9 +70,9 @@ trait Yielder
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     public function send($value): Promise
     {
@@ -85,9 +86,9 @@ trait Yielder
     /**
      * @param \Throwable $exception
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     public function throw(\Throwable $exception): Promise
     {
@@ -103,9 +104,9 @@ trait Yielder
      *
      * @psalm-param Promise<TSend|null> $promise
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
      *
-     * @psalm-return Promise<list<TValue>>
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     private function next(Promise $promise): Promise
     {
@@ -124,7 +125,7 @@ trait Yielder
             $value = $this->yieldedValues[$position];
             unset($this->yieldedValues[$position]);
 
-            return new Success([$value]);
+            return new Success(new YieldedValue($value));
         }
 
         if ($this->result) {
@@ -205,6 +206,10 @@ trait Yielder
             throw new \Error("Streams cannot yield values after calling complete");
         }
 
+        if ($value instanceof YieldedValue) {
+            $value = $value->unwrap();
+        }
+
         if ($value instanceof Promise || $value instanceof ReactPromise) {
             throw new \TypeError("Streams cannot yield promises");
         }
@@ -214,7 +219,7 @@ trait Yielder
         if (isset($this->waiting[$position])) {
             $deferred = $this->waiting[$position];
             unset($this->waiting[$position]);
-            $deferred->resolve([$value]);
+            $deferred->resolve(new YieldedValue($value));
 
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {

@@ -901,8 +901,8 @@ namespace Amp\Stream
     function map(Stream $stream, callable $onYield): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $onYield) {
-            while (list($value) = yield $stream->continue()) {
-                yield $yield($onYield($value));
+            while ($value = yield $stream->continue()) {
+                yield $yield(yield call($onYield, $value->unwrap()));
             }
         });
     }
@@ -922,8 +922,9 @@ namespace Amp\Stream
     function filter(Stream $stream, callable $filter): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
-            while (list($value) = yield $stream->continue()) {
-                if ($filter($value)) {
+            while ($value = yield $stream->continue()) {
+                $value = $value->unwrap();
+                if (yield call($filter, $value)) {
                     yield $yield($value);
                 }
             }
@@ -943,8 +944,8 @@ namespace Amp\Stream
         $result = $source->stream();
 
         $coroutine = coroutine(static function (Stream $stream) use (&$source) {
-            while ((list($value) = yield $stream->continue()) && $source !== null) {
-                yield $source->yield($value);
+            while (($value = yield $stream->continue()) && $source !== null) {
+                yield $source->yield($value->unwrap());
             }
         });
 
@@ -993,8 +994,8 @@ namespace Amp\Stream
         $promise = Promise\all($previous);
 
         $coroutine = coroutine(static function (Stream $stream, callable $yield) {
-            while (list($value) = yield $stream->continue()) {
-                yield $yield($value);
+            while ($value = yield $stream->continue()) {
+                yield $yield($value->unwrap());
             }
         });
 
@@ -1077,8 +1078,8 @@ namespace Amp\Stream
             /** @psalm-var list<TValue> $array */
             $array = [];
 
-            while (list($value) = yield $stream->continue()) {
-                $array[] = $value;
+            while ($value = yield $stream->continue()) {
+                $array[] = $value->unwrap();
             }
 
             return $array;

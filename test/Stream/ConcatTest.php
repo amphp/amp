@@ -32,8 +32,8 @@ class ConcatTest extends AsyncTestCase
 
         $stream = Stream\concat($iterators);
 
-        while (list($value) = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+        while ($value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value->unwrap());
         }
     }
 
@@ -56,8 +56,8 @@ class ConcatTest extends AsyncTestCase
         ]);
 
         try {
-            while (list($value) = yield $stream->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
+            while ($value = yield $stream->continue()) {
+                $this->assertSame(\array_shift($expected), $value->unwrap());
             }
 
             $this->fail("The exception used to fail the stream should be thrown from continue()");

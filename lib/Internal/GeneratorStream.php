@@ -5,6 +5,7 @@ namespace Amp\Internal;
 use Amp\AsyncGenerator;
 use Amp\Promise;
 use Amp\Stream;
+use Amp\YieldedValue;
 
 /**
  * Interface used internally by {@see AsyncGenerator} and {@see Yielder}.
@@ -23,7 +24,9 @@ interface GeneratorStream extends Stream
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
+     *
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     public function send($value): Promise;
 
@@ -32,7 +35,9 @@ interface GeneratorStream extends Stream
      *
      * @param \Throwable $exception
      *
-     * @return Promise<array>
+     * @return Promise<YieldedValue|null>
+     *
+     * @psalm-return Promise<YieldedValue<TValue>|null>
      */
     public function throw(\Throwable $exception): Promise;
 }
