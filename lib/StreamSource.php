@@ -11,16 +11,12 @@ namespace Amp;
  */
 final class StreamSource
 {
-    /** @var Stream<TValue> Has public yield, complete, and fail methods. */
-    private $stream;
+    /** @var Internal\YieldSource<TValue, null> Has public yield, complete, and fail methods. */
+    private $source;
 
     public function __construct()
     {
-        $this->stream = new class implements Stream {
-            use Internal\Yielder {
-                createStream as public;
-            }
-        };
+        $this->source = new Internal\YieldSource;
     }
 
     /**
@@ -29,11 +25,12 @@ final class StreamSource
      * @return Stream
      *
      * @psalm-return Stream<TValue>
+     *
+     * @throws \Error If this method is called more than once.
      */
     public function stream(): Stream
     {
-        /** @psalm-suppress UndefinedInterfaceMethod */
-        return $this->stream->createStream();
+        return $this->source->stream();
     }
 
     /**
@@ -48,8 +45,7 @@ final class StreamSource
      */
     public function yield($value): Promise
     {
-        /** @psalm-suppress UndefinedInterfaceMethod */
-        return $this->stream->yield($value);
+        return $this->source->yield($value);
     }
 
     /**
@@ -59,8 +55,7 @@ final class StreamSource
      */
     public function complete()
     {
-        /** @psalm-suppress UndefinedInterfaceMethod */
-        $this->stream->complete();
+        $this->source->complete();
     }
 
     /**
@@ -72,7 +67,6 @@ final class StreamSource
      */
     public function fail(\Throwable $reason)
     {
-        /** @psalm-suppress UndefinedInterfaceMethod */
-        $this->stream->fail($reason);
+        $this->source->fail($reason);
     }
 }

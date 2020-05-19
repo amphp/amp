@@ -9,8 +9,8 @@ namespace Amp;
  */
 final class AsyncGenerator implements Stream
 {
-    /** @var Internal\GeneratorStream */
-    private $generator;
+    /** @var Internal\YieldSource<TValue, TSend> */
+    private $source;
 
     /** @var Promise<TReturn> */
     private $coroutine;
@@ -18,15 +18,12 @@ final class AsyncGenerator implements Stream
     /**
      * @param callable(callable(TValue):Promise<TSend>):\Generator $callable
      *
+     * @throws \Error Thrown if the callable throws any exception.
      * @throws \TypeError Thrown if the callable does not return a Generator.
      */
     public function __construct(callable $callable)
     {
-        $source = new class implements Internal\GeneratorStream {
-            use Internal\Yielder {
-                createGenerator as public;
-            }
-        };
+        $this->source = $source = new Internal\YieldSource;
 
         if (\PHP_VERSION_ID < 70100) {
             $yield = static function ($value) use ($source): Promise {
@@ -36,13 +33,17 @@ final class AsyncGenerator implements Stream
             $yield = \Closure::fromCallable([$source, "yield"]);
         }
 
-        $result = $callable($yield);
+        try {
+            $generator = $callable($yield);
+        } catch (\Throwable $exception) {
+            throw new \Error("The callable threw an exception", 0, $exception);
+        }
 
-        if (!$result instanceof \Generator) {
+        if (!$generator instanceof \Generator) {
             throw new \TypeError("The callable did not return a Generator");
         }
 
-        $this->coroutine = new Coroutine($result);
+        $this->coroutine = new Coroutine($generator);
         $this->coroutine->onResolve(static function ($exception) use ($source) {
             if ($exception) {
                 $source->fail($exception);
@@ -51,8 +52,11 @@ final class AsyncGenerator implements Stream
 
             $source->complete();
         });
+    }
 
-        $this->generator = $source->createGenerator();
+    public function __destruct()
+    {
+        $this->source->dispose();
     }
 
     /**
@@ -60,7 +64,7 @@ final class AsyncGenerator implements Stream
      */
     public function continue(): Promise
     {
-        return $this->generator->continue();
+        return $this->source->continue();
     }
 
     /**
@@ -79,7 +83,7 @@ final class AsyncGenerator implements Stream
      */
     public function send($value): Promise
     {
-        return $this->generator->send($value);
+        return $this->source->send($value);
     }
 
     /**
@@ -96,7 +100,7 @@ final class AsyncGenerator implements Stream
      */
     public function throw(\Throwable $exception): Promise
     {
-        return $this->generator->throw($exception);
+        return $this->source->throw($exception);
     }
 
     /**
@@ -106,7 +110,7 @@ final class AsyncGenerator implements Stream
      */
     public function dispose()
     {
-        $this->generator->dispose();
+        $this->source->dispose();
     }
 
     /**

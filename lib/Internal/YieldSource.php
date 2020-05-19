@@ -20,7 +20,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  * @template TValue
  * @template TSend
  */
-trait Yielder
+final class YieldSource
 {
     /** @var Promise|null */
     private $result;
@@ -137,40 +137,20 @@ trait Yielder
         return $deferred->promise();
     }
 
-    private function createStream(): Stream
+    public function stream(): Stream
     {
-        \assert($this instanceof Stream, \sprintf("Users of this trait must implement %s to call %s", Stream::class, __METHOD__));
-
         if ($this->used) {
             throw new \Error("A stream may be started only once");
         }
 
         $this->used = true;
 
-        /**
-         * @psalm-suppress InvalidArgument
-         * @psalm-suppress InternalClass
-         */
         return new AutoDisposingStream($this);
     }
 
-    private function createGenerator(): GeneratorStream
-    {
-        \assert($this instanceof GeneratorStream, \sprintf("Users of this trait must implement %s to call %s", GeneratorStream::class, __METHOD__));
-
-        if ($this->used) {
-            throw new \Error("A stream may be started only once");
-        }
-
-        $this->used = true;
-
-        /**
-         * @psalm-suppress InvalidArgument
-         * @psalm-suppress InternalClass
-         */
-        return new AutoDisposingGenerator($this);
-    }
-
+    /**
+     * @return void
+     */
     public function dispose()
     {
         if ($this->result) {
