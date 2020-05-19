@@ -3,28 +3,21 @@
 namespace Amp\Test;
 
 use Amp\DisposedException;
+use Amp\Internal\YieldSource;
 use Amp\Loop;
 use Amp\Promise;
-use Amp\Stream;
 use Amp\Success;
 use Amp\YieldedValue;
 use PHPUnit\Framework\TestCase;
 
-class Yielder implements Stream
+class YieldSourceTest extends TestCase
 {
-    use \Amp\Internal\Yielder {
-        createStream as public;
-    }
-}
-
-class YielderTraitTest extends TestCase
-{
-    /** @var Yielder */
+    /** @var YieldSource */
     private $source;
 
     public function setUp()
     {
-        $this->source = new Yielder;
+        $this->source = new YieldSource;
     }
 
     public function testYield()
@@ -33,7 +26,7 @@ class YielderTraitTest extends TestCase
             $value = 'Yielded Value';
 
             $promise = $this->source->yield($value);
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
 
             $yielded = yield $stream->continue();
 
@@ -65,7 +58,7 @@ class YielderTraitTest extends TestCase
     {
         Loop::run(function () {
             $this->source->yield(null);
-            $this->assertNull((yield $this->source->createStream()->continue())->unwrap());
+            $this->assertNull((yield $this->source->stream()->continue())->unwrap());
         });
     }
 
@@ -100,12 +93,12 @@ class YielderTraitTest extends TestCase
 
     public function testDoubleStart()
     {
-        $stream = $this->source->createStream();
+        $stream = $this->source->stream();
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('A stream may be started only once');
 
-        $stream = $this->source->createStream();
+        $stream = $this->source->stream();
     }
 
     public function testYieldAfterContinue()
@@ -113,7 +106,7 @@ class YielderTraitTest extends TestCase
         Loop::run(function () {
             $value = 'Yielded Value';
 
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
 
             $promise = $stream->continue();
             $this->assertInstanceOf(Promise::class, $promise);
@@ -127,7 +120,7 @@ class YielderTraitTest extends TestCase
     public function testContinueAfterComplete()
     {
         Loop::run(function () {
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
 
             $this->source->complete();
 
@@ -141,7 +134,7 @@ class YielderTraitTest extends TestCase
     public function testContinueAfterFail()
     {
         Loop::run(function () {
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
 
             $this->source->fail(new \Exception('Stream failed'));
 
@@ -159,7 +152,7 @@ class YielderTraitTest extends TestCase
     public function testCompleteAfterContinue()
     {
         Loop::run(function () {
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
 
             $promise = $stream->continue();
             $this->assertInstanceOf(Promise::class, $promise);
@@ -172,7 +165,7 @@ class YielderTraitTest extends TestCase
 
     public function testDestroyingStreamRelievesBackPressure()
     {
-        $stream = $this->source->createStream();
+        $stream = $this->source->stream();
 
         $invoked = 0;
         $onResolved = function () use (&$invoked) {
@@ -204,7 +197,7 @@ class YielderTraitTest extends TestCase
         $this->expectExceptionMessage('The stream has been disposed');
 
         Loop::run(function () {
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
             $promise = $this->source->yield(1);
             $stream->dispose();
             $this->assertNull(yield $promise);
@@ -219,7 +212,7 @@ class YielderTraitTest extends TestCase
         $this->expectExceptionMessage('The stream has been disposed');
 
         Loop::run(function () {
-            $stream = $this->source->createStream();
+            $stream = $this->source->stream();
             $promise = $this->source->yield(1);
             unset($stream);
             $this->assertNull(yield $promise);
