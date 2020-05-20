@@ -12,8 +12,8 @@ use Amp\YieldedValue;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Trait used by {@see Stream} implementations. Do not use this trait in your code, instead compose your class from one
- * of the available classes implementing {@see Stream}.
+ * Class used internally by {@see Stream} implementations. Do not use this class in your code, instead compose your
+ * class from one of the available classes implementing {@see Stream}.
  *
  * @internal
  *

@@ -33,6 +33,20 @@ final class Success implements Promise
     }
 
     /**
+     * Catches any destructor exception thrown and rethrows it to the event loop.
+     */
+    public function __destruct()
+    {
+        try {
+            $this->value = null;
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
+            });
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function onResolve(callable $onResolved)
@@ -51,9 +65,9 @@ final class Success implements Promise
             if ($result instanceof Promise || $result instanceof ReactPromise) {
                 Promise\rethrow($result);
             }
-        } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
+        } catch (\Throwable $e) {
+            Loop::defer(static function () use ($e) {
+                throw $e;
             });
         }
     }
