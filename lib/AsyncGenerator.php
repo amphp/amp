@@ -75,9 +75,9 @@ final class AsyncGenerator implements Stream
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<YieldedValue|null> Resolves with null if the stream has completed.
+     * @return Promise<mixed|null> Resolves with null if the stream has completed.
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      *
      * @throws \Error If the first yielded value has not been retrieved using {@see continue()}.
      */
@@ -92,9 +92,9 @@ final class AsyncGenerator implements Stream
      *
      * @param \Throwable $exception Exception to throw into the async generator.
      *
-     * @return Promise<YieldedValue|null> Resolves with null if the stream has completed.
+     * @return Promise<mixed|null> Resolves with null if the stream has completed.
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      *
      * @throws \Error If the first yielded value has not been retrieved using {@see continue()}.
      */

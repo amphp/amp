@@ -8,7 +8,6 @@ use Amp\Failure;
 use Amp\Promise;
 use Amp\Stream;
 use Amp\Success;
-use Amp\YieldedValue;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
@@ -56,9 +55,9 @@ final class YieldSource
     private $used = false;
 
     /**
-     * @return Promise<YieldedValue|null>
+     * @return Promise<mixed|null>
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      */
     public function continue(): Promise
     {
@@ -70,9 +69,9 @@ final class YieldSource
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<YieldedValue|null>
+     * @return Promise<mixed|null>
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      */
     public function send($value): Promise
     {
@@ -86,9 +85,9 @@ final class YieldSource
     /**
      * @param \Throwable $exception
      *
-     * @return Promise<YieldedValue|null>
+     * @return Promise<mixed|null>
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      */
     public function throw(\Throwable $exception): Promise
     {
@@ -104,9 +103,9 @@ final class YieldSource
      *
      * @psalm-param Promise<TSend|null> $promise
      *
-     * @return Promise<YieldedValue|null>
+     * @return Promise<mixed|null>
      *
-     * @psalm-return Promise<YieldedValue<TValue>|null>
+     * @psalm-return Promise<TValue|null>
      */
     private function next(Promise $promise): Promise
     {
@@ -125,7 +124,7 @@ final class YieldSource
             $value = $this->yieldedValues[$position];
             unset($this->yieldedValues[$position]);
 
-            return new Success(new YieldedValue($value));
+            return new Success($value);
         }
 
         if ($this->result) {
@@ -186,8 +185,8 @@ final class YieldSource
             throw new \Error("Streams cannot yield values after calling complete");
         }
 
-        if ($value instanceof YieldedValue) {
-            $value = $value->unwrap();
+        if ($value === null) {
+            throw new \TypeError("Streams cannot yield NULL");
         }
 
         if ($value instanceof Promise || $value instanceof ReactPromise) {
@@ -199,7 +198,7 @@ final class YieldSource
         if (isset($this->waiting[$position])) {
             $deferred = $this->waiting[$position];
             unset($this->waiting[$position]);
-            $deferred->resolve(new YieldedValue($value));
+            $deferred->resolve($value);
 
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {

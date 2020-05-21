@@ -18,8 +18,8 @@ class FromIterableTest extends AsyncTestCase
         $expected = \range(1, 3);
         $stream = Stream\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-        while ($value = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -40,8 +40,8 @@ class FromIterableTest extends AsyncTestCase
         $stream = Stream\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
         try {
-            while ($value = yield $stream->continue()) {
-                $this->assertSame(\array_shift($expected), $value->unwrap());
+            while (null !== $value = yield $stream->continue()) {
+                $this->assertSame(\array_shift($expected), $value);
             }
             $this->fail("A failed promise in the iterable should fail the stream and be thrown from continue()");
         } catch (TestException $reason) {
@@ -61,8 +61,8 @@ class FromIterableTest extends AsyncTestCase
             new Success(4),
         ]);
 
-        while ($value = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -77,8 +77,8 @@ class FromIterableTest extends AsyncTestCase
 
         $stream = Stream\fromIterable($generator);
 
-        while ($value = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
         }
 
         $this->assertEmpty($expected);
@@ -112,8 +112,8 @@ class FromIterableTest extends AsyncTestCase
         $stream = Stream\fromIterable(\range(1, $count), self::TIMEOUT);
 
         $i = 0;
-        while ($value = yield $stream->continue()) {
-            $this->assertSame(++$i, $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            $this->assertSame(++$i, $value);
         }
 
         $this->assertSame($count, $i);

@@ -32,14 +32,14 @@ class FilterTest extends AsyncTestCase
             }
         });
 
-        $iterator = Stream\filter($generator, static function ($value) use (&$count) {
+        $stream = Stream\filter($generator, static function ($value) use (&$count) {
             ++$count;
 
             return $value & 1;
         });
 
-        while ($value = yield $iterator->continue()) {
-            $this->assertSame(\array_shift($expected), $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            $this->assertSame(\array_shift($expected), $value);
         }
 
         $this->assertSame(3, $count);
