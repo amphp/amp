@@ -29,8 +29,8 @@ Loop::run(function () {
 
         $stream = $source->stream();
 
-        while ($value = yield $stream->continue()) {
-            \printf("Stream source yielded %d\n", $value->unwrap());
+        while (null !== $value = yield $stream->continue()) {
+            \printf("Stream source yielded %d\n", $value);
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {

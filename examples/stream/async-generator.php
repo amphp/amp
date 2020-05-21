@@ -25,13 +25,11 @@ Loop::run(function () {
         });
 
         // Use AsyncGenerator::continue() to get the first yielded value.
-        if ($value = yield $generator->continue()) {
-            $value = $value->unwrap();
+        if (null !== $value = yield $generator->continue()) {
             \printf("Async Generator yielded %d\n", $value);
 
             // Use AsyncGenerator::send() to send values into the generator and get the next yielded value.
-            while ($value = yield $generator->send($value + 1)) {
-                $value = $value->unwrap();
+            while (null !== $value = yield $generator->send($value + 1)) {
                 \printf("Async Generator yielded %d\n", $value);
                 yield new Delayed(100); // Listener consumption takes 100 ms.
             }

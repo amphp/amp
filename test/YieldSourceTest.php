@@ -4,39 +4,38 @@ namespace Amp\Test;
 
 use Amp\DisposedException;
 use Amp\Internal\YieldSource;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use Amp\YieldedValue;
-use PHPUnit\Framework\TestCase;
 
-class YieldSourceTest extends TestCase
+class YieldSourceTest extends AsyncTestCase
 {
     /** @var YieldSource */
     private $source;
 
     public function setUp()
     {
+        parent::setUp();
         $this->source = new YieldSource;
     }
 
     public function testYield()
     {
-        Loop::run(function () {
-            $value = 'Yielded Value';
+        $value = 'Yielded Value';
 
-            $promise = $this->source->yield($value);
-            $stream = $this->source->stream();
+        $promise = $this->source->yield($value);
+        $stream = $this->source->stream();
 
-            $yielded = yield $stream->continue();
+        $this->assertSame($value, yield $stream->continue());
 
-            $this->assertInstanceOf(YieldedValue::class, $yielded);
+        $continue = $stream->continue(); // Promise will not resolve until another value is yielded or stream completed.
 
-            $this->assertSame($value, $yielded->unwrap());
+        $this->assertInstanceOf(Promise::class, $promise);
+        $this->assertNull(yield $promise);
 
-            $this->assertInstanceOf(Promise::class, $promise);
-            $this->assertNull(yield $promise);
-        });
+        $this->source->complete();
+
+        $this->assertNull(yield $continue);
     }
 
     /**
@@ -56,10 +55,10 @@ class YieldSourceTest extends TestCase
      */
     public function testYieldingNull()
     {
-        Loop::run(function () {
-            $this->source->yield(null);
-            $this->assertNull((yield $this->source->stream()->continue())->unwrap());
-        });
+        $this->expectException(\TypeError::class);
+        $this->expectExceptionMessage('Streams cannot yield NULL');
+
+        $this->source->yield(null);
     }
 
     /**
@@ -67,7 +66,7 @@ class YieldSourceTest extends TestCase
      */
     public function testYieldingPromise()
     {
-        $this->expectException(\Error::class);
+        $this->expectException(\TypeError::class);
         $this->expectExceptionMessage('Streams cannot yield promises');
 
         $this->source->yield(new Success);
@@ -103,64 +102,60 @@ class YieldSourceTest extends TestCase
 
     public function testYieldAfterContinue()
     {
-        Loop::run(function () {
-            $value = 'Yielded Value';
+        $value = 'Yielded Value';
 
-            $stream = $this->source->stream();
+        $stream = $this->source->stream();
 
-            $promise = $stream->continue();
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = $stream->continue();
+        $this->assertInstanceOf(Promise::class, $promise);
 
-            $this->assertNull(yield $this->source->yield($value));
+        $backPressure = $this->source->yield($value);
 
-            $this->assertSame($value, (yield $promise)->unwrap());
-        });
+        $this->assertSame($value, yield $promise);
+
+        $stream->continue();
+
+        $this->assertNull(yield $backPressure);
     }
 
     public function testContinueAfterComplete()
     {
-        Loop::run(function () {
-            $stream = $this->source->stream();
+        $stream = $this->source->stream();
 
-            $this->source->complete();
+        $this->source->complete();
 
-            $promise = $stream->continue();
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = $stream->continue();
+        $this->assertInstanceOf(Promise::class, $promise);
 
-            $this->assertNull(yield $promise);
-        });
+        $this->assertNull(yield $promise);
     }
 
     public function testContinueAfterFail()
     {
-        Loop::run(function () {
-            $stream = $this->source->stream();
+        $stream = $this->source->stream();
 
-            $this->source->fail(new \Exception('Stream failed'));
+        $this->source->fail(new \Exception('Stream failed'));
 
-            $promise = $stream->continue();
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = $stream->continue();
+        $this->assertInstanceOf(Promise::class, $promise);
 
-            $this->expectException(\Exception::class);
-            $this->expectExceptionMessage('Stream failed');
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Stream failed');
 
-            yield $promise;
-        });
+        yield $promise;
     }
 
 
     public function testCompleteAfterContinue()
     {
-        Loop::run(function () {
-            $stream = $this->source->stream();
+        $stream = $this->source->stream();
 
-            $promise = $stream->continue();
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = $stream->continue();
+        $this->assertInstanceOf(Promise::class, $promise);
 
-            $this->source->complete();
+        $this->source->complete();
 
-            $this->assertNull(yield $promise);
-        });
+        $this->assertNull(yield $promise);
     }
 
     public function testDestroyingStreamRelievesBackPressure()
@@ -196,13 +191,11 @@ class YieldSourceTest extends TestCase
         $this->expectException(DisposedException::class);
         $this->expectExceptionMessage('The stream has been disposed');
 
-        Loop::run(function () {
-            $stream = $this->source->stream();
-            $promise = $this->source->yield(1);
-            $stream->dispose();
-            $this->assertNull(yield $promise);
-            yield $this->source->yield(1);
-        });
+        $stream = $this->source->stream();
+        $promise = $this->source->yield(1);
+        $stream->dispose();
+        $this->assertNull(yield $promise);
+        yield $this->source->yield(1);
     }
 
 
@@ -211,12 +204,10 @@ class YieldSourceTest extends TestCase
         $this->expectException(DisposedException::class);
         $this->expectExceptionMessage('The stream has been disposed');
 
-        Loop::run(function () {
-            $stream = $this->source->stream();
-            $promise = $this->source->yield(1);
-            unset($stream);
-            $this->assertNull(yield $promise);
-            yield $this->source->yield(1);
-        });
+        $stream = $this->source->stream();
+        $promise = $this->source->yield(1);
+        unset($stream);
+        $this->assertNull(yield $promise);
+        yield $this->source->yield(1);
     }
 }

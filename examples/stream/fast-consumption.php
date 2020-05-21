@@ -33,7 +33,7 @@ Loop::run(function () {
                 break;
             }
 
-            \printf("Async generator yielded %d\n", $yielded->unwrap());
+            \printf("Async generator yielded %d\n", $yielded);
         }
     } catch (\Exception $exception) {
         \printf("Exception: %s\n", (string) $exception);

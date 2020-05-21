@@ -901,8 +901,8 @@ namespace Amp\Stream
     function map(Stream $stream, callable $onYield): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $onYield) {
-            while ($value = yield $stream->continue()) {
-                yield $yield(yield call($onYield, $value->unwrap()));
+            while (null !== $value = yield $stream->continue()) {
+                yield $yield(yield call($onYield, $value));
             }
         });
     }
@@ -922,8 +922,7 @@ namespace Amp\Stream
     function filter(Stream $stream, callable $filter): Stream
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
-            while ($value = yield $stream->continue()) {
-                $value = $value->unwrap();
+            while (null !== $value = yield $stream->continue()) {
                 if (yield call($filter, $value)) {
                     yield $yield($value);
                 }
@@ -944,8 +943,8 @@ namespace Amp\Stream
         $result = $source->stream();
 
         $coroutine = coroutine(static function (Stream $stream) use (&$source) {
-            while (($value = yield $stream->continue()) && $source !== null) {
-                yield $source->yield($value->unwrap());
+            while ((null !== $value = yield $stream->continue()) && $source !== null) {
+                yield $source->yield($value);
             }
         });
 
@@ -994,8 +993,8 @@ namespace Amp\Stream
         $promise = Promise\all($previous);
 
         $coroutine = coroutine(static function (Stream $stream, callable $yield) {
-            while ($value = yield $stream->continue()) {
-                yield $yield($value->unwrap());
+            while (null !== $value = yield $stream->continue()) {
+                yield $yield($value);
             }
         });
 
@@ -1051,7 +1050,7 @@ namespace Amp\Stream
         return call(static function () use ($stream): \Generator {
             $count = 0;
 
-            while (yield $stream->continue()) {
+            while (null !== yield $stream->continue()) {
                 $count++;
             }
 
@@ -1078,8 +1077,8 @@ namespace Amp\Stream
             /** @psalm-var list<TValue> $array */
             $array = [];
 
-            while ($value = yield $stream->continue()) {
-                $array[] = $value->unwrap();
+            while (null !== $value = yield $stream->continue()) {
+                $array[] = $value;
             }
 
             return $array;
