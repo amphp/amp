@@ -127,8 +127,8 @@ abstract class DriverTest extends TestCase
         $this->assertNotSame(0, $start);
         $this->assertNotSame(0, $invoked);
 
-        $this->assertGreaterThan(1000, $invoked - $start);
-        $this->assertLessThan(1100, $invoked - $start);
+        $this->assertGreaterThan(1500, $invoked - $start);
+        $this->assertLessThan(1600, $invoked - $start);
     }
 
     public function testCorrectTimeoutIfBlockingBeforeDelay()
