@@ -6,7 +6,7 @@ use Amp\Promise;
 use Amp\Stream;
 
 /**
- * Wraps a Stream instance that has public methods to yield, complete, and fail into an object that only allows
+ * Wraps a Stream instance that has public methods to emit, complete, and fail into an object that only allows
  * access to the public API methods and sets $disposed to true when the object is destroyed.
  *
  * @internal
@@ -16,10 +16,10 @@ use Amp\Stream;
  */
 final class AutoDisposingStream implements Stream
 {
-    /** @var YieldSource<TValue, null> */
+    /** @var EmitSource<TValue, null> */
     private $source;
 
-    public function __construct(YieldSource $source)
+    public function __construct(EmitSource $source)
     {
         $this->source = $source;
     }

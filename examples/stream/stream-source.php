@@ -13,17 +13,17 @@ Loop::run(function () {
         $source = new StreamSource;
 
         Loop::defer(function () use ($source) {
-            // Source yields all values at once without awaiting back-pressure.
-            $source->yield(1);
-            $source->yield(2);
-            $source->yield(3);
-            $source->yield(4);
-            $source->yield(5);
-            $source->yield(6);
-            $source->yield(7);
-            $source->yield(8);
-            $source->yield(9);
-            $source->yield(10);
+            // Source emits all values at once without awaiting back-pressure.
+            $source->emit(1);
+            $source->emit(2);
+            $source->emit(3);
+            $source->emit(4);
+            $source->emit(5);
+            $source->emit(6);
+            $source->emit(7);
+            $source->emit(8);
+            $source->emit(9);
+            $source->emit(10);
             $source->complete();
         });
 

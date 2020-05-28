@@ -3,32 +3,32 @@
 namespace Amp\Test;
 
 use Amp\DisposedException;
-use Amp\Internal\YieldSource;
+use Amp\Internal\EmitSource;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 
-class YieldSourceTest extends AsyncTestCase
+class EmitSourceTest extends AsyncTestCase
 {
-    /** @var YieldSource */
+    /** @var EmitSource */
     private $source;
 
     public function setUp()
     {
         parent::setUp();
-        $this->source = new YieldSource;
+        $this->source = new EmitSource;
     }
 
-    public function testYield()
+    public function testEmit()
     {
-        $value = 'Yielded Value';
+        $value = 'Emited Value';
 
-        $promise = $this->source->yield($value);
+        $promise = $this->source->emit($value);
         $stream = $this->source->stream();
 
         $this->assertSame($value, yield $stream->continue());
 
-        $continue = $stream->continue(); // Promise will not resolve until another value is yielded or stream completed.
+        $continue = $stream->continue(); // Promise will not resolve until another value is emitted or stream completed.
 
         $this->assertInstanceOf(Promise::class, $promise);
         $this->assertNull(yield $promise);
@@ -39,37 +39,37 @@ class YieldSourceTest extends AsyncTestCase
     }
 
     /**
-     * @depends testYield
+     * @depends testEmit
      */
-    public function testYieldAfterComplete()
+    public function testEmitAfterComplete()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Streams cannot yield values after calling complete');
+        $this->expectExceptionMessage('Streams cannot emit values after calling complete');
 
         $this->source->complete();
-        $this->source->yield(1);
+        $this->source->emit(1);
     }
 
     /**
-     * @depends testYield
+     * @depends testEmit
      */
-    public function testYieldingNull()
+    public function testEmitingNull()
     {
         $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Streams cannot yield NULL');
+        $this->expectExceptionMessage('Streams cannot emit NULL');
 
-        $this->source->yield(null);
+        $this->source->emit(null);
     }
 
     /**
-     * @depends testYield
+     * @depends testEmit
      */
-    public function testYieldingPromise()
+    public function testEmitingPromise()
     {
         $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Streams cannot yield promises');
+        $this->expectExceptionMessage('Streams cannot emit promises');
 
-        $this->source->yield(new Success);
+        $this->source->emit(new Success);
     }
 
     public function testDoubleComplete()
@@ -100,16 +100,16 @@ class YieldSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
     }
 
-    public function testYieldAfterContinue()
+    public function testEmitAfterContinue()
     {
-        $value = 'Yielded Value';
+        $value = 'Emited Value';
 
         $stream = $this->source->stream();
 
         $promise = $stream->continue();
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $backPressure = $this->source->yield($value);
+        $backPressure = $this->source->emit($value);
 
         $this->assertSame($value, yield $promise);
 
@@ -168,7 +168,7 @@ class YieldSourceTest extends AsyncTestCase
         };
 
         foreach (\range(1, 5) as $value) {
-            $promise = $this->source->yield($value);
+            $promise = $this->source->emit($value);
             $promise->onResolve($onResolved);
         }
 
@@ -186,28 +186,28 @@ class YieldSourceTest extends AsyncTestCase
         $this->source->complete(); // Should throw.
     }
 
-    public function testYieldAfterDisposal()
+    public function testEmitAfterDisposal()
     {
         $this->expectException(DisposedException::class);
         $this->expectExceptionMessage('The stream has been disposed');
 
         $stream = $this->source->stream();
-        $promise = $this->source->yield(1);
+        $promise = $this->source->emit(1);
         $stream->dispose();
         $this->assertNull(yield $promise);
-        yield $this->source->yield(1);
+        yield $this->source->emit(1);
     }
 
 
-    public function testYieldAfterDestruct()
+    public function testEmitAfterDestruct()
     {
         $this->expectException(DisposedException::class);
         $this->expectExceptionMessage('The stream has been disposed');
 
         $stream = $this->source->stream();
-        $promise = $this->source->yield(1);
+        $promise = $this->source->emit(1);
         unset($stream);
         $this->assertNull(yield $promise);
-        yield $this->source->yield(1);
+        yield $this->source->emit(1);
     }
 }

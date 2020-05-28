@@ -15,16 +15,16 @@ Loop::run(function () {
         $stream = $source->stream();
 
         asyncCall(function (StreamSource $source): \Generator {
-            yield $source->yield(yield new Delayed(500, 1));
-            yield $source->yield(yield new Delayed(1500, 2));
-            yield $source->yield(yield new Delayed(1000, 3));
-            yield $source->yield(yield new Delayed(2000, 4));
-            yield $source->yield(5);
-            yield $source->yield(6);
-            yield $source->yield(7);
-            yield $source->yield(yield new Delayed(2000, 8));
-            yield $source->yield(9);
-            yield $source->yield(10);
+            yield $source->emit(yield new Delayed(500, 1));
+            yield $source->emit(yield new Delayed(1500, 2));
+            yield $source->emit(yield new Delayed(1000, 3));
+            yield $source->emit(yield new Delayed(2000, 4));
+            yield $source->emit(5);
+            yield $source->emit(6);
+            yield $source->emit(7);
+            yield $source->emit(yield new Delayed(2000, 8));
+            yield $source->emit(9);
+            yield $source->emit(10);
             $source->complete();
         }, $source);
 

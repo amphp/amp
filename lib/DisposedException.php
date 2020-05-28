@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Will be thrown from {@see StreamSource::yield()} or the yield callable provided by {@see AsyncGenerator} if the
+ * Will be thrown from {@see StreamSource::emit()} or the emit callable provided by {@see AsyncGenerator} if the
  * associated stream is destroyed.
  */
 final class DisposedException extends \Exception

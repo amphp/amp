@@ -19,7 +19,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  * @template TValue
  * @template TSend
  */
-final class YieldSource
+final class EmitSource
 {
     /** @var Promise|null */
     private $result;
@@ -28,7 +28,7 @@ final class YieldSource
     private $completed = false;
 
     /** @var mixed[] */
-    private $yieldedValues = [];
+    private $emittedValues = [];
 
     /** @var Promise[] */
     private $sendValues = [];
@@ -43,7 +43,7 @@ final class YieldSource
     private $consumePosition = 0;
 
     /** @var int */
-    private $yieldPosition = 0;
+    private $emitPosition = 0;
 
     /** @var array|null */
     private $resolutionTrace;
@@ -120,9 +120,9 @@ final class YieldSource
             $this->sendValues[$position - 1] = $promise;
         }
 
-        if (\array_key_exists($position, $this->yieldedValues)) {
-            $value = $this->yieldedValues[$position];
-            unset($this->yieldedValues[$position]);
+        if (\array_key_exists($position, $this->emittedValues)) {
+            $value = $this->emittedValues[$position];
+            unset($this->emittedValues[$position]);
 
             return new Success($value);
         }
@@ -160,7 +160,7 @@ final class YieldSource
     }
 
     /**
-     * Yields a value from the stream. The returned promise is resolved once the yielded value has been consumed or
+     * Emits a value from the stream. The returned promise is resolved once the emitted value has been consumed or
      * if the stream is completed, failed, or disposed.
      *
      * @param mixed $value
@@ -175,25 +175,25 @@ final class YieldSource
      *
      * @throws \Error If the stream has completed.
      */
-    public function yield($value): Promise
+    public function emit($value): Promise
     {
         if ($this->result) {
             if ($this->disposed) {
                 return $this->result; // Promise failed with an instance of DisposedException.
             }
 
-            throw new \Error("Streams cannot yield values after calling complete");
+            throw new \Error("Streams cannot emit values after calling complete");
         }
 
         if ($value === null) {
-            throw new \TypeError("Streams cannot yield NULL");
+            throw new \TypeError("Streams cannot emit NULL");
         }
 
         if ($value instanceof Promise || $value instanceof ReactPromise) {
-            throw new \TypeError("Streams cannot yield promises");
+            throw new \TypeError("Streams cannot emit promises");
         }
 
-        $position = $this->yieldPosition++;
+        $position = $this->emitPosition++;
 
         if (isset($this->waiting[$position])) {
             $deferred = $this->waiting[$position];
@@ -207,7 +207,7 @@ final class YieldSource
                 return $promise;
             }
         } else {
-            $this->yieldedValues[$position] = $value;
+            $this->emittedValues[$position] = $value;
         }
 
         $this->backPressure[$position] = $deferred = new Deferred;
