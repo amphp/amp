@@ -10,25 +10,25 @@ use Amp\Loop;
 Loop::run(function () {
     try {
         /** @psalm-var AsyncGenerator<int, int, int> $generator */
-        $generator = new AsyncGenerator(function (callable $yield): \Generator {
-            $value = yield $yield(0);
-            $value = yield $yield(yield new Delayed(500, $value));
-            $value = yield $yield($value);
-            $value = yield $yield(yield new Delayed(300, $value));
-            $value = yield $yield($value);
-            $value = yield $yield($value);
-            $value = yield $yield(yield new Delayed(1000, $value));
-            $value = yield $yield($value);
-            $value = yield $yield($value);
-            $value = yield $yield(yield new Delayed(600, $value));
+        $generator = new AsyncGenerator(function (callable $emit): \Generator {
+            $value = yield $emit(0);
+            $value = yield $emit(yield new Delayed(500, $value));
+            $value = yield $emit($value);
+            $value = yield $emit(yield new Delayed(300, $value));
+            $value = yield $emit($value);
+            $value = yield $emit($value);
+            $value = yield $emit(yield new Delayed(1000, $value));
+            $value = yield $emit($value);
+            $value = yield $emit($value);
+            $value = yield $emit(yield new Delayed(600, $value));
             return $value;
         });
 
-        // Use AsyncGenerator::continue() to get the first yielded value.
+        // Use AsyncGenerator::continue() to get the first emitted value.
         if (null !== $value = yield $generator->continue()) {
             \printf("Async Generator yielded %d\n", $value);
 
-            // Use AsyncGenerator::send() to send values into the generator and get the next yielded value.
+            // Use AsyncGenerator::send() to send values into the generator and get the next emitted value.
             while (null !== $value = yield $generator->send($value + 1)) {
                 \printf("Async Generator yielded %d\n", $value);
                 yield new Delayed(100); // Listener consumption takes 100 ms.

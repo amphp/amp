@@ -3,20 +3,20 @@
 namespace Amp;
 
 /**
- * StreamSource is a container for a Stream that can yield values using the yield() method and completed using the
+ * StreamSource is a container for a Stream that can emit values using the emit() method and completed using the
  * complete() and fail() methods. The contained Stream may be accessed using the stream() method. This object should
- * not be returned as part of a public API, but used internally to create and yield values to a Stream.
+ * not be returned as part of a public API, but used internally to create and emit values to a Stream.
  *
  * @template TValue
  */
 final class StreamSource
 {
-    /** @var Internal\YieldSource<TValue, null> Has public yield, complete, and fail methods. */
+    /** @var Internal\EmitSource<TValue, null> Has public emit, complete, and fail methods. */
     private $source;
 
     public function __construct()
     {
-        $this->source = new Internal\YieldSource;
+        $this->source = new Internal\EmitSource;
     }
 
     /**
@@ -34,18 +34,18 @@ final class StreamSource
     }
 
     /**
-     * Yields a value to the stream.
+     * Emits a value to the stream.
      *
      * @param mixed $value
      *
      * @psalm-param TValue $value
      *
-     * @return Promise<null> Resolves with null when the yielded value has been consumed or fails with
+     * @return Promise<null> Resolves with null when the emitted value has been consumed or fails with
      *                       {@see DisposedException} if the stream has been destroyed.
      */
-    public function yield($value): Promise
+    public function emit($value): Promise
     {
-        return $this->source->yield($value);
+        return $this->source->emit($value);
     }
 
     /**

@@ -850,8 +850,8 @@ namespace Amp\Stream
      *
      * @template TValue
      *
-     * @param array|\Traversable $iterable Elements to yield.
-     * @param int                $delay Delay between elements yielded in milliseconds.
+     * @param array|\Traversable $iterable Elements to emit.
+     * @param int                $delay Delay between elements emitted in milliseconds.
      *
      * @psalm-param iterable<TValue> $iterable
      *
@@ -890,7 +890,7 @@ namespace Amp\Stream
      * @template TReturn
      *
      * @param Stream $stream
-     * @param callable(TValue $value):TReturn $onYield
+     * @param callable(TValue $value):TReturn $onEmit
      *
      * @psalm-param Stream<TValue> $stream
      *
@@ -898,11 +898,11 @@ namespace Amp\Stream
      *
      * @psalm-return Stream<TReturn>
      */
-    function map(Stream $stream, callable $onYield): Stream
+    function map(Stream $stream, callable $onEmit): Stream
     {
-        return new AsyncGenerator(static function (callable $yield) use ($stream, $onYield) {
+        return new AsyncGenerator(static function (callable $yield) use ($stream, $onEmit) {
             while (null !== $value = yield $stream->continue()) {
-                yield $yield(yield call($onYield, $value));
+                yield $yield(yield call($onEmit, $value));
             }
         });
     }
@@ -931,7 +931,7 @@ namespace Amp\Stream
     }
 
     /**
-     * Creates a stream that yields values emitted from any stream in the array of streams.
+     * Creates a stream that emits values emitted from any stream in the array of streams.
      *
      * @param Stream[] $streams
      *
@@ -944,7 +944,7 @@ namespace Amp\Stream
 
         $coroutine = coroutine(static function (Stream $stream) use (&$source) {
             while ((null !== $value = yield $stream->continue()) && $source !== null) {
-                yield $source->yield($value);
+                yield $source->emit($value);
             }
         });
 
@@ -972,8 +972,8 @@ namespace Amp\Stream
     }
 
     /**
-     * Concatenates the given streams into a single stream, yielding values from a single stream at a time. The
-     * prior stream must complete before values are yielded from any subsequent streams. Streams are concatenated
+     * Concatenates the given streams into a single stream, emitting from a single stream at a time. The
+     * prior stream must complete before values are emitted from any subsequent streams. Streams are concatenated
      * in the order given (iteration order of the array).
      *
      * @param Stream[] $streams
@@ -1016,7 +1016,7 @@ namespace Amp\Stream
                     }
                 }
 
-                yield $source->yield($value);
+                yield $source->emit($value);
             });
             $previous[] = $coroutine($iterator, $emit);
             $promise = Promise\all($previous);
