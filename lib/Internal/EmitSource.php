@@ -21,6 +21,9 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class EmitSource
 {
+    /** @var Success */
+    private static $success;
+
     /** @var Promise|null */
     private $result;
 
@@ -61,7 +64,7 @@ final class EmitSource
      */
     public function continue(): Promise
     {
-        return $this->next(new Success);
+        return $this->next(self::$success ?? (self::$success = new Success));
     }
 
     /**
