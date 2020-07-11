@@ -115,3 +115,12 @@ function getCurrentTime(): int
 
     return (int) (\microtime(true) * 1000);
 }
+
+/**
+ * @return bool True if AMP_DEBUG is set to a truthy value.
+ */
+function isDebugEnabled(): bool
+{
+    $env = \getenv("AMP_DEBUG") ?: "0";
+    return ($env !== "0" && $env !== "false") || (\defined("AMP_DEBUG") && \AMP_DEBUG);
+}
