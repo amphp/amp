@@ -274,8 +274,7 @@ final class EmitSource
         }
 
         \assert((function () {
-            $env = \getenv("AMP_DEBUG") ?: "0";
-            if (($env !== "0" && $env !== "false") || (\defined("AMP_DEBUG") && \AMP_DEBUG)) {
+            if (isDebugEnabled()) {
                 $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
                 \array_shift($trace); // remove current closure
                 $this->resolutionTrace = $trace;
