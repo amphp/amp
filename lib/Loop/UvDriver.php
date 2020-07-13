@@ -168,7 +168,7 @@ class UvDriver extends Driver
 
         if (isset($this->watchers[$eventId][0])) { // All except IO watchers.
             unset($this->watchers[$eventId]);
-        } else {
+        } elseif (isset($this->watchers[$eventId][$watcherId])) {
             $watcher = $this->watchers[$eventId][$watcherId];
             unset($this->watchers[$eventId][$watcherId]);
 
