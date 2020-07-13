@@ -104,43 +104,33 @@ class NativeDriver extends Driver
             $blocking ? $this->getTimeout() : 0
         );
 
-        $scheduleQueue = [];
+        $now = $this->now();
 
-        try {
-            $now = $this->now();
-
-            while ($watcher = $this->timerQueue->extract($now)) {
-                if ($watcher->type & Watcher::REPEAT) {
-                    $expiration = $now + $watcher->value;
-                    $scheduleQueue[] = [$watcher, $expiration];
-                } else {
-                    $this->cancel($watcher->id);
-                }
-
-                try {
-                    // Execute the timer.
-                    $result = ($watcher->callback)($watcher->id, $watcher->data);
-
-                    if ($result === null) {
-                        continue;
-                    }
-
-                    if ($result instanceof \Generator) {
-                        $result = new Coroutine($result);
-                    }
-
-                    if ($result instanceof Promise || $result instanceof ReactPromise) {
-                        rethrow($result);
-                    }
-                } catch (\Throwable $exception) {
-                    $this->error($exception);
-                }
+        while ($watcher = $this->timerQueue->extract($now)) {
+            if ($watcher->type & Watcher::REPEAT) {
+                $watcher->enabled = false; // Trick base class into adding to enable queue when calling enable()
+                $this->enable($watcher->id);
+            } else {
+                $this->cancel($watcher->id);
             }
-        } finally {
-            foreach ($scheduleQueue as list($watcher, $expiration)) {
-                if ($watcher->enabled) {
-                    $this->timerQueue->insert($watcher, $expiration);
+
+            try {
+                // Execute the timer.
+                $result = ($watcher->callback)($watcher->id, $watcher->data);
+
+                if ($result === null) {
+                    continue;
                 }
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    rethrow($result);
+                }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
             }
         }
 
