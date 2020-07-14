@@ -1,3 +1,18 @@
+### 2.4.5
+
+ - Add `Amp\Iterator\discard()` (#315)
+ - Fix potential warning on shutdown in UvDriver
+ - Fix repeat watchers in `NativeDriver` that are disabled and re-enabled during callback invocation (#325)
+ - Fix timer intervals being counted from timer creation instead of last tick time (#319)
+ - `Loop::now()` / `Driver::now()` is no longer cached in each tick
+
+### 2.4.4
+
+ - Fixed `Delayed::reference()` / `Delayed::unreference()` after the promise resolved
+ - Changed return type of `Delayed::reference()` / `Delayed::unreference()` to `self` to allow fluid API usage
+ - Add generics for `Amp\Promise\wait`
+ - Improved types for `Amp\call` / `Amp\coroutine`
+
 ### 2.4.3
 
  - Improved types for `Amp\call`
