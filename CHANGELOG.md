@@ -1,4 +1,4 @@
-### 2.4.5
+### 2.5.0
 
  - Add `Amp\Iterator\discard()` (#315)
  - Fix potential warning on shutdown in UvDriver
