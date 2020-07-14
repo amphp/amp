@@ -31,7 +31,7 @@ install:
   - travis/install-ev.sh
   - travis/install-event.sh
 
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then composer remove --dev vimeo/psalm; fi
+  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then composer remove --dev psalm/phar; fi
   - composer update -n --prefer-dist
 
   - mkdir -p coverage/cov coverage/bin
@@ -45,7 +45,7 @@ script:
   - php vendor/bin/phpunit --verbose --group memoryleak
   - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then echo "Skipped psalm static analysis"; else vendor/bin/psalm; fi
+  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then echo "Skipped psalm static analysis"; else vendor/bin/psalm.phar; fi
 
 after_script:
   - curl -OL https://github.com/php-coveralls/php-coveralls/releases/download/v1.0.0/coveralls.phar
