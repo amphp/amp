@@ -31,9 +31,6 @@ class EventDriver extends Driver
     /** @var \Event[] */
     private $signals = [];
 
-    /** @var bool */
-    private $nowUpdateNeeded = false;
-
     /** @var int Internal timestamp for now. */
     private $now;
 
@@ -235,10 +232,7 @@ class EventDriver extends Driver
      */
     public function now(): int
     {
-        if ($this->nowUpdateNeeded) {
-            $this->now = getCurrentTime() - $this->nowOffset;
-            $this->nowUpdateNeeded = false;
-        }
+        $this->now = getCurrentTime() - $this->nowOffset;
 
         return $this->now;
     }
@@ -258,7 +252,6 @@ class EventDriver extends Driver
      */
     protected function dispatch(bool $blocking)
     {
-        $this->nowUpdateNeeded = true;
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
     }
 
@@ -269,7 +262,7 @@ class EventDriver extends Driver
      */
     protected function activate(array $watchers)
     {
-        $now = getCurrentTime() - $this->nowOffset;
+        $now = $this->now();
 
         foreach ($watchers as $watcher) {
             if (!isset($this->events[$id = $watcher->id])) {
@@ -335,7 +328,7 @@ class EventDriver extends Driver
                 case Watcher::REPEAT:
                     \assert(\is_int($watcher->value));
 
-                    $interval = $watcher->value - ($now - $this->now());
+                    $interval = \max(0, $watcher->expiration - $now);
                     $this->events[$id]->add($interval > 0 ? $interval / self::MILLISEC_PER_SEC : 0);
                     break;
 

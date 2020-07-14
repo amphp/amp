@@ -227,6 +227,7 @@ abstract class Driver
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $delay;
+        $watcher->expiration = $this->now() + $delay;
         $watcher->data = $data;
 
         $this->watchers[$watcher->id] = $watcher;
@@ -263,6 +264,7 @@ abstract class Driver
         $watcher->id = $this->nextId++;
         $watcher->callback = $callback;
         $watcher->value = $interval;
+        $watcher->expiration = $this->now() + $interval;
         $watcher->data = $data;
 
         $this->watchers[$watcher->id] = $watcher;
@@ -406,6 +408,14 @@ abstract class Driver
         switch ($watcher->type) {
             case Watcher::DEFER:
                 $this->nextTickQueue[$watcher->id] = $watcher;
+                break;
+
+            case Watcher::REPEAT:
+            case Watcher::DELAY:
+                \assert(\is_int($watcher->value));
+
+                $watcher->expiration = $this->now() + $watcher->value;
+                $this->enableQueue[$watcher->id] = $watcher;
                 break;
 
             default:

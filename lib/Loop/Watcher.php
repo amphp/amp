@@ -51,4 +51,7 @@ class Watcher
      * @psalm-var TValue
      */
     public $value;
+
+    /** @var int|null */
+    public $expiration;
 }

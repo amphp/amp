@@ -127,8 +127,8 @@ abstract class DriverTest extends TestCase
         $this->assertNotSame(0, $start);
         $this->assertNotSame(0, $invoked);
 
-        $this->assertGreaterThan(1500, $invoked - $start);
-        $this->assertLessThan(1600, $invoked - $start);
+        $this->assertGreaterThanOrEqual(999, $invoked - $start);
+        $this->assertLessThan(1100, $invoked - $start);
     }
 
     public function testCorrectTimeoutIfBlockingBeforeDelay()
@@ -149,7 +149,7 @@ abstract class DriverTest extends TestCase
         $this->assertNotSame(0, $start);
         $this->assertNotSame(0, $invoked);
 
-        $this->assertGreaterThan(1500, $invoked - $start);
+        $this->assertGreaterThanOrEqual(1500, $invoked - $start);
         $this->assertLessThan(1600, $invoked - $start);
     }
 
@@ -383,8 +383,11 @@ abstract class DriverTest extends TestCase
 
         $this->start(function (Driver $loop) use ($type, $args, &$invoked) {
             if ($type == "onReadable") {
-                $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-                    STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                $ends = \stream_socket_pair(
+                    \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                    STREAM_SOCK_STREAM,
+                    STREAM_IPPROTO_IP
+                );
                 \fwrite($ends[0], "trigger readability watcher");
                 $args = [$ends[1]];
             } else {
@@ -657,9 +660,14 @@ abstract class DriverTest extends TestCase
                             }
                             if ($i) {
                                 // explicitly use *different* streams with *different* resource ids
-                                $ends = \stream_socket_pair(\stripos(PHP_OS,
-                                    "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX, STREAM_SOCK_STREAM,
-                                    STREAM_IPPROTO_IP);
+                                $ends = \stream_socket_pair(
+                                    \stripos(
+                                    PHP_OS,
+                                    "win"
+                                ) === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                                    STREAM_SOCK_STREAM,
+                                    STREAM_IPPROTO_IP
+                                );
                                 $loop->onWritable($ends[0], $fn, --$i);
                                 $loop->onReadable($ends[1], function ($watcherId) use ($loop) {
                                     $loop->cancel($watcherId);
@@ -706,8 +714,10 @@ abstract class DriverTest extends TestCase
      */
     public function testExecutionOrderGuarantees()
     {
-        $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat("13 ",
-                4) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
+        $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat(
+            "13 ",
+            4
+        ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
@@ -1501,8 +1511,11 @@ abstract class DriverTest extends TestCase
                             break;
 
                         case "onReadable":
-                            $ends = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-                                STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                            $ends = \stream_socket_pair(
+                                \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                                STREAM_SOCK_STREAM,
+                                STREAM_IPPROTO_IP
+                            );
                             \fwrite($ends[0], "trigger readability watcher");
                             $args[] = $ends[1];
                             break;
@@ -1545,8 +1558,11 @@ abstract class DriverTest extends TestCase
 
     public function testMultipleWatchersOnSameDescriptor()
     {
-        $sockets = \stream_socket_pair(\stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-            STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        $sockets = \stream_socket_pair(
+            \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+            STREAM_SOCK_STREAM,
+            STREAM_IPPROTO_IP
+        );
         \fwrite($sockets[1], "testing");
 
         $invoked = 0;
@@ -1593,11 +1609,12 @@ abstract class DriverTest extends TestCase
 
     public function testTimerIntervalCountedWhenNotRunning()
     {
-        \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
-        $start = \microtime(true);
-        $this->loop->delay(1000, function () use ($start) {
+        $this->loop->delay(1000, function () use (&$start) {
             $this->assertLessThan(0.5, \microtime(true) - $start);
         });
+
+        \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
+        $start = \microtime(true);
         $this->loop->run();
     }
 
@@ -1653,9 +1670,6 @@ abstract class DriverTest extends TestCase
             // Allow a few milliseconds of inaccuracy.
             $this->assertGreaterThanOrEqual($now - 1, $new);
             $this->assertLessThanOrEqual($now + 10, $new);
-
-            // Same time should be returned from later call.
-            $this->assertSame($new, $this->loop->now());
         });
         $this->loop->run();
     }
