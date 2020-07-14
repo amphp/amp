@@ -62,9 +62,6 @@ class LoopTest extends BaseTest
                 // Allow a few milliseconds of inaccuracy.
                 $this->assertGreaterThanOrEqual($now - 1, $new);
                 $this->assertLessThanOrEqual($now + 100, $new);
-
-                // Same time should be returned from later call.
-                $this->assertSame($new, Loop::now());
             });
         });
     }

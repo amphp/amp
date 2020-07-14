@@ -31,9 +31,6 @@ class NativeDriver extends Driver
     /** @var Watcher[][] */
     private $signalWatchers = [];
 
-    /** @var bool */
-    private $nowUpdateNeeded = false;
-
     /** @var int Internal timestamp for now. */
     private $now;
 
@@ -71,10 +68,7 @@ class NativeDriver extends Driver
      */
     public function now(): int
     {
-        if ($this->nowUpdateNeeded) {
-            $this->now = getCurrentTime() - $this->nowOffset;
-            $this->nowUpdateNeeded = false;
-        }
+        $this->now = getCurrentTime() - $this->nowOffset;
 
         return $this->now;
     }
@@ -96,8 +90,6 @@ class NativeDriver extends Driver
      */
     protected function dispatch(bool $blocking)
     {
-        $this->nowUpdateNeeded = true;
-
         $this->selectStreams(
             $this->readStreams,
             $this->writeStreams,
@@ -292,9 +284,7 @@ class NativeDriver extends Driver
                 case Watcher::DELAY:
                 case Watcher::REPEAT:
                     \assert(\is_int($watcher->value));
-
-                    $expiration = $this->now() + $watcher->value;
-                    $this->timerQueue->insert($watcher, $expiration);
+                    $this->timerQueue->insert($watcher);
                     break;
 
                 case Watcher::SIGNAL:

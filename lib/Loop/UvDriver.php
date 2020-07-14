@@ -190,6 +190,8 @@ class UvDriver extends Driver
      */
     public function now(): int
     {
+        \uv_update_time($this->handle);
+
         /** @psalm-suppress TooManyArguments */
         return \uv_now($this->handle);
     }
@@ -220,6 +222,8 @@ class UvDriver extends Driver
      */
     protected function activate(array $watchers)
     {
+        $now = $this->now();
+
         foreach ($watchers as $watcher) {
             $id = $watcher->id;
 
@@ -264,7 +268,7 @@ class UvDriver extends Driver
 
                     \uv_timer_start(
                         $event,
-                        $watcher->value,
+                        \max(0, $watcher->expiration - $now),
                         ($watcher->type & Watcher::REPEAT) ? $watcher->value : 0,
                         $this->timerCallback
                     );

@@ -41,7 +41,7 @@
         "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",
         "phpunit/phpunit": "^6.0.9 | ^7",
-        "vimeo/psalm": "^3.11@dev",
+        "psalm/phar": "^3.11@dev",
         "jetbrains/phpstorm-stubs": "^2019.3"
     },
     "autoload": {

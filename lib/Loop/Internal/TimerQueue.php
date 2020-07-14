@@ -19,15 +19,17 @@ final class TimerQueue
      * Inserts the watcher into the queue. Time complexity: O(log(n)).
      *
      * @param Watcher $watcher
-     * @param int     $expiration
      *
      * @psalm-param Watcher<int> $watcher
      *
      * @return void
      */
-    public function insert(Watcher $watcher, int $expiration)
+    public function insert(Watcher $watcher)
     {
-        $entry = new TimerQueueEntry($watcher, $expiration);
+        \assert($watcher->expiration !== null);
+        \assert(!isset($this->pointers[$watcher->id]));
+
+        $entry = new TimerQueueEntry($watcher, $watcher->expiration);
 
         $node = \count($this->data);
         $this->data[$node] = $entry;

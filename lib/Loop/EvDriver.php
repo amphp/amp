@@ -32,8 +32,6 @@ class EvDriver extends Driver
     private $signals = [];
     /** @var int Internal timestamp for now. */
     private $now;
-    /** @var bool */
-    private $nowUpdateNeeded = false;
     /** @var int Loop time offset */
     private $nowOffset;
 
@@ -213,10 +211,7 @@ class EvDriver extends Driver
      */
     public function now(): int
     {
-        if ($this->nowUpdateNeeded) {
-            $this->now = getCurrentTime() - $this->nowOffset;
-            $this->nowUpdateNeeded = false;
-        }
+        $this->now = getCurrentTime() - $this->nowOffset;
 
         return $this->now;
     }
@@ -236,7 +231,6 @@ class EvDriver extends Driver
      */
     protected function dispatch(bool $blocking)
     {
-        $this->nowUpdateNeeded = true;
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
 
@@ -247,6 +241,9 @@ class EvDriver extends Driver
      */
     protected function activate(array $watchers)
     {
+        $this->handle->nowUpdate();
+        $now = $this->now();
+
         foreach ($watchers as $watcher) {
             if (!isset($this->events[$id = $watcher->id])) {
                 switch ($watcher->type) {
@@ -273,7 +270,7 @@ class EvDriver extends Driver
 
                         $interval = $watcher->value / self::MILLISEC_PER_SEC;
                         $this->events[$id] = $this->handle->timer(
-                            $interval,
+                            \max(0, ($watcher->expiration - $now) / self::MILLISEC_PER_SEC),
                             ($watcher->type & Watcher::REPEAT) ? $interval : 0,
                             $this->timerCallback,
                             $watcher
