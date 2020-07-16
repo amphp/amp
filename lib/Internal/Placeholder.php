@@ -89,6 +89,11 @@ trait Placeholder
         }
     }
 
+    private function isResolved(): bool
+    {
+        return $this->resolved;
+    }
+
     /**
      * @param mixed $value
      *

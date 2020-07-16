@@ -49,6 +49,14 @@ final class StreamSource
     }
 
     /**
+     * @return bool True if the stream has been completed or failed.
+     */
+    public function isComplete(): bool
+    {
+        return $this->source->isComplete();
+    }
+
+    /**
      * Completes the stream.
      *
      * @return void

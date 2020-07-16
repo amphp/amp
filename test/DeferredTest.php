@@ -29,6 +29,8 @@ class DeferredTest extends BaseTest
         $value = "Resolution value";
         $promise = $this->deferred->promise();
 
+        $this->assertFalse($this->deferred->isResolved());
+
         $invoked = false;
         $promise->onResolve(function ($exception, $value) use (&$invoked, &$result) {
             $invoked = true;
@@ -37,6 +39,7 @@ class DeferredTest extends BaseTest
 
         $this->deferred->resolve($value);
 
+        $this->assertTrue($this->deferred->isResolved());
         $this->assertTrue($invoked);
         $this->assertSame($value, $result);
     }
