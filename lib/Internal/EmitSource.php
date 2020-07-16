@@ -219,6 +219,14 @@ final class EmitSource
     }
 
     /**
+     * @return bool True if the stream has been completed or failed.
+     */
+    public function isComplete(): bool
+    {
+        return $this->completed;
+    }
+
+    /**
      * Completes the stream.
      **
      * @return void

@@ -3,20 +3,20 @@
 namespace Amp\Test;
 
 use Amp\DisposedException;
-use Amp\Internal\EmitSource;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
+use Amp\StreamSource;
 use Amp\Success;
 
-class EmitSourceTest extends AsyncTestCase
+class StreamSourceTest extends AsyncTestCase
 {
-    /** @var EmitSource */
+    /** @var StreamSource */
     private $source;
 
     public function setUp()
     {
         parent::setUp();
-        $this->source = new EmitSource;
+        $this->source = new StreamSource;
     }
 
     public function testEmit()
@@ -33,9 +33,28 @@ class EmitSourceTest extends AsyncTestCase
         $this->assertInstanceOf(Promise::class, $promise);
         $this->assertNull(yield $promise);
 
+        $this->assertFalse($this->source->isComplete());
+
         $this->source->complete();
 
+        $this->assertTrue($this->source->isComplete());
+
         $this->assertNull(yield $continue);
+    }
+
+    public function testFail()
+    {
+        $this->assertFalse($this->source->isComplete());
+        $this->source->fail($exception = new \Exception);
+        $this->assertTrue($this->source->isComplete());
+
+        $stream = $this->source->stream();
+
+        try {
+            yield $stream->continue();
+        } catch (\Exception $caught) {
+            $this->assertSame($exception, $caught);
+        }
     }
 
     /**
@@ -53,7 +72,7 @@ class EmitSourceTest extends AsyncTestCase
     /**
      * @depends testEmit
      */
-    public function testEmitingNull()
+    public function testEmittingNull()
     {
         $this->expectException(\TypeError::class);
         $this->expectExceptionMessage('Streams cannot emit NULL');
@@ -64,7 +83,7 @@ class EmitSourceTest extends AsyncTestCase
     /**
      * @depends testEmit
      */
-    public function testEmitingPromise()
+    public function testEmittingPromise()
     {
         $this->expectException(\TypeError::class);
         $this->expectExceptionMessage('Streams cannot emit promises');

@@ -10,7 +10,7 @@ namespace Amp;
 interface Stream
 {
     /**
-     * Succeeds with the yielded value if the stream has yielded a value or null if the stream has completed.
+     * Succeeds with the emitted value if the stream has emitted a value or null if the stream has completed.
      * If the stream fails, the returned promise will fail with the same exception.
      *
      * @return Promise<mixed|null> Resolves with null if the stream has completed.
