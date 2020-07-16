@@ -252,4 +252,19 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         yield $generator->getReturn();
     }
+
+    public function testLazyExecution()
+    {
+        $invoked = false;
+        $generator = new AsyncGenerator(function (callable $yield) use (&$invoked) {
+            $invoked = true;
+            yield $yield(0);
+        });
+
+        $this->assertFalse($invoked);
+
+        $this->assertSame(0, yield $generator->continue());
+
+        $this->assertTrue($invoked);
+    }
 }

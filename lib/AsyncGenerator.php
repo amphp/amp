@@ -15,6 +15,9 @@ final class AsyncGenerator implements Stream
     /** @var Promise<TReturn> */
     private $coroutine;
 
+    /** @var \Generator|null */
+    private $generator;
+
     /**
      * @param callable(callable(TValue):Promise<TSend>):\Generator $callable
      *
@@ -34,24 +37,14 @@ final class AsyncGenerator implements Stream
         }
 
         try {
-            $generator = $callable($emit);
+            $this->generator = $callable($emit);
         } catch (\Throwable $exception) {
             throw new \Error("The callable threw an exception", 0, $exception);
         }
 
-        if (!$generator instanceof \Generator) {
+        if (!$this->generator instanceof \Generator) {
             throw new \TypeError("The callable did not return a Generator");
         }
-
-        $this->coroutine = new Coroutine($generator);
-        $this->coroutine->onResolve(static function ($exception) use ($source) {
-            if ($exception) {
-                $source->fail($exception);
-                return;
-            }
-
-            $source->complete();
-        });
     }
 
     public function __destruct()
@@ -64,6 +57,10 @@ final class AsyncGenerator implements Stream
      */
     public function continue(): Promise
     {
+        if ($this->coroutine === null) {
+            $this->getReturn(); // Starts execution of the coroutine.
+        }
+
         return $this->source->continue();
     }
 
@@ -120,6 +117,23 @@ final class AsyncGenerator implements Stream
      */
     public function getReturn(): Promise
     {
+        if ($this->coroutine !== null) {
+            return $this->coroutine;
+        }
+
+        $this->coroutine = new Coroutine($this->generator);
+        $this->generator = null;
+
+        $source = $this->source;
+        $this->coroutine->onResolve(static function ($exception) use ($source) {
+            if ($exception) {
+                $source->fail($exception);
+                return;
+            }
+
+            $source->complete();
+        });
+
         return $this->coroutine;
     }
 }
