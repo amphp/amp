@@ -213,6 +213,7 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         $stream->dispose();
+        $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
     }
@@ -226,6 +227,7 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         unset($stream);
+        $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
     }

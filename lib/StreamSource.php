@@ -57,6 +57,14 @@ final class StreamSource
     }
 
     /**
+     * @return bool True if the stream has been disposed.
+     */
+    public function isDisposed(): bool
+    {
+        return $this->source->isDisposed();
+    }
+
+    /**
      * Completes the stream.
      *
      * @return void

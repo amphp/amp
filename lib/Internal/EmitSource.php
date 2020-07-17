@@ -227,6 +227,14 @@ final class EmitSource
     }
 
     /**
+     * @return bool True if the stream was disposed.
+     */
+    public function isDisposed(): bool
+    {
+        return $this->disposed;
+    }
+
+    /**
      * Completes the stream.
      **
      * @return void
