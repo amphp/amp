@@ -43,6 +43,7 @@ final class Deferred
      */
     public function isResolved(): bool
     {
+        /** @psalm-suppress UndefinedInterfaceMethod */
         return $this->resolver->isResolved();
     }
 

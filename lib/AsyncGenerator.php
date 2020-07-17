@@ -12,7 +12,7 @@ final class AsyncGenerator implements Stream
     /** @var Internal\EmitSource<TValue, TSend> */
     private $source;
 
-    /** @var Promise<TReturn> */
+    /** @var Coroutine<TReturn>|null */
     private $coroutine;
 
     /** @var \Generator|null */
@@ -121,11 +121,16 @@ final class AsyncGenerator implements Stream
             return $this->coroutine;
         }
 
+        /** @psalm-suppress PossiblyNullArgument */
         $this->coroutine = new Coroutine($this->generator);
         $this->generator = null;
 
         $source = $this->source;
         $this->coroutine->onResolve(static function ($exception) use ($source) {
+            if ($source->isComplete()) {
+                return; // AsyncGenerator object was destroyed.
+            }
+
             if ($exception) {
                 $source->fail($exception);
                 return;
