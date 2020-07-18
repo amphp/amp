@@ -4,10 +4,8 @@ namespace Amp\Internal;
 
 use Amp\Deferred;
 use Amp\DisposedException;
-use Amp\Failure;
 use Amp\Promise;
 use Amp\Stream;
-use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
@@ -21,9 +19,6 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class EmitSource
 {
-    /** @var Success */
-    private static $success;
-
     /** @var Promise|null */
     private $result;
 
@@ -64,7 +59,7 @@ final class EmitSource
      */
     public function continue(): Promise
     {
-        return $this->next(self::$success ?? (self::$success = new Success));
+        return $this->next(Promise\succeed());
     }
 
     /**
@@ -82,7 +77,7 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(new Success($value));
+        return $this->next(Promise\succeed($value));
     }
 
     /**
@@ -98,7 +93,7 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(new Failure($exception));
+        return $this->next(Promise\fail($exception));
     }
 
     /**
@@ -127,7 +122,7 @@ final class EmitSource
             $value = $this->emittedValues[$position];
             unset($this->emittedValues[$position]);
 
-            return new Success($value);
+            return Promise\succeed($value);
         }
 
         if ($this->result) {
@@ -159,7 +154,7 @@ final class EmitSource
             return; // Stream already completed or failed.
         }
 
-        $this->finalize(new Failure(new DisposedException), true);
+        $this->finalize(Promise\fail(new DisposedException), true);
     }
 
     /**
@@ -243,7 +238,7 @@ final class EmitSource
      */
     public function complete()
     {
-        $this->finalize(new Success);
+        $this->finalize(Promise\succeed());
     }
 
     /**
@@ -255,7 +250,7 @@ final class EmitSource
      */
     public function fail(\Throwable $exception)
     {
-        $this->finalize(new Failure($exception));
+        $this->finalize(Promise\fail($exception));
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Amp\Test;
 
 use Amp\Failure;
 use Amp\Loop;
+use Amp\Promise;
 use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class FailureTest extends BaseTest
@@ -60,5 +61,23 @@ class FailureTest extends BaseTest
         });
 
         $this->assertTrue($invoked);
+    }
+
+    public function testFailFunction()
+    {
+        $exception = new \Exception;
+
+        $invoked = 0;
+        $callback = function ($exception, $value) use (&$invoked, &$reason) {
+            ++$invoked;
+            $reason = $exception;
+        };
+
+        $failure = Promise\fail($exception);
+
+        $failure->onResolve($callback);
+
+        $this->assertSame(1, $invoked);
+        $this->assertSame($exception, $reason);
     }
 }
