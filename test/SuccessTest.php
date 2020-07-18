@@ -88,4 +88,32 @@ class SuccessTest extends BaseTest
 
         $this->assertTrue($invoked);
     }
+
+    public function testSucceedFunction()
+    {
+        $value = 1;
+        $success = Promise\succeed($value);
+        $invoked = false;
+        $success->onResolve(function ($exception, $value) use (&$invoked, &$result) {
+            $invoked = true;
+            $result = $value;
+        });
+
+        $this->assertTrue($invoked);
+        $this->assertSame($value, $result);
+    }
+
+    public function testSucceedFunctionWithNull()
+    {
+        $success = Promise\succeed();
+        $this->assertSame($success, Promise\succeed());
+        $invoked = false;
+        $success->onResolve(function ($exception, $value) use (&$invoked, &$result) {
+            $invoked = true;
+            $result = $value;
+        });
+
+        $this->assertTrue($invoked);
+        $this->assertNull($result);
+    }
 }
