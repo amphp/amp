@@ -65,6 +65,16 @@ final class StreamSource
     }
 
     /**
+     * @param callable():void $onDisposal
+     *
+     * @return void
+     */
+    public function onDisposal(callable $onDisposal)
+    {
+        $this->source->onDisposal($onDisposal);
+    }
+
+    /**
      * Completes the stream.
      *
      * @return void

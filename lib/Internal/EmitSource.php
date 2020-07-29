@@ -4,6 +4,7 @@ namespace Amp\Internal;
 
 use Amp\Deferred;
 use Amp\DisposedException;
+use Amp\Loop;
 use Amp\Promise;
 use Amp\Stream;
 use React\Promise\PromiseInterface as ReactPromise;
@@ -51,6 +52,9 @@ final class EmitSource
 
     /** @var bool */
     private $used = false;
+
+    /** @var callable[]|null */
+    private $onDisposal = [];
 
     /**
      * @return Promise<mixed|null>
@@ -146,6 +150,8 @@ final class EmitSource
     }
 
     /**
+     * @see Stream::dispose()
+     *
      * @return void
      */
     public function dispose()
@@ -155,6 +161,31 @@ final class EmitSource
         }
 
         $this->finalize(Promise\fail(new DisposedException), true);
+    }
+
+    /**
+     * @see Stream::onDisposal()
+     *
+     * @param callable():void $onDispose
+     *
+     * @return void
+     */
+    public function onDisposal(callable $onDisposal)
+    {
+        if ($this->result) {
+            if ($this->disposed) {
+                try {
+                    $onDisposal();
+                } catch (\Throwable $e) {
+                    Loop::defer(static function () use ($e) {
+                        throw $e;
+                    });
+                }
+            }
+            return;
+        }
+
+        $this->onDisposal[] = $onDisposal;
     }
 
     /**
@@ -277,8 +308,8 @@ final class EmitSource
             throw new \Error($message);
         }
 
-        $this->completed = !$disposed;
-        $this->disposed = $disposed;
+        $this->completed = !$disposed; // $disposed is false if complete() or fail() invoked
+        $this->disposed = $this->disposed ?: $disposed; // Once disposed, do not change flag
 
         if ($this->result) {
             return;
@@ -309,6 +340,20 @@ final class EmitSource
 
             foreach ($backPressure as $deferred) {
                 $deferred->resolve($result);
+            }
+
+            $onDisposal = $this->onDisposal;
+            $this->onDisposal = null;
+
+            /** @psalm-suppress PossiblyNullIterator $this->result is a guard against $this->onDisposal being null */
+            foreach ($onDisposal as $callback) {
+                try {
+                    $callback();
+                } catch (\Throwable $e) {
+                    Loop::defer(static function () use ($e) {
+                        throw $e;
+                    });
+                }
             }
         }
     }
