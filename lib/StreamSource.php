@@ -57,6 +57,17 @@ final class StreamSource
     }
 
     /**
+     * @param callable(?\Throwable):void $onCompletion
+     *
+     * @return void
+     */
+    public function onCompletion(callable $onCompletion)
+    {
+        $this->source->onCompletion($onCompletion);
+    }
+
+
+    /**
      * @return bool True if the stream has been disposed.
      */
     public function isDisposed(): bool

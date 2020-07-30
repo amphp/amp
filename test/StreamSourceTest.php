@@ -205,6 +205,42 @@ class StreamSourceTest extends AsyncTestCase
         $this->source->complete(); // Should throw.
     }
 
+    public function testOnDisposal()
+    {
+        $invoked = false;
+        $this->source->onDisposal(function () use (&$invoked) {
+            $invoked = true;
+        });
+
+        $this->assertFalse($invoked);
+
+        $stream = $this->source->stream();
+        $stream->dispose();
+
+        $this->assertTrue($invoked);
+
+        $this->source->onDisposal($this->createCallback(1));
+    }
+
+    public function testOnDisposalAfterCompletion()
+    {
+        $invoked = false;
+        $this->source->onDisposal(function () use (&$invoked) {
+            $invoked = true;
+        });
+
+        $this->assertFalse($invoked);
+
+        $this->source->complete();
+
+        $stream = $this->source->stream();
+        $stream->dispose();
+
+        $this->assertFalse($invoked);
+
+        $this->source->onDisposal($this->createCallback(0));
+    }
+
     public function testEmitAfterDisposal()
     {
         $this->expectException(DisposedException::class);
@@ -213,8 +249,10 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
+        $this->source->onCompletion($this->createCallback(0));
         $stream->dispose();
         $this->source->onDisposal($this->createCallback(1));
+        $this->source->onCompletion($this->createCallback(0));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
@@ -229,10 +267,63 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
+        $this->source->onCompletion($this->createCallback(0));
         unset($stream);
         $this->source->onDisposal($this->createCallback(1));
+        $this->source->onCompletion($this->createCallback(0));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
+    }
+
+    public function testOnCompletionWithSuccessfulStream()
+    {
+        $invoked = false;
+        $this->source->onCompletion(function (\Throwable $exception = null) use (&$invoked) {
+            $this->assertNull($exception);
+            $invoked = true;
+        });
+
+        $this->source->onDisposal($this->createCallback(0));
+
+        $this->assertFalse($invoked);
+
+        $this->source->complete();
+
+        $this->assertTrue($invoked);
+
+        $this->source->onCompletion($this->createCallback(1, function (\Throwable $exception = null) {
+            $this->assertNull($exception);
+        }));
+    }
+
+    public function testOnCompletionWithFailedStream()
+    {
+        $reason = new \Exception;
+        $invoked = false;
+        $this->source->onCompletion(function (\Throwable $exception = null) use (&$invoked, $reason) {
+            $this->assertSame($reason, $exception);
+            $invoked = true;
+        });
+
+        $this->source->onDisposal($this->createCallback(0));
+
+        $this->assertFalse($invoked);
+
+        $this->source->fail($reason);
+
+        $this->assertTrue($invoked);
+
+        $this->source->onCompletion($this->createCallback(1, function (\Throwable $exception = null) use ($reason) {
+            $this->assertSame($reason, $exception);
+        }));
+    }
+
+    public function testFailWithDisposedException()
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Cannot fail a stream with an instance of');
+
+        $this->source->fail(new DisposedException);
     }
 }
