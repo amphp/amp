@@ -111,6 +111,22 @@ final class AsyncGenerator implements Stream
     }
 
     /**
+     * @inheritDoc
+     */
+    public function onCompletion(callable $onCompletion)
+    {
+        $this->source->onCompletion($onCompletion);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function onDisposal(callable $onDisposal)
+    {
+        $this->source->onDisposal($onDisposal);
+    }
+
+    /**
      * @return Promise<mixed>
      *
      * @psalm-return Promise<TReturn>
@@ -127,7 +143,7 @@ final class AsyncGenerator implements Stream
 
         $source = $this->source;
         $this->coroutine->onResolve(static function ($exception) use ($source) {
-            if ($source->isComplete()) {
+            if ($source->isDisposed()) {
                 return; // AsyncGenerator object was destroyed.
             }
 

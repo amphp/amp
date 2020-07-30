@@ -27,4 +27,24 @@ interface Stream
      * @return void
      */
     public function dispose();
+
+    /**
+     * Registers a callback to be invoked *only* if the stream is disposed before being completed or failed.
+     *
+     * @param callable():void $onDisposal
+     *
+     * @return void
+     */
+    public function onDisposal(callable $onDisposal);
+
+    /**
+     * Registers a callback to be invoked when the stream is completed or failed. If the stream is failed, the exception
+     * used to fail the stream is given as the first argument to the callback. Null is given as the first argument if
+     * the stream is completed.
+     *
+     * @param callable(?\Throwable):void $onCompletion
+     *
+     * @return void
+     */
+    public function onCompletion(callable $onCompletion);
 }

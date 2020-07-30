@@ -44,4 +44,20 @@ final class AutoDisposingStream implements Stream
     {
         $this->source->dispose();
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function onCompletion(callable $onCompletion)
+    {
+        $this->source->onCompletion($onCompletion);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function onDisposal(callable $onDisposal)
+    {
+        $this->source->onDisposal($onDisposal);
+    }
 }
