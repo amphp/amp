@@ -249,10 +249,8 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
-        $this->source->onCompletion($this->createCallback(0));
         $stream->dispose();
         $this->source->onDisposal($this->createCallback(1));
-        $this->source->onCompletion($this->createCallback(0));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
@@ -267,56 +265,11 @@ class StreamSourceTest extends AsyncTestCase
         $stream = $this->source->stream();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
-        $this->source->onCompletion($this->createCallback(0));
         unset($stream);
         $this->source->onDisposal($this->createCallback(1));
-        $this->source->onCompletion($this->createCallback(0));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
         yield $this->source->emit(1);
-    }
-
-    public function testOnCompletionWithSuccessfulStream()
-    {
-        $invoked = false;
-        $this->source->onCompletion(function (\Throwable $exception = null) use (&$invoked) {
-            $this->assertNull($exception);
-            $invoked = true;
-        });
-
-        $this->source->onDisposal($this->createCallback(0));
-
-        $this->assertFalse($invoked);
-
-        $this->source->complete();
-
-        $this->assertTrue($invoked);
-
-        $this->source->onCompletion($this->createCallback(1, function (\Throwable $exception = null) {
-            $this->assertNull($exception);
-        }));
-    }
-
-    public function testOnCompletionWithFailedStream()
-    {
-        $reason = new \Exception;
-        $invoked = false;
-        $this->source->onCompletion(function (\Throwable $exception = null) use (&$invoked, $reason) {
-            $this->assertSame($reason, $exception);
-            $invoked = true;
-        });
-
-        $this->source->onDisposal($this->createCallback(0));
-
-        $this->assertFalse($invoked);
-
-        $this->source->fail($reason);
-
-        $this->assertTrue($invoked);
-
-        $this->source->onCompletion($this->createCallback(1, function (\Throwable $exception = null) use ($reason) {
-            $this->assertSame($reason, $exception);
-        }));
     }
 
     public function testFailWithDisposedException()

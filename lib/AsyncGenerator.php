@@ -111,22 +111,6 @@ final class AsyncGenerator implements Stream
     }
 
     /**
-     * @inheritDoc
-     */
-    public function onCompletion(callable $onCompletion)
-    {
-        $this->source->onCompletion($onCompletion);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function onDisposal(callable $onDisposal)
-    {
-        $this->source->onDisposal($onDisposal);
-    }
-
-    /**
      * @return Promise<mixed>
      *
      * @psalm-return Promise<TReturn>
