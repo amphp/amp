@@ -133,8 +133,6 @@ class AsyncGeneratorTest extends AsyncTestCase
             return $value;
         });
 
-        $generator->onDisposal($this->createCallback(0));
-        $generator->onCompletion($this->createCallback(1));
         $this->assertSame(0, yield $generator->continue());
         $this->assertNull(yield $generator->continue());
         $this->assertSame($value, yield $generator->getReturn());
@@ -151,11 +149,6 @@ class AsyncGeneratorTest extends AsyncTestCase
         $generator = new AsyncGenerator(function (callable $yield) use ($deferred) {
             yield $yield(yield $deferred->promise());
         });
-
-        $generator->onDisposal($this->createCallback(0));
-        $generator->onCompletion($this->createCallback(1, function (\Throwable $reason = null) use ($exception) {
-            $this->assertSame($exception, $reason);
-        }));
 
         $deferred->fail($exception);
 
@@ -231,9 +224,6 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         yield $generator->continue();
 
-        $generator->onDisposal($this->createCallback(1));
-        $generator->onCompletion($this->createCallback(0));
-
         unset($generator); // Should call dispose() on the internal stream.
 
         $this->assertInstanceOf(DisposedException::class, $exception);
@@ -256,12 +246,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         yield $generator->continue();
 
-        $generator->onDisposal($this->createCallback(1));
-        $generator->onCompletion($this->createCallback(0));
-
         $generator->dispose();
-
-        $generator->onDisposal($this->createCallback(1));
 
         $this->expectException(DisposedException::class);
 
@@ -281,8 +266,5 @@ class AsyncGeneratorTest extends AsyncTestCase
         $this->assertSame(0, yield $generator->continue());
 
         $this->assertTrue($invoked);
-
-        $generator->onDisposal($this->createCallback(1));
-        $generator->onCompletion($this->createCallback(0));
     }
 }

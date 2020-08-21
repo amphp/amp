@@ -20,10 +20,10 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class EmitSource
 {
-    /** @var \Throwable|null */
-    private $exception;
+    /** @var Promise|null */
+    private $result;
 
-    /** @var bool */
+    /** @var bool True if complete() or fail() has been called. */
     private $completed = false;
 
     /** @var mixed[] */
@@ -52,9 +52,6 @@ final class EmitSource
 
     /** @var bool */
     private $used = false;
-
-    /** @var callable[]|null */
-    private $onCompletion = [];
 
     /** @var callable[]|null */
     private $onDisposal = [];
@@ -132,12 +129,8 @@ final class EmitSource
             return Promise\succeed($value);
         }
 
-        if ($this->exception) {
-            return Promise\fail($this->exception);
-        }
-
-        if ($this->completed) {
-            return Promise\succeed();
+        if ($this->result) {
+            return $this->result;
         }
 
         $this->waiting[$position] = $deferred = new Deferred;
@@ -163,11 +156,11 @@ final class EmitSource
      */
     public function dispose()
     {
-        if ($this->completed || $this->disposed) {
+        if ($this->result) {
             return; // Stream already completed or failed.
         }
 
-        $this->finalize(new DisposedException, true);
+        $this->finalize(Promise\fail(new DisposedException), true);
     }
 
     /**
@@ -190,38 +183,11 @@ final class EmitSource
             return;
         }
 
-        if ($this->completed) {
+        if ($this->result) {
             return;
         }
 
         $this->onDisposal[] = $onDisposal;
-    }
-
-    /**
-     * @param callable(?\Throwable):void $onDispose
-     *
-     * @return void
-     *
-     * @see Stream::onCompletion()
-     */
-    public function onCompletion(callable $onCompletion)
-    {
-        if ($this->completed) {
-            try {
-                $onCompletion($this->exception);
-            } catch (\Throwable $e) {
-                Loop::defer(static function () use ($e) {
-                    throw $e;
-                });
-            }
-            return;
-        }
-
-        if ($this->disposed) {
-            return;
-        }
-
-        $this->onCompletion[] = $onCompletion;
     }
 
     /**
@@ -242,13 +208,12 @@ final class EmitSource
      */
     public function emit($value): Promise
     {
-        if ($this->completed || $this->exception) {
-            if ($this->disposed) {
-                \assert($this->exception instanceof DisposedException);
-                return Promise\fail($this->exception);
+        if ($this->result) {
+            if ($this->completed) {
+                throw new \Error("Streams cannot emit values after calling complete");
             }
 
-            throw new \Error("Streams cannot emit values after calling complete");
+            return $this->result;
         }
 
         if ($value === null) {
@@ -306,7 +271,7 @@ final class EmitSource
      */
     public function complete()
     {
-        $this->finalize();
+        $this->finalize(Promise\succeed());
     }
 
     /**
@@ -322,16 +287,16 @@ final class EmitSource
             throw new \Error("Cannot fail a stream with an instance of " . DisposedException::class);
         }
 
-        $this->finalize($exception);
+        $this->finalize(Promise\fail($exception));
     }
 
     /**
-     * @param \Throwable $exception
-     * @param bool       $disposed Flag if the generator was disposed.
+     * @param Promise $result
+     * @param bool    $disposed Flag if the generator was disposed.
      *
      * @return void
      */
-    private function finalize(\Throwable $exception = null, bool $disposed = false)
+    private function finalize(Promise $result, bool $disposed = false)
     {
         if ($this->completed) {
             $message = "Stream has already been completed";
@@ -349,9 +314,7 @@ final class EmitSource
             throw new \Error($message);
         }
 
-        $alreadyDisposed = $this->disposed;
-
-        $this->completed = !$disposed; // $disposed is false if complete() or fail() invoked
+        $this->completed = $this->completed ?: !$disposed; // $disposed is false if complete() or fail() invoked
         $this->disposed = $this->disposed ?: $disposed; // Once disposed, do not change flag
 
         if ($this->completed) { // Record stack trace when calling complete() or fail()
@@ -366,35 +329,17 @@ final class EmitSource
             })());
         }
 
-        if ($alreadyDisposed) {
+        if ($this->result) {
             return;
         }
 
-        $this->exception = $exception;
+        $this->result = $result;
 
         $waiting = $this->waiting;
         $this->waiting = [];
 
-        $result = $exception ? Promise\fail($exception) : Promise\succeed();
-
         foreach ($waiting as $deferred) {
             $deferred->resolve($result);
-        }
-
-        $onCompletion = $this->onCompletion;
-        $this->onCompletion = null;
-
-        if (!$disposed) {
-            /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onCompletion being null */
-            foreach ($onCompletion as $callback) {
-                try {
-                    $callback($exception);
-                } catch (\Throwable $e) {
-                    Loop::defer(static function () use ($e) {
-                        throw $e;
-                    });
-                }
-            }
         }
 
         $onDisposal = $this->onDisposal;
