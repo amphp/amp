@@ -5,13 +5,13 @@ namespace Amp\Internal;
 use Amp\Deferred;
 use Amp\DisposedException;
 use Amp\Loop;
+use Amp\Pipeline;
 use Amp\Promise;
-use Amp\Stream;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Class used internally by {@see Stream} implementations. Do not use this class in your code, instead compose your
- * class from one of the available classes implementing {@see Stream}.
+ * Class used internally by {@see Pipeline} implementations. Do not use this class in your code, instead compose your
+ * class from one of the available classes implementing {@see Pipeline}.
  *
  * @internal
  *
@@ -138,26 +138,26 @@ final class EmitSource
         return $deferred->promise();
     }
 
-    public function stream(): Stream
+    public function pipe(): Pipeline
     {
         if ($this->used) {
-            throw new \Error("A stream may be started only once");
+            throw new \Error("A pipeline may be started only once");
         }
 
         $this->used = true;
 
-        return new AutoDisposingStream($this);
+        return new AutoDisposingPipeline($this);
     }
 
     /**
      * @return void
      *
-     * @see Stream::dispose()
+     * @see Pipeline::dispose()
      */
     public function dispose()
     {
         if ($this->result) {
-            return; // Stream already completed or failed.
+            return; // Pipeline already completed or failed.
         }
 
         $this->finalize(Promise\fail(new DisposedException), true);
@@ -168,7 +168,7 @@ final class EmitSource
      *
      * @return void
      *
-     * @see Stream::onDisposal()
+     * @see Pipeline::onDisposal()
      */
     public function onDisposal(callable $onDisposal)
     {
@@ -191,37 +191,37 @@ final class EmitSource
     }
 
     /**
-     * Emits a value from the stream. The returned promise is resolved once the emitted value has been consumed or
-     * if the stream is completed, failed, or disposed.
+     * Emits a value from the pipeline. The returned promise is resolved once the emitted value has been consumed or
+     * if the pipeline is completed, failed, or disposed.
      *
      * @param mixed $value
      *
      * @psalm-param TValue $value
      *
      * @return Promise<mixed> Resolves with the sent value once the value has been consumed. Fails with the failure
-     *                        reason if the {@see fail()} is called, or with {@see DisposedException} if the stream
+     *                        reason if the {@see fail()} is called, or with {@see DisposedException} if the pipeline
      *                        is destroyed.
      *
      * @psalm-return Promise<TSend|null>
      *
-     * @throws \Error If the stream has completed.
+     * @throws \Error If the pipeline has completed.
      */
     public function emit($value): Promise
     {
         if ($this->result) {
             if ($this->completed) {
-                throw new \Error("Streams cannot emit values after calling complete");
+                throw new \Error("Pipelines cannot emit values after calling complete");
             }
 
             return $this->result;
         }
 
         if ($value === null) {
-            throw new \TypeError("Streams cannot emit NULL");
+            throw new \TypeError("Pipelines cannot emit NULL");
         }
 
         if ($value instanceof Promise || $value instanceof ReactPromise) {
-            throw new \TypeError("Streams cannot emit promises");
+            throw new \TypeError("Pipelines cannot emit promises");
         }
 
         $position = $this->emitPosition++;
@@ -247,7 +247,7 @@ final class EmitSource
     }
 
     /**
-     * @return bool True if the stream has been completed or failed.
+     * @return bool True if the pipeline has been completed or failed.
      */
     public function isComplete(): bool
     {
@@ -255,7 +255,7 @@ final class EmitSource
     }
 
     /**
-     * @return bool True if the stream was disposed.
+     * @return bool True if the pipeline was disposed.
      */
     public function isDisposed(): bool
     {
@@ -263,7 +263,7 @@ final class EmitSource
     }
 
     /**
-     * Completes the stream.
+     * Completes the pipeline.
      *
      * @return void
      *
@@ -275,7 +275,7 @@ final class EmitSource
     }
 
     /**
-     * Fails the stream.
+     * Fails the pipeline.
      *
      * @param \Throwable $exception
      *
@@ -284,7 +284,7 @@ final class EmitSource
     public function fail(\Throwable $exception)
     {
         if ($exception instanceof DisposedException) {
-            throw new \Error("Cannot fail a stream with an instance of " . DisposedException::class);
+            throw new \Error("Cannot fail a pipeline with an instance of " . DisposedException::class);
         }
 
         $this->finalize(Promise\fail($exception));
@@ -299,7 +299,7 @@ final class EmitSource
     private function finalize(Promise $result, bool $disposed = false)
     {
         if ($this->completed) {
-            $message = "Stream has already been completed";
+            $message = "Pipeline has already been completed";
 
             if (isset($this->resolutionTrace)) {
                 $trace = formatStacktrace($this->resolutionTrace);

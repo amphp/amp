@@ -4,19 +4,19 @@ namespace Amp\Test;
 
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\PipelineSource;
 use Amp\Promise;
-use Amp\StreamSource;
 use Amp\Success;
 
-class StreamSourceTest extends AsyncTestCase
+class PipelineSourceTest extends AsyncTestCase
 {
-    /** @var StreamSource */
+    /** @var PipelineSource */
     private $source;
 
     public function setUp()
     {
         parent::setUp();
-        $this->source = new StreamSource;
+        $this->source = new PipelineSource;
     }
 
     public function testEmit()
@@ -24,11 +24,11 @@ class StreamSourceTest extends AsyncTestCase
         $value = 'Emited Value';
 
         $promise = $this->source->emit($value);
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
-        $this->assertSame($value, yield $stream->continue());
+        $this->assertSame($value, yield $pipeline->continue());
 
-        $continue = $stream->continue(); // Promise will not resolve until another value is emitted or stream completed.
+        $continue = $pipeline->continue(); // Promise will not resolve until another value is emitted or pipeline completed.
 
         $this->assertInstanceOf(Promise::class, $promise);
         $this->assertNull(yield $promise);
@@ -48,10 +48,10 @@ class StreamSourceTest extends AsyncTestCase
         $this->source->fail($exception = new \Exception);
         $this->assertTrue($this->source->isComplete());
 
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
         try {
-            yield $stream->continue();
+            yield $pipeline->continue();
         } catch (\Exception $caught) {
             $this->assertSame($exception, $caught);
         }
@@ -63,7 +63,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testEmitAfterComplete()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Streams cannot emit values after calling complete');
+        $this->expectExceptionMessage('Pipelines cannot emit values after calling complete');
 
         $this->source->complete();
         $this->source->emit(1);
@@ -75,7 +75,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testEmittingNull()
     {
         $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Streams cannot emit NULL');
+        $this->expectExceptionMessage('Pipelines cannot emit NULL');
 
         $this->source->emit(null);
     }
@@ -86,7 +86,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testEmittingPromise()
     {
         $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Streams cannot emit promises');
+        $this->expectExceptionMessage('Pipelines cannot emit promises');
 
         $this->source->emit(new Success);
     }
@@ -94,7 +94,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testDoubleComplete()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Stream has already been completed');
+        $this->expectExceptionMessage('Pipeline has already been completed');
 
         $this->source->complete();
         $this->source->complete();
@@ -103,7 +103,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testDoubleFail()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Stream has already been completed');
+        $this->expectExceptionMessage('Pipeline has already been completed');
 
         $this->source->fail(new \Exception);
         $this->source->fail(new \Exception);
@@ -111,39 +111,39 @@ class StreamSourceTest extends AsyncTestCase
 
     public function testDoubleStart()
     {
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('A stream may be started only once');
+        $this->expectExceptionMessage('A pipeline may be started only once');
 
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
     }
 
     public function testEmitAfterContinue()
     {
         $value = 'Emited Value';
 
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
-        $promise = $stream->continue();
+        $promise = $pipeline->continue();
         $this->assertInstanceOf(Promise::class, $promise);
 
         $backPressure = $this->source->emit($value);
 
         $this->assertSame($value, yield $promise);
 
-        $stream->continue();
+        $pipeline->continue();
 
         $this->assertNull(yield $backPressure);
     }
 
     public function testContinueAfterComplete()
     {
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
         $this->source->complete();
 
-        $promise = $stream->continue();
+        $promise = $pipeline->continue();
         $this->assertInstanceOf(Promise::class, $promise);
 
         $this->assertNull(yield $promise);
@@ -151,15 +151,15 @@ class StreamSourceTest extends AsyncTestCase
 
     public function testContinueAfterFail()
     {
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
-        $this->source->fail(new \Exception('Stream failed'));
+        $this->source->fail(new \Exception('Pipeline failed'));
 
-        $promise = $stream->continue();
+        $promise = $pipeline->continue();
         $this->assertInstanceOf(Promise::class, $promise);
 
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Stream failed');
+        $this->expectExceptionMessage('Pipeline failed');
 
         yield $promise;
     }
@@ -167,9 +167,9 @@ class StreamSourceTest extends AsyncTestCase
 
     public function testCompleteAfterContinue()
     {
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
-        $promise = $stream->continue();
+        $promise = $pipeline->continue();
         $this->assertInstanceOf(Promise::class, $promise);
 
         $this->source->complete();
@@ -177,9 +177,9 @@ class StreamSourceTest extends AsyncTestCase
         $this->assertNull(yield $promise);
     }
 
-    public function testDestroyingStreamRelievesBackPressure()
+    public function testDestroyingPipelineRelievesBackPressure()
     {
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
 
         $invoked = 0;
         $onResolved = function () use (&$invoked) {
@@ -193,14 +193,14 @@ class StreamSourceTest extends AsyncTestCase
 
         $this->assertSame(0, $invoked);
 
-        unset($stream); // Should relieve all back-pressure.
+        unset($pipeline); // Should relieve all back-pressure.
 
         $this->assertSame(5, $invoked);
 
         $this->source->complete(); // Should not throw.
 
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Stream has already been completed');
+        $this->expectExceptionMessage('Pipeline has already been completed');
 
         $this->source->complete(); // Should throw.
     }
@@ -214,8 +214,8 @@ class StreamSourceTest extends AsyncTestCase
 
         $this->assertFalse($invoked);
 
-        $stream = $this->source->stream();
-        $stream->dispose();
+        $pipeline = $this->source->pipe();
+        $pipeline->dispose();
 
         $this->assertTrue($invoked);
 
@@ -233,8 +233,8 @@ class StreamSourceTest extends AsyncTestCase
 
         $this->source->complete();
 
-        $stream = $this->source->stream();
-        $stream->dispose();
+        $pipeline = $this->source->pipe();
+        $pipeline->dispose();
 
         $this->assertFalse($invoked);
 
@@ -244,12 +244,12 @@ class StreamSourceTest extends AsyncTestCase
     public function testEmitAfterDisposal()
     {
         $this->expectException(DisposedException::class);
-        $this->expectExceptionMessage('The stream has been disposed');
+        $this->expectExceptionMessage('The pipeline has been disposed');
 
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
-        $stream->dispose();
+        $pipeline->dispose();
         $this->source->onDisposal($this->createCallback(1));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
@@ -260,12 +260,12 @@ class StreamSourceTest extends AsyncTestCase
     public function testEmitAfterDestruct()
     {
         $this->expectException(DisposedException::class);
-        $this->expectExceptionMessage('The stream has been disposed');
+        $this->expectExceptionMessage('The pipeline has been disposed');
 
-        $stream = $this->source->stream();
+        $pipeline = $this->source->pipe();
         $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
-        unset($stream);
+        unset($pipeline);
         $this->source->onDisposal($this->createCallback(1));
         $this->assertTrue($this->source->isDisposed());
         $this->assertNull(yield $promise);
@@ -275,7 +275,7 @@ class StreamSourceTest extends AsyncTestCase
     public function testFailWithDisposedException()
     {
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Cannot fail a stream with an instance of');
+        $this->expectExceptionMessage('Cannot fail a pipeline with an instance of');
 
         $this->source->fail(new DisposedException);
     }

@@ -7,7 +7,7 @@ namespace Amp;
  * @template TSend
  * @template TReturn
  */
-final class AsyncGenerator implements Stream
+final class AsyncGenerator implements Pipeline
 {
     /** @var Internal\EmitSource<TValue, TSend> */
     private $source;
@@ -72,7 +72,7 @@ final class AsyncGenerator implements Stream
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<mixed|null> Resolves with null if the stream has completed.
+     * @return Promise<mixed|null> Resolves with null if the pipeline has completed.
      *
      * @psalm-return Promise<TValue|null>
      *
@@ -89,7 +89,7 @@ final class AsyncGenerator implements Stream
      *
      * @param \Throwable $exception Exception to throw into the async generator.
      *
-     * @return Promise<mixed|null> Resolves with null if the stream has completed.
+     * @return Promise<mixed|null> Resolves with null if the pipeline has completed.
      *
      * @psalm-return Promise<TValue|null>
      *

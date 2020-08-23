@@ -623,9 +623,9 @@ namespace Amp\Iterator
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Iterator;
+    use Amp\Pipeline;
     use Amp\Producer;
     use Amp\Promise;
-    use Amp\Stream;
     use function Amp\call;
     use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
@@ -821,15 +821,15 @@ namespace Amp\Iterator
     /**
      * @template TValue
      *
-     * @param Stream $stream
+     * @param Pipeline $stream
      *
-     * @psalm-param Stream<TValue> $stream
+     * @psalm-param Pipeline<TValue> $pipeline
      *
      * @return Iterator
      *
      * @psalm-return Iterator<TValue>
      */
-    function fromStream(Stream $stream): Iterator
+    function fromPipeline(Pipeline $stream): Iterator
     {
         return new Producer(function (callable $emit) use ($stream): \Generator {
             while (null !== $value = yield $stream->continue()) {
@@ -839,22 +839,22 @@ namespace Amp\Iterator
     }
 }
 
-namespace Amp\Stream
+namespace Amp\Pipeline
 {
     use Amp\AsyncGenerator;
     use Amp\Delayed;
     use Amp\Iterator;
+    use Amp\Pipeline;
+    use Amp\PipelineSource;
     use Amp\Promise;
-    use Amp\Stream;
-    use Amp\StreamSource;
     use React\Promise\PromiseInterface as ReactPromise;
     use function Amp\call;
     use function Amp\coroutine;
     use function Amp\Internal\createTypeError;
 
     /**
-     * Creates a stream from the given iterable, emitting the each value. The iterable may contain promises. If any
-     * promise fails, the returned stream will fail with the same reason.
+     * Creates a pipeline from the given iterable, emitting the each value. The iterable may contain promises. If any
+     * promise fails, the returned pipeline will fail with the same reason.
      *
      * @template TValue
      *
@@ -863,16 +863,16 @@ namespace Amp\Stream
      *
      * @psalm-param iterable<TValue> $iterable
      *
-     * @return Stream
+     * @return Pipeline
      *
-     * @psalm-return Stream<TValue>
+     * @psalm-return Pipeline<TValue>
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
     function fromIterable(/* iterable */
         $iterable,
         int $delay = 0
-    ): Stream {
+    ): Pipeline {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw createTypeError(["array", "Traversable"], $iterable);
         }
@@ -896,16 +896,16 @@ namespace Amp\Stream
      * @template TValue
      * @template TReturn
      *
-     * @param Stream $stream
+     * @param Pipeline $stream
      * @param callable(TValue $value):TReturn $onEmit
      *
-     * @psalm-param Stream<TValue> $stream
+     * @psalm-param Pipeline<TValue> $pipeline
      *
-     * @return Stream
+     * @return Pipeline
      *
-     * @psalm-return Stream<TReturn>
+     * @psalm-return Pipeline<TReturn>
      */
-    function map(Stream $stream, callable $onEmit): Stream
+    function map(Pipeline $stream, callable $onEmit): Pipeline
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $onEmit) {
             while (null !== $value = yield $stream->continue()) {
@@ -917,16 +917,16 @@ namespace Amp\Stream
     /**
      * @template TValue
      *
-     * @param Stream $stream
+     * @param Pipeline $stream
      * @param callable(TValue $value):bool $filter
      *
-     * @psalm-param Stream<TValue> $stream
+     * @psalm-param Pipeline<TValue> $pipeline
      *
-     * @return Stream
+     * @return Pipeline
      *
-     * @psalm-return Stream<TValue>
+     * @psalm-return Pipeline<TValue>
      */
-    function filter(Stream $stream, callable $filter): Stream
+    function filter(Pipeline $stream, callable $filter): Pipeline
     {
         return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
             while (null !== $value = yield $stream->continue()) {
@@ -938,18 +938,18 @@ namespace Amp\Stream
     }
 
     /**
-     * Creates a stream that emits values emitted from any stream in the array of streams.
+     * Creates a pipeline that emits values emitted from any pipeline in the array of streams.
      *
-     * @param Stream[] $streams
+     * @param Pipeline[] $streams
      *
-     * @return Stream
+     * @return Pipeline
      */
-    function merge(array $streams): Stream
+    function merge(array $streams): Pipeline
     {
-        $source = new StreamSource;
-        $result = $source->stream();
+        $source = new PipelineSource;
+        $result = $source->pipe();
 
-        $coroutine = coroutine(static function (Stream $stream) use (&$source) {
+        $coroutine = coroutine(static function (Pipeline $stream) use (&$source) {
             while ((null !== $value = yield $stream->continue()) && $source !== null) {
                 yield $source->emit($value);
             }
@@ -957,8 +957,8 @@ namespace Amp\Stream
 
         $coroutines = [];
         foreach ($streams as $stream) {
-            if (!$stream instanceof Stream) {
-                throw createTypeError([Stream::class], $stream);
+            if (!$stream instanceof Pipeline) {
+                throw createTypeError([Pipeline::class], $stream);
             }
 
             $coroutines[] = $coroutine($stream);
@@ -979,19 +979,19 @@ namespace Amp\Stream
     }
 
     /**
-     * Concatenates the given streams into a single stream, emitting from a single stream at a time. The
-     * prior stream must complete before values are emitted from any subsequent streams. Streams are concatenated
+     * Concatenates the given streams into a single pipeline, emitting from a single pipeline at a time. The
+     * prior pipeline must complete before values are emitted from any subsequent streams. Streams are concatenated
      * in the order given (iteration order of the array).
      *
-     * @param Stream[] $streams
+     * @param Pipeline[] $streams
      *
-     * @return Stream
+     * @return Pipeline
      */
-    function concat(array $streams): Stream
+    function concat(array $streams): Pipeline
     {
         foreach ($streams as $stream) {
-            if (!$stream instanceof Stream) {
-                throw createTypeError([Stream::class], $stream);
+            if (!$stream instanceof Pipeline) {
+                throw createTypeError([Pipeline::class], $stream);
             }
         }
 
@@ -1009,13 +1009,13 @@ namespace Amp\Stream
      *
      * @template TValue
      *
-     * @param Stream $stream
+     * @param Pipeline $stream
      *
-     * @psalm-param Stream<TValue> $stream
+     * @psalm-param Pipeline<TValue> $pipeline
      *
      * @return Promise<int>
      */
-    function discard(Stream $stream): Promise
+    function discard(Pipeline $stream): Promise
     {
         return call(static function () use ($stream): \Generator {
             $count = 0;
@@ -1029,19 +1029,19 @@ namespace Amp\Stream
     }
 
     /**
-     * Collects all items from a stream into an array.
+     * Collects all items from a pipeline into an array.
      *
      * @template TValue
      *
-     * @param Stream $stream
+     * @param Pipeline $stream
      *
-     * @psalm-param Stream<TValue> $stream
+     * @psalm-param Pipeline<TValue> $pipeline
      *
      * @return Promise
      *
      * @psalm-return Promise<array<int, TValue>>
      */
-    function toArray(Stream $stream): Promise
+    function toArray(Pipeline $stream): Promise
     {
         return call(static function () use ($stream): \Generator {
             /** @psalm-var list<TValue> $array */
@@ -1056,7 +1056,7 @@ namespace Amp\Stream
     }
 
     /**
-     * Converts an instance of the deprecated {@see Iterator} into an instance of {@see Stream}.
+     * Converts an instance of the deprecated {@see Iterator} into an instance of {@see Pipeline}.
      *
      * @template TValue
      *
@@ -1064,11 +1064,11 @@ namespace Amp\Stream
      *
      * @psalm-param Iterator<TValue> $iterator
      *
-     * @return Stream
+     * @return Pipeline
      *
-     * @psalm-return Stream<TValue>
+     * @psalm-return Pipeline<TValue>
      */
-    function fromIterator(Iterator $iterator): Stream
+    function fromIterator(Iterator $iterator): Pipeline
     {
         return new AsyncGenerator(function (callable $yield) use ($iterator): \Generator {
             while (yield $iterator->advance()) {

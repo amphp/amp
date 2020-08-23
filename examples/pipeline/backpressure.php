@@ -5,16 +5,16 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
-use Amp\StreamSource;
+use Amp\PipelineSource;
 use function Amp\asyncCall;
 
 Loop::run(function () {
     try {
-        /** @psalm-var StreamSource<int> $source */
-        $source = new StreamSource;
-        $stream = $source->stream();
+        /** @psalm-var PipelineSource<int> $source */
+        $source = new PipelineSource;
+        $pipeline = $source->pipe();
 
-        asyncCall(function (StreamSource $source): \Generator {
+        asyncCall(function (PipelineSource $source): \Generator {
             yield $source->emit(yield new Delayed(500, 1));
             yield $source->emit(yield new Delayed(1500, 2));
             yield $source->emit(yield new Delayed(1000, 3));
@@ -28,8 +28,8 @@ Loop::run(function () {
             $source->complete();
         }, $source);
 
-        while (null !== $value = yield $stream->continue()) {
-            \printf("Stream source yielded %d\n", $value);
+        while (null !== $value = yield $pipeline->continue()) {
+            \printf("Pipeline source yielded %d\n", $value);
             yield new Delayed(500); // Listener consumption takes 500 ms.
         }
     } catch (\Exception $exception) {

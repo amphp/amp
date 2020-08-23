@@ -5,12 +5,12 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Delayed;
 use Amp\Loop;
-use Amp\StreamSource;
+use Amp\PipelineSource;
 
 Loop::run(function () {
     try {
-        /** @psalm-var StreamSource<int> $source */
-        $source = new StreamSource;
+        /** @psalm-var PipelineSource<int> $source */
+        $source = new PipelineSource;
 
         Loop::defer(function () use ($source) {
             // Source emits all values at once without awaiting back-pressure.
@@ -27,10 +27,10 @@ Loop::run(function () {
             $source->complete();
         });
 
-        $stream = $source->stream();
+        $pipeline = $source->pipe();
 
-        while (null !== $value = yield $stream->continue()) {
-            \printf("Stream source yielded %d\n", $value);
+        while (null !== $value = yield $pipeline->continue()) {
+            \printf("Pipeline source yielded %d\n", $value);
             yield new Delayed(100); // Listener consumption takes 100 ms.
         }
     } catch (\Throwable $exception) {

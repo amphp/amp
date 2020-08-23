@@ -22,7 +22,7 @@ use function Amp\Promise\rethrow;
  * $tokenSource = new CancellationTokenSource;
  * $token = $tokenSource->getToken();
  *
- * $response = yield $httpClient->request("https://example.com/stream", $token);
+ * $response = yield $httpClient->request("https://example.com/pipeline", $token);
  * $responseBody = $response->getBody();
  *
  * while (($chunk = yield $response->read()) !== null) {
