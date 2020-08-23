@@ -1,45 +1,43 @@
 <?php
 
-namespace Amp\Test\Stream;
+namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
-use Amp\Stream;
-use Amp\StreamSource;
+use Amp\Pipeline;
+use Amp\PipelineSource;
 
-class FilterTest extends AsyncTestCase
+class MapTest extends AsyncTestCase
 {
     public function testNoValuesEmitted()
     {
-        $source = new StreamSource;
+        $source = new PipelineSource;
 
-        $stream = Stream\filter($source->stream(), $this->createCallback(0));
+        /** @noinspection PhpUnusedLocalVariableInspection */
+        $pipeline = Pipeline\map($source->pipe(), $this->createCallback(0));
 
         $source->complete();
-
-        yield Stream\discard($stream);
     }
 
     public function testValuesEmitted()
     {
         $count = 0;
         $values = [1, 2, 3];
-        $expected = [1, 3];
         $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
             foreach ($values as $value) {
                 yield $yield($value);
             }
         });
 
-        $stream = Stream\filter($generator, static function ($value) use (&$count) {
+        $pipeline = Pipeline\map($generator, static function ($value) use (&$count) {
             ++$count;
 
-            return $value & 1;
+            return $value + 1;
         });
 
-        while (null !== $value = yield $stream->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+        while (null !== $value = yield $pipeline->continue()) {
+            $this->assertSame(\array_shift($values) + 1, $value);
         }
 
         $this->assertSame(3, $count);
@@ -48,36 +46,37 @@ class FilterTest extends AsyncTestCase
     /**
      * @depends testValuesEmitted
      */
-    public function testCallbackThrows()
+    public function testOnNextCallbackThrows()
     {
         $values = [1, 2, 3];
         $exception = new TestException;
+
         $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
             foreach ($values as $value) {
                 yield $yield($value);
             }
         });
 
-        $stream = Stream\filter($generator, static function () use ($exception) {
+        $pipeline = Pipeline\map($generator, static function () use ($exception) {
             throw $exception;
         });
 
         $this->expectExceptionObject($exception);
 
-        yield $stream->continue();
+        yield $pipeline->continue();
     }
 
-    public function testStreamFails()
+    public function testPipelineFails()
     {
         $exception = new TestException;
-        $source = new StreamSource;
+        $source = new PipelineSource;
 
-        $stream = Stream\filter($source->stream(), $this->createCallback(0));
+        $iterator = Pipeline\map($source->pipe(), $this->createCallback(0));
 
         $source->fail($exception);
 
         $this->expectExceptionObject($exception);
 
-        yield $stream->continue();
+        yield $iterator->continue();
     }
 }

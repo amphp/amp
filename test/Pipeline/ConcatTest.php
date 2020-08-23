@@ -1,11 +1,11 @@
 <?php
 
-namespace Amp\Test\Stream;
+namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
-use Amp\Stream;
+use Amp\Pipeline;
 
 class ConcatTest extends AsyncTestCase
 {
@@ -26,13 +26,13 @@ class ConcatTest extends AsyncTestCase
      */
     public function testConcat(array $iterators, array $expected)
     {
-        $iterators = \array_map(static function (array $iterator): Stream {
-            return Stream\fromIterable($iterator);
+        $iterators = \array_map(static function (array $iterator): Pipeline {
+            return Pipeline\fromIterable($iterator);
         }, $iterators);
 
-        $stream = Stream\concat($iterators);
+        $pipeline = Pipeline\concat($iterators);
 
-        while (null !== $value = yield $stream->continue()) {
+        while (null !== $value = yield $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
@@ -40,7 +40,7 @@ class ConcatTest extends AsyncTestCase
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedStream()
+    public function testConcatWithFailedPipeline()
     {
         $exception = new TestException;
         $expected = \range(1, 6);
@@ -49,18 +49,18 @@ class ConcatTest extends AsyncTestCase
             throw $exception;
         });
 
-        $stream = Stream\concat([
-            Stream\fromIterable(\range(1, 5)),
+        $pipeline = Pipeline\concat([
+            Pipeline\fromIterable(\range(1, 5)),
             $generator,
-            Stream\fromIterable(\range(7, 10)),
+            Pipeline\fromIterable(\range(7, 10)),
         ]);
 
         try {
-            while (null !== $value = yield $stream->continue()) {
+            while (null !== $value = yield $pipeline->continue()) {
                 $this->assertSame(\array_shift($expected), $value);
             }
 
-            $this->fail("The exception used to fail the stream should be thrown from continue()");
+            $this->fail("The exception used to fail the pipeline should be thrown from continue()");
         } catch (TestException $reason) {
             $this->assertSame($exception, $reason);
         }
@@ -68,11 +68,11 @@ class ConcatTest extends AsyncTestCase
         $this->assertEmpty($expected);
     }
 
-    public function testNonStream()
+    public function testNonPipeline()
     {
         $this->expectException(\TypeError::class);
 
         /** @noinspection PhpParamsInspection */
-        Stream\concat([1]);
+        Pipeline\concat([1]);
     }
 }

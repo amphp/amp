@@ -10,7 +10,7 @@ namespace Amp;
  *
  * @template TValue
  *
- * @deprecated Use {@see StreamSource} and {@see Stream} instead of {@see Emitter} and {@see Iterator}.
+ * @deprecated Use {@see PipelineSource} and {@see Pipeline} instead of {@see Emitter} and {@see Iterator}.
  */
 final class Emitter
 {

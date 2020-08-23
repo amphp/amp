@@ -7,7 +7,7 @@ namespace Amp;
  *
  * @template-covariant TValue
  *
- * @deprecated Use {@see Stream} instead.
+ * @deprecated Use {@see Pipeline} instead.
  */
 interface Iterator
 {

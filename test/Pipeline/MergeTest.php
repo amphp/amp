@@ -1,12 +1,12 @@
 <?php
 
-namespace Amp\Test\Stream;
+namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
 use Amp\Delayed;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
-use Amp\Stream;
+use Amp\Pipeline;
 
 class MergeTest extends AsyncTestCase
 {
@@ -22,18 +22,18 @@ class MergeTest extends AsyncTestCase
     /**
      * @dataProvider getArrays
      *
-     * @param array $streams
+     * @param array $pipelines
      * @param array $expected
      */
-    public function testMerge(array $streams, array $expected)
+    public function testMerge(array $pipelines, array $expected)
     {
-        $streams = \array_map(static function (array $iterator): Stream {
-            return Stream\fromIterable($iterator);
-        }, $streams);
+        $pipelines = \array_map(static function (array $iterator): Pipeline {
+            return Pipeline\fromIterable($iterator);
+        }, $pipelines);
 
-        $stream = Stream\merge($streams);
+        $pipeline = Pipeline\merge($pipelines);
 
-        while (null !== $value = yield $stream->continue()) {
+        while (null !== $value = yield $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
@@ -43,26 +43,26 @@ class MergeTest extends AsyncTestCase
      */
     public function testMergeWithDelayedYields()
     {
-        $streams = [];
+        $pipelines = [];
         $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
         $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
         $expected = [1, 4, 5, 2, 6, 3];
 
-        $streams[] = new AsyncGenerator(function (callable $yield) use ($values1) {
+        $pipelines[] = new AsyncGenerator(function (callable $yield) use ($values1) {
             foreach ($values1 as $value) {
                 yield $yield(yield $value);
             }
         });
 
-        $streams[] = new AsyncGenerator(function (callable $yield) use ($values2) {
+        $pipelines[] = new AsyncGenerator(function (callable $yield) use ($values2) {
             foreach ($values2 as $value) {
                 yield $yield(yield $value);
             }
         });
 
-        $stream = Stream\merge($streams);
+        $pipeline = Pipeline\merge($pipelines);
 
-        while (null !== $value = yield $stream->continue()) {
+        while (null !== $value = yield $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
@@ -70,7 +70,7 @@ class MergeTest extends AsyncTestCase
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedStream()
+    public function testMergeWithFailedPipeline()
     {
         $exception = new TestException;
         $generator = new AsyncGenerator(static function (callable $yield) use ($exception) {
@@ -78,24 +78,24 @@ class MergeTest extends AsyncTestCase
             throw $exception;
         });
 
-        $stream = Stream\merge([$generator, Stream\fromIterable(\range(1, 5))]);
+        $pipeline = Pipeline\merge([$generator, Pipeline\fromIterable(\range(1, 5))]);
 
         try {
             /** @noinspection PhpStatementHasEmptyBodyInspection */
-            while (yield $stream->continue()) {
+            while (yield $pipeline->continue()) {
                 ;
             }
-            $this->fail("The exception used to fail the stream should be thrown from continue()");
+            $this->fail("The exception used to fail the pipeline should be thrown from continue()");
         } catch (TestException $reason) {
             $this->assertSame($exception, $reason);
         }
     }
 
-    public function testNonStream()
+    public function testNonPipeline()
     {
         $this->expectException(\TypeError::class);
 
         /** @noinspection PhpParamsInspection */
-        Stream\merge([1]);
+        Pipeline\merge([1]);
     }
 }

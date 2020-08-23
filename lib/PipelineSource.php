@@ -3,13 +3,13 @@
 namespace Amp;
 
 /**
- * StreamSource is a container for a Stream that can emit values using the emit() method and completed using the
- * complete() and fail() methods. The contained Stream may be accessed using the stream() method. This object should
- * not be returned as part of a public API, but used internally to create and emit values to a Stream.
+ * PipelineSource is a container for a Pipeline that can emit values using the emit() method and completed using the
+ * complete() and fail() methods. The contained Pipeline may be accessed using the pipeline() method. This object should
+ * not be returned as part of a public API, but used internally to create and emit values to a Pipeline.
  *
  * @template TValue
  */
-final class StreamSource
+final class PipelineSource
 {
     /** @var Internal\EmitSource<TValue, null> Has public emit, complete, and fail methods. */
     private $source;
@@ -20,28 +20,28 @@ final class StreamSource
     }
 
     /**
-     * Returns a Stream that can be given to an API consumer. This method may be called only once!
+     * Returns a Pipeline that can be given to an API consumer. This method may be called only once!
      *
-     * @return Stream
+     * @return Pipeline
      *
-     * @psalm-return Stream<TValue>
+     * @psalm-return Pipeline<TValue>
      *
      * @throws \Error If this method is called more than once.
      */
-    public function stream(): Stream
+    public function pipe(): Pipeline
     {
-        return $this->source->stream();
+        return $this->source->pipe();
     }
 
     /**
-     * Emits a value to the stream.
+     * Emits a value to the pipeline.
      *
      * @param mixed $value
      *
      * @psalm-param TValue $value
      *
      * @return Promise<null> Resolves with null when the emitted value has been consumed or fails with
-     *                       {@see DisposedException} if the stream has been destroyed.
+     *                       {@see DisposedException} if the pipeline has been destroyed.
      */
     public function emit($value): Promise
     {
@@ -49,7 +49,7 @@ final class StreamSource
     }
 
     /**
-     * @return bool True if the stream has been completed or failed.
+     * @return bool True if the pipeline has been completed or failed.
      */
     public function isComplete(): bool
     {
@@ -57,7 +57,7 @@ final class StreamSource
     }
 
     /**
-     * @return bool True if the stream has been disposed.
+     * @return bool True if the pipeline has been disposed.
      */
     public function isDisposed(): bool
     {
@@ -75,7 +75,7 @@ final class StreamSource
     }
 
     /**
-     * Completes the stream.
+     * Completes the pipeline.
      *
      * @return void
      */
@@ -85,7 +85,7 @@ final class StreamSource
     }
 
     /**
-     * Fails the stream with the given reason.
+     * Fails the pipeline with the given reason.
      *
      * @param \Throwable $reason
      *

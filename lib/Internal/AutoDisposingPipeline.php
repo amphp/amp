@@ -2,19 +2,19 @@
 
 namespace Amp\Internal;
 
+use Amp\Pipeline;
 use Amp\Promise;
-use Amp\Stream;
 
 /**
- * Wraps a Stream instance that has public methods to emit, complete, and fail into an object that only allows
+ * Wraps a Pipeline instance that has public methods to emit, complete, and fail into an object that only allows
  * access to the public API methods and sets $disposed to true when the object is destroyed.
  *
  * @internal
  *
  * @template-covariant TValue
- * @template-implements Stream<TValue>
+ * @template-implements Pipeline<TValue>
  */
-final class AutoDisposingStream implements Stream
+final class AutoDisposingPipeline implements Pipeline
 {
     /** @var EmitSource<TValue, null> */
     private $source;
@@ -43,21 +43,5 @@ final class AutoDisposingStream implements Stream
     public function dispose()
     {
         $this->source->dispose();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function onCompletion(callable $onCompletion)
-    {
-        $this->source->onCompletion($onCompletion);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function onDisposal(callable $onDisposal)
-    {
-        $this->source->onDisposal($onDisposal);
     }
 }

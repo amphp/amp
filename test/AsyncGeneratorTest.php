@@ -154,7 +154,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         try {
             yield $generator->continue();
-            $this->fail("Awaiting a failed promise should fail the stream");
+            $this->fail("Awaiting a failed promise should fail the pipeline");
         } catch (TestException $reason) {
             $this->assertSame($reason, $exception);
         }
@@ -201,7 +201,7 @@ class AsyncGeneratorTest extends AsyncTestCase
             });
 
             while (yield $generator->continue());
-            $this->fail("The exception thrown from the coroutine should fail the stream");
+            $this->fail("The exception thrown from the coroutine should fail the pipeline");
         } catch (TestException $caught) {
             $this->assertSame($exception, $caught);
         }
@@ -224,7 +224,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         yield $generator->continue();
 
-        unset($generator); // Should call dispose() on the internal stream.
+        unset($generator); // Should call dispose() on the internal pipeline.
 
         $this->assertInstanceOf(DisposedException::class, $exception);
 
