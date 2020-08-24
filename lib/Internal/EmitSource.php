@@ -208,14 +208,6 @@ final class EmitSource
      */
     public function emit($value): Promise
     {
-        if ($this->result) {
-            if ($this->completed) {
-                throw new \Error("Pipelines cannot emit values after calling complete");
-            }
-
-            return $this->result;
-        }
-
         if ($value === null) {
             throw new \TypeError("Pipelines cannot emit NULL");
         }
@@ -237,8 +229,22 @@ final class EmitSource
                 unset($this->sendValues[$position]);
                 return $promise;
             }
+        } elseif ($this->result) {
+            if ($this->completed) {
+                throw new \Error("Pipelines cannot emit values after calling complete");
+            }
+
+            return $this->result;
         } else {
             $this->emittedValues[$position] = $value;
+        }
+
+        if ($this->disposed) {
+            if (empty($this->waiting)) {
+                $this->triggerDisposal();
+            }
+
+            return Promise\succeed();
         }
 
         $this->backPressure[$position] = $deferred = new Deferred;
@@ -259,7 +265,7 @@ final class EmitSource
      */
     public function isDisposed(): bool
     {
-        return $this->disposed;
+        return $this->disposed && empty($this->waiting);
     }
 
     /**
@@ -335,33 +341,44 @@ final class EmitSource
 
         $this->result = $result;
 
-        $waiting = $this->waiting;
-        $this->waiting = [];
+        if ($disposed) {
+            if (empty($this->waiting)) {
+                $this->triggerDisposal();
+            }
+        } else {
+            $waiting = $this->waiting;
+            $this->waiting = [];
 
-        foreach ($waiting as $deferred) {
-            $deferred->resolve($result);
+            foreach ($waiting as $deferred) {
+                $deferred->resolve($result);
+            }
+        }
+    }
+
+    private function triggerDisposal()
+    {
+        if ($this->onDisposal === null) {
+            return;
         }
 
         $onDisposal = $this->onDisposal;
         $this->onDisposal = null;
 
-        if ($disposed) {
-            $backPressure = $this->backPressure;
-            $this->backPressure = [];
+        $backPressure = $this->backPressure;
+        $this->backPressure = [];
 
-            foreach ($backPressure as $deferred) {
-                $deferred->resolve($result);
-            }
+        foreach ($backPressure as $deferred) {
+            $deferred->resolve($this->result);
+        }
 
-            /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
-            foreach ($onDisposal as $callback) {
-                try {
-                    $callback();
-                } catch (\Throwable $e) {
-                    Loop::defer(static function () use ($e) {
-                        throw $e;
-                    });
-                }
+        /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
+        foreach ($onDisposal as $callback) {
+            try {
+                $callback();
+            } catch (\Throwable $e) {
+                Loop::defer(static function () use ($e) {
+                    throw $e;
+                });
             }
         }
     }
