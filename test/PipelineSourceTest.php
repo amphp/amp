@@ -256,6 +256,23 @@ class PipelineSourceTest extends AsyncTestCase
         yield $this->source->emit(1);
     }
 
+    public function testEmitAfterDisposalWithPendingContinuePromise()
+    {
+        $pipeline = $this->source->pipe();
+        $promise = $pipeline->continue();
+        $this->source->onDisposal($this->createCallback(1));
+        $pipeline->dispose();
+        $this->source->onDisposal($this->createCallback(1));
+        $this->assertFalse($this->source->isDisposed());
+        yield $this->source->emit(1);
+        $this->assertSame(1, yield $promise);
+
+        $this->expectException(DisposedException::class);
+        $this->expectExceptionMessage('The pipeline has been disposed');
+
+        $this->assertTrue($this->source->isDisposed());
+        yield $this->source->emit(2);
+    }
 
     public function testEmitAfterDestruct()
     {
