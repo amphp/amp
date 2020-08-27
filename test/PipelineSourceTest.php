@@ -244,7 +244,6 @@ class PipelineSourceTest extends AsyncTestCase
     public function testEmitAfterDisposal()
     {
         $this->expectException(DisposedException::class);
-        $this->expectExceptionMessage('The pipeline has been disposed');
 
         $pipeline = $this->source->pipe();
         $promise = $this->source->emit(1);
@@ -256,28 +255,54 @@ class PipelineSourceTest extends AsyncTestCase
         yield $this->source->emit(1);
     }
 
-    public function testEmitAfterDisposalWithPendingContinuePromise()
+    public function testEmitAfterAutomaticDisposal()
+    {
+        $this->expectException(DisposedException::class);
+
+        $pipeline = $this->source->pipe();
+        $promise = $this->source->emit(1);
+        $this->source->onDisposal($this->createCallback(1));
+        unset($pipeline); // Trigger automatic disposal.
+        $this->source->onDisposal($this->createCallback(1));
+        $this->assertTrue($this->source->isDisposed());
+        $this->assertNull(yield $promise);
+        yield $this->source->emit(1);
+    }
+
+    public function testEmitAfterAutomaticDisposalWithPendingContinuePromise()
     {
         $pipeline = $this->source->pipe();
         $promise = $pipeline->continue();
         $this->source->onDisposal($this->createCallback(1));
-        $pipeline->dispose();
+        unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
         $this->assertFalse($this->source->isDisposed());
         yield $this->source->emit(1);
         $this->assertSame(1, yield $promise);
 
         $this->expectException(DisposedException::class);
-        $this->expectExceptionMessage('The pipeline has been disposed');
 
         $this->assertTrue($this->source->isDisposed());
         yield $this->source->emit(2);
     }
 
+    public function testEmitAfterExplicitDisposalWithPendingContinuePromise()
+    {
+        $pipeline = $this->source->pipe();
+        $promise = $pipeline->continue();
+        $this->source->onDisposal($this->createCallback(1));
+        $pipeline->dispose();
+        $this->source->onDisposal($this->createCallback(1));
+        $this->assertTrue($this->source->isDisposed());
+
+        $this->expectException(DisposedException::class);
+
+        $this->assertSame(1, yield $promise);
+    }
+
     public function testEmitAfterDestruct()
     {
         $this->expectException(DisposedException::class);
-        $this->expectExceptionMessage('The pipeline has been disposed');
 
         $pipeline = $this->source->pipe();
         $promise = $this->source->emit(1);
