@@ -49,7 +49,7 @@ final class AsyncGenerator implements Pipeline
 
     public function __destruct()
     {
-        $this->source->dispose();
+        $this->source->destroy();
     }
 
     /**

@@ -6,8 +6,8 @@ use Amp\Pipeline;
 use Amp\Promise;
 
 /**
- * Wraps a Pipeline instance that has public methods to emit, complete, and fail into an object that only allows
- * access to the public API methods and sets $disposed to true when the object is destroyed.
+ * Wraps an EmitSource instance that has public methods to emit, complete, and fail into an object that only allows
+ * access to the public API methods and automatically calls EmitSource::destroy() when the object is destroyed.
  *
  * @internal
  *
@@ -26,7 +26,7 @@ final class AutoDisposingPipeline implements Pipeline
 
     public function __destruct()
     {
-        $this->source->dispose();
+        $this->source->destroy();
     }
 
     /**

@@ -156,11 +156,27 @@ final class EmitSource
      */
     public function dispose()
     {
-        if ($this->result) {
-            return; // Pipeline already completed or failed.
-        }
+        $this->cancel(true);
+    }
 
-        $this->finalize(Promise\fail(new DisposedException), true);
+    public function destroy()
+    {
+        $this->cancel(false);
+    }
+
+    private function cancel(bool $cancelPending)
+    {
+        try {
+            if ($this->result) {
+                return; // Pipeline already completed or failed.
+            }
+
+            $this->finalize(Promise\fail(new DisposedException), true);
+        } finally {
+            if ($this->disposed && $cancelPending) {
+                $this->triggerDisposal();
+            }
+        }
     }
 
     /**
@@ -341,22 +357,42 @@ final class EmitSource
 
         $this->result = $result;
 
-        if ($disposed) {
+        if ($this->disposed) {
             if (empty($this->waiting)) {
                 $this->triggerDisposal();
             }
         } else {
-            $waiting = $this->waiting;
-            $this->waiting = [];
-
-            foreach ($waiting as $deferred) {
-                $deferred->resolve($result);
-            }
+            $this->resolvePending();
         }
     }
 
+    /**
+     * Resolves all pending promises returned from {@see continue()} with the result promise.
+     */
+    private function resolvePending()
+    {
+        $backPressure = $this->backPressure;
+        $this->backPressure = [];
+
+        $waiting = $this->waiting;
+        $this->waiting = [];
+
+        foreach ($backPressure as $deferred) {
+            $deferred->resolve($this->result);
+        }
+
+        foreach ($waiting as $deferred) {
+            $deferred->resolve($this->result);
+        }
+    }
+
+    /**
+     * Invokes all pending {@see onDisposal()} callbacks and fails pending {@see continue()} promises.
+     */
     private function triggerDisposal()
     {
+        \assert($this->disposed, "Pipeline was not disposed on triggering disposal");
+
         if ($this->onDisposal === null) {
             return;
         }
@@ -364,12 +400,7 @@ final class EmitSource
         $onDisposal = $this->onDisposal;
         $this->onDisposal = null;
 
-        $backPressure = $this->backPressure;
-        $this->backPressure = [];
-
-        foreach ($backPressure as $deferred) {
-            $deferred->resolve($this->result);
-        }
+        $this->resolvePending();
 
         /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
         foreach ($onDisposal as $callback) {
