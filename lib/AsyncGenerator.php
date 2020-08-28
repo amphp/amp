@@ -15,9 +15,6 @@ final class AsyncGenerator implements Pipeline
     /** @var Coroutine<TReturn>|null */
     private $coroutine;
 
-    /** @var \Generator|null */
-    private $generator;
-
     /**
      * @param callable(callable(TValue):Promise<TSend>):\Generator $callable
      *
@@ -37,14 +34,28 @@ final class AsyncGenerator implements Pipeline
         }
 
         try {
-            $this->generator = $callable($emit);
+            $generator = $callable($emit);
         } catch (\Throwable $exception) {
             throw new \Error("The callable threw an exception", 0, $exception);
         }
 
-        if (!$this->generator instanceof \Generator) {
+        if (!$generator instanceof \Generator) {
             throw new \TypeError("The callable did not return a Generator");
         }
+
+        $this->coroutine = new Coroutine($generator);
+        $this->coroutine->onResolve(static function ($exception) use ($source) {
+            if ($source->isDisposed()) {
+                return; // AsyncGenerator object was destroyed.
+            }
+
+            if ($exception) {
+                $source->fail($exception);
+                return;
+            }
+
+            $source->complete();
+        });
     }
 
     public function __destruct()
@@ -117,28 +128,6 @@ final class AsyncGenerator implements Pipeline
      */
     public function getReturn(): Promise
     {
-        if ($this->coroutine !== null) {
-            return $this->coroutine;
-        }
-
-        /** @psalm-suppress PossiblyNullArgument */
-        $this->coroutine = new Coroutine($this->generator);
-        $this->generator = null;
-
-        $source = $this->source;
-        $this->coroutine->onResolve(static function ($exception) use ($source) {
-            if ($source->isDisposed()) {
-                return; // AsyncGenerator object was destroyed.
-            }
-
-            if ($exception) {
-                $source->fail($exception);
-                return;
-            }
-
-            $source->complete();
-        });
-
         return $this->coroutine;
     }
 }
