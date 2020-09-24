@@ -155,7 +155,7 @@ class UvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         parent::cancel($watcherId);
 
@@ -209,7 +209,7 @@ class UvDriver extends Driver
      *
      * @return void
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         /** @psalm-suppress TooManyArguments */
         \uv_run($this->handle, $blocking ? \UV::RUN_ONCE : \UV::RUN_NOWAIT);
@@ -220,7 +220,7 @@ class UvDriver extends Driver
      *
      * @return void
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         $now = $this->now();
 
@@ -303,7 +303,7 @@ class UvDriver extends Driver
      *
      * @return void
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         $id = $watcher->id;
 

@@ -12,8 +12,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class Failure implements Promise
 {
-    /** @var \Throwable $exception */
-    private $exception;
+    private \Throwable $exception;
 
     /**
      * @param \Throwable $exception Rejection reason.
@@ -26,9 +25,9 @@ final class Failure implements Promise
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved)
+    public function onResolve(callable $onResolved): void
     {
-        try {
+        Loop::defer(function () use ($onResolved): void {
             /** @var mixed $result */
             $result = $onResolved($this->exception, null);
 
@@ -43,10 +42,6 @@ final class Failure implements Promise
             if ($result instanceof Promise || $result instanceof ReactPromise) {
                 Promise\rethrow($result);
             }
-        } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        }
+        });
     }
 }

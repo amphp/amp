@@ -5,6 +5,76 @@ namespace Amp
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
+     * Await the resolution of the given promise. The function does not return until the promise has been
+     * resolved. The promise resolution value is returned or the promise failure reason is thrown.
+     *
+     * @template TValue
+     *
+     * @param Promise|ReactPromise|array<Promise|ReactPromise> $promise
+     *
+     * @psalm-param Promise<TValue>|ReactPromise|array<Promise<TValue>|ReactPromise> $promise
+     *
+     * @return mixed Promise resolution value.
+     *
+     * @throws \Throwable Promise failure reason.
+     *
+     * @psalm-return TValue|array<TValue>
+     */
+    function await(Promise|ReactPromise|array $promise): mixed
+    {
+        if (!$promise instanceof Promise) {
+            if ($promise instanceof ReactPromise) {
+                $promise = Promise\adapt($promise);
+            } else {
+                $promise = Promise\all($promise);
+            }
+        }
+
+        return \Fiber::await($promise, Loop::get());
+    }
+
+    /**
+     * Creates a green thread using the given callable and argument list.
+     *
+     * @template TValue
+     *
+     * @param callable(mixed ...$args):TValue $callback
+     * @param mixed ...$args
+     *
+     * @return Promise
+     *
+     * @psalm-return Promise<TValue>
+     */
+    function async(callable $callback, mixed ...$args): Promise
+    {
+        $deferred = new Deferred;
+
+        Loop::defer(static fn () => \Fiber::run(static function () use ($deferred, $callback, $args): void {
+            try {
+                $deferred->resolve($callback(...$args));
+            } catch (\Throwable $e) {
+                $deferred->fail($e);
+            }
+        }, ...$args));
+
+        return $deferred->promise();
+    }
+
+    /**
+     * Returns a callable that when invoked creates a new green thread using the given callable using {@see async()},
+     * passing any arguments to the function as the argument list to async() and returning promise created by async().
+     *
+     * @param callable $callback Green thread to create each time the function returned is invoked.
+     *
+     * @return callable(mixed ...$args):Promise Creates a new green thread each time the returned function is invoked. The
+     *     arguments given to the returned function are passed through to the callable.
+     */
+    function asyncCallable(callable $callback): callable
+    {
+        return static fn (mixed ...$args): Promise => async($callback, ...$args);
+    }
+
+    /**
      * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
      * Generators as coroutines. The returned function always returns a promise when invoked. Errors have to be handled
      * by the callback caller or they will go unnoticed.
@@ -35,9 +105,7 @@ namespace Amp
     function coroutine(callable $callback): callable
     {
         /** @psalm-suppress InvalidReturnStatement */
-        return static function (...$args) use ($callback): Promise {
-            return call($callback, ...$args);
-        };
+        return static fn (...$args): Promise => call($callback, ...$args);
     }
 
     /**
@@ -56,9 +124,7 @@ namespace Amp
      */
     function asyncCoroutine(callable $callback): callable
     {
-        return static function (...$args) use ($callback) {
-            Promise\rethrow(call($callback, ...$args));
-        };
+        return static fn (...$args) => Promise\rethrow(call($callback, ...$args));
     }
 
     /**
@@ -115,7 +181,7 @@ namespace Amp
      *
      * @return void
      */
-    function asyncCall(callable $callback, ...$args)
+    function asyncCall(callable $callback, ...$args): void
     {
         Promise\rethrow(call($callback, ...$args));
     }
@@ -168,14 +234,10 @@ namespace Amp\Promise
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      *
      */
-    function rethrow($promise)
+    function rethrow(Promise|ReactPromise $promise)
     {
         if (!$promise instanceof Promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } else {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
-            }
+            $promise = adapt($promise);
         }
 
         $promise->onResolve(static function ($exception) {
@@ -201,7 +263,7 @@ namespace Amp\Promise
      *
      * @throws \Error If a promise is given as the value.
      */
-    function succeed($value = null): Promise
+    function succeed(mixed $value = null): Promise
     {
         static $empty;
 
@@ -248,14 +310,10 @@ namespace Amp\Promise
      * @throws \Error If the event loop stopped without the $promise being resolved.
      * @throws \Throwable Promise failure reason.
      */
-    function wait($promise)
+    function wait(Promise|ReactPromise $promise): mixed
     {
         if (!$promise instanceof Promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } else {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
-            }
+            $promise = adapt($promise);
         }
 
         $resolved = false;
@@ -299,14 +357,10 @@ namespace Amp\Promise
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
-    function timeout($promise, int $timeout): Promise
+    function timeout(Promise|ReactPromise $promise, int $timeout): Promise
     {
         if (!$promise instanceof Promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } else {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
-            }
+            $promise = adapt($promise);
         }
 
         $deferred = new Deferred;
@@ -345,7 +399,7 @@ namespace Amp\Promise
      *
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      */
-    function timeoutWithDefault($promise, int $timeout, $default = null): Promise
+    function timeoutWithDefault(Promise|ReactPromise $promise, int $timeout, mixed $default = null): Promise
     {
         $promise = timeout($promise, $timeout);
 
@@ -369,7 +423,7 @@ namespace Amp\Promise
      *
      * @throws \Error If the provided object does not have a then() method.
      */
-    function adapt($promise): Promise
+    function adapt(object $promise): Promise
     {
         $deferred = new Deferred;
 
@@ -634,17 +688,15 @@ namespace Amp\Iterator
      * Creates an iterator from the given iterable, emitting the each value. The iterable may contain promises. If any
      * promise fails, the iterator will fail with the same reason.
      *
-     * @param array|\Traversable $iterable Elements to emit.
-     * @param int                $delay Delay between element emissions in milliseconds.
+     * @param iterable $iterable Elements to emit.
+     * @param int      $delay Delay between element emissions in milliseconds.
      *
      * @return Iterator
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
-    function fromIterable(/* iterable */
-        $iterable,
-        int $delay = 0
-    ): Iterator {
+    function fromIterable(iterable $iterable, int $delay = 0): Iterator
+    {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw createTypeError(["array", "Traversable"], $iterable);
         }
@@ -858,8 +910,8 @@ namespace Amp\Pipeline
      *
      * @template TValue
      *
-     * @param array|\Traversable $iterable Elements to emit.
-     * @param int                $delay Delay between elements emitted in milliseconds.
+     * @param iterable $iterable Elements to emit.
+     * @param int      $delay Delay between elements emitted in milliseconds.
      *
      * @psalm-param iterable<TValue> $iterable
      *
@@ -869,10 +921,8 @@ namespace Amp\Pipeline
      *
      * @throws \TypeError If the argument is not an array or instance of \Traversable.
      */
-    function fromIterable(/* iterable */
-        $iterable,
-        int $delay = 0
-    ): Pipeline {
+    function fromIterable(iterable $iterable, int $delay = 0): Pipeline
+    {
         if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
             throw createTypeError(["array", "Traversable"], $iterable);
         }

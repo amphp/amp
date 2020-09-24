@@ -56,7 +56,7 @@ class EventDriver extends Driver
          *
          * @return void
          */
-        $this->ioCallback = function ($resource, $what, Watcher $watcher) {
+        $this->ioCallback = function ($resource, $what, Watcher $watcher): void {
             \assert(\is_resource($watcher->value));
 
             try {
@@ -85,7 +85,7 @@ class EventDriver extends Driver
          *
          * @return void
          */
-        $this->timerCallback = function ($resource, $what, Watcher $watcher) {
+        $this->timerCallback = function ($resource, $what, Watcher $watcher): void {
             \assert(\is_int($watcher->value));
 
             if ($watcher->type & Watcher::DELAY) {
@@ -120,7 +120,7 @@ class EventDriver extends Driver
          *
          * @return void
          */
-        $this->signalCallback = function ($signum, $what, Watcher $watcher) {
+        $this->signalCallback = function ($signum, $what, Watcher $watcher): void {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
@@ -144,7 +144,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         parent::cancel($watcherId);
 
@@ -185,7 +185,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         $active = self::$activeSignals;
 
@@ -221,7 +221,7 @@ class EventDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(): void
     {
         $this->handle->stop();
         parent::stop();
@@ -250,7 +250,7 @@ class EventDriver extends Driver
      *
      * @return void
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->handle->loop($blocking ? \EventBase::LOOP_ONCE : \EventBase::LOOP_ONCE | \EventBase::LOOP_NONBLOCK);
     }
@@ -260,7 +260,7 @@ class EventDriver extends Driver
      *
      * @return void
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         $now = $this->now();
 
@@ -349,7 +349,7 @@ class EventDriver extends Driver
      *
      * @return void
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->del();

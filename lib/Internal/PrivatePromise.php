@@ -18,7 +18,7 @@ final class PrivatePromise implements Promise
         $this->promise = $promise;
     }
 
-    public function onResolve(callable $onResolved)
+    public function onResolve(callable $onResolved): void
     {
         $this->promise->onResolve($onResolved);
     }

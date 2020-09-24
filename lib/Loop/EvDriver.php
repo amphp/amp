@@ -143,7 +143,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         parent::cancel($watcherId);
         unset($this->events[$watcherId]);
@@ -166,7 +166,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         $active = self::$activeSignals;
 
@@ -200,7 +200,7 @@ class EvDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(): void
     {
         $this->handle->stop();
         parent::stop();
@@ -229,7 +229,7 @@ class EvDriver extends Driver
      *
      * @return void
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->handle->run($blocking ? \Ev::RUN_ONCE : \Ev::RUN_ONCE | \Ev::RUN_NOWAIT);
     }
@@ -239,7 +239,7 @@ class EvDriver extends Driver
      *
      * @return void
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         $this->handle->nowUpdate();
         $now = $this->now();
@@ -304,7 +304,7 @@ class EvDriver extends Driver
      *
      * @return void
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         if (isset($this->events[$id = $watcher->id])) {
             $this->events[$id]->stop();

@@ -13,15 +13,15 @@ final class Delayed implements Promise
     use Internal\Placeholder;
 
     /** @var string|null Event loop watcher identifier. */
-    private $watcher;
+    private ?string $watcher;
 
     /**
      * @param int     $time Milliseconds before succeeding the promise.
      * @param TReturn $value Succeed the promise with this value.
      */
-    public function __construct(int $time, $value = null)
+    public function __construct(int $time, mixed $value = null)
     {
-        $this->watcher = Loop::delay($time, function () use ($value) {
+        $this->watcher = Loop::delay($time, function () use ($value): void {
             $this->watcher = null;
             $this->resolve($value);
         });

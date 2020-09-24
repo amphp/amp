@@ -15,7 +15,7 @@ use function Amp\Promise\rethrow;
  *
  * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
-abstract class Driver
+abstract class Driver implements \FiberScheduler
 {
     // Don't use 1e3 / 1e6, they result in a float instead of int
     const MILLISEC_PER_SEC = 1000;
@@ -60,7 +60,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         $this->running = true;
 
@@ -95,7 +95,7 @@ abstract class Driver
      *
      * @return void
      */
-    private function tick()
+    private function tick(): void
     {
         if (empty($this->deferQueue)) {
             $this->deferQueue = $this->nextTickQueue;
@@ -145,7 +145,7 @@ abstract class Driver
      *
      * @return void
      */
-    abstract protected function activate(array $watchers);
+    abstract protected function activate(array $watchers): void;
 
     /**
      * Dispatches any pending read/write, timer, and signal events.
@@ -154,7 +154,7 @@ abstract class Driver
      *
      * @return void
      */
-    abstract protected function dispatch(bool $blocking);
+    abstract protected function dispatch(bool $blocking): void;
 
     /**
      * Stop the event loop.
@@ -164,7 +164,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         $this->running = false;
     }
@@ -434,7 +434,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         $this->disable($watcherId);
         unset($this->watchers[$watcherId]);
@@ -453,7 +453,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function disable(string $watcherId)
+    public function disable(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -496,7 +496,7 @@ abstract class Driver
      *
      * @return void
      */
-    abstract protected function deactivate(Watcher $watcher);
+    abstract protected function deactivate(Watcher $watcher): void;
 
     /**
      * Reference a watcher.
@@ -510,7 +510,7 @@ abstract class Driver
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function reference(string $watcherId)
+    public function reference(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot reference an invalid watcher identifier: '{$watcherId}'");
@@ -529,7 +529,7 @@ abstract class Driver
      *
      * @return void
      */
-    public function unreference(string $watcherId)
+    public function unreference(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             return;
@@ -552,7 +552,7 @@ abstract class Driver
      *
      * @return void
      */
-    final public function setState(string $key, $value)
+    final public function setState(string $key, $value): void
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -593,7 +593,7 @@ abstract class Driver
      *
      * @return callable(\Throwable $error):void|null The previous handler, `null` if there was none.
      */
-    public function setErrorHandler(callable $callback = null)
+    public function setErrorHandler(callable $callback = null): ?callable
     {
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
@@ -608,7 +608,7 @@ abstract class Driver
      * @return void
      * @throws \Throwable If no error handler has been set.
      */
-    protected function error(\Throwable $exception)
+    protected function error(\Throwable $exception): void
     {
         if ($this->errorHandler === null) {
             throw $exception;
@@ -648,7 +648,7 @@ abstract class Driver
      *
      * @return array
      */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         // @codeCoverageIgnoreStart
         return $this->getInfo();

@@ -16,11 +16,9 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 trait Placeholder
 {
-    /** @var bool */
-    private $resolved = false;
+    private bool $resolved = false;
 
-    /** @var mixed */
-    private $result;
+    private mixed $result;
 
     /** @var ResolutionQueue|null|callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
      *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
@@ -28,12 +26,12 @@ trait Placeholder
     private $onResolved;
 
     /** @var null|array */
-    private $resolutionTrace;
+    private ?array $resolutionTrace;
 
     /**
      * @inheritdoc
      */
-    public function onResolve(callable $onResolved)
+    public function onResolve(callable $onResolved): void
     {
         if ($this->resolved) {
             if ($this->result instanceof Promise) {
@@ -41,7 +39,7 @@ trait Placeholder
                 return;
             }
 
-            try {
+            Loop::defer(function () use ($onResolved): void {
                 /** @var mixed $result */
                 $result = $onResolved(null, $this->result);
 
@@ -56,11 +54,7 @@ trait Placeholder
                 if ($result instanceof Promise || $result instanceof ReactPromise) {
                     Promise\rethrow($result);
                 }
-            } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
-                    throw $exception;
-                });
-            }
+            });
             return;
         }
 
@@ -83,7 +77,7 @@ trait Placeholder
         try {
             $this->result = null;
         } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e) {
+            Loop::defer(static function () use ($e): void {
                 throw $e;
             });
         }
@@ -101,7 +95,7 @@ trait Placeholder
      *
      * @throws \Error Thrown if the promise has already been resolved.
      */
-    private function resolve($value = null)
+    private function resolve(mixed $value = null): void
     {
         if ($this->resolved) {
             $message = "Promise has already been resolved";
@@ -148,7 +142,7 @@ trait Placeholder
             return;
         }
 
-        try {
+        Loop::defer(function () use ($onResolved): void {
             /** @var mixed $result */
             $result = $onResolved(null, $this->result);
             $onResolved = null; // allow garbage collection of $onResolved, to catch any exceptions from destructors
@@ -164,11 +158,7 @@ trait Placeholder
             if ($result instanceof Promise || $result instanceof ReactPromise) {
                 Promise\rethrow($result);
             }
-        } catch (\Throwable $exception) {
-            Loop::defer(static function () use ($exception) {
-                throw $exception;
-            });
-        }
+        });
     }
 
     /**
@@ -176,7 +166,7 @@ trait Placeholder
      *
      * @return void
      */
-    private function fail(\Throwable $reason)
+    private function fail(\Throwable $reason): void
     {
         $this->resolve(new Failure($reason));
     }

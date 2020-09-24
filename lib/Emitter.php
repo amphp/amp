@@ -14,11 +14,9 @@ namespace Amp;
  */
 final class Emitter
 {
-    /** @var Iterator<TValue> Has public emit, complete, and fail methods. */
-    private $emitter;
+    private Iterator $emitter;
 
-    /** @var Iterator<TValue> Hides producer methods. */
-    private $iterator;
+    private Internal\PrivateIterator $iterator;
 
     public function __construct()
     {

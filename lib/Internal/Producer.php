@@ -19,26 +19,19 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 trait Producer
 {
-    /** @var Promise|null */
-    private $complete;
+    private ?Promise $complete;
 
-    /** @var mixed[] */
-    private $values = [];
+    private array $values = [];
 
-    /** @var Deferred[] */
-    private $backPressure = [];
+    private array $backPressure = [];
 
-    /** @var int */
-    private $consumePosition = -1;
+    private int $consumePosition = -1;
 
-    /** @var int */
-    private $emitPosition = -1;
+    private int $emitPosition = -1;
 
-    /** @var Deferred|null */
-    private $waiting;
+    private ?Deferred $waiting;
 
-    /** @var null|array */
-    private $resolutionTrace;
+    private ?array $resolutionTrace;
 
     /**
      * {@inheritdoc}

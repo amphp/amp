@@ -88,7 +88,7 @@ class NativeDriver extends Driver
      *
      * @throws \Throwable
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         $this->selectStreams(
             $this->readStreams,
@@ -138,7 +138,7 @@ class NativeDriver extends Driver
      *
      * @return void
      */
-    private function selectStreams(array $read, array $write, int $timeout)
+    private function selectStreams(array $read, array $write, int $timeout): void
     {
         $timeout /= self::MILLISEC_PER_SEC;
 
@@ -261,7 +261,7 @@ class NativeDriver extends Driver
      *
      * @return void
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         foreach ($watchers as $watcher) {
             switch ($watcher->type) {
@@ -316,7 +316,7 @@ class NativeDriver extends Driver
      *
      * @return void
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         switch ($watcher->type) {
             case Watcher::READABLE:
@@ -365,7 +365,7 @@ class NativeDriver extends Driver
      *
      * @return void
      */
-    private function handleSignal(int $signo)
+    private function handleSignal(int $signo): void
     {
         foreach ($this->signalWatchers[$signo] as $watcher) {
             if (!isset($this->signalWatchers[$signo][$watcher->id])) {

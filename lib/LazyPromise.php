@@ -27,7 +27,7 @@ final class LazyPromise implements Promise
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved)
+    public function onResolve(callable $onResolved): void
     {
         if ($this->promise === null) {
             \assert($this->promisor !== null);

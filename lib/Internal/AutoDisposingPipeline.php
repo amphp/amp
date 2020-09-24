@@ -17,7 +17,7 @@ use Amp\Promise;
 final class AutoDisposingPipeline implements Pipeline
 {
     /** @var EmitSource<TValue, null> */
-    private $source;
+    private EmitSource $source;
 
     public function __construct(EmitSource $source)
     {
@@ -40,7 +40,7 @@ final class AutoDisposingPipeline implements Pipeline
     /**
      * @inheritDoc
      */
-    public function dispose()
+    public function dispose(): void
     {
         $this->source->dispose();
     }

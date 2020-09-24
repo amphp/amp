@@ -11,11 +11,9 @@ namespace Amp;
  */
 final class Deferred
 {
-    /** @var Promise<TValue> Has public resolve and fail methods. */
-    private $resolver;
+    private Promise $resolver;
 
-    /** @var Promise<TValue> Hides placeholder methods */
-    private $promise;
+    private Internal\PrivatePromise $promise;
 
     public function __construct()
     {
@@ -56,7 +54,7 @@ final class Deferred
      *
      * @return void
      */
-    public function resolve($value = null)
+    public function resolve(mixed $value = null): void
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
         $this->resolver->resolve($value);
@@ -69,7 +67,7 @@ final class Deferred
      *
      * @return void
      */
-    public function fail(\Throwable $reason)
+    public function fail(\Throwable $reason): void
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
         $this->resolver->fail($reason);

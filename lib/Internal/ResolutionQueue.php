@@ -18,7 +18,7 @@ class ResolutionQueue
     /** @var array<array-key, callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
      *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
      *     mixed>|null) | callable(\Throwable|null, mixed): void> */
-    private $queue = [];
+    private array $queue = [];
 
     /**
      * @param callable|null $callback Initial callback to add to queue.
@@ -45,7 +45,7 @@ class ResolutionQueue
      *
      * @return void
      */
-    public function push(callable $callback)
+    public function push(callable $callback): void
     {
         if ($callback instanceof self) {
             $this->queue = \array_merge($this->queue, $callback->queue);
@@ -63,7 +63,7 @@ class ResolutionQueue
      *
      * @return void
      */
-    public function __invoke($exception, $value)
+    public function __invoke(?\Throwable $exception, mixed $value): void
     {
         foreach ($this->queue as $callback) {
             try {

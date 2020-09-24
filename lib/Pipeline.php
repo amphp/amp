@@ -26,5 +26,5 @@ interface Pipeline
      *
      * @return void
      */
-    public function dispose();
+    public function dispose(): void;
 }

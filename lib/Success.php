@@ -13,8 +13,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class Success implements Promise
 {
-    /** @var mixed */
-    private $value;
+    private mixed $value;
 
     /**
      * @param mixed $value Anything other than a Promise object.
@@ -23,7 +22,7 @@ final class Success implements Promise
      *
      * @throws \Error If a promise is given as the value.
      */
-    public function __construct($value = null)
+    public function __construct(mixed $value = null)
     {
         if ($value instanceof Promise || $value instanceof ReactPromise) {
             throw new \Error("Cannot use a promise as success value");
@@ -49,9 +48,9 @@ final class Success implements Promise
     /**
      * {@inheritdoc}
      */
-    public function onResolve(callable $onResolved)
+    public function onResolve(callable $onResolved): void
     {
-        try {
+        Loop::defer(function () use ($onResolved): void {
             $result = $onResolved(null, $this->value);
 
             if ($result === null) {
@@ -65,10 +64,6 @@ final class Success implements Promise
             if ($result instanceof Promise || $result instanceof ReactPromise) {
                 Promise\rethrow($result);
             }
-        } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e) {
-                throw $e;
-            });
-        }
+        });
     }
 }

@@ -10,10 +10,10 @@ namespace Amp;
 final class AsyncGenerator implements Pipeline
 {
     /** @var Internal\EmitSource<TValue, TSend> */
-    private $source;
+    private Internal\EmitSource $source;
 
     /** @var Coroutine<TReturn>|null */
-    private $coroutine;
+    private Coroutine $coroutine;
 
     /**
      * @param callable(callable(TValue):Promise<TSend>):\Generator $callable

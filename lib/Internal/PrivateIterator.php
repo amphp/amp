@@ -15,7 +15,7 @@ use Amp\Promise;
 final class PrivateIterator implements Iterator
 {
     /** @var Iterator<TValue> */
-    private $iterator;
+    private Iterator $iterator;
 
     /**
      * @param Iterator $iterator

@@ -20,41 +20,29 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class EmitSource
 {
-    /** @var Promise|null */
-    private $result;
+    private ?Promise $result;
 
-    /** @var bool True if complete() or fail() has been called. */
-    private $completed = false;
+    private bool $completed = false;
 
-    /** @var mixed[] */
-    private $emittedValues = [];
+    private array $emittedValues = [];
 
-    /** @var Promise[] */
-    private $sendValues = [];
+    private array $sendValues = [];
 
-    /** @var Deferred[] */
-    private $backPressure = [];
+    private array $backPressure = [];
 
-    /** @var Deferred[] */
-    private $waiting = [];
+    private array $waiting = [];
 
-    /** @var int */
-    private $consumePosition = 0;
+    private int $consumePosition = 0;
 
-    /** @var int */
-    private $emitPosition = 0;
+    private int $emitPosition = 0;
 
-    /** @var array|null */
-    private $resolutionTrace;
+    private ?array $resolutionTrace;
 
-    /** @var bool */
-    private $disposed = false;
+    private bool $disposed = false;
 
-    /** @var bool */
-    private $used = false;
+    private bool $used = false;
 
-    /** @var callable[]|null */
-    private $onDisposal = [];
+    private ?array $onDisposal = [];
 
     /**
      * @return Promise<mixed|null>
@@ -154,17 +142,17 @@ final class EmitSource
      *
      * @see Pipeline::dispose()
      */
-    public function dispose()
+    public function dispose(): void
     {
         $this->cancel(true);
     }
 
-    public function destroy()
+    public function destroy(): void
     {
         $this->cancel(false);
     }
 
-    private function cancel(bool $cancelPending)
+    private function cancel(bool $cancelPending): void
     {
         try {
             if ($this->result) {
@@ -186,7 +174,7 @@ final class EmitSource
      *
      * @see Pipeline::onDisposal()
      */
-    public function onDisposal(callable $onDisposal)
+    public function onDisposal(callable $onDisposal): void
     {
         if ($this->disposed) {
             try {
@@ -222,7 +210,7 @@ final class EmitSource
      *
      * @throws \Error If the pipeline has completed.
      */
-    public function emit($value): Promise
+    public function emit(mixed $value): Promise
     {
         if ($value === null) {
             throw new \TypeError("Pipelines cannot emit NULL");
@@ -291,7 +279,7 @@ final class EmitSource
      *
      * @throws \Error If the iterator has already been completed.
      */
-    public function complete()
+    public function complete(): void
     {
         $this->finalize(Promise\succeed());
     }
@@ -303,7 +291,7 @@ final class EmitSource
      *
      * @return void
      */
-    public function fail(\Throwable $exception)
+    public function fail(\Throwable $exception): void
     {
         if ($exception instanceof DisposedException) {
             throw new \Error("Cannot fail a pipeline with an instance of " . DisposedException::class);
@@ -318,7 +306,7 @@ final class EmitSource
      *
      * @return void
      */
-    private function finalize(Promise $result, bool $disposed = false)
+    private function finalize(Promise $result, bool $disposed = false): void
     {
         if ($this->completed) {
             $message = "Pipeline has already been completed";
@@ -369,7 +357,7 @@ final class EmitSource
     /**
      * Resolves all pending promises returned from {@see continue()} with the result promise.
      */
-    private function resolvePending()
+    private function resolvePending(): void
     {
         $backPressure = $this->backPressure;
         $this->backPressure = [];
@@ -389,7 +377,7 @@ final class EmitSource
     /**
      * Invokes all pending {@see onDisposal()} callbacks and fails pending {@see continue()} promises.
      */
-    private function triggerDisposal()
+    private function triggerDisposal(): void
     {
         \assert($this->disposed, "Pipeline was not disposed on triggering disposal");
 

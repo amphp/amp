@@ -27,7 +27,7 @@ final class Coroutine implements Promise
      *
      * @return Promise
      */
-    private static function transform($yielded, $generator): Promise
+    private static function transform(mixed $yielded, \Generator $generator): Promise
     {
         $exception = null; // initialize here, see https://github.com/vimeo/psalm/issues/2951
 
@@ -88,7 +88,7 @@ final class Coroutine implements Promise
          * @psalm-suppress MissingClosureParamType
          * @psalm-suppress MissingClosureReturnType
          */
-        $onResolve = function (\Throwable $e = null, $v) use ($generator, &$onResolve) {
+        $onResolve = function (?\Throwable $e, mixed $v) use ($generator, &$onResolve): void {
             /** @var bool $immediate Used to control iterative coroutine continuation. */
             static $immediate = true;
 

@@ -69,7 +69,7 @@ final class PipelineSource
      *
      * @return void
      */
-    public function onDisposal(callable $onDisposal)
+    public function onDisposal(callable $onDisposal): void
     {
         $this->source->onDisposal($onDisposal);
     }
@@ -79,7 +79,7 @@ final class PipelineSource
      *
      * @return void
      */
-    public function complete()
+    public function complete(): void
     {
         $this->source->complete();
     }
@@ -91,7 +91,7 @@ final class PipelineSource
      *
      * @return void
      */
-    public function fail(\Throwable $reason)
+    public function fail(\Throwable $reason): void
     {
         $this->source->fail($reason);
     }
