@@ -34,18 +34,33 @@ final class PipelineSource
     }
 
     /**
-     * Emits a value to the pipeline.
+     * Emits a value to the pipeline, returning a promise that is resolved once the emitted value is consumed.
+     * Use {@see yield()} to wait until the value is consumed or use {@see await()} on the promise returned
+     * to wait at a later time.
      *
      * @param mixed $value
      *
      * @psalm-param TValue $value
      *
      * @return Promise<null> Resolves with null when the emitted value has been consumed or fails with
-     *                       {@see DisposedException} if the pipeline has been destroyed.
+     *                       {@see DisposedException} if the pipeline has been disposed.
      */
-    public function emit($value): Promise
+    public function emit(mixed $value): Promise
     {
         return $this->source->emit($value);
+    }
+
+    /**
+     * Emits a value to the pipeline and does not return until the emitted value is consumed.
+     * Use {@see emit()} to emit a value without waiting for the value to be consumed.
+     *
+     * @param mixed $value
+     *
+     * @throws DisposedException Thrown if the pipeline is disposed.
+     */
+    public function yield(mixed $value): void
+    {
+        await($this->source->emit($value));
     }
 
     /**

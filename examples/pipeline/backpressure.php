@@ -16,16 +16,16 @@ try {
     $pipeline = $source->pipe();
 
     Promise\rethrow(async(function (PipelineSource $source): void {
-        await($source->emit(await(new Delayed(500, 1))));
-        await($source->emit(await(new Delayed(1500, 2))));
-        await($source->emit(await(new Delayed(1000, 3))));
-        await($source->emit(await(new Delayed(2000, 4))));
-        await($source->emit(5));
-        await($source->emit(6));
-        await($source->emit(7));
-        await($source->emit(await(new Delayed(2000, 8))));
-        await($source->emit(9));
-        await($source->emit(10));
+        $source->yield(await(new Delayed(500, 1)));
+        $source->yield(await(new Delayed(1500, 2)));
+        $source->yield(await(new Delayed(1000, 3)));
+        $source->yield(await(new Delayed(2000, 4)));
+        $source->yield(5);
+        $source->yield(6);
+        $source->yield(7);
+        $source->yield(await(new Delayed(2000, 8)));
+        $source->yield(9);
+        $source->yield(10);
         $source->complete();
     }, $source));
 

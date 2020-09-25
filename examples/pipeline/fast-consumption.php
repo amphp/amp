@@ -23,9 +23,9 @@ try {
         yield await(new Delayed(600, 10));
     });
 
-    // Flow listener attempts to consume 11 values at once. Only 10 will be emitted.
+    // Pipeline consumer attempts to consume 11 values at once. Only 10 will be emitted.
     $promises = [];
-    for ($i = 0; $i < 11 && ($promises[] = async(fn () => $pipeline->continue())); ++$i);
+    for ($i = 0; $i < 11 && ($promises[] = async(fn (): ?int => $pipeline->continue())); ++$i);
 
     foreach ($promises as $key => $promise) {
         if (null === $yielded = await($promise)) {
