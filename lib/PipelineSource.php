@@ -12,7 +12,7 @@ namespace Amp;
 final class PipelineSource
 {
     /** @var Internal\EmitSource<TValue, null> Has public emit, complete, and fail methods. */
-    private $source;
+    private Internal\EmitSource $source;
 
     public function __construct()
     {

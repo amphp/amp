@@ -12,29 +12,22 @@ final class AsyncGenerator implements Pipeline
     /** @var Internal\EmitSource<TValue, TSend> */
     private Internal\EmitSource $source;
 
-    /** @var Coroutine<TReturn>|null */
-    private Coroutine $coroutine;
+    /** @var Promise<TReturn> */
+    private Promise $promise;
 
     /**
-     * @param callable(callable(TValue):Promise<TSend>):\Generator $callable
+     * @param callable(mixed ...$args):\Generator $callable
+     * @param mixed ...$args Arguments passed to callback.
      *
      * @throws \Error Thrown if the callable throws any exception.
      * @throws \TypeError Thrown if the callable does not return a Generator.
      */
-    public function __construct(callable $callable)
+    public function __construct(callable $callable, mixed ...$args)
     {
         $this->source = $source = new Internal\EmitSource;
 
-        if (\PHP_VERSION_ID < 70100) {
-            $emit = static function ($value) use ($source): Promise {
-                return $source->emit($value);
-            };
-        } else {
-            $emit = \Closure::fromCallable([$source, "emit"]);
-        }
-
         try {
-            $generator = $callable($emit);
+            $generator = $callable(...$args);
         } catch (\Throwable $exception) {
             throw new \Error("The callable threw an exception", 0, $exception);
         }
@@ -43,8 +36,21 @@ final class AsyncGenerator implements Pipeline
             throw new \TypeError("The callable did not return a Generator");
         }
 
-        $this->coroutine = new Coroutine($generator);
-        $this->coroutine->onResolve(static function ($exception) use ($source) {
+        $this->promise = async(static function () use ($generator, $source): mixed {
+            $yielded = $generator->current();
+
+            while ($generator->valid()) {
+                try {
+                    $yielded = $generator->send(await($source->emit($yielded)));
+                } catch (\Throwable $exception) {
+                    $yielded = $generator->throw($exception);
+                }
+            }
+
+            return $generator->getReturn();
+        });
+
+        $this->promise->onResolve(static function ($exception) use ($source): void {
             if ($source->isDisposed()) {
                 return; // AsyncGenerator object was destroyed.
             }
@@ -66,12 +72,8 @@ final class AsyncGenerator implements Pipeline
     /**
      * @inheritDoc
      */
-    public function continue(): Promise
+    public function continue(): mixed
     {
-        if ($this->coroutine === null) {
-            $this->getReturn(); // Starts execution of the coroutine.
-        }
-
         return $this->source->continue();
     }
 
@@ -89,7 +91,7 @@ final class AsyncGenerator implements Pipeline
      *
      * @throws \Error If the first emitted value has not been retrieved using {@see continue()}.
      */
-    public function send($value): Promise
+    public function send($value): mixed
     {
         return $this->source->send($value);
     }
@@ -106,7 +108,7 @@ final class AsyncGenerator implements Pipeline
      *
      * @throws \Error If the first emitted value has not been retrieved using {@see continue()}.
      */
-    public function throw(\Throwable $exception): Promise
+    public function throw(\Throwable $exception): mixed
     {
         return $this->source->throw($exception);
     }
@@ -116,18 +118,16 @@ final class AsyncGenerator implements Pipeline
      *
      * @return void
      */
-    public function dispose()
+    public function dispose(): void
     {
         $this->source->dispose();
     }
 
     /**
-     * @return Promise<mixed>
-     *
-     * @psalm-return Promise<TReturn>
+     * @psalm-return TReturn
      */
-    public function getReturn(): Promise
+    public function getReturn(): mixed
     {
-        return $this->coroutine;
+        return await($this->promise);
     }
 }

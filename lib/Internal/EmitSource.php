@@ -8,6 +8,7 @@ use Amp\Loop;
 use Amp\Pipeline;
 use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\await;
 
 /**
  * Class used internally by {@see Pipeline} implementations. Do not use this class in your code, instead compose your
@@ -20,7 +21,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  */
 final class EmitSource
 {
-    private ?Promise $result;
+    private ?Promise $result = null;
 
     private bool $completed = false;
 
@@ -36,7 +37,7 @@ final class EmitSource
 
     private int $emitPosition = 0;
 
-    private ?array $resolutionTrace;
+    private ?array $resolutionTrace = null;
 
     private bool $disposed = false;
 
@@ -45,25 +46,19 @@ final class EmitSource
     private ?array $onDisposal = [];
 
     /**
-     * @return Promise<mixed|null>
-     *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      */
-    public function continue(): Promise
+    public function continue(): mixed
     {
         return $this->next(Promise\succeed());
     }
 
     /**
-     * @param mixed $value
-     *
      * @psalm-param TSend $value
-     *
-     * @return Promise<mixed|null>
      *
      * @psalm-return Promise<TValue|null>
      */
-    public function send($value): Promise
+    public function send(mixed $value): mixed
     {
         if ($this->consumePosition === 0) {
             throw new \Error("Must initialize async generator by calling continue() first");
@@ -73,13 +68,9 @@ final class EmitSource
     }
 
     /**
-     * @param \Throwable $exception
-     *
-     * @return Promise<mixed|null>
-     *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return mixed
      */
-    public function throw(\Throwable $exception): Promise
+    public function throw(\Throwable $exception): mixed
     {
         if ($this->consumePosition === 0) {
             throw new \Error("Must initialize async generator by calling continue() first");
@@ -89,15 +80,11 @@ final class EmitSource
     }
 
     /**
-     * @param Promise<mixed> $promise
-     *
      * @psalm-param Promise<TSend|null> $promise
      *
-     * @return Promise<mixed|null>
-     *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      */
-    private function next(Promise $promise): Promise
+    private function next(Promise $promise): mixed
     {
         $position = $this->consumePosition++;
 
@@ -114,16 +101,16 @@ final class EmitSource
             $value = $this->emittedValues[$position];
             unset($this->emittedValues[$position]);
 
-            return Promise\succeed($value);
+            return await(Promise\succeed($value));
         }
 
         if ($this->result) {
-            return $this->result;
+            return await($this->result);
         }
 
         $this->waiting[$position] = $deferred = new Deferred;
 
-        return $deferred->promise();
+        return await($deferred->promise());
     }
 
     public function pipe(): Pipeline

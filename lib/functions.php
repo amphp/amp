@@ -187,11 +187,7 @@ namespace Amp
     }
 
     /**
-     * Sleeps for the specified number of milliseconds.
-     *
-     * @param int $milliseconds
-     *
-     * @return Delayed
+     * Returns a promise that is resolved in the specified number of milliseconds.
      */
     function delay(int $milliseconds): Delayed
     {
@@ -206,6 +202,14 @@ namespace Amp
     function getCurrentTime(): int
     {
         return Internal\getCurrentTime();
+    }
+
+    /**
+     * Async sleep for the specified number of milliseconds.
+     */
+    function sleep(int $milliseconds): void
+    {
+        await(delay($milliseconds));
     }
 }
 
@@ -697,10 +701,6 @@ namespace Amp\Iterator
      */
     function fromIterable(iterable $iterable, int $delay = 0): Iterator
     {
-        if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
-            throw createTypeError(["array", "Traversable"], $iterable);
-        }
-
         if ($delay) {
             return new Producer(static function (callable $emit) use ($iterable, $delay) {
                 foreach ($iterable as $value) {
@@ -894,14 +894,14 @@ namespace Amp\Iterator
 namespace Amp\Pipeline
 {
     use Amp\AsyncGenerator;
-    use Amp\Delayed;
-    use Amp\Iterator;
     use Amp\Pipeline;
     use Amp\PipelineSource;
     use Amp\Promise;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\await;
     use function Amp\call;
     use function Amp\coroutine;
+    use function Amp\delay;
     use function Amp\Internal\createTypeError;
 
     /**
@@ -923,21 +923,17 @@ namespace Amp\Pipeline
      */
     function fromIterable(iterable $iterable, int $delay = 0): Pipeline
     {
-        if (!$iterable instanceof \Traversable && !\is_array($iterable)) {
-            throw createTypeError(["array", "Traversable"], $iterable);
-        }
-
-        return new AsyncGenerator(static function (callable $yield) use ($iterable, $delay) {
+        return new AsyncGenerator(static function () use ($iterable, $delay): \Generator {
             foreach ($iterable as $value) {
                 if ($delay) {
-                    yield new Delayed($delay);
+                    await(delay($delay));
                 }
 
                 if ($value instanceof Promise || $value instanceof ReactPromise) {
-                    $value = yield $value;
+                    $value = await($value);
                 }
 
-                yield $yield($value);
+                yield $value;
             }
         });
     }
@@ -946,7 +942,7 @@ namespace Amp\Pipeline
      * @template TValue
      * @template TReturn
      *
-     * @param Pipeline $stream
+     * @param Pipeline $pipeline
      * @param callable(TValue $value):TReturn $onEmit
      *
      * @psalm-param Pipeline<TValue> $pipeline
@@ -955,11 +951,11 @@ namespace Amp\Pipeline
      *
      * @psalm-return Pipeline<TReturn>
      */
-    function map(Pipeline $stream, callable $onEmit): Pipeline
+    function map(Pipeline $pipeline, callable $onEmit): Pipeline
     {
-        return new AsyncGenerator(static function (callable $yield) use ($stream, $onEmit) {
-            while (null !== $value = yield $stream->continue()) {
-                yield $yield(yield call($onEmit, $value));
+        return new AsyncGenerator(static function () use ($pipeline, $onEmit): \Generator {
+            while (null !== $value = $pipeline->continue()) {
+                yield $onEmit($value);
             }
         });
     }
@@ -967,7 +963,7 @@ namespace Amp\Pipeline
     /**
      * @template TValue
      *
-     * @param Pipeline $stream
+     * @param Pipeline $pipeline
      * @param callable(TValue $value):bool $filter
      *
      * @psalm-param Pipeline<TValue> $pipeline
@@ -976,25 +972,25 @@ namespace Amp\Pipeline
      *
      * @psalm-return Pipeline<TValue>
      */
-    function filter(Pipeline $stream, callable $filter): Pipeline
+    function filter(Pipeline $pipeline, callable $filter): Pipeline
     {
-        return new AsyncGenerator(static function (callable $yield) use ($stream, $filter) {
-            while (null !== $value = yield $stream->continue()) {
-                if (yield call($filter, $value)) {
-                    yield $yield($value);
+        return new AsyncGenerator(static function () use ($pipeline, $filter): \Generator {
+            while (null !== $value = $pipeline->continue()) {
+                if ($filter($value)) {
+                    yield $value;
                 }
             }
         });
     }
 
     /**
-     * Creates a pipeline that emits values emitted from any pipeline in the array of streams.
+     * Creates a pipeline that emits values emitted from any pipeline in the array of pipelines.
      *
-     * @param Pipeline[] $streams
+     * @param Pipeline[] $pipelines
      *
      * @return Pipeline
      */
-    function merge(array $streams): Pipeline
+    function merge(array $pipelines): Pipeline
     {
         $source = new PipelineSource;
         $result = $source->pipe();
@@ -1006,12 +1002,12 @@ namespace Amp\Pipeline
         });
 
         $coroutines = [];
-        foreach ($streams as $stream) {
-            if (!$stream instanceof Pipeline) {
-                throw createTypeError([Pipeline::class], $stream);
+        foreach ($pipelines as $pipeline) {
+            if (!$pipeline instanceof Pipeline) {
+                throw createTypeError([Pipeline::class], $pipeline);
             }
 
-            $coroutines[] = $coroutine($stream);
+            $coroutines[] = $coroutine($pipeline);
         }
 
         Promise\all($coroutines)->onResolve(static function ($exception) use (&$source) {
@@ -1029,26 +1025,26 @@ namespace Amp\Pipeline
     }
 
     /**
-     * Concatenates the given streams into a single pipeline, emitting from a single pipeline at a time. The
-     * prior pipeline must complete before values are emitted from any subsequent streams. Streams are concatenated
+     * Concatenates the given pipelines into a single pipeline, emitting from a single pipeline at a time. The
+     * prior pipeline must complete before values are emitted from any subsequent pipelines. Streams are concatenated
      * in the order given (iteration order of the array).
      *
-     * @param Pipeline[] $streams
+     * @param Pipeline[] $pipelines
      *
      * @return Pipeline
      */
-    function concat(array $streams): Pipeline
+    function concat(array $pipelines): Pipeline
     {
-        foreach ($streams as $stream) {
-            if (!$stream instanceof Pipeline) {
-                throw createTypeError([Pipeline::class], $stream);
+        foreach ($pipelines as $pipeline) {
+            if (!$pipeline instanceof Pipeline) {
+                throw createTypeError([Pipeline::class], $pipeline);
             }
         }
 
-        return new AsyncGenerator(function (callable $emit) use ($streams) {
-            foreach ($streams as $stream) {
-                while ($value = yield $stream->continue()) {
-                    yield $emit($value);
+        return new AsyncGenerator(function () use ($pipelines): \Generator {
+            foreach ($pipelines as $stream) {
+                while ($value = $stream->continue()) {
+                    yield $value;
                 }
             }
         });
@@ -1059,13 +1055,13 @@ namespace Amp\Pipeline
      *
      * @template TValue
      *
-     * @param Pipeline $stream
+     * @param Pipeline $pipeline
      *
      * @psalm-param Pipeline<TValue> $pipeline
      *
      * @return Promise<int>
      */
-    function discard(Pipeline $stream): Promise
+    function discard(Pipeline $pipeline): Promise
     {
         return call(static function () use ($stream): \Generator {
             $count = 0;
@@ -1083,47 +1079,43 @@ namespace Amp\Pipeline
      *
      * @template TValue
      *
-     * @param Pipeline $stream
+     * @param Pipeline $pipeline
      *
      * @psalm-param Pipeline<TValue> $pipeline
      *
-     * @return Promise
+     * @return array
      *
-     * @psalm-return Promise<array<int, TValue>>
+     * @psalm-return array<int, TValue>
      */
-    function toArray(Pipeline $stream): Promise
+    function toArray(Pipeline $pipeline): array
     {
-        return call(static function () use ($stream): \Generator {
-            /** @psalm-var list<TValue> $array */
-            $array = [];
+        /** @psalm-var list<TValue> $array */
+        $array = [];
 
-            while (null !== $value = yield $stream->continue()) {
-                $array[] = $value;
-            }
+        while (null !== $value = $pipeline->continue()) {
+            $array[] = $value;
+        }
 
-            return $array;
-        });
+        return $array;
     }
 
     /**
-     * Converts an instance of the deprecated {@see Iterator} into an instance of {@see Pipeline}.
+     * Converts the given pipeline to an object implementing \Iterator.
      *
      * @template TValue
      *
-     * @param Iterator $iterator
+     * @param Pipeline $pipeline
      *
-     * @psalm-param Iterator<TValue> $iterator
+     * @psalm-param Pipeline<TValue> $pipeline
      *
-     * @return Pipeline
+     * @return \Iterator
      *
-     * @psalm-return Pipeline<TValue>
+     * @psalm-return \Iterator<TValue>
      */
-    function fromIterator(Iterator $iterator): Pipeline
+    function toIterator(Pipeline $pipeline): \Iterator
     {
-        return new AsyncGenerator(function (callable $yield) use ($iterator): \Generator {
-            while (yield $iterator->advance()) {
-                yield $yield($iterator->getCurrent());
-            }
-        });
+        while (null !== $value = $pipeline->continue()) {
+            yield $value;
+        }
     }
 }

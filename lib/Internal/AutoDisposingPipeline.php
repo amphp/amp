@@ -3,7 +3,6 @@
 namespace Amp\Internal;
 
 use Amp\Pipeline;
-use Amp\Promise;
 
 /**
  * Wraps an EmitSource instance that has public methods to emit, complete, and fail into an object that only allows
@@ -32,7 +31,7 @@ final class AutoDisposingPipeline implements Pipeline
     /**
      * @inheritDoc
      */
-    public function continue(): Promise
+    public function continue(): mixed
     {
         return $this->source->continue();
     }

@@ -13,13 +13,13 @@ interface Pipeline
      * Succeeds with the emitted value if the pipeline has emitted a value or null if the pipeline has completed.
      * If the pipeline fails, the returned promise will fail with the same exception.
      *
-     * @return Promise<mixed|null> Resolves with null if the pipeline has completed.
+     * @return mixed Returns null if the pipeline has completed.
      *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      *
      * @throws \Throwable The exception used to fail the pipeline.
      */
-    public function continue(): Promise;
+    public function continue(): mixed;
 
     /**
      * Disposes of the pipeline, indicating the consumer is no longer interested in the pipeline output.
