@@ -41,16 +41,21 @@ final class AsyncGenerator implements Pipeline
 
             while ($generator->valid()) {
                 try {
-                    $yielded = $generator->send(await($source->emit($yielded)));
+                    $yielded = await($source->emit($yielded));
+                } catch (DisposedException $exception) {
+                    throw $exception; // Destroys generator and fails pipeline.
                 } catch (\Throwable $exception) {
                     $yielded = $generator->throw($exception);
+                    continue;
                 }
+
+                $yielded = $generator->send($yielded);
             }
 
             return $generator->getReturn();
         });
 
-        $this->promise->onResolve(static function ($exception) use ($source): void {
+        $this->promise->onResolve(static function (?\Throwable $exception) use ($source): void {
             if ($source->isDisposed()) {
                 return; // AsyncGenerator object was destroyed.
             }
@@ -91,7 +96,7 @@ final class AsyncGenerator implements Pipeline
      *
      * @throws \Error If the first emitted value has not been retrieved using {@see continue()}.
      */
-    public function send($value): mixed
+    public function send(mixed $value): mixed
     {
         return $this->source->send($value);
     }
