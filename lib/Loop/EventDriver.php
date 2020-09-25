@@ -11,31 +11,26 @@ use function Amp\Promise\rethrow;
 class EventDriver extends Driver
 {
     /** @var \Event[]|null */
-    private static $activeSignals;
+    private static ?array $activeSignals = null;
 
-    /** @var \EventBase */
-    private $handle;
-
-    /** @var \Event[] */
-    private $events = [];
-
-    /** @var callable */
-    private $ioCallback;
-
-    /** @var callable */
-    private $timerCallback;
-
-    /** @var callable */
-    private $signalCallback;
+    private \EventBase $handle;
 
     /** @var \Event[] */
-    private $signals = [];
+    private array $events = [];
+
+    private \Closure $ioCallback;
+
+    private \Closure $timerCallback;
+
+    private \Closure $signalCallback;
+
+    private array $signals = [];
 
     /** @var int Internal timestamp for now. */
-    private $now;
+    private int $now;
 
     /** @var int Loop time offset */
-    private $nowOffset;
+    private int $nowOffset;
 
     public function __construct()
     {

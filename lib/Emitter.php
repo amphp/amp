@@ -63,7 +63,7 @@ final class Emitter
      *
      * @return void
      */
-    public function complete()
+    public function complete(): void
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
         $this->emitter->complete();
@@ -76,7 +76,7 @@ final class Emitter
      *
      * @return void
      */
-    public function fail(\Throwable $reason)
+    public function fail(\Throwable $reason): void
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
         $this->emitter->fail($reason);

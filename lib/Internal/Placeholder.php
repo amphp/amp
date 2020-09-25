@@ -25,8 +25,7 @@ trait Placeholder
      *     mixed>|null)|callable(\Throwable|null, mixed): void */
     private $onResolved;
 
-    /** @var null|array */
-    private ?array $resolutionTrace;
+    private ?array $resolutionTrace = null;
 
     /**
      * @inheritdoc

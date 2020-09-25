@@ -14,7 +14,7 @@ trait Struct
      * The minimum percentage [0-100] at which to recommend a similar property
      * name when generating error messages.
      */
-    private $__propertySuggestThreshold = 70;
+    private int $__propertySuggestThreshold = 70;
 
     /**
      * @param string $property

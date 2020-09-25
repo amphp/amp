@@ -11,29 +11,33 @@ use function Amp\Promise\rethrow;
 class EvDriver extends Driver
 {
     /** @var \EvSignal[]|null */
-    private static $activeSignals;
+    private static ?array $activeSignals = null;
 
     public static function isSupported(): bool
     {
         return \extension_loaded("ev");
     }
 
-    /** @var \EvLoop */
-    private $handle;
+    private \EvLoop $handle;
+
     /** @var \EvWatcher[] */
-    private $events = [];
+    private array $events = [];
+
+    private \Closure $ioCallback;
     /** @var callable */
-    private $ioCallback;
-    /** @var callable */
-    private $timerCallback;
-    /** @var callable */
-    private $signalCallback;
+
+    private \Closure $timerCallback;
+
+    private \Closure $signalCallback;
+
     /** @var \EvSignal[] */
-    private $signals = [];
+    private array $signals = [];
+
     /** @var int Internal timestamp for now. */
-    private $now;
+    private int $now;
+
     /** @var int Loop time offset */
-    private $nowOffset;
+    private int $nowOffset;
 
     public function __construct()
     {
@@ -51,7 +55,7 @@ class EvDriver extends Driver
          *
          * @return void
          */
-        $this->ioCallback = function (\EvIO $event) {
+        $this->ioCallback = function (\EvIO $event): void {
             /** @var Watcher $watcher */
             $watcher = $event->data;
 
@@ -79,7 +83,7 @@ class EvDriver extends Driver
          *
          * @return void
          */
-        $this->timerCallback = function (\EvTimer $event) {
+        $this->timerCallback = function (\EvTimer $event): void {
             /** @var Watcher $watcher */
             $watcher = $event->data;
 
@@ -116,7 +120,7 @@ class EvDriver extends Driver
          *
          * @return void
          */
-        $this->signalCallback = function (\EvSignal $event) {
+        $this->signalCallback = function (\EvSignal $event): void {
             /** @var Watcher $watcher */
             $watcher = $event->data;
 

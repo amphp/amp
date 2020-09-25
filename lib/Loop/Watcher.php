@@ -22,17 +22,13 @@ class Watcher
     const REPEAT = 0b00010000;
     const SIGNAL = 0b00100000;
 
-    /** @var int */
-    public $type;
+    public int $type;
 
-    /** @var bool */
-    public $enabled = true;
+    public bool $enabled = true;
 
-    /** @var bool */
-    public $referenced = true;
+    public bool $referenced = true;
 
-    /** @var string */
-    public $id;
+    public string $id;
 
     /** @var callable */
     public $callback;
@@ -53,5 +49,5 @@ class Watcher
     public $value;
 
     /** @var int|null */
-    public $expiration;
+    public ?int $expiration = null;
 }

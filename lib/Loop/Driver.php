@@ -21,29 +21,28 @@ abstract class Driver implements \FiberScheduler
     const MILLISEC_PER_SEC = 1000;
     const MICROSEC_PER_SEC = 1000000;
 
-    /** @var string */
-    private $nextId = "a";
+    /** @var string Next watcher ID. */
+    private string $nextId = "a";
 
     /** @var Watcher[] */
-    private $watchers = [];
+    private array $watchers = [];
 
     /** @var Watcher[] */
-    private $enableQueue = [];
+    private array $enableQueue = [];
 
     /** @var Watcher[] */
-    private $deferQueue = [];
+    private array $deferQueue = [];
 
     /** @var Watcher[] */
-    private $nextTickQueue = [];
+    private array $nextTickQueue = [];
 
     /** @var callable(\Throwable):void|null */
     private $errorHandler;
 
-    /** @var bool */
-    private $running = false;
+    private bool $running = false;
 
-    /** @var array */
-    private $registry = [];
+    /** @var mixed[] */
+    private array $registry = [];
 
     /**
      * Run the event loop.

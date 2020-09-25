@@ -9,11 +9,9 @@ use function Amp\Internal\formatStacktrace;
  */
 final class TimeoutCancellationToken implements CancellationToken
 {
-    /** @var string */
-    private $watcher;
+    private string $watcher;
 
-    /** @var CancellationToken */
-    private $token;
+    private CancellationToken $token;
 
     /**
      * @param int    $timeout Milliseconds until cancellation is requested.
@@ -52,7 +50,7 @@ final class TimeoutCancellationToken implements CancellationToken
     /**
      * {@inheritdoc}
      */
-    public function unsubscribe(string $id)
+    public function unsubscribe(string $id): void
     {
         $this->token->unsubscribe($id);
     }
@@ -68,7 +66,7 @@ final class TimeoutCancellationToken implements CancellationToken
     /**
      * {@inheritdoc}
      */
-    public function throwIfRequested()
+    public function throwIfRequested(): void
     {
         $this->token->throwIfRequested();
     }

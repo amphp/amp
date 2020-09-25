@@ -57,7 +57,7 @@ final class CombinedCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function unsubscribe(string $id)
+    public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
@@ -75,7 +75,7 @@ final class CombinedCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function throwIfRequested()
+    public function throwIfRequested(): void
     {
         foreach ($this->tokens as list($token)) {
             $token->throwIfRequested();

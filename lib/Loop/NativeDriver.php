@@ -14,31 +14,29 @@ class NativeDriver extends Driver
     use CallableMaker;
 
     /** @var resource[] */
-    private $readStreams = [];
+    private array $readStreams = [];
 
     /** @var Watcher[][] */
-    private $readWatchers = [];
+    private array $readWatchers = [];
 
     /** @var resource[] */
-    private $writeStreams = [];
+    private array $writeStreams = [];
 
     /** @var Watcher[][] */
-    private $writeWatchers = [];
+    private array $writeWatchers = [];
 
-    /** @var Internal\TimerQueue */
-    private $timerQueue;
+    private Internal\TimerQueue $timerQueue;
 
     /** @var Watcher[][] */
-    private $signalWatchers = [];
+    private array $signalWatchers = [];
 
     /** @var int Internal timestamp for now. */
-    private $now;
+    private int $now;
 
     /** @var int Loop time offset */
-    private $nowOffset;
+    private int $nowOffset;
 
-    /** @var bool */
-    private $signalHandling;
+    private bool $signalHandling;
 
     public function __construct()
     {

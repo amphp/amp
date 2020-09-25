@@ -5,7 +5,7 @@ namespace Amp;
 class MultiReasonException extends \Exception
 {
     /** @var \Throwable[] */
-    private $reasons;
+    private array $reasons;
 
     /**
      * @param \Throwable[] $reasons Array of exceptions rejecting the promise.

@@ -40,8 +40,7 @@ use function Amp\Promise\rethrow;
  */
 final class CancellationTokenSource
 {
-    /** @var CancellationToken */
-    private $token;
+    private CancellationToken $token;
 
     /** @var callable|null */
     private $onCancel;
@@ -51,14 +50,13 @@ final class CancellationTokenSource
         $onCancel = null;
 
         $this->token = new class($onCancel) implements CancellationToken {
-            /** @var string */
-            private $nextId = "a";
+            private string $nextId = "a";
 
             /** @var callable[] */
-            private $callbacks = [];
+            private array $callbacks = [];
 
             /** @var \Throwable|null */
-            private $exception;
+            private ?\Throwable $exception = null;
 
             /**
              * @param mixed $onCancel
@@ -84,7 +82,7 @@ final class CancellationTokenSource
              *
              * @return void
              */
-            private function invokeCallback(callable $callback)
+            private function invokeCallback(callable $callback): void
             {
                 // No type declaration to prevent exception outside the try!
                 try {
@@ -119,7 +117,7 @@ final class CancellationTokenSource
                 return $id;
             }
 
-            public function unsubscribe(string $id)
+            public function unsubscribe(string $id): void
             {
                 unset($this->callbacks[$id]);
             }
@@ -129,7 +127,7 @@ final class CancellationTokenSource
                 return isset($this->exception);
             }
 
-            public function throwIfRequested()
+            public function throwIfRequested(): void
             {
                 if (isset($this->exception)) {
                     throw $this->exception;

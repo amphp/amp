@@ -29,7 +29,7 @@ interface CancellationToken
      *
      * @return void
      */
-    public function unsubscribe(string $id);
+    public function unsubscribe(string $id): void;
 
     /**
      * Returns whether cancellation has been requested yet.
@@ -45,5 +45,5 @@ interface CancellationToken
      *
      * @throws CancelledException
      */
-    public function throwIfRequested();
+    public function throwIfRequested(): void;
 }

@@ -10,8 +10,7 @@ use Amp\Promise;
  */
 final class PrivatePromise implements Promise
 {
-    /** @var Promise */
-    private $promise;
+    private Promise $promise;
 
     public function __construct(Promise $promise)
     {

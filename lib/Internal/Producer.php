@@ -31,7 +31,7 @@ trait Producer
 
     private ?Deferred $waiting;
 
-    private ?array $resolutionTrace;
+    private ?array $resolutionTrace = null;
 
     /**
      * {@inheritdoc}

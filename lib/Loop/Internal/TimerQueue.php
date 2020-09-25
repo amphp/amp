@@ -10,10 +10,10 @@ use Amp\Loop\Watcher;
 final class TimerQueue
 {
     /** @var TimerQueueEntry[] */
-    private $data = [];
+    private array $data = [];
 
     /** @var int[] */
-    private $pointers = [];
+    private array $pointers = [];
 
     /**
      * Inserts the watcher into the queue. Time complexity: O(log(n)).

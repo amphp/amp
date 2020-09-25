@@ -9,26 +9,23 @@ use function Amp\Promise\rethrow;
 
 class UvDriver extends Driver
 {
-    /** @var resource A uv_loop resource created with uv_loop_new() */
+    /** @var resource|\UVLoop A uv_loop resource created with uv_loop_new() */
     private $handle;
 
     /** @var resource[] */
-    private $events = [];
+    private array $events = [];
 
     /** @var Watcher[][] */
-    private $watchers = [];
+    private array $watchers = [];
 
     /** @var resource[] */
-    private $streams = [];
+    private array $streams = [];
 
-    /** @var callable */
-    private $ioCallback;
+    private \Closure $ioCallback;
 
-    /** @var callable */
-    private $timerCallback;
+    private \Closure $timerCallback;
 
-    /** @var callable */
-    private $signalCallback;
+    private \Closure $signalCallback;
 
     public function __construct()
     {
@@ -42,7 +39,7 @@ class UvDriver extends Driver
          *
          * @return void
          */
-        $this->ioCallback = function ($event, $status, $events, $resource) {
+        $this->ioCallback = function ($event, $status, $events, $resource): void {
             $watchers = $this->watchers[(int) $event];
 
             switch ($status) {
@@ -91,7 +88,7 @@ class UvDriver extends Driver
          *
          * @return void
          */
-        $this->timerCallback = function ($event) {
+        $this->timerCallback = function ($event): void {
             $watcher = $this->watchers[(int) $event][0];
 
             if ($watcher->type & Watcher::DELAY) {
@@ -129,7 +126,7 @@ class UvDriver extends Driver
          *
          * @return void
          */
-        $this->signalCallback = function ($event, $signo) {
+        $this->signalCallback = function ($event, $signo): void {
             $watcher = $this->watchers[(int) $event][0];
 
             try {

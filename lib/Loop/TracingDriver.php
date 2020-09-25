@@ -6,28 +6,31 @@ use function Amp\Internal\formatStacktrace;
 
 final class TracingDriver extends Driver
 {
-    /** @var Driver */
-    private $driver;
+    private Driver $driver;
+
     /** @var true[] */
-    private $enabledWatchers = [];
+    private array $enabledWatchers = [];
+
     /** @var true[] */
-    private $unreferencedWatchers = [];
+    private array $unreferencedWatchers = [];
+
     /** @var string[] */
-    private $creationTraces = [];
+    private array $creationTraces = [];
+
     /** @var string[] */
-    private $cancelTraces = [];
+    private array $cancelTraces = [];
 
     public function __construct(Driver $driver)
     {
         $this->driver = $driver;
     }
 
-    public function run()
+    public function run(): void
     {
         $this->driver->run();
     }
 
-    public function stop()
+    public function stop(): void
     {
         $this->driver->stop();
     }
@@ -111,7 +114,7 @@ final class TracingDriver extends Driver
         }
     }
 
-    public function cancel(string $watcherId)
+    public function cancel(string $watcherId): void
     {
         $this->driver->cancel($watcherId);
 
@@ -122,13 +125,13 @@ final class TracingDriver extends Driver
         unset($this->enabledWatchers[$watcherId], $this->unreferencedWatchers[$watcherId]);
     }
 
-    public function disable(string $watcherId)
+    public function disable(string $watcherId): void
     {
         $this->driver->disable($watcherId);
         unset($this->enabledWatchers[$watcherId]);
     }
 
-    public function reference(string $watcherId)
+    public function reference(string $watcherId): void
     {
         try {
             $this->driver->reference($watcherId);
@@ -141,13 +144,13 @@ final class TracingDriver extends Driver
         }
     }
 
-    public function unreference(string $watcherId)
+    public function unreference(string $watcherId): void
     {
         $this->driver->unreference($watcherId);
         $this->unreferencedWatchers[$watcherId] = true;
     }
 
-    public function setErrorHandler(callable $callback = null)
+    public function setErrorHandler(callable $callback = null): ?callable
     {
         return $this->driver->setErrorHandler($callback);
     }
@@ -180,7 +183,7 @@ final class TracingDriver extends Driver
         return $this->driver->getInfo();
     }
 
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return $this->driver->__debugInfo();
     }
@@ -190,7 +193,7 @@ final class TracingDriver extends Driver
         return $this->driver->now();
     }
 
-    protected function error(\Throwable $exception)
+    protected function error(\Throwable $exception): void
     {
         $this->driver->error($exception);
     }
@@ -200,7 +203,7 @@ final class TracingDriver extends Driver
      *
      * @return void
      */
-    protected function activate(array $watchers)
+    protected function activate(array $watchers): void
     {
         // nothing to do in a decorator
     }
@@ -210,7 +213,7 @@ final class TracingDriver extends Driver
      *
      * @return void
      */
-    protected function dispatch(bool $blocking)
+    protected function dispatch(bool $blocking): void
     {
         // nothing to do in a decorator
     }
@@ -220,7 +223,7 @@ final class TracingDriver extends Driver
      *
      * @return void
      */
-    protected function deactivate(Watcher $watcher)
+    protected function deactivate(Watcher $watcher): void
     {
         // nothing to do in a decorator
     }

@@ -12,11 +12,9 @@ final class TimerQueueEntry
 {
     use Struct;
 
-    /** @var Watcher */
-    public $watcher;
+    public Watcher $watcher;
 
-    /** @var int */
-    public $expiration;
+    public int $expiration;
 
     /**
      * @param Watcher $watcher

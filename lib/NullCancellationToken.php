@@ -34,7 +34,7 @@ final class NullCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function unsubscribe(string $id)
+    public function unsubscribe(string $id): void
     {
         // nothing to do
     }
@@ -46,7 +46,7 @@ final class NullCancellationToken implements CancellationToken
     }
 
     /** @inheritdoc */
-    public function throwIfRequested()
+    public function throwIfRequested(): void
     {
         // nothing to do
     }
