@@ -39,61 +39,31 @@ abstract class Driver
     /** @var callable(\Throwable):void|null */
     private $errorHandler;
 
-    private bool $running = false;
-
     /** @var mixed[] */
     private array $registry = [];
 
-    /**
-     * Run the event loop.
-     *
-     * One iteration of the loop is called one "tick". A tick covers the following steps:
-     *
-     *  1. Activate watchers created / enabled in the last tick / before `run()`.
-     *  2. Execute all enabled defer watchers.
-     *  3. Execute all due timer, pending signal and actionable stream callbacks, each only once per tick.
-     *
-     * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
-     * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
-     * error handler or exceptions that would be passed to an error handler but none exists to handle them.
-     *
-     * @return void
-     */
-    public function run(): void
-    {
-        $this->running = true;
-
-        try {
-            while ($this->running) {
-                if ($this->isEmpty()) {
-                    return;
-                }
-                $this->tick();
-            }
-        } finally {
-            $this->stop();
-        }
-    }
+    private int $runCount = 0;
 
     /**
      * Create a control that can be used to start and stop a specific iteration of the driver loop.
      *
-     * This method is intended for {@see \Amp\Promise\wait()} only and NOT exposed as method in {@see \Amp\Loop}.
-     *
      * @return DriverControl
-     *
-     * @see Driver::run()
      */
     public function createControl(): DriverControl
     {
         return new class(function () use (&$running): void {
+            $this->runCount++;
             $running = true;
-            while ($running) {
-                if ($this->isEmpty()) {
-                    return;
-                }
+            try {
+                while ($running) {
+                    if ($this->isEmpty()) {
+                        return;
+                    }
 
-                $this->tick();
+                    $this->tick();
+                }
+            } finally {
+                $this->runCount--;
             }
         }, static function () use (&$running): void {
             $running = false;
@@ -120,16 +90,11 @@ abstract class Driver
     }
 
     /**
-     * Stop the event loop.
-     *
-     * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
-     * to stop MUST be ignored and MUST NOT raise an exception.
-     *
-     * @return void
+     * @return bool True if the event loop is running, false if it is stopped.
      */
-    public function stop(): void
+    public function isRunning(): bool
     {
-        $this->running = false;
+        return $this->runCount > 0;
     }
 
     /**
@@ -605,7 +570,6 @@ abstract class Driver
      *         "on_writable"      => ["enabled" => int, "disabled" => int],
      *         "on_signal"        => ["enabled" => int, "disabled" => int],
      *         "enabled_watchers" => ["referenced" => int, "unreferenced" => int],
-     *         "running"          => bool
      *     ];
      *
      * Implementations MAY optionally add more information in the array but at minimum the above `key => value` format
@@ -673,7 +637,6 @@ abstract class Driver
             "on_readable" => $onReadable,
             "on_writable" => $onWritable,
             "on_signal" => $onSignal,
-            "running" => (bool) $this->running,
         ];
     }
 
@@ -780,6 +743,6 @@ abstract class Driver
         }
 
         /** @psalm-suppress RedundantCondition */
-        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
+        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && !$this->isEmpty());
     }
 }

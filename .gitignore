@@ -5,3 +5,4 @@ phpunit.xml
 vendor
 humbug.json
 .php_cs.cache
+.phpunit.result.cache

@@ -3,6 +3,7 @@
 namespace Amp;
 
 use Amp\Loop\Driver;
+use Amp\Loop\DriverControl;
 use Amp\Loop\DriverFactory;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
@@ -15,10 +16,9 @@ use Amp\Loop\Watcher;
  */
 final class Loop
 {
-    /**
-     * @var Driver
-     */
     private static Driver $driver;
+
+    private static DriverControl $control;
 
     /**
      * Disable construction as this is a static class.
@@ -37,6 +37,10 @@ final class Loop
      */
     public static function set(Driver $driver): void
     {
+        if (isset(self::$driver) && self::$driver->isRunning()) {
+            throw new \Error("Can't swap the event loop while it is running");
+        }
+
         try {
             self::$driver = new class extends Driver {
                 protected function activate(array $watchers): void
@@ -63,6 +67,7 @@ final class Loop
             \gc_collect_cycles();
         } finally {
             self::$driver = $driver;
+            self::$control = $driver->createControl();
         }
     }
 
@@ -83,7 +88,7 @@ final class Loop
             self::$driver->defer($callback);
         }
 
-        self::$driver->run();
+        self::$control->run();
     }
 
     /**
@@ -96,7 +101,15 @@ final class Loop
      */
     public static function stop(): void
     {
-        self::$driver->stop();
+        self::$control->stop();
+    }
+
+    /**
+     * @return bool True if the event loop is running, false if it is stopped.
+     */
+    public static function isRunning(): bool
+    {
+        return self::$driver->isRunning();
     }
 
     /**

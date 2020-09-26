@@ -9,7 +9,7 @@ class TracingDriverTest extends DriverTest
 {
     public function getFactory(): callable
     {
-        return static function () {
+        return static function (): TracingDriver {
             return new TracingDriver(new NativeDriver);
         };
     }
@@ -18,7 +18,7 @@ class TracingDriverTest extends DriverTest
      * @dataProvider provideRegistrationArgs
      * @group memoryleak
      */
-    public function testNoMemoryLeak($type, $args)
+    public function testNoMemoryLeak(string $type, array $args): void
     {
         // Skip, because the driver intentionally leaks
         $this->assertTrue(true);

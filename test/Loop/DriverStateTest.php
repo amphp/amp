@@ -8,16 +8,15 @@ use PHPUnit\Framework\TestCase;
 
 class DriverStateTest extends TestCase
 {
-    /** @var Driver */
-    private $loop;
+    private Driver $loop;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->loop = $this->getMockForAbstractClass(Driver::class);
     }
 
     /** @test */
-    public function defaultsToNull()
+    public function defaultsToNull(): void
     {
         $this->assertNull($this->loop->getState("foobar"));
     }
@@ -26,7 +25,7 @@ class DriverStateTest extends TestCase
      * @test
      * @dataProvider provideValues
      */
-    public function getsPreviouslySetValue($value)
+    public function getsPreviouslySetValue($value): void
     {
         $this->loop->setState("foobar", $value);
         $this->assertSame($value, $this->loop->getState("foobar"));
@@ -36,13 +35,13 @@ class DriverStateTest extends TestCase
      * @test
      * @dataProvider provideValues
      */
-    public function getsPreviouslySetValueViaAccessor($value)
+    public function getsPreviouslySetValueViaAccessor($value): void
     {
         Loop::setState("foobar", $value);
         $this->assertSame($value, Loop::getState("foobar"));
     }
 
-    public function provideValues()
+    public function provideValues(): array
     {
         return [
             ["string"],

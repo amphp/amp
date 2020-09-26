@@ -22,6 +22,13 @@ namespace Amp
      */
     function await(Promise|ReactPromise|array $promise): mixed
     {
+        static $loop, $control;
+
+        if ($loop !== Loop::get()) {
+            $loop = Loop::get();
+            $control = $loop->createControl();
+        }
+
         if (!$promise instanceof Promise) {
             if ($promise instanceof ReactPromise) {
                 $promise = Promise\adapt($promise);
@@ -30,7 +37,7 @@ namespace Amp
             }
         }
 
-        return \Fiber::await($promise, Loop::get());
+        return \Fiber::await($promise, $control);
     }
 
     /**
