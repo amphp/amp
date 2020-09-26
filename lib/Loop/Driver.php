@@ -15,7 +15,7 @@ use function Amp\Promise\rethrow;
  *
  * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
-abstract class Driver implements \FiberScheduler
+abstract class Driver
 {
     // Don't use 1e3 / 1e6, they result in a float instead of int
     const MILLISEC_PER_SEC = 1000;
@@ -76,84 +76,48 @@ abstract class Driver implements \FiberScheduler
     }
 
     /**
-     * @return bool True if no enabled and referenced watchers remain in the loop.
+     * Create a control that can be used to start and stop a specific iteration of the driver loop.
+     *
+     * This method is intended for {@see \Amp\Promise\wait()} only and NOT exposed as method in {@see \Amp\Loop}.
+     *
+     * @return DriverControl
+     *
+     * @see Driver::run()
      */
-    private function isEmpty(): bool
+    public function createControl(): DriverControl
     {
-        foreach ($this->watchers as $watcher) {
-            if ($watcher->enabled && $watcher->referenced) {
-                return false;
-            }
-        }
+        return new class(function () use (&$running): void {
+            $running = true;
+            while ($running) {
+                if ($this->isEmpty()) {
+                    return;
+                }
 
-        return true;
+                $this->tick();
+            }
+        }, static function () use (&$running): void {
+            $running = false;
+        }) implements DriverControl {
+            private $run;
+            private $stop;
+
+            public function __construct(callable $run, callable $stop)
+            {
+                $this->run = $run;
+                $this->stop = $stop;
+            }
+
+            public function run(): void
+            {
+                ($this->run)();
+            }
+
+            public function stop(): void
+            {
+                ($this->stop)();
+            }
+        };
     }
-
-    /**
-     * Executes a single tick of the event loop.
-     *
-     * @return void
-     */
-    private function tick(): void
-    {
-        if (empty($this->deferQueue)) {
-            $this->deferQueue = $this->nextTickQueue;
-        } else {
-            $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
-        }
-        $this->nextTickQueue = [];
-
-        $this->activate($this->enableQueue);
-        $this->enableQueue = [];
-
-        foreach ($this->deferQueue as $watcher) {
-            if (!isset($this->deferQueue[$watcher->id])) {
-                continue; // Watcher disabled by another defer watcher.
-            }
-
-            unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
-
-            try {
-                /** @var mixed $result */
-                $result = ($watcher->callback)($watcher->id, $watcher->data);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
-                    rethrow($result);
-                }
-            } catch (\Throwable $exception) {
-                $this->error($exception);
-            }
-        }
-
-        /** @psalm-suppress RedundantCondition */
-        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
-    }
-
-    /**
-     * Activates (enables) all the given watchers.
-     *
-     * @param Watcher[] $watchers
-     *
-     * @return void
-     */
-    abstract protected function activate(array $watchers): void;
-
-    /**
-     * Dispatches any pending read/write, timer, and signal events.
-     *
-     * @param bool $blocking
-     *
-     * @return void
-     */
-    abstract protected function dispatch(bool $blocking): void;
 
     /**
      * Stop the event loop.
@@ -390,7 +354,7 @@ abstract class Driver implements \FiberScheduler
      *
      * @throws InvalidWatcherError If the watcher identifier is invalid.
      */
-    public function enable(string $watcherId)
+    public function enable(string $watcherId): void
     {
         if (!isset($this->watchers[$watcherId])) {
             throw new InvalidWatcherError($watcherId, "Cannot enable an invalid watcher identifier: '{$watcherId}'");
@@ -489,15 +453,6 @@ abstract class Driver implements \FiberScheduler
     }
 
     /**
-     * Deactivates (disables) the given watcher.
-     *
-     * @param Watcher $watcher
-     *
-     * @return void
-     */
-    abstract protected function deactivate(Watcher $watcher): void;
-
-    /**
      * Reference a watcher.
      *
      * This will keep the event loop alive whilst the watcher is still being monitored. Watchers have this state by
@@ -573,7 +528,7 @@ abstract class Driver implements \FiberScheduler
      *
      * @return mixed The previously stored value or `null` if it doesn't exist.
      */
-    final public function getState(string $key)
+    final public function getState(string $key): mixed
     {
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
@@ -597,23 +552,6 @@ abstract class Driver implements \FiberScheduler
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;
         return $previous;
-    }
-
-    /**
-     * Invokes the error handler with the given exception.
-     *
-     * @param \Throwable $exception The exception thrown from a watcher callback.
-     *
-     * @return void
-     * @throws \Throwable If no error handler has been set.
-     */
-    protected function error(\Throwable $exception): void
-    {
-        if ($this->errorHandler === null) {
-            throw $exception;
-        }
-
-        ($this->errorHandler)($exception);
     }
 
     /**
@@ -737,5 +675,111 @@ abstract class Driver implements \FiberScheduler
             "on_signal" => $onSignal,
             "running" => (bool) $this->running,
         ];
+    }
+
+    /**
+     * Activates (enables) all the given watchers.
+     *
+     * @param Watcher[] $watchers
+     *
+     * @return void
+     */
+    abstract protected function activate(array $watchers): void;
+
+    /**
+     * Dispatches any pending read/write, timer, and signal events.
+     *
+     * @param bool $blocking
+     *
+     * @return void
+     */
+    abstract protected function dispatch(bool $blocking): void;
+
+    /**
+     * Deactivates (disables) the given watcher.
+     *
+     * @param Watcher $watcher
+     *
+     * @return void
+     */
+    abstract protected function deactivate(Watcher $watcher): void;
+
+    /**
+     * Invokes the error handler with the given exception.
+     *
+     * @param \Throwable $exception The exception thrown from a watcher callback.
+     *
+     * @return void
+     * @throws \Throwable If no error handler has been set.
+     */
+    protected function error(\Throwable $exception): void
+    {
+        if ($this->errorHandler === null) {
+            throw $exception;
+        }
+
+        ($this->errorHandler)($exception);
+    }
+
+    /**
+     * @return bool True if no enabled and referenced watchers remain in the loop.
+     */
+    private function isEmpty(): bool
+    {
+        foreach ($this->watchers as $watcher) {
+            if ($watcher->enabled && $watcher->referenced) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Executes a single tick of the event loop.
+     *
+     * @return void
+     */
+    private function tick(): void
+    {
+        if (empty($this->deferQueue)) {
+            $this->deferQueue = $this->nextTickQueue;
+        } else {
+            $this->deferQueue = \array_merge($this->deferQueue, $this->nextTickQueue);
+        }
+        $this->nextTickQueue = [];
+
+        $this->activate($this->enableQueue);
+        $this->enableQueue = [];
+
+        foreach ($this->deferQueue as $watcher) {
+            if (!isset($this->deferQueue[$watcher->id])) {
+                continue; // Watcher disabled by another defer watcher.
+            }
+
+            unset($this->watchers[$watcher->id], $this->deferQueue[$watcher->id]);
+
+            try {
+                /** @var mixed $result */
+                $result = ($watcher->callback)($watcher->id, $watcher->data);
+
+                if ($result === null) {
+                    continue;
+                }
+
+                if ($result instanceof \Generator) {
+                    $result = new Coroutine($result);
+                }
+
+                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    rethrow($result);
+                }
+            } catch (\Throwable $exception) {
+                $this->error($exception);
+            }
+        }
+
+        /** @psalm-suppress RedundantCondition */
+        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && $this->running && !$this->isEmpty());
     }
 }

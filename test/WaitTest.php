@@ -9,6 +9,8 @@ use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\call;
+use function Amp\delay;
 use function React\Promise\resolve;
 
 class WaitTest extends BaseTest
@@ -96,5 +98,46 @@ class WaitTest extends BaseTest
     {
         $this->expectException(\TypeError::class);
         Promise\wait(42);
+    }
+
+    public function testWaitNested()
+    {
+        $promise = call(static function () {
+            yield delay(10);
+
+            return Promise\wait(new Delayed(10, 1));
+        });
+
+        $result = Promise\wait($promise);
+
+        $this->assertSame(1, $result);
+    }
+
+    public function testWaitNestedDelayed()
+    {
+        $promise = call(static function () {
+            yield delay(10);
+
+            $result = Promise\wait(new Delayed(10, 1));
+
+            yield delay(0);
+
+            return $result;
+        });
+
+        $result = Promise\wait($promise);
+
+        $this->assertSame(1, $result);
+    }
+
+    public function testWaitNestedConcurrent()
+    {
+        Loop::defer(function () {
+            Promise\wait(new Delayed(100));
+        });
+
+        $result = Promise\wait(new Delayed(10, 1));
+
+        $this->assertSame(1, $result);
     }
 }

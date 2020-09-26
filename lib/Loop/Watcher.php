@@ -48,6 +48,6 @@ class Watcher
      */
     public $value;
 
-    /** @var int|null */
+    /** @var int|null Timer expiration timestamp. */
     public ?int $expiration = null;
 }

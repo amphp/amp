@@ -323,14 +323,18 @@ namespace Amp\Promise
         $resolved = false;
 
         try {
-            Loop::run(function () use (&$resolved, &$value, &$exception, $promise) {
-                $promise->onResolve(function ($e, $v) use (&$resolved, &$value, &$exception) {
-                    Loop::stop();
-                    $resolved = true;
-                    $exception = $e;
-                    $value = $v;
-                });
+            $driver = Loop::get();
+            $control = $driver->createControl();
+
+            $promise->onResolve(static function ($e, $v) use (&$resolved, &$value, &$exception, $control) {
+                $control->stop();
+
+                $resolved = true;
+                $exception = $e;
+                $value = $v;
             });
+
+            $control->run();
         } catch (\Throwable $throwable) {
             throw new \Error("Loop exceptionally stopped without resolving the promise", 0, $throwable);
         }

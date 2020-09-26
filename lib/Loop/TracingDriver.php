@@ -25,6 +25,11 @@ final class TracingDriver extends Driver
         $this->driver = $driver;
     }
 
+    public function createControl(): DriverControl
+    {
+        return $this->driver->createControl();
+    }
+
     public function run(): void
     {
         $this->driver->run();
@@ -101,7 +106,7 @@ final class TracingDriver extends Driver
         return $id;
     }
 
-    public function enable(string $watcherId)
+    public function enable(string $watcherId): void
     {
         try {
             $this->driver->enable($watcherId);
