@@ -3,7 +3,6 @@
 namespace Amp;
 
 use Amp\Loop\Driver;
-use Amp\Loop\DriverControl;
 use Amp\Loop\DriverFactory;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
@@ -12,13 +11,11 @@ use Amp\Loop\Watcher;
 /**
  * Accessor to allow global access to the event loop.
  *
- * @see \Amp\Loop\Driver
+ * @see Driver
  */
 final class Loop
 {
     private static Driver $driver;
-
-    private static DriverControl $control;
 
     /**
      * Disable construction as this is a static class.
@@ -37,10 +34,6 @@ final class Loop
      */
     public static function set(Driver $driver): void
     {
-        if (isset(self::$driver) && self::$driver->isRunning()) {
-            throw new \Error("Can't swap the event loop while it is running");
-        }
-
         try {
             self::$driver = new class extends Driver {
                 protected function activate(array $watchers): void
@@ -67,49 +60,7 @@ final class Loop
             \gc_collect_cycles();
         } finally {
             self::$driver = $driver;
-            self::$control = $driver->createControl();
         }
-    }
-
-    /**
-     * Run the event loop and optionally execute a callback within the scope of it.
-     *
-     * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
-     * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
-     * error handler or exceptions that would be passed to an error handler but none exists to handle them.
-     *
-     * @param callable|null $callback The callback to execute.
-     *
-     * @return void
-     */
-    public static function run(callable $callback = null): void
-    {
-        if ($callback) {
-            self::$driver->defer($callback);
-        }
-
-        self::$control->run();
-    }
-
-    /**
-     * Stop the event loop.
-     *
-     * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
-     * to stop MUST be ignored and MUST NOT raise an exception.
-     *
-     * @return void
-     */
-    public static function stop(): void
-    {
-        self::$control->stop();
-    }
-
-    /**
-     * @return bool True if the event loop is running, false if it is stopped.
-     */
-    public static function isRunning(): bool
-    {
-        return self::$driver->isRunning();
     }
 
     /**

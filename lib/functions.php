@@ -230,6 +230,7 @@ namespace Amp\Promise
     use Amp\Success;
     use Amp\TimeoutException;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\await;
     use function Amp\call;
     use function Amp\Internal\createTypeError;
 
@@ -302,10 +303,7 @@ namespace Amp\Promise
     }
 
     /**
-     * Runs the event loop until the promise is resolved. Should not be called within a running event loop.
-     *
-     * Use this function only in synchronous contexts to wait for an asynchronous operation. Use coroutines and yield to
-     * await promise resolution in a fully asynchronous application instead.
+     * @deprecated Use {@see await()} instead.
      *
      * @template TPromise
      * @template T as Promise<TPromise>|ReactPromise
@@ -317,44 +315,11 @@ namespace Amp\Promise
      * @psalm-param T $promise
      * @psalm-return (T is Promise ? TPromise : mixed)
      *
-     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
-     * @throws \Error If the event loop stopped without the $promise being resolved.
      * @throws \Throwable Promise failure reason.
      */
     function wait(Promise|ReactPromise $promise): mixed
     {
-        if (!$promise instanceof Promise) {
-            $promise = adapt($promise);
-        }
-
-        $resolved = false;
-
-        try {
-            $driver = Loop::get();
-            $control = $driver->createControl();
-
-            $promise->onResolve(static function ($e, $v) use (&$resolved, &$value, &$exception, $control) {
-                $control->stop();
-
-                $resolved = true;
-                $exception = $e;
-                $value = $v;
-            });
-
-            $control->run();
-        } catch (\Throwable $throwable) {
-            throw new \Error("Loop exceptionally stopped without resolving the promise", 0, $throwable);
-        }
-
-        if (!$resolved) {
-            throw new \Error("Loop stopped without resolving the promise");
-        }
-
-        if ($exception) {
-            throw $exception;
-        }
-
-        return $value;
+        return await($promise);
     }
 
     /**
