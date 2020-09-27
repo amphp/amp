@@ -2,7 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\CallableMaker;
 use Amp\Coroutine;
 use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
@@ -11,8 +10,6 @@ use function Amp\Promise\rethrow;
 
 class NativeDriver extends Driver
 {
-    use CallableMaker;
-
     /** @var resource[] */
     private array $readStreams = [];
 
@@ -289,7 +286,7 @@ class NativeDriver extends Driver
                     \assert(\is_int($watcher->value));
 
                     if (!isset($this->signalWatchers[$watcher->value])) {
-                        if (!@\pcntl_signal($watcher->value, $this->callableFromInstanceMethod('handleSignal'))) {
+                        if (!@\pcntl_signal($watcher->value, \Closure::fromCallable([$this, 'handleSignal']))) {
                             $message = "Failed to register signal handler";
                             if ($error = \error_get_last()) {
                                 $message .= \sprintf("; Errno: %d; %s", $error["type"], $error["message"]);
