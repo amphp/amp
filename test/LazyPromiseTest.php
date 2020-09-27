@@ -2,15 +2,19 @@
 
 namespace Amp\Test;
 
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\LazyPromise;
+use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise as FulfilledReactPromise;
-use React\Promise\RejectedPromise as RejectedReactPromise;
+use React\Promise\PromiseInterface as ReactPromise;
+use function Amp\await;
+use function React\Promise\reject;
+use function React\Promise\resolve;
 
 class LazyPromiseTest extends BaseTest
 {
-    public function testPromisorNotCalledOnConstruct()
+    public function testPromisorNotCalledOnConstruct(): void
     {
         $invoked = false;
         $lazy = new LazyPromise(function () use (&$invoked) {
@@ -19,127 +23,102 @@ class LazyPromiseTest extends BaseTest
         $this->assertFalse($invoked);
     }
 
-    public function testPromisorReturningScalar()
+    public function testPromisorReturningScalar(): void
     {
         $invoked = false;
         $value = 1;
-        $lazy = new LazyPromise(function () use (&$invoked, $value) {
+        $lazy = new LazyPromise(function () use (&$invoked, $value): int {
             $invoked = true;
             return $value;
         });
 
-        $lazy->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
+        $this->assertSame($value, await($lazy));
         $this->assertTrue($invoked);
-        $this->assertSame($value, $result);
     }
 
-    public function testPromisorReturningSuccessfulPromise()
+    public function testPromisorReturningSuccessfulPromise(): void
     {
-        $invoked = false;
         $value = 1;
         $promise = new Success($value);
-        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
-            $invoked = true;
-            return $promise;
-        });
+        $lazy = new LazyPromise(static fn (): Promise => $promise);
 
-        $lazy->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertTrue($invoked);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($lazy));
     }
 
-    public function testPromisorReturningFailedPromise()
+    public function testPromisorReturningFailedPromise(): void
     {
-        $invoked = false;
         $exception = new \Exception;
         $promise = new Failure($exception);
-        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
-            $invoked = true;
-            return $promise;
-        });
+        $lazy = new LazyPromise(static fn (): Promise => $promise);
 
-        $lazy->onResolve(function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        });
+        try {
+            await($lazy);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $reason);
+        $this->fail("Promise was not failed");
     }
 
-    public function testPromisorThrowingException()
+    public function testPromisorThrowingException(): void
     {
-        $invoked = false;
         $exception = new \Exception;
-        $lazy = new LazyPromise(function () use (&$invoked, $exception) {
-            $invoked = true;
+        $lazy = new LazyPromise(function () use ($exception): void {
             throw $exception;
         });
 
-        $lazy->onResolve(function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        });
+        try {
+            await($lazy);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $reason);
+        $this->fail("Promise was not failed");
     }
 
-    public function testPromisorReturningSuccessfulReactPromise()
+    public function testPromisorReturningSuccessfulReactPromise(): void
     {
-        $invoked = false;
         $value = 1;
-        $promise = new FulfilledReactPromise($value);
-        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
-            $invoked = true;
-            return $promise;
-        });
+        $promise = resolve($value);
+        $lazy = new LazyPromise(static fn (): ReactPromise => $promise);
 
-        $lazy->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertTrue($invoked);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($lazy));
     }
 
-    public function testPromisorReturningFailedReactPromise()
+    public function testPromisorReturningFailedReactPromise(): void
     {
-        $invoked = false;
         $exception = new \Exception;
-        $promise = new RejectedReactPromise($exception);
-        $lazy = new LazyPromise(function () use (&$invoked, $promise) {
-            $invoked = true;
-            return $promise;
-        });
+        $promise = reject($exception);
+        $lazy = new LazyPromise(static fn (): ReactPromise => $promise);
 
-        $lazy->onResolve(function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        });
+        try {
+            await($lazy);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $reason);
+        $this->fail("Promise was not failed");
     }
 
-    public function testPromisorReturningGenerator()
+    public function testPromisorReturningGenerator(): void
     {
-        $invoked = false;
         $value = 1;
-        $lazy = new LazyPromise(function () use (&$invoked, $value) {
-            $invoked = true;
+        $lazy = new LazyPromise(function () use ($value): \Generator {
             return $value;
             yield; // Unreachable, but makes function a generator.
         });
 
-        $lazy->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
+        $this->assertSame($value, await($lazy));
+    }
 
-        $this->assertTrue($invoked);
-        $this->assertSame($value, $result);
+    public function testPromisorCallingAwait(): void
+    {
+        $value = 1;
+        $lazy = new LazyPromise(static fn (): int => await(new Delayed(100, $value)));
+
+        $this->assertSame($value, await($lazy));
     }
 }

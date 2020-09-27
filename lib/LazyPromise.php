@@ -13,7 +13,7 @@ final class LazyPromise implements Promise
     private $promisor;
 
     /** @var Promise|null */
-    private $promise;
+    private ?Promise $promise;
 
     /**
      * @param callable $promisor Function which starts an async operation, returning a Promise (or any value).
@@ -25,16 +25,16 @@ final class LazyPromise implements Promise
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function onResolve(callable $onResolved): void
     {
-        if ($this->promise === null) {
+        if (!isset($this->promise)) {
             \assert($this->promisor !== null);
 
             $provider = $this->promisor;
             $this->promisor = null;
-            $this->promise = call($provider);
+            $this->promise = async(static fn (): Promise => call($provider));
         }
 
         \assert($this->promise !== null);
