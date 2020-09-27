@@ -14,19 +14,13 @@ namespace Amp;
  */
 final class Emitter
 {
-    private Iterator $emitter;
+    private Internal\Producer $emitter;
 
     private Internal\PrivateIterator $iterator;
 
     public function __construct()
     {
-        $this->emitter = new class implements Iterator {
-            use Internal\Producer {
-                emit as public;
-                complete as public;
-                fail as public;
-            }
-        };
+        $this->emitter = new Internal\Producer;
 
         $this->iterator = new Internal\PrivateIterator($this->emitter);
     }

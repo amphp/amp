@@ -16,7 +16,7 @@ namespace Amp;
  */
 final class Coroutine implements Promise
 {
-    use Internal\Placeholder;
+    private Promise $promise;
 
     /**
      * @param \Generator $generator
@@ -25,7 +25,7 @@ final class Coroutine implements Promise
      */
     public function __construct(\Generator $generator)
     {
-        $this->resolve(async(function () use ($generator): mixed {
+        $this->promise = async(function () use ($generator): mixed {
             $yielded = $generator->current();
 
             while ($generator->valid()) {
@@ -40,6 +40,12 @@ final class Coroutine implements Promise
             }
 
             return $generator->getReturn();
-        }));
+        });
+    }
+
+    /** @inheritDoc */
+    public function onResolve(callable $onResolved): void
+    {
+        $this->promise->onResolve($onResolved);
     }
 }

@@ -13,7 +13,7 @@ use React\Promise\PromiseInterface as ReactPromise;
  * @internal
  * @psalm-internal Amp\Internal
  */
-class ResolutionQueue
+final class ResolutionQueue
 {
     /** @var array<array-key, callable(\Throwable|null, mixed): (Promise|\React\Promise\PromiseInterface|\Generator<mixed,
      *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,

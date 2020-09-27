@@ -11,20 +11,13 @@ namespace Amp;
  */
 final class Deferred
 {
-    private Promise $resolver;
+    private Internal\Placeholder $resolver;
 
     private Internal\PrivatePromise $promise;
 
     public function __construct()
     {
-        $this->resolver = new class implements Promise {
-            use Internal\Placeholder {
-                resolve as public;
-                fail as public;
-                isResolved as public;
-            }
-        };
-
+        $this->resolver = new Internal\Placeholder;
         $this->promise = new Internal\PrivatePromise($this->resolver);
     }
 

@@ -12,10 +12,7 @@ namespace Amp;
  */
 final class Producer implements Iterator
 {
-    /**
-     * @use Internal\Producer<TValue>
-     */
-    use Internal\Producer;
+    private Internal\Producer $producer;
 
     /**
      * @param callable(callable(TValue):Promise):\Generator $producer
@@ -24,24 +21,36 @@ final class Producer implements Iterator
      */
     public function __construct(callable $producer)
     {
-        $result = $producer(\Closure::fromCallable([$this, 'emit']));
+        $this->producer = $emitter = new Internal\Producer;
+
+        $result = $producer(\Closure::fromCallable([$this->producer, 'emit']));
 
         if (!$result instanceof \Generator) {
             throw new \Error("The callable did not return a Generator");
         }
 
         $coroutine = new Coroutine($result);
-        $coroutine->onResolve(function ($exception) {
-            if ($this->complete) {
+        $coroutine->onResolve(static function ($exception) use ($emitter): void {
+            if ($emitter->isComplete()) {
                 return;
             }
 
             if ($exception) {
-                $this->fail($exception);
+                $emitter->fail($exception);
                 return;
             }
 
-            $this->complete();
+            $emitter->complete();
         });
+    }
+
+    public function advance(): Promise
+    {
+        return $this->producer->advance();
+    }
+
+    public function getCurrent()
+    {
+        return $this->producer->getCurrent();
     }
 }

@@ -10,7 +10,7 @@ namespace Amp;
  */
 final class Delayed implements Promise
 {
-    use Internal\Placeholder;
+    private Internal\Placeholder $placeholder;
 
     /** @var string|null Event loop watcher identifier. */
     private ?string $watcher;
@@ -21,9 +21,11 @@ final class Delayed implements Promise
      */
     public function __construct(int $time, mixed $value = null)
     {
-        $this->watcher = Loop::delay($time, function () use ($value): void {
+        $this->placeholder = $placeholder = new Internal\Placeholder;
+
+        $this->watcher = Loop::delay($time, function () use ($value, $placeholder): void {
             $this->watcher = null;
-            $this->resolve($value);
+            $placeholder->resolve($value);
         });
     }
 
@@ -54,5 +56,11 @@ final class Delayed implements Promise
         }
 
         return $this;
+    }
+
+    /** @inheritDoc */
+    public function onResolve(callable $onResolved): void
+    {
+        $this->placeholder->onResolve($onResolved);
     }
 }

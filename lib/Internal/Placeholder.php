@@ -9,12 +9,12 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 
 /**
- * Trait used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing \Amp\Promise.
+ * Class used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
+ * the available classes implementing {@see Promise}
  *
  * @internal
  */
-trait Placeholder
+final class Placeholder
 {
     private bool $resolved = false;
 
@@ -82,7 +82,7 @@ trait Placeholder
         }
     }
 
-    private function isResolved(): bool
+    public function isResolved(): bool
     {
         return $this->resolved;
     }
@@ -94,7 +94,7 @@ trait Placeholder
      *
      * @throws \Error Thrown if the promise has already been resolved.
      */
-    private function resolve(mixed $value = null): void
+    public function resolve(mixed $value = null): void
     {
         if ($this->resolved) {
             $message = "Promise has already been resolved";
@@ -165,7 +165,7 @@ trait Placeholder
      *
      * @return void
      */
-    private function fail(\Throwable $reason): void
+    public function fail(\Throwable $reason): void
     {
         $this->resolve(new Failure($reason));
     }

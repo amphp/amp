@@ -6,7 +6,7 @@ use Amp\Iterator;
 use Amp\Promise;
 
 /**
- * Wraps an Iterator instance that has public methods to emit, complete, and fail into an object that only allows
+ * Wraps a Producer instance that has public methods to emit, complete, and fail into an object that only allows
  * access to the public API methods.
  *
  * @template-covariant TValue
@@ -14,17 +14,17 @@ use Amp\Promise;
  */
 final class PrivateIterator implements Iterator
 {
-    /** @var Iterator<TValue> */
-    private Iterator $iterator;
+    /** @var Producer<TValue> */
+    private Producer $producer;
 
     /**
-     * @param Iterator $iterator
+     * @param Producer $producer
      *
      * @psalm-param Iterator<TValue> $iterator
      */
-    public function __construct(Iterator $iterator)
+    public function __construct(Producer $producer)
     {
-        $this->iterator = $iterator;
+        $this->producer = $producer;
     }
 
     /**
@@ -32,7 +32,7 @@ final class PrivateIterator implements Iterator
      */
     public function advance(): Promise
     {
-        return $this->iterator->advance();
+        return $this->producer->advance();
     }
 
     /**
@@ -40,6 +40,6 @@ final class PrivateIterator implements Iterator
      */
     public function getCurrent()
     {
-        return $this->iterator->getCurrent();
+        return $this->producer->getCurrent();
     }
 }

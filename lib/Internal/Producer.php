@@ -17,9 +17,9 @@ use React\Promise\PromiseInterface as ReactPromise;
  * @internal
  * @template-covariant TValue
  */
-trait Producer
+final class Producer
 {
-    private ?Promise $complete;
+    private ?Promise $complete = null;
 
     private array $values = [];
 
@@ -29,7 +29,7 @@ trait Producer
 
     private int $emitPosition = -1;
 
-    private ?Deferred $waiting;
+    private ?Deferred $waiting = null;
 
     private ?array $resolutionTrace = null;
 
@@ -84,6 +84,11 @@ trait Producer
         return $this->values[$this->consumePosition];
     }
 
+    public function isComplete(): bool
+    {
+        return (bool) $this->complete;
+    }
+
     /**
      * Emits a value from the iterator. The returned promise is resolved once the emitted value has been consumed.
      *
@@ -94,7 +99,7 @@ trait Producer
      *
      * @throws \Error If the iterator has completed.
      */
-    private function emit($value): Promise
+    public function emit($value): Promise
     {
         if ($this->complete) {
             throw new \Error("Iterators cannot emit values after calling complete");
@@ -149,7 +154,7 @@ trait Producer
      *
      * @throws \Error If the iterator has already been completed.
      */
-    private function complete()
+    public function complete()
     {
         if ($this->complete) {
             $message = "Iterator has already been completed";
@@ -191,7 +196,7 @@ trait Producer
      *
      * @return void
      */
-    private function fail(\Throwable $exception)
+    public function fail(\Throwable $exception)
     {
         $this->complete = new Failure($exception);
 
