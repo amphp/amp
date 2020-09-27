@@ -33,10 +33,10 @@
         }
     ],
     "require": {
-        "php": ">=8"
+        "php": ">=8",
+        "ext-fiber": "*"
     },
     "require-dev": {
-        "ext-fiber": "*",
         "ext-json": "*",
         "amphp/phpunit-util": "^1",
         "amphp/php-cs-fixer-config": "dev-master",
@@ -51,8 +51,7 @@
         },
         "files": [
             "lib/functions.php",
-            "lib/Internal/functions.php",
-            "polyfill/ext-fiber.php"
+            "lib/Internal/functions.php"
         ]
     },
     "autoload-dev": {
