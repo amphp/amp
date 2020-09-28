@@ -4,16 +4,17 @@ namespace Amp\Test\Pipeline;
 
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Pipeline;
+use function Amp\await;
 
 class DiscardTest extends AsyncTestCase
 {
-    public function testEmpty(): \Generator
+    public function testEmpty(): void
     {
-        $this->assertSame(0, yield Pipeline\discard(Pipeline\fromIterable([])));
+        $this->assertSame(0, await(Pipeline\discard(Pipeline\fromIterable([]))));
     }
 
-    public function testCount(): \Generator
+    public function testCount(): void
     {
-        $this->assertSame(3, yield Pipeline\discard(Pipeline\fromIterable(['a', 1, false], 1)));
+        $this->assertSame(3, await(Pipeline\discard(Pipeline\fromIterable(['a', 1, false], 1))));
     }
 }

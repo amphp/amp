@@ -3,13 +3,14 @@
 namespace Amp\Test;
 
 use Amp\Failure;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\await;
 
 class PromiseMock
 {
-    /** @var \Amp\Promise */
-    private $promise;
+    private Promise $promise;
 
     public function __construct(Promise $promise)
     {
@@ -18,7 +19,7 @@ class PromiseMock
 
     public function then(callable $onFulfilled = null, callable $onRejected = null)
     {
-        $this->promise->onResolve(function ($exception, $value) use ($onFulfilled, $onRejected) {
+        $this->promise->onResolve(function ($exception, $value) use ($onFulfilled, $onRejected): void {
             if ($exception) {
                 if ($onRejected) {
                     $onRejected($exception);
@@ -33,9 +34,9 @@ class PromiseMock
     }
 }
 
-class AdaptTest extends BaseTest
+class AdaptTest extends AsyncTestCase
 {
-    public function testThenCalled()
+    public function testThenCalled(): void
     {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()
@@ -60,7 +61,7 @@ class AdaptTest extends BaseTest
     /**
      * @depends testThenCalled
      */
-    public function testPromiseFulfilled()
+    public function testPromiseFulfilled(): void
     {
         $value = 1;
 
@@ -68,17 +69,13 @@ class AdaptTest extends BaseTest
 
         $promise = Promise\adapt($promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
-
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
     /**
      * @depends testThenCalled
      */
-    public function testPromiseRejected()
+    public function testPromiseRejected(): void
     {
         $exception = new \Exception;
 
@@ -86,26 +83,13 @@ class AdaptTest extends BaseTest
 
         $promise = Promise\adapt($promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        });
+        try {
+            await($promise);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertSame($exception, $reason);
-    }
-
-    /**
-     * @expectedException \Error
-     */
-    public function testScalarValue()
-    {
-        Promise\adapt(1);
-    }
-
-    /**
-     * @expectedException \Error
-     */
-    public function testNonThenableObject()
-    {
-        Promise\adapt(new \stdClass);
+        $this->fail("Promise was not failed");
     }
 }

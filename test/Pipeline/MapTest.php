@@ -10,7 +10,7 @@ use Amp\PipelineSource;
 
 class MapTest extends AsyncTestCase
 {
-    public function testNoValuesEmitted()
+    public function testNoValuesEmitted(): void
     {
         $source = new PipelineSource;
 
@@ -20,13 +20,13 @@ class MapTest extends AsyncTestCase
         $source->complete();
     }
 
-    public function testValuesEmitted()
+    public function testValuesEmitted(): void
     {
         $count = 0;
         $values = [1, 2, 3];
-        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+        $generator = new AsyncGenerator(static function () use ($values) {
             foreach ($values as $value) {
-                yield $yield($value);
+                yield $value;
             }
         });
 
@@ -36,7 +36,7 @@ class MapTest extends AsyncTestCase
             return $value + 1;
         });
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($values) + 1, $value);
         }
 
@@ -46,14 +46,14 @@ class MapTest extends AsyncTestCase
     /**
      * @depends testValuesEmitted
      */
-    public function testOnNextCallbackThrows()
+    public function testOnNextCallbackThrows(): void
     {
         $values = [1, 2, 3];
         $exception = new TestException;
 
-        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+        $generator = new AsyncGenerator(static function () use ($values) {
             foreach ($values as $value) {
-                yield $yield($value);
+                yield $value;
             }
         });
 
@@ -63,10 +63,10 @@ class MapTest extends AsyncTestCase
 
         $this->expectExceptionObject($exception);
 
-        yield $pipeline->continue();
+        $pipeline->continue();
     }
 
-    public function testPipelineFails()
+    public function testPipelineFails(): void
     {
         $exception = new TestException;
         $source = new PipelineSource;
@@ -77,6 +77,6 @@ class MapTest extends AsyncTestCase
 
         $this->expectExceptionObject($exception);
 
-        yield $iterator->continue();
+        $iterator->continue();
     }
 }

@@ -4,80 +4,85 @@ namespace Amp\Test;
 
 use Amp\Failure;
 use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
-use React\Promise\RejectedPromise as RejectedReactPromise;
+use function Amp\await;
+use function Amp\sleep;
+use function React\Promise\reject;
 
-class FailureTest extends BaseTest
+class FailureTest extends AsyncTestCase
 {
-    /**
-     * @expectedException \TypeError
-     */
-    public function testConstructWithNonException()
-    {
-        $failure = new Failure(1);
-    }
-
-    public function testOnResolve()
+    public function testOnResolve(): void
     {
         $exception = new \Exception;
 
-        $invoked = 0;
-        $callback = function ($exception, $value) use (&$invoked, &$reason) {
-            ++$invoked;
-            $reason = $exception;
-        };
-
         $failure = new Failure($exception);
 
-        $failure->onResolve($callback);
+        try {
+            await($failure);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $reason);
+        $this->fail("Promise was not failed");
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
-     */
-    public function testOnResolveWithReactPromise()
+    public function testOnResolveWithReactPromise(): void
     {
-        Loop::run(function () {
-            $failure = new Failure(new \Exception);
-            $failure->onResolve(function ($exception, $value) {
-                return new RejectedReactPromise(new \Exception("Success"));
-            });
+        $failure = new Failure(new \Exception);
+        $failure->onResolve(function () {
+            return reject(new \Exception("Success"));
         });
+
+        Loop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
+            $reason = $exception;
+        });
+
+        sleep(0); // Tick event loop to invoke error callback.
+
+        $this->assertSame("Success", $reason->getMessage());
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
         $exception = new \Exception;
         $failure = new Failure($exception);
         $invoked = false;
-        $failure->onResolve(function ($exception, $value) use (&$invoked) {
+        $failure->onResolve(function () use (&$invoked): \Generator {
+            if (false) {
+                yield;
+            }
+
             $invoked = true;
-            return $exception;
-            yield; // Unreachable, but makes function a generator.
         });
 
-        $this->assertTrue($invoked);
+        try {
+            await($failure);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            sleep(0); // Tick event loop to execute coroutine
+            $this->assertTrue($invoked);
+            return;
+        }
+
+        $this->fail("Promise was not failed");
     }
 
-    public function testFailFunction()
+    public function testFailFunction(): void
     {
         $exception = new \Exception;
 
-        $invoked = 0;
-        $callback = function ($exception, $value) use (&$invoked, &$reason) {
-            ++$invoked;
-            $reason = $exception;
-        };
-
         $failure = Promise\fail($exception);
 
-        $failure->onResolve($callback);
+        try {
+            await($failure);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $reason);
+        $this->fail("Promise was not failed");
     }
 }

@@ -7,15 +7,15 @@ use Amp\Pipeline;
 
 class ToArrayTest extends AsyncTestCase
 {
-    public function testNonEmpty()
+    public function testNonEmpty(): void
     {
         $pipeline = Pipeline\fromIterable(["abc", "foo", "bar"], 5);
-        $this->assertSame(["abc", "foo", "bar"], yield Pipeline\toArray($pipeline));
+        $this->assertSame(["abc", "foo", "bar"], Pipeline\toArray($pipeline));
     }
 
-    public function testEmpty()
+    public function testEmpty(): void
     {
         $pipeline = Pipeline\fromIterable([], 5);
-        $this->assertSame([], yield Pipeline\toArray($pipeline));
+        $this->assertSame([], Pipeline\toArray($pipeline));
     }
 }

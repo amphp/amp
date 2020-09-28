@@ -5,104 +5,93 @@ namespace Amp\Test\Iterator;
 use Amp\Delayed;
 use Amp\Failure;
 use Amp\Iterator;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Success;
-use Amp\Test\BaseTest;
 
-class FromIterableTest extends BaseTest
+class FromIterableTest extends AsyncTestCase
 {
     const TIMEOUT = 10;
 
-    public function testSuccessfulPromises()
+    public function testSuccessfulPromises(): \Generator
     {
-        Loop::run(function () {
-            $expected = \range(1, 3);
-            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Success(3)]);
+        $expected = \range(1, 3);
+        $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
+    }
+
+    public function testFailedPromises(): \Generator
+    {
+        $exception = new \Exception;
+        $iterator = Iterator\fromIterable([new Failure($exception), new Failure($exception)]);
+
+        try {
+            yield $iterator->advance();
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+        }
+    }
+
+    public function testMixedPromises(): \Generator
+    {
+        $exception = new TestException;
+        $expected = \range(1, 2);
+        $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+
+        try {
             while (yield $iterator->advance()) {
                 $this->assertSame(\array_shift($expected), $iterator->getCurrent());
             }
-        });
+            $this->fail("A failed promise in the iterable should fail the iterator and be thrown from advance()");
+        } catch (TestException $reason) {
+            $this->assertSame($exception, $reason);
+        }
+
+        $this->assertEmpty($expected);
     }
 
-    public function testFailedPromises()
+    public function testPendingPromises(): \Generator
     {
-        Loop::run(function () {
-            $exception = new \Exception;
-            $iterator = Iterator\fromIterable([new Failure($exception), new Failure($exception)]);
+        $expected = \range(1, 4);
+        $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
 
-            try {
-                yield $iterator->advance();
-            } catch (\Exception $reason) {
-                $this->assertSame($exception, $reason);
-            }
-        });
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
     }
 
-    public function testMixedPromises()
+    public function testTraversable(): \Generator
     {
-        Loop::run(function () {
-            $exception = new TestException;
-            $expected = \range(1, 2);
-            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
-
-            try {
-                while (yield $iterator->advance()) {
-                    $this->assertSame(\array_shift($expected), $iterator->getCurrent());
-                }
-                $this->fail("A failed promise in the iterable should fail the iterator and be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($exception, $reason);
+        $expected = \range(1, 4);
+        $generator = (function () {
+            foreach (\range(1, 4) as $value) {
+                yield $value;
             }
+        })();
 
-            $this->assertEmpty($expected);
-        });
-    }
+        $iterator = Iterator\fromIterable($generator);
 
-    public function testPendingPromises()
-    {
-        Loop::run(function () {
-            $expected = \range(1, 4);
-            $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
-            }
-        });
-    }
-
-    public function testTraversable()
-    {
-        Loop::run(function () {
-            $expected = \range(1, 4);
-            $generator = (function () {
-                foreach (\range(1, 4) as $value) {
-                    yield $value;
-                }
-            })();
-
-            $iterator = Iterator\fromIterable($generator);
-
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
-            }
-
-            $this->assertEmpty($expected);
-        });
+        $this->assertEmpty($expected);
     }
 
     /**
      * @dataProvider provideInvalidIteratorArguments
      */
-    public function testInvalid($arg)
+    public function testInvalid($arg): void
     {
         $this->expectException(\TypeError::class);
 
         Iterator\fromIterable($arg);
     }
 
-    public function provideInvalidIteratorArguments()
+    public function provideInvalidIteratorArguments(): array
     {
         return [
             [null],
@@ -114,35 +103,31 @@ class FromIterableTest extends BaseTest
         ];
     }
 
-    public function testInterval()
+    public function testInterval(): \Generator
     {
-        Loop::run(function () {
-            $count = 3;
-            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
+        $count = 3;
+        $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
 
-            $i = 0;
-            while (yield $iterator->advance()) {
-                $this->assertSame(++$i, $iterator->getCurrent());
-            }
+        $i = 0;
+        while (yield $iterator->advance()) {
+            $this->assertSame(++$i, $iterator->getCurrent());
+        }
 
-            $this->assertSame($count, $i);
-        });
+        $this->assertSame($count, $i);
     }
 
     /**
      * @depends testInterval
      */
-    public function testSlowConsumer()
+    public function testSlowConsumer(): \Generator
     {
         $count = 5;
-        Loop::run(function () use ($count) {
-            $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
+        $iterator = Iterator\fromIterable(\range(1, $count), self::TIMEOUT);
 
-            for ($i = 0; yield $iterator->advance(); ++$i) {
-                yield new Delayed(self::TIMEOUT * 2);
-            }
+        for ($i = 0; yield $iterator->advance(); ++$i) {
+            yield new Delayed(self::TIMEOUT * 2);
+        }
 
-            $this->assertSame($count, $i);
-        });
+        $this->assertSame($count, $i);
     }
 }

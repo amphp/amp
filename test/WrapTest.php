@@ -3,11 +3,13 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
+use function Amp\await;
 
-class WrapTest extends BaseTest
+class WrapTest extends AsyncTestCase
 {
-    public function testSuccess()
+    public function testSuccess(): void
     {
         $deferred = new Deferred();
 
@@ -17,16 +19,12 @@ class WrapTest extends BaseTest
 
         $deferred->resolve(1);
 
-        $result = Promise\wait($promise);
+        $result = await($promise);
 
         $this->assertSame(2, $result);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage bar
-     */
-    public function testFailure()
+    public function testFailure(): void
     {
         $deferred = new Deferred();
 
@@ -36,6 +34,9 @@ class WrapTest extends BaseTest
 
         $deferred->fail(new \Exception('foo'));
 
-        Promise\wait($promise);
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('bar');
+
+        await($promise);
     }
 }

@@ -2,83 +2,78 @@
 
 namespace Amp\Test;
 
+use Amp\PHPUnit\AsyncTestCase;
+
 class StructTestFixture
 {
     use \Amp\Struct;
-    public $callback;
-    public $_foofoofoofoofoofoofoofoobar;
+    public \Closure $callback;
+    public string $_foofoofoofoofoofoofoofoobar;
 }
 
-class StructTest extends BaseTest
+class StructTest extends AsyncTestCase
 {
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
-     *     "callback?"
-     */
-    public function testSetErrorWithSuggestion()
+    public function testSetErrorWithSuggestion(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean "callback?"');
+
         $struct = new StructTestFixture;
         $struct->callbac = function () {
         };
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean
-     *     "callback?"
-     */
-    public function testGetErrorWithSuggestion()
+    public function testGetErrorWithSuggestion(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Amp\Test\StructTestFixture property "callbac" does not exist ... did you mean "callback?"');
+
         $struct = new StructTestFixture;
         $test = $struct->callbac;
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
-     */
-    public function testSetErrorWithoutSuggestion()
+    public function testSetErrorWithoutSuggestion(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist');
+
         $struct = new StructTestFixture;
         $struct->callZZZZZZZZZZZ = "test";
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist
-     */
-    public function testGetErrorWithoutSuggestion()
+    public function testGetErrorWithoutSuggestion(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Amp\Test\StructTestFixture property "callZZZZZZZZZZZ" does not exist');
+
         $struct = new StructTestFixture;
         $test = $struct->callZZZZZZZZZZZ;
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Amp\Test\StructTestFixture property "__propertySuggestThreshold" does not exist
-     */
-    public function testSuggestionIgnoresPropertyStartingWithUnderscore()
+    public function testSuggestionIgnoresPropertyStartingWithUnderscore(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Amp\Test\StructTestFixture property "__propertySuggestThreshold" does not exist');
+
         $struct = new StructTestFixture;
         $struct->__propertySuggestThreshold;
     }
 
-    public function testSetErrorWithoutSuggestionBecauseUnderscore()
+    public function testSetErrorWithoutSuggestionBecauseUnderscore(): void
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);
-        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectExceptionMessageMatches("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
 
         $struct = new StructTestFixture;
         $struct->foofoofoofoofoofoofoofoobar = "test";
     }
 
-    public function testGetErrorWithoutSuggestionBecauseUnderscore()
+    public function testGetErrorWithoutSuggestionBecauseUnderscore(): void
     {
         // Use regexp to ensure no property is suggested, because expected message is a prefix then and still passes
         $this->expectException(\Error::class);
-        $this->expectExceptionMessageRegExp("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
+        $this->expectExceptionMessageMatches("(Amp\\\\Test\\\\StructTestFixture property \"foofoofoofoofoofoofoofoobar\" does not exist$)");
 
         $struct = new StructTestFixture;
         $struct->foofoofoofoofoofoofoofoobar;

@@ -8,39 +8,40 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\Success;
+use function Amp\sleep;
 
 class FromIterableTest extends AsyncTestCase
 {
     const TIMEOUT = 10;
 
-    public function testSuccessfulPromises()
+    public function testSuccessfulPromises(): void
     {
         $expected = \range(1, 3);
         $pipeline = Pipeline\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
 
-    public function testFailedPromises()
+    public function testFailedPromises(): void
     {
         $exception = new \Exception;
         $iterator = Pipeline\fromIterable([new Failure($exception), new Failure($exception)]);
 
         $this->expectExceptionObject($exception);
 
-        yield $iterator->continue();
+        $iterator->continue();
     }
 
-    public function testMixedPromises()
+    public function testMixedPromises(): void
     {
         $exception = new TestException;
         $expected = \range(1, 2);
         $pipeline = Pipeline\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
 
         try {
-            while (null !== $value = yield $pipeline->continue()) {
+            while (null !== $value = $pipeline->continue()) {
                 $this->assertSame(\array_shift($expected), $value);
             }
             $this->fail("A failed promise in the iterable should fail the pipeline and be thrown from continue()");
@@ -51,7 +52,7 @@ class FromIterableTest extends AsyncTestCase
         $this->assertEmpty($expected);
     }
 
-    public function testPendingPromises()
+    public function testPendingPromises(): void
     {
         $expected = \range(1, 4);
         $pipeline = Pipeline\fromIterable([
@@ -61,12 +62,12 @@ class FromIterableTest extends AsyncTestCase
             new Success(4),
         ]);
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
 
-    public function testTraversable()
+    public function testTraversable(): void
     {
         $expected = \range(1, 4);
         $generator = (static function () {
@@ -77,7 +78,7 @@ class FromIterableTest extends AsyncTestCase
 
         $pipeline = Pipeline\fromIterable($generator);
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
 
@@ -87,7 +88,7 @@ class FromIterableTest extends AsyncTestCase
     /**
      * @dataProvider provideInvalidIteratorArguments
      */
-    public function testInvalid($arg)
+    public function testInvalid($arg): void
     {
         $this->expectException(\TypeError::class);
 
@@ -106,13 +107,13 @@ class FromIterableTest extends AsyncTestCase
         ];
     }
 
-    public function testInterval()
+    public function testInterval(): void
     {
         $count = 3;
         $pipeline = Pipeline\fromIterable(\range(1, $count), self::TIMEOUT);
 
         $i = 0;
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(++$i, $value);
         }
 
@@ -122,13 +123,13 @@ class FromIterableTest extends AsyncTestCase
     /**
      * @depends testInterval
      */
-    public function testSlowConsumer()
+    public function testSlowConsumer(): void
     {
         $count = 5;
         $pipeline = Pipeline\fromIterable(\range(1, $count), self::TIMEOUT);
 
-        for ($i = 0; $value = yield $pipeline->continue(); ++$i) {
-            yield new Delayed(self::TIMEOUT * 2);
+        for ($i = 0; $value = $pipeline->continue(); ++$i) {
+            sleep(self::TIMEOUT * 2);
         }
 
         $this->assertSame($count, $i);

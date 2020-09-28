@@ -4,137 +4,102 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
 use Amp\MultiReasonException;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise;
+use function Amp\await;
+use function React\Promise\resolve;
 
-class SomeTest extends BaseTest
+class SomeTest extends AsyncTestCase
 {
     public function testEmptyArray()
     {
         $this->assertSame([[], []], Promise\wait(Promise\some([], 0)));
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Too few promises provided
-     */
-    public function testEmptyArrayWithNonZeroRequired()
+    public function testEmptyArrayWithNonZeroRequired(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("Too few promises provided");
+
         Promise\some([], 1);
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage non-negative
-     */
-    public function testInvalidRequiredNumberOfPromises()
+    public function testInvalidRequiredNumberOfPromises(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("non-negative");
+
         Promise\some([], -1);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\some($promises)->onResolve($callback);
-
-        $this->assertSame([[], [1, 2, 3]], $result);
+        $this->assertSame([[], [1, 2, 3]], await(Promise\some($promises)));
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
-        $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
+        $promises = [resolve(1), resolve(2), resolve(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\some($promises)->onResolve($callback);
-
-        $this->assertSame([[], [1, 2, 3]], $result);
+        $this->assertSame([[], [1, 2, 3]], await(Promise\some($promises)));
     }
 
-    public function testFailedPromisesArray()
+    public function testFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
 
-        $callback = function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        };
+        try {
+            await(Promise\some($promises));
+        } catch (MultiReasonException $reason) {
+            $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+            return;
+        }
 
-        Promise\some($promises)->onResolve($callback);
-
-        $this->assertInstanceOf(MultiReasonException::class, $reason);
-        $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+        $this->fail("Promise should have failed");
     }
 
-    public function testSuccessfulAndFailedPromisesArray()
+    public function testSuccessfulAndFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\some($promises)->onResolve($callback);
-
-        $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], $result);
+        $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], await(Promise\some($promises)));
     }
 
-    public function testPendingAwatiablesArray()
+    public function testPendingPromiseArray(): void
     {
-        Loop::run(function () use (&$result) {
-            $promises = [
-                new Delayed(20, 1),
-                new Delayed(30, 2),
-                new Delayed(10, 3),
-            ];
+        $promises = [
+            new Delayed(20, 1),
+            new Delayed(30, 2),
+            new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\some($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
+        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], await(Promise\some($promises)));
     }
 
-    public function testArrayKeysPreserved()
+    public function testArrayKeysPreserved(): void
     {
         $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
-        Loop::run(function () use (&$result) {
-            $promises = [
-                'one' => new Delayed(20, 1),
-                'two' => new Delayed(30, 2),
-                'three' => new Delayed(10, 3),
-            ];
+        $promises = [
+            'one' => new Delayed(20, 1),
+            'two' => new Delayed(30, 2),
+            'three' => new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
 
-            Promise\some($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, await(Promise\some($promises)));
     }
 
-    /**
-     * @expectedException \Error
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
-        Promise\some([1]);
+        $this->expectException(\TypeError::class);
+
+        await(Promise\some([1]));
     }
 }

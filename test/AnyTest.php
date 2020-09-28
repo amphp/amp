@@ -4,34 +4,23 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\await;
 
-class AnyTest extends BaseTest
+class AnyTest extends AsyncTestCase
 {
     public function testEmptyArray()
     {
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\any([])->onResolve($callback);
-
-        $this->assertSame([[], []], $result);
+        $this->assertSame([[], []], await(Promise\any([])));
     }
 
     public function testSuccessfulPromisesArray()
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\any($promises)->onResolve($callback);
-
-        $this->assertSame([[], [1, 2, 3]], $result);
+        $this->assertSame([[], [1, 2, 3]], await(Promise\any($promises)));
     }
 
     public function testFailedPromisesArray()
@@ -39,13 +28,7 @@ class AnyTest extends BaseTest
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\any($promises)->onResolve($callback);
-
-        $this->assertSame([[$exception, $exception, $exception], []], $result);
+        $this->assertSame([[$exception, $exception, $exception], []], await(Promise\any($promises)));
     }
 
     public function testMixedPromisesArray()
@@ -53,32 +36,18 @@ class AnyTest extends BaseTest
         $exception = new \Exception;
         $promises = [new Success(1), new Failure($exception), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\any($promises)->onResolve($callback);
-
-        $this->assertSame([[1 => $exception], [0 => 1, 2 => 3]], $result);
+        $this->assertSame([[1 => $exception], [0 => 1, 2 => 3]], await(Promise\any($promises)));
     }
 
     public function testPendingPromiseArray()
     {
-        Loop::run(function () use (&$result) {
-            $promises = [
-                new Delayed(20, 1),
-                new Delayed(30, 2),
-                new Delayed(10, 3),
-            ];
+        $promises = [
+            new Delayed(20, 1),
+            new Delayed(30, 2),
+            new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\any($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals([[], [1, 2, 3]], $result);
+        $this->assertEquals([[], [1, 2, 3]], await(Promise\any($promises)));
     }
 
     /**
@@ -89,28 +58,19 @@ class AnyTest extends BaseTest
         $exception = new \Exception;
         $expected = [['two' => $exception], ['one' => 1, 'three' => 3]];
 
-        Loop::run(function () use (&$result, $exception) {
-            $promises = [
-                'one' => new Delayed(20, 1),
-                'two' => new Failure($exception),
-                'three' => new Delayed(10, 3),
-            ];
+        $promises = [
+            'one' => new Delayed(20, 1),
+            'two' => new Failure($exception),
+            'three' => new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\any($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, await(Promise\any($promises)));
     }
 
-    /**
-     * @expectedException \TypeError
-     */
     public function testNonPromise()
     {
+        $this->expectException(\TypeError::class);
+
         Promise\any([1]);
     }
 }

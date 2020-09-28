@@ -2,24 +2,21 @@
 
 namespace Amp\Test;
 
+use Amp\Internal\Placeholder;
 use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
+use Amp\PHPUnit\TestException;
 use Amp\Promise;
+use function Amp\sleep;
 
-class Placeholder
+class InternalPlaceholderTest extends AsyncTestCase
 {
-    use \Amp\Internal\Placeholder {
-        resolve as public;
-        fail as public;
-    }
-}
+    private Placeholder $placeholder;
 
-class PlaceholderTraitTest extends BaseTest
-{
-    /** @var Placeholder */
-    private $placeholder;
-
-    public function setUp()
+    public function setUp(): void
     {
+        parent::setUp();
+
         $this->placeholder = new Placeholder;
     }
 
@@ -36,6 +33,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
 
         $this->placeholder->resolve($value);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -60,6 +59,8 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->resolve($value);
 
+        sleep(0); // Tick event loop to invoke callbacks.
+
         $this->assertSame(3, $invoked);
         $this->assertSame($value, $result);
     }
@@ -80,6 +81,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->resolve($value);
 
         $this->placeholder->onResolve($callback);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
         $this->assertSame($value, $result);
@@ -104,6 +107,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
         $this->placeholder->onResolve($callback);
 
+        sleep(0); // Tick event loop to invoke callbacks.
+
         $this->assertSame(3, $invoked);
         $this->assertSame($value, $result);
     }
@@ -113,49 +118,47 @@ class PlaceholderTraitTest extends BaseTest
      */
     public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess()
     {
-        Loop::run(function () use (&$invoked) {
-            $invoked = 0;
-            $expected = new \Exception;
+        $invoked = 0;
+        $expected = new \Exception;
 
-            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                $this->assertSame($expected, $exception);
-                ++$invoked;
-            });
-
-            $callback = function () use ($expected) {
-                throw $expected;
-            };
-
-            $this->placeholder->onResolve($callback);
-
-            $this->placeholder->resolve($expected);
+        Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
+            $this->assertSame($expected, $exception);
+            ++$invoked;
         });
 
-        $this->assertSame(1, $invoked);
+        $callback = function () use ($expected) {
+            throw $expected;
+        };
+
+        $this->placeholder->onResolve($callback);
+
+        $this->placeholder->resolve($expected);
+
+        sleep(0); // Tick event loop to invoke callbacks.
     }
 
     /**
      * @depends testOnResolveAfterSuccess
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerAfterSuccess()
+    public function testOnResolveThrowingForwardsToLoopHandlerAfterSuccess(): void
     {
-        Loop::run(function () use (&$invoked) {
-            $invoked = 0;
-            $expected = new \Exception;
+        $invoked = 0;
+        $expected = new \Exception;
 
-            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                $this->assertSame($expected, $exception);
-                ++$invoked;
-            });
-
-            $callback = function () use ($expected) {
-                throw $expected;
-            };
-
-            $this->placeholder->resolve($expected);
-
-            $this->placeholder->onResolve($callback);
+        Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
+            $this->assertSame($expected, $exception);
+            ++$invoked;
         });
+
+        $callback = function () use ($expected) {
+            throw $expected;
+        };
+
+        $this->placeholder->resolve($expected);
+
+        $this->placeholder->onResolve($callback);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
     }
@@ -173,6 +176,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
 
         $this->placeholder->fail($exception);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $result);
@@ -197,6 +202,8 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->fail($exception);
 
+        sleep(0); // Tick event loop to invoke callbacks.
+
         $this->assertSame(3, $invoked);
         $this->assertSame($exception, $result);
     }
@@ -217,6 +224,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->fail($exception);
 
         $this->placeholder->onResolve($callback);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
         $this->assertSame($exception, $result);
@@ -241,6 +250,8 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
         $this->placeholder->onResolve($callback);
 
+        sleep(0); // Tick event loop to invoke callbacks.
+
         $this->assertSame(3, $invoked);
         $this->assertSame($exception, $result);
     }
@@ -250,23 +261,23 @@ class PlaceholderTraitTest extends BaseTest
      */
     public function testOnResolveThrowingForwardsToLoopHandlerOnFail()
     {
-        Loop::run(function () use (&$invoked) {
-            $invoked = 0;
-            $expected = new \Exception;
+        $invoked = 0;
+        $expected = new \Exception;
 
-            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                $this->assertSame($expected, $exception);
-                ++$invoked;
-            });
-
-            $callback = function () use ($expected) {
-                throw $expected;
-            };
-
-            $this->placeholder->onResolve($callback);
-
-            $this->placeholder->fail(new \Exception);
+        Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
+            $this->assertSame($expected, $exception);
+            ++$invoked;
         });
+
+        $callback = function () use ($expected) {
+            throw $expected;
+        };
+
+        $this->placeholder->onResolve($callback);
+
+        $this->placeholder->fail(new \Exception);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
     }
@@ -276,23 +287,23 @@ class PlaceholderTraitTest extends BaseTest
      */
     public function testOnResolveThrowingForwardsToLoopHandlerAfterFail()
     {
-        Loop::run(function () use (&$invoked) {
-            $invoked = 0;
-            $expected = new \Exception;
+        $invoked = 0;
+        $expected = new \Exception;
 
-            Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
-                $this->assertSame($expected, $exception);
-                ++$invoked;
-            });
-
-            $callback = function () use ($expected) {
-                throw $expected;
-            };
-
-            $this->placeholder->fail(new \Exception);
-
-            $this->placeholder->onResolve($callback);
+        Loop::setErrorHandler(function ($exception) use (&$invoked, $expected) {
+            $this->assertSame($expected, $exception);
+            ++$invoked;
         });
+
+        $callback = function () use ($expected) {
+            throw $expected;
+        };
+
+        $this->placeholder->fail(new \Exception);
+
+        $this->placeholder->onResolve($callback);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertSame(1, $invoked);
     }
@@ -309,6 +320,8 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->onResolve(function () {
         });
+
+        sleep(0); // Tick event loop to invoke callbacks.
     }
 
     public function testResolveWithPromiseAfterOnResolve()
@@ -323,31 +336,35 @@ class PlaceholderTraitTest extends BaseTest
         });
 
         $this->placeholder->resolve($promise);
+
+        sleep(0); // Tick event loop to invoke callbacks.
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Promise has already been resolved
-     */
     public function testDoubleResolve()
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("Promise has already been resolved");
+
         $this->placeholder->resolve();
         $this->placeholder->resolve();
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Promise has already been resolved
-     */
     public function testResolveAgainWithinOnResolveCallback()
     {
-        Loop::run(function () {
-            $this->placeholder->onResolve(function () {
-                $this->placeholder->resolve();
-            });
-
+        $this->placeholder->onResolve(function () {
             $this->placeholder->resolve();
         });
+
+        $this->placeholder->resolve();
+
+        Loop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
+            $reason = $exception;
+        });
+
+        sleep(0); // Tick event loop to invoke error callback.
+
+        $this->assertInstanceOf(\Error::class, $reason);
+        $this->assertStringContainsString("Promise has already been resolved", $reason->getMessage());
     }
 
     public function testOnResolveWithGenerator()
@@ -360,6 +377,8 @@ class PlaceholderTraitTest extends BaseTest
         });
 
         $this->placeholder->resolve(1);
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertTrue($invoked);
     }
@@ -377,6 +396,8 @@ class PlaceholderTraitTest extends BaseTest
             return $value;
             yield; // Unreachable, but makes function a generator.
         });
+
+        sleep(0); // Tick event loop to invoke callbacks.
 
         $this->assertTrue($invoked);
     }

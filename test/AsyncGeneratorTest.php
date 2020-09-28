@@ -8,12 +8,15 @@ use Amp\Delayed;
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
+use function Amp\async;
+use function Amp\await;
+use function Amp\sleep;
 
 class AsyncGeneratorTest extends AsyncTestCase
 {
     const TIMEOUT = 100;
 
-    public function testNonGeneratorCallable()
+    public function testNonGeneratorCallable(): void
     {
         $this->expectException(\TypeError::class);
         $this->expectExceptionMessage('The callable did not return a Generator');
@@ -22,138 +25,138 @@ class AsyncGeneratorTest extends AsyncTestCase
         });
     }
 
-    public function testYield()
+    public function testYield(): void
     {
         $value = 1;
 
-        $generator = new AsyncGenerator(function (callable $yield) use ($value) {
-            yield $yield($value);
+        $generator = new AsyncGenerator(function () use ($value) {
+            yield $value;
         });
 
-        $this->assertSame($value, yield $generator->continue());
+        $this->assertSame($value, $generator->continue());
     }
 
-    public function testSend()
-    {
-        $value = 1;
-        $send = 2;
-        $generator = new AsyncGenerator(function (callable $yield) use (&$result, $value) {
-            $result = yield $yield($value);
-        });
-
-        $this->assertSame($value, yield $generator->continue());
-        $this->assertNull(yield $generator->send($send));
-        $this->assertSame($result, $send);
-    }
-
-    public function testSendBeforeYield()
+    public function testSend(): void
     {
         $value = 1;
         $send = 2;
-        $generator = new AsyncGenerator(function (callable $yield) use (&$result, $value) {
-            yield new Delayed(100); // Wait so send() is called before $yield().
-            $result = yield $yield($value);
+        $generator = new AsyncGenerator(function () use (&$result, $value) {
+            $result = yield $value;
         });
 
-        $promise1 = $generator->continue();
-        $promise2 = $generator->send($send);
-
-        $this->assertSame($value, yield $promise1);
-        $this->assertNull(yield $promise2);
+        $this->assertSame($value, $generator->continue());
+        $this->assertNull($generator->send($send));
         $this->assertSame($result, $send);
     }
 
-    public function testThrow()
+    public function testSendBeforeYield(): void
+    {
+        $value = 1;
+        $send = 2;
+        $generator = new AsyncGenerator(function () use (&$result, $value) {
+            sleep(100); // Wait so send() is called before $yield().
+            $result = yield $value;
+        });
+
+        $promise1 = async(fn () => $generator->continue());
+        $promise2 = async(fn () => $generator->send($send));
+
+        $this->assertSame($value, await($promise1));
+        $this->assertNull(await($promise2));
+        $this->assertSame($result, $send);
+    }
+
+    public function testThrow(): void
     {
         $value = 1;
         $exception = new \Exception;
-        $generator = new AsyncGenerator(function (callable $yield) use (&$result, $value) {
+        $generator = new AsyncGenerator(function () use (&$result, $value) {
             try {
-                $result = yield $yield($value);
+                $result = yield $value;
             } catch (\Throwable $exception) {
                 $result = $exception;
             }
         });
 
-        $promise1 = $generator->continue();
-        $promise2 = $generator->throw($exception);
+        $promise1 = async(fn () => $generator->continue());
+        $promise2 = async(fn () => $generator->throw($exception));
 
-        $this->assertSame($value, yield $promise1);
-        $this->assertNull(yield $promise2);
+        $this->assertSame($value, await($promise1));
+        $this->assertNull(await($promise2));
         $this->assertSame($result, $exception);
     }
 
-    public function testThrowBeforeYield()
+    public function testThrowBeforeYield(): void
     {
         $value = 1;
         $exception = new \Exception;
-        $generator = new AsyncGenerator(function (callable $yield) use (&$result, $value) {
-            yield new Delayed(100); // Wait so throw() is called before $yield().
+        $generator = new AsyncGenerator(function () use (&$result, $value) {
+            sleep(100); // Wait so throw() is called before $yield().
             try {
-                $result = yield $yield($value);
+                $result = yield $value;
             } catch (\Throwable $exception) {
                 $result = $exception;
             }
         });
 
-        $this->assertSame($value, yield $generator->continue());
-        $this->assertNull(yield $generator->throw($exception));
+        $this->assertSame($value, $generator->continue());
+        $this->assertNull($generator->throw($exception));
         $this->assertSame($result, $exception);
     }
 
-    public function testInitialSend()
+    public function testInitialSend(): void
     {
-        $generator = new AsyncGenerator(function (callable $yield) {
-            yield $yield(0);
+        $generator = new AsyncGenerator(function () {
+            yield 0;
         });
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Must initialize async generator by calling continue() first');
 
-        yield $generator->send(0);
+        $generator->send(0);
     }
 
-    public function testInitialThrow()
+    public function testInitialThrow(): void
     {
-        $generator = new AsyncGenerator(function (callable $yield) {
-            yield $yield(0);
+        $generator = new AsyncGenerator(function () {
+            yield 0;
         });
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Must initialize async generator by calling continue() first');
 
-        yield $generator->throw(new \Exception);
+        $generator->throw(new \Exception);
     }
 
-    public function testGetResult()
+    public function testGetResult(): void
     {
         $value = 1;
-        $generator = new AsyncGenerator(function (callable $yield) use ($value) {
-            yield $yield(0);
+        $generator = new AsyncGenerator(function () use ($value) {
+            yield 0;
             return $value;
         });
 
-        $this->assertSame(0, yield $generator->continue());
-        $this->assertNull(yield $generator->continue());
-        $this->assertSame($value, yield $generator->getReturn());
+        $this->assertSame(0, $generator->continue());
+        $this->assertNull($generator->continue());
+        $this->assertSame($value, $generator->getReturn());
     }
 
     /**
      * @depends testYield
      */
-    public function testFailingPromise()
+    public function testFailingPromise(): void
     {
         $exception = new TestException;
-        $deferred = new Deferred();
+        $deferred = new Deferred;
 
-        $generator = new AsyncGenerator(function (callable $yield) use ($deferred) {
-            yield $yield(yield $deferred->promise());
+        $generator = new AsyncGenerator(function () use ($deferred) {
+            yield await($deferred->promise());
         });
 
         $deferred->fail($exception);
 
         try {
-            yield $generator->continue();
+            $generator->continue();
             $this->fail("Awaiting a failed promise should fail the pipeline");
         } catch (TestException $reason) {
             $this->assertSame($reason, $exception);
@@ -163,22 +166,22 @@ class AsyncGeneratorTest extends AsyncTestCase
     /**
      * @depends testYield
      */
-    public function testBackPressure()
+    public function testBackPressure(): void
     {
         $output = '';
         $yields = 5;
 
-        $generator = new AsyncGenerator(function (callable $yield) use (&$time, $yields) {
+        $generator = new AsyncGenerator(function () use (&$time, $yields) {
             $time = \microtime(true);
             for ($i = 0; $i < $yields; ++$i) {
-                yield $yield($i);
+                yield $i;
             }
             $time = \microtime(true) - $time;
         });
 
-        while (null !== $yielded = yield $generator->continue()) {
+        while (null !== $yielded = $generator->continue()) {
             $output .= $yielded;
-            yield new Delayed(self::TIMEOUT);
+            sleep(self::TIMEOUT);
         }
 
         $expected = \implode('', \range(0, $yields - 1));
@@ -190,79 +193,86 @@ class AsyncGeneratorTest extends AsyncTestCase
     /**
      * @depends testYield
      */
-    public function testAsyncGeneratorCoroutineThrows()
+    public function testAsyncGeneratorCoroutineThrows(): void
     {
         $exception = new TestException;
 
         try {
-            $generator = new AsyncGenerator(function (callable $yield) use ($exception) {
-                yield $yield(1);
+            $generator = new AsyncGenerator(function () use ($exception) {
+                yield 1;
                 throw $exception;
             });
 
-            while (yield $generator->continue());
-            $this->fail("The exception thrown from the coroutine should fail the pipeline");
+            while ($generator->continue());
+            $this->fail("The exception thrown from the generator should fail the pipeline");
         } catch (TestException $caught) {
             $this->assertSame($exception, $caught);
         }
     }
 
-    public function testDisposal()
+    public function testDisposal(): void
     {
-        $generator = new AsyncGenerator(function (callable $yield) use (&$exception) {
+        $invoked = false;
+        $generator = new AsyncGenerator(function () use (&$invoked) {
             try {
-                yield $yield(0);
-            } catch (\Throwable $exception) {
-                // Exception type validated below.
-                return 1;
+                yield 0;
+            } finally {
+                $invoked = true;
             }
-
-            return 0;
         });
 
-        $promise = $generator->getReturn();
+        $promise = async(static fn () => $generator->getReturn());
 
-        yield $generator->continue();
+        $this->assertSame(0, $generator->continue());
 
-        unset($generator); // Should call dispose() on the internal pipeline.
+        $this->assertFalse($invoked);
 
-        $this->assertInstanceOf(DisposedException::class, $exception);
+        $generator->dispose();
 
-        $this->assertSame(1, yield $promise);
+        try {
+            $this->assertSame(1, await($promise));
+            $this->fail("Pipeline should have been disposed");
+        } catch (DisposedException $exception) {
+            $this->assertTrue($invoked);
+        }
     }
 
     /**
      * @depends testDisposal
      */
-    public function testYieldAfterDisposal()
+    public function testYieldAfterDisposal(): void
     {
-        $generator = new AsyncGenerator(function (callable $yield) use (&$exception) {
+        $generator = new AsyncGenerator(function () use (&$exception) {
             try {
-                yield $yield(0);
+                yield 0;
             } catch (\Throwable $exception) {
-                yield $yield(1);
+                yield 1;
             }
         });
 
-        yield $generator->continue();
+        $generator->continue();
 
         $generator->dispose();
 
         $this->expectException(DisposedException::class);
 
-        yield $generator->getReturn();
+        $generator->getReturn();
     }
 
-    public function testGeneratorStartsUponCreation()
+    public function testGeneratorStartsBeforeCallingContinue(): void
     {
         $invoked = false;
-        $generator = new AsyncGenerator(function (callable $yield) use (&$invoked) {
+        $generator = new AsyncGenerator(function () use (&$invoked) {
             $invoked = true;
-            yield $yield(0);
+            yield 0;
         });
+
+        $this->assertFalse($invoked);
+
+        sleep(0); // Tick event loop to start generator.
 
         $this->assertTrue($invoked);
 
-        $this->assertSame(0, yield $generator->continue());
+        $this->assertSame(0, $generator->continue());
     }
 }

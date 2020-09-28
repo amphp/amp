@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.0/phpunit.xsd"
-        bootstrap="vendor/autoload.php"
-        colors="true"
->
-    <testsuites>
-        <testsuite name="Main">
-            <directory>test</directory>
-        </testsuite>
-        <testsuite name="PHPT tests">
-            <directory suffix=".phpt">test</directory>
-        </testsuite>
-    </testsuites>
-    <filter>
-        <whitelist>
-            <directory suffix=".php">lib</directory>
-        </whitelist>
-    </filter>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true">
+  <coverage>
+    <include>
+      <directory suffix=".php">lib</directory>
+    </include>
+  </coverage>
+  <testsuites>
+    <testsuite name="Main">
+      <directory>test</directory>
+    </testsuite>
+    <testsuite name="PHPT tests">
+      <directory suffix=".phpt">test</directory>
+    </testsuite>
+  </testsuites>
 </phpunit>

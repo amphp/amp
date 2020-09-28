@@ -4,103 +4,94 @@ namespace Amp\Test\Iterator;
 
 use Amp\Emitter;
 use Amp\Iterator;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use Amp\Test\BaseTest;
 
-class FilterTest extends BaseTest
+class FilterTest extends AsyncTestCase
 {
-    public function testNoValuesEmitted()
+    public function testNoValuesEmitted(): \Generator
     {
         $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $emitter = new Emitter;
+        $emitter = new Emitter;
 
-            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
-                $invoked = true;
-            });
-
-            $this->assertInstanceOf(Iterator::class, $iterator);
-
-            $emitter->complete();
+        $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
+            $invoked = true;
         });
+
+        $this->assertInstanceOf(Iterator::class, $iterator);
+
+        $emitter->complete();
 
         $this->assertFalse($invoked);
     }
 
-    public function testValuesEmitted()
+    public function testValuesEmitted(): \Generator
     {
-        Loop::run(function () {
-            $count = 0;
-            $values = [1, 2, 3];
-            $expected = [1, 3];
-            $producer = new Producer(function (callable $emit) use ($values) {
-                foreach ($values as $value) {
-                    yield $emit($value);
-                }
-            });
-
-            $iterator = Iterator\filter($producer, function ($value) use (&$count) {
-                ++$count;
-                return $value & 1;
-            });
-
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        $count = 0;
+        $values = [1, 2, 3];
+        $expected = [1, 3];
+        $producer = new Producer(function (callable $emit) use ($values) {
+            foreach ($values as $value) {
+                yield $emit($value);
             }
-            $this->assertSame(3, $count);
         });
+
+        $iterator = Iterator\filter($producer, function ($value) use (&$count) {
+            ++$count;
+            return $value & 1;
+        });
+
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
+        $this->assertSame(3, $count);
     }
 
     /**
      * @depends testValuesEmitted
      */
-    public function testCallbackThrows()
+    public function testCallbackThrows(): \Generator
     {
-        Loop::run(function () {
-            $values = [1, 2, 3];
-            $exception = new TestException;
-            $producer = new Producer(function (callable $emit) use ($values) {
-                foreach ($values as $value) {
-                    yield $emit($value);
-                }
-            });
-
-            $iterator = Iterator\filter($producer, function () use ($exception) {
-                throw $exception;
-            });
-
-            try {
-                yield $iterator->advance();
-                $this->fail("The exception thrown from the filter callback should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($reason, $exception);
+        $values = [1, 2, 3];
+        $exception = new TestException;
+        $producer = new Producer(function (callable $emit) use ($values) {
+            foreach ($values as $value) {
+                yield $emit($value);
             }
         });
+
+        $iterator = Iterator\filter($producer, function () use ($exception) {
+            throw $exception;
+        });
+
+        try {
+            yield $iterator->advance();
+            $this->fail("The exception thrown from the filter callback should be thrown from advance()");
+        } catch (TestException $reason) {
+            $this->assertSame($reason, $exception);
+        }
     }
 
-    public function testIteratorFails()
+    public function testIteratorFails(): \Generator
     {
-        Loop::run(function () {
-            $invoked = false;
-            $exception = new TestException;
-            $emitter = new Emitter;
+        $invoked = false;
+        $exception = new TestException;
+        $emitter = new Emitter;
 
-            $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
-                $invoked = true;
-            });
-
-            $emitter->fail($exception);
-
-            try {
-                yield $iterator->advance();
-                $this->fail("The exception used to fail the iterator should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($reason, $exception);
-            }
-
-            $this->assertFalse($invoked);
+        $iterator = Iterator\filter($emitter->iterate(), function ($value) use (&$invoked) {
+            $invoked = true;
         });
+
+        $emitter->fail($exception);
+
+        try {
+            yield $iterator->advance();
+            $this->fail("The exception used to fail the iterator should be thrown from advance()");
+        } catch (TestException $reason) {
+            $this->assertSame($reason, $exception);
+        }
+
+        $this->assertFalse($invoked);
     }
 }
