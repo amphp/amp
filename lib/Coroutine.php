@@ -3,13 +3,13 @@
 namespace Amp;
 
 /**
- * @deprecated Use {@see await()} and ext-fiber to await promises.
- *
  * Creates a promise from a generator function yielding promises.
  *
  * When a promise is yielded, execution of the generator is interrupted until the promise is resolved. A success
  * value is sent into the generator, while a failure reason is thrown into the generator. Using a coroutine,
  * asynchronous code can be written without callbacks and be structured like synchronous code.
+ *
+ * @deprecated Use {@see await()} and ext-fiber to await promises.
  *
  * @template-covariant TReturn
  * @template-implements Promise<TReturn>
@@ -30,13 +30,10 @@ final class Coroutine implements Promise
 
             while ($generator->valid()) {
                 try {
-                    $value = await($yielded);
+                    $yielded = $generator->send(await($yielded));
                 } catch (\Throwable $exception) {
                     $yielded = $generator->throw($exception);
-                    continue;
                 }
-
-                $yielded = $generator->send($value);
             }
 
             return $generator->getReturn();
