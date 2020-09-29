@@ -2,6 +2,7 @@
 
 namespace Amp
 {
+
     use React\Promise\PromiseInterface as ReactPromise;
 
     /**
@@ -56,13 +57,13 @@ namespace Amp
     {
         $deferred = new Deferred;
 
-        Loop::defer(static fn () => \Fiber::run(static function () use ($deferred, $callback, $args): void {
+        Loop::defer(static fn() => \Fiber::run(static function () use ($deferred, $callback, $args): void {
             try {
                 $deferred->resolve($callback(...$args));
-            } catch (\Throwable $e) {
-                $deferred->fail($e);
+            } catch (\Throwable $exception) {
+                $deferred->fail($exception);
             }
-        }, ...$args));
+        }));
 
         return $deferred->promise();
     }
@@ -73,12 +74,12 @@ namespace Amp
      *
      * @param callable $callback Green thread to create each time the function returned is invoked.
      *
-     * @return callable(mixed ...$args):Promise Creates a new green thread each time the returned function is invoked. The
-     *     arguments given to the returned function are passed through to the callable.
+     * @return callable(mixed ...$args):Promise Creates a new green thread each time the returned function is invoked.
+     *     The arguments given to the returned function are passed through to the callable.
      */
     function asyncCallable(callable $callback): callable
     {
-        return static fn (mixed ...$args): Promise => async($callback, ...$args);
+        return static fn(mixed ...$args): Promise => async($callback, ...$args);
     }
 
     /**
@@ -108,11 +109,13 @@ namespace Amp
      * @see asyncCoroutine()
      *
      * @psalm-suppress InvalidReturnType
+     *
+     * @deprecated No longer necessary with ext-fiber
      */
     function coroutine(callable $callback): callable
     {
         /** @psalm-suppress InvalidReturnStatement */
-        return static fn (...$args): Promise => call($callback, ...$args);
+        return static fn(...$args): Promise => call($callback, ...$args);
     }
 
     /**
@@ -128,10 +131,12 @@ namespace Amp
      * @psalm-return callable(mixed...): void
      *
      * @see coroutine()
+     *
+     * @deprecated No longer necessary with ext-fiber
      */
     function asyncCoroutine(callable $callback): callable
     {
-        return static fn (...$args) => Promise\rethrow(call($callback, ...$args));
+        return static fn(...$args) => Promise\rethrow(call($callback, ...$args));
     }
 
     /**
@@ -155,6 +160,8 @@ namespace Amp
      * @psalm-return (T is Promise ? Promise<TPromise> : (T is \Generator ? (TGenerator is Promise ? Promise<TGeneratorPromise> : Promise<TGeneratorReturn>) : Promise<TReturn>))
      *
      * @formatter:on
+     *
+     * @deprecated No longer necessary with ext-fiber
      */
     function call(callable $callback, ...$args): Promise
     {
@@ -187,6 +194,8 @@ namespace Amp
      * @param mixed ...$args Arguments to pass to the function.
      *
      * @return void
+     *
+     * @deprecated No longer necessary with ext-fiber
      */
     function asyncCall(callable $callback, ...$args): void
     {
@@ -222,6 +231,7 @@ namespace Amp
 
 namespace Amp\Promise
 {
+
     use Amp\Deferred;
     use Amp\Failure;
     use Amp\Loop;
@@ -303,11 +313,6 @@ namespace Amp\Promise
     }
 
     /**
-     * @deprecated Use {@see await()} instead.
-     *
-     * @template TPromise
-     * @template T as Promise<TPromise>|ReactPromise
-     *
      * @param Promise|ReactPromise $promise Promise to wait for.
      *
      * @return mixed Promise success value.
@@ -316,6 +321,11 @@ namespace Amp\Promise
      * @psalm-return (T is Promise ? TPromise : mixed)
      *
      * @throws \Throwable Promise failure reason.
+     *
+     * @deprecated Use {@see await()} instead.
+     *
+     * @template TPromise
+     * @template T as Promise<TPromise>|ReactPromise
      */
     function wait(Promise|ReactPromise $promise): mixed
     {
@@ -654,6 +664,7 @@ namespace Amp\Promise
 
 namespace Amp\Iterator
 {
+
     use Amp\Delayed;
     use Amp\Emitter;
     use Amp\Iterator;
@@ -869,6 +880,7 @@ namespace Amp\Iterator
 
 namespace Amp\Pipeline
 {
+
     use Amp\AsyncGenerator;
     use Amp\Pipeline;
     use Amp\PipelineSource;
@@ -877,8 +889,8 @@ namespace Amp\Pipeline
     use function Amp\await;
     use function Amp\call;
     use function Amp\coroutine;
-    use function Amp\delay;
     use function Amp\Internal\createTypeError;
+    use function Amp\sleep;
 
     /**
      * Creates a pipeline from the given iterable, emitting the each value. The iterable may contain promises. If any
@@ -902,7 +914,7 @@ namespace Amp\Pipeline
         return new AsyncGenerator(static function () use ($iterable, $delay): \Generator {
             foreach ($iterable as $value) {
                 if ($delay) {
-                    await(delay($delay));
+                    sleep($delay);
                 }
 
                 if ($value instanceof Promise || $value instanceof ReactPromise) {
@@ -1039,10 +1051,10 @@ namespace Amp\Pipeline
      */
     function discard(Pipeline $pipeline): Promise
     {
-        return call(static function () use ($stream): \Generator {
+        return call(static function () use ($pipeline): \Generator {
             $count = 0;
 
-            while (null !== yield $stream->continue()) {
+            while (null !== yield $pipeline->continue()) {
                 $count++;
             }
 
