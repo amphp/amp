@@ -2,21 +2,15 @@
 
 namespace Amp\Test;
 
+use Amp\Deferred;
 use Amp\Loop;
-use React\Promise\RejectedPromise as RejectedReactPromise;
+use Amp\PHPUnit\AsyncTestCase;
+use Amp\Promise;
+use function Amp\sleep;
+use function React\Promise\reject;
 
-class Promise implements \Amp\Promise
+class PromiseTest extends AsyncTestCase
 {
-    use \Amp\Internal\Placeholder {
-        resolve as public;
-        fail as public;
-    }
-}
-
-class PromiseTest extends BaseTest
-{
-    private $originalErrorHandler;
-
     /**
      * A Promise to use for a test with resolution methods.
      * Note that the callables shall take care of the Promise being resolved in any case. Example: The actual
@@ -26,17 +20,17 @@ class PromiseTest extends BaseTest
      * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result
      *     or a Throwable/Exception respectively
      */
-    public function promise()
+    public function promise(): array
     {
-        $promise = new Promise;
+        $deferred = new Deferred;
         return [
-            $promise,
-            [$promise, 'resolve'],
-            [$promise, 'fail'],
+            $deferred->promise(),
+            [$deferred, 'resolve'],
+            [$deferred, 'fail'],
         ];
     }
 
-    public function provideSuccessValues()
+    public function provideSuccessValues(): array
     {
         return [
             ["string"],
@@ -52,14 +46,14 @@ class PromiseTest extends BaseTest
         ];
     }
 
-    public function testPromiseImplementsPromise()
+    public function testPromiseImplementsPromise(): void
     {
         list($promise) = $this->promise();
         $this->assertInstanceOf(Promise::class, $promise);
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testPromiseSucceed($value)
+    public function testPromiseSucceed(mixed $value): void
     {
         list($promise, $succeeder) = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
@@ -67,12 +61,16 @@ class PromiseTest extends BaseTest
             $this->assertSame($value, $v);
             $invoked = true;
         });
+
         $succeeder($value);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testOnResolveOnSucceededPromise($value)
+    public function testOnResolveOnSucceededPromise(mixed $value): void
     {
         list($promise, $succeeder) = $this->promise();
         $succeeder($value);
@@ -81,10 +79,13 @@ class PromiseTest extends BaseTest
             $this->assertSame($value, $v);
             $invoked = true;
         });
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
-    public function testSuccessAllOnResolvesExecuted()
+    public function testSuccessAllOnResolvesExecuted(): void
     {
         list($promise, $succeeder) = $this->promise();
         $invoked = 0;
@@ -113,10 +114,12 @@ class PromiseTest extends BaseTest
             $invoked++;
         });
 
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertSame(4, $invoked);
     }
 
-    public function testPromiseExceptionFailure()
+    public function testPromiseExceptionFailure(): void
     {
         list($promise, , $failer) = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
@@ -124,10 +127,13 @@ class PromiseTest extends BaseTest
             $invoked = true;
         });
         $failer(new \RuntimeException);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveOnExceptionFailedPromise()
+    public function testOnResolveOnExceptionFailedPromise(): void
     {
         list($promise, , $failer) = $this->promise();
         $failer(new \RuntimeException);
@@ -135,10 +141,13 @@ class PromiseTest extends BaseTest
             $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
         });
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
-    public function testFailureAllOnResolvesExecuted()
+    public function testFailureAllOnResolvesExecuted(): void
     {
         list($promise, , $failer) = $this->promise();
         $invoked = 0;
@@ -163,10 +172,12 @@ class PromiseTest extends BaseTest
             $invoked++;
         });
 
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertSame(4, $invoked);
     }
 
-    public function testPromiseErrorFailure()
+    public function testPromiseErrorFailure(): void
     {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
@@ -178,10 +189,13 @@ class PromiseTest extends BaseTest
             $invoked = true;
         });
         $failer(new \Error);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveOnErrorFailedPromise()
+    public function testOnResolveOnErrorFailedPromise(): void
     {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped("Error only exists on PHP 7+");
@@ -193,11 +207,14 @@ class PromiseTest extends BaseTest
             $this->assertSame(\get_class($e), "Error");
             $invoked = true;
         });
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
     /** Implementations MAY fail upon resolution with a Promise, but they definitely MUST NOT return a Promise */
-    public function testPromiseResolutionWithPromise()
+    public function testPromiseResolutionWithPromise(): void
     {
         list($success, $succeeder) = $this->promise();
         $succeeder(true);
@@ -217,109 +234,109 @@ class PromiseTest extends BaseTest
                 $invoked = true;
                 $this->assertNotInstanceOf(Promise::class, $v);
             });
+
+            sleep(0); // Tick event loop to invoke onResolve callback.
+
             $this->assertTrue($invoked);
         }
     }
 
-    public function testThrowingInCallback()
+    public function testThrowingInCallback(): void
     {
-        Loop::run(function () {
-            $invoked = 0;
+        $invoked = 0;
 
-            Loop::setErrorHandler(function () use (&$invoked) {
-                $invoked++;
-            });
-
-            list($promise, $succeeder) = $this->promise();
-            $succeeder(true);
-            $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertNull($e);
-                $this->assertTrue($v);
-                $invoked++;
-
-                throw new \Exception;
-            });
-
-            list($promise, $succeeder) = $this->promise();
-            $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertNull($e);
-                $this->assertTrue($v);
-                $invoked++;
-
-                throw new \Exception;
-            });
-            $succeeder(true);
-
-            $this->assertSame(4, $invoked);
+        Loop::setErrorHandler(function () use (&$invoked) {
+            $invoked++;
         });
+
+        list($promise, $succeeder) = $this->promise();
+        $succeeder(true);
+        $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
+            $this->assertNull($e);
+            $this->assertTrue($v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+
+        list($promise, $succeeder) = $this->promise();
+        $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
+            $this->assertNull($e);
+            $this->assertTrue($v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+        $succeeder(true);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
+        $this->assertSame(4, $invoked);
     }
 
-    public function testThrowingInCallbackContinuesOtherOnResolves()
+    public function testThrowingInCallbackContinuesOtherOnResolves(): void
     {
-        Loop::run(function () {
-            $invoked = 0;
+        $invoked = 0;
 
-            Loop::setErrorHandler(function () use (&$invoked) {
-                $invoked++;
-            });
-
-            list($promise, $succeeder) = $this->promise();
-            $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertNull($e);
-                $this->assertTrue($v);
-                $invoked++;
-
-                throw new \Exception;
-            });
-            $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
-                $this->assertNull($e);
-                $this->assertTrue($v);
-                $invoked++;
-            });
-            $succeeder(true);
-
-            $this->assertSame(3, $invoked);
+        Loop::setErrorHandler(function () use (&$invoked) {
+            $invoked++;
         });
+
+        list($promise, $succeeder) = $this->promise();
+        $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
+            $this->assertNull($e);
+            $this->assertTrue($v);
+            $invoked++;
+
+            throw new \Exception;
+        });
+        $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
+            $this->assertNull($e);
+            $this->assertTrue($v);
+            $invoked++;
+        });
+        $succeeder(true);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
+        $this->assertSame(3, $invoked);
     }
 
-    public function testThrowingInCallbackOnFailure()
+    public function testThrowingInCallbackOnFailure(): void
     {
-        Loop::run(function () {
-            $invoked = 0;
-            Loop::setErrorHandler(function () use (&$invoked) {
-                $invoked++;
-            });
-
-            list($promise, , $failer) = $this->promise();
-            $exception = new \Exception;
-            $failer($exception);
-            $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
-                $this->assertSame($exception, $e);
-                $this->assertNull($v);
-                $invoked++;
-
-                throw $e;
-            });
-
-            list($promise, , $failer) = $this->promise();
-            $exception = new \Exception;
-            $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
-                $this->assertSame($exception, $e);
-                $this->assertNull($v);
-                $invoked++;
-
-                throw $e;
-            });
-            $failer($exception);
-
-            $this->assertSame(4, $invoked);
+        $invoked = 0;
+        Loop::setErrorHandler(function () use (&$invoked) {
+            $invoked++;
         });
+
+        list($promise, , $failer) = $this->promise();
+        $exception = new \Exception;
+        $failer($exception);
+        $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
+            $this->assertSame($exception, $e);
+            $this->assertNull($v);
+            $invoked++;
+
+            throw $e;
+        });
+
+        list($promise, , $failer) = $this->promise();
+        $exception = new \Exception;
+        $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
+            $this->assertSame($exception, $e);
+            $this->assertNull($v);
+            $invoked++;
+
+            throw $e;
+        });
+        $failer($exception);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
+        $this->assertSame(4, $invoked);
     }
 
-    /**
-     * @requires PHP 7
-     */
-    public function testWeakTypes()
+    public function testWeakTypes(): void
     {
         $invoked = 0;
         list($promise, $succeeder) = $this->promise();
@@ -336,15 +353,18 @@ class PromiseTest extends BaseTest
             $this->assertSame((int) $expectedData, $v);
         });
 
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertSame(2, $invoked);
     }
 
-    public function testResolvedQueueUnrolling()
+    public function testResolvedQueueUnrolling(): void
     {
         $count = 50;
         $invoked = false;
 
-        $promise = new Promise;
+        $deferred = new Deferred;
+        $promise = $deferred->promise();
         $promise->onResolve(function () {
         });
         $promise->onResolve(function () {
@@ -354,17 +374,16 @@ class PromiseTest extends BaseTest
             $this->assertLessThan(30, \count(\debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)));
         });
 
-        $last = $promise;
-
-        $f = function () use (&$f, &$count, &$last) {
-            $p = new Promise;
+        $f = function () use (&$f, &$count, &$deferred) {
+            $d = new Deferred;
+            $p = $d->promise();
             $p->onResolve(function () {
             });
             $p->onResolve(function () {
             });
 
-            $last->resolve($p);
-            $last = $p;
+            $deferred->resolve($p);
+            $deferred = $d;
 
             if (--$count > 0) {
                 $f();
@@ -372,45 +391,49 @@ class PromiseTest extends BaseTest
         };
 
         $f();
-        $last->resolve();
+        $deferred->resolve();
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
-     */
-    public function testOnResolveWithReactPromise()
+    public function testOnResolveWithReactPromise(): void
     {
-        Loop::run(function () {
-            $promise = new Promise;
-            $promise->onResolve(function ($exception, $value) {
-                return new RejectedReactPromise(new \Exception("Success"));
-            });
-            $promise->resolve();
+        Loop::setErrorHandler(function (\Throwable $exception): void {
+            $this->assertSame("Success", $exception->getMessage());
         });
+
+        [$promise, $succeeder] = $this->promise();
+        $promise->onResolve(function ($exception, $value) {
+            return reject(new \Exception("Success"));
+        });
+        $succeeder();
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
     }
 
     /**
      * @depends testOnResolveWithReactPromise
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromiseAfterResolve()
+    public function testOnResolveWithReactPromiseAfterResolve(): void
     {
-        Loop::run(function () {
-            $promise = new Promise;
-            $promise->resolve();
-            $promise->onResolve(function ($exception, $value) {
-                return new RejectedReactPromise(new \Exception("Success"));
-            });
+        Loop::setErrorHandler(function (\Throwable $exception): void {
+            $this->assertSame("Success", $exception->getMessage());
         });
+
+        [$promise, $succeeder] = $this->promise();
+        $succeeder();
+        $promise->onResolve(function ($exception, $value) {
+            return reject(new \Exception("Success"));
+        });
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
-        $promise = new Promise;
+        [$promise, $succeeder] = $this->promise();
         $invoked = false;
         $promise->onResolve(function ($exception, $value) use (&$invoked) {
             $invoked = true;
@@ -418,7 +441,9 @@ class PromiseTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         });
 
-        $promise->resolve(1);
+        $succeeder(1);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -426,23 +451,25 @@ class PromiseTest extends BaseTest
     /**
      * @depends testOnResolveWithGenerator
      */
-    public function testOnResolveWithGeneratorAfterResolve()
+    public function testOnResolveWithGeneratorAfterResolve(): void
     {
-        $promise = new Promise;
+        [$promise, $succeeder] = $this->promise();
+        $succeeder(1);
         $invoked = false;
-        $promise->resolve(1);
         $promise->onResolve(function ($exception, $value) use (&$invoked) {
             $invoked = true;
             return $value;
             yield; // Unreachable, but makes function a generator.
         });
 
+        sleep(0); // Tick event loop to invoke onResolve callback.
+
         $this->assertTrue($invoked);
     }
 
-    public function testOnResolveWithGeneratorWithMultipleCallbacks()
+    public function testOnResolveWithGeneratorWithMultipleCallbacks(): void
     {
-        $promise = new Promise;
+        [$promise, $succeeder] = $this->promise();
         $invoked = 0;
         $callback = function ($exception, $value) use (&$invoked) {
             ++$invoked;
@@ -454,7 +481,9 @@ class PromiseTest extends BaseTest
         $promise->onResolve($callback);
         $promise->onResolve($callback);
 
-        $promise->resolve(1);
+        $succeeder(1);
+
+        sleep(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(3, $invoked);
     }

@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\Delayed;
 use Amp\Failure;
 use Amp\LazyPromise;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
@@ -12,7 +13,7 @@ use function Amp\await;
 use function React\Promise\reject;
 use function React\Promise\resolve;
 
-class LazyPromiseTest extends BaseTest
+class LazyPromiseTest extends AsyncTestCase
 {
     public function testPromisorNotCalledOnConstruct(): void
     {

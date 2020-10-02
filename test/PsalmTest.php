@@ -9,7 +9,7 @@ class PsalmTest extends TestCase
     /**
      * @requires PHP >= 7.1
      */
-    public function test()
+    public function test(): void
     {
         $issues = \json_decode(
             \shell_exec('./vendor/bin/psalm.phar --output-format=json --no-progress --config=psalm.examples.xml'),

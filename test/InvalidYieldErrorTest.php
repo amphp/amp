@@ -3,8 +3,9 @@
 namespace Amp\Test;
 
 use Amp\InvalidYieldError;
+use Amp\PHPUnit\AsyncTestCase;
 
-class InvalidYieldErrorTest extends BaseTest
+class InvalidYieldErrorTest extends AsyncTestCase
 {
     public function testWithInvalidGenerator()
     {

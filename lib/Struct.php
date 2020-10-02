@@ -21,7 +21,7 @@ trait Struct
      *
      * @psalm-return no-return
      */
-    public function __get(string $property)
+    public function __get(string $property): void
     {
         throw new \Error(
             $this->generateStructPropertyError($property)
@@ -34,7 +34,7 @@ trait Struct
      *
      * @psalm-return no-return
      */
-    public function __set(string $property, $value)
+    public function __set(string $property, mixed $value): void
     {
         throw new \Error(
             $this->generateStructPropertyError($property)
@@ -60,16 +60,20 @@ trait Struct
         $bestMatch = "";
         $bestMatchPercentage = 0;
 
+        $reflection = new \ReflectionClass($this);
+
         /** @psalm-suppress RawObjectIteration */
-        foreach ($this as $property => $value) {
+        foreach ($reflection->getProperties() as $property) {
+            $name = $property->getName();
+
             // Never suggest properties that begin with an underscore
-            if ($property[0] === "_") {
+            if ($name[0] === "_") {
                 continue;
             }
-            \similar_text($badProperty, \strtolower($property), $byRefPercentage);
+            \similar_text($badProperty, \strtolower($name), $byRefPercentage);
             if ($byRefPercentage > $bestMatchPercentage) {
                 $bestMatchPercentage = $byRefPercentage;
-                $bestMatch = $property;
+                $bestMatch = $name;
             }
         }
 

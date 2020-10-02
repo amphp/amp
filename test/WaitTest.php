@@ -6,6 +6,7 @@ use Amp\Deferred;
 use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
@@ -13,9 +14,9 @@ use function Amp\call;
 use function Amp\delay;
 use function React\Promise\resolve;
 
-class WaitTest extends BaseTest
+class WaitTest extends AsyncTestCase
 {
-    public function testWaitOnSuccessfulPromise()
+    public function testWaitOnSuccessfulPromise(): void
     {
         $value = 1;
 
@@ -26,7 +27,7 @@ class WaitTest extends BaseTest
         $this->assertSame($value, $result);
     }
 
-    public function testWaitOnFailedPromise()
+    public function testWaitOnFailedPromise(): void
     {
         $exception = new \Exception();
 
@@ -45,37 +46,21 @@ class WaitTest extends BaseTest
     /**
      * @depends testWaitOnSuccessfulPromise
      */
-    public function testWaitOnPendingPromise()
+    public function testWaitOnPendingPromise(): void
     {
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $promise = new Delayed(100, $value);
+        $promise = new Delayed(100, $value);
 
-            $result = Promise\wait($promise);
+        $result = Promise\wait($promise);
 
-            $this->assertSame($value, $result);
-        });
+        $this->assertSame($value, $result);
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Loop stopped without resolving the promise
-     */
-    public function testPromiseWithNoResolutionPathThrowsException()
+    public function testPromiseWithNoResolutionPathThrowsException(): void
     {
-        Promise\wait((new Deferred)->promise());
-    }
-
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Loop exceptionally stopped without resolving the promise
-     */
-    public function testPromiseWithErrorBeforeResolutionThrowsException()
-    {
-        Loop::defer(function () {
-            throw new TestException;
-        });
+        $this->expectException(\FiberError::class);
+        $this->expectExceptionMessage("Scheduler ended");
 
         Promise\wait((new Deferred)->promise());
     }
@@ -83,7 +68,7 @@ class WaitTest extends BaseTest
     /**
      * @depends testWaitOnSuccessfulPromise
      */
-    public function testReactPromise()
+    public function testReactPromise(): void
     {
         $value = 1;
 
@@ -94,13 +79,7 @@ class WaitTest extends BaseTest
         $this->assertSame($value, $result);
     }
 
-    public function testNonPromise()
-    {
-        $this->expectException(\TypeError::class);
-        Promise\wait(42);
-    }
-
-    public function testWaitNested()
+    public function testWaitNested(): void
     {
         $promise = call(static function () {
             yield delay(10);
@@ -113,7 +92,7 @@ class WaitTest extends BaseTest
         $this->assertSame(1, $result);
     }
 
-    public function testWaitNestedDelayed()
+    public function testWaitNestedDelayed(): void
     {
         $promise = call(static function () {
             yield delay(10);
@@ -126,17 +105,6 @@ class WaitTest extends BaseTest
         });
 
         $result = Promise\wait($promise);
-
-        $this->assertSame(1, $result);
-    }
-
-    public function testWaitNestedConcurrent()
-    {
-        Loop::defer(function () {
-            Promise\wait(new Delayed(100));
-        });
-
-        $result = Promise\wait(new Delayed(10, 1));
 
         $this->assertSame(1, $result);
     }

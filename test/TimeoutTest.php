@@ -4,123 +4,103 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use Amp\TimeoutException;
+use function Amp\await;
+use function Amp\sleep;
 use function React\Promise\resolve;
 
-class TimeoutTest extends BaseTest
+class TimeoutTest extends AsyncTestCase
 {
-    public function testSuccessfulPromise()
-    {
-        Loop::run(function () {
-            $value = 1;
-
-            $promise = new Success($value);
-
-            $promise = Promise\timeout($promise, 100);
-            $this->assertInstanceOf(Promise::class, $promise);
-
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            $promise->onResolve($callback);
-
-            $this->assertSame($value, $result);
-        });
-    }
-
-    public function testFailedPromise()
-    {
-        Loop::run(function () {
-            $exception = new \Exception;
-
-            $promise = new Failure($exception);
-
-            $promise = Promise\timeout($promise, 100);
-            $this->assertInstanceOf(Promise::class, $promise);
-
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
-
-            $promise->onResolve($callback);
-
-            $this->assertSame($exception, $reason);
-        });
-    }
-
-    /**
-     * @depends testSuccessfulPromise
-     */
-    public function testFastPending()
+    public function testSuccessfulPromise(): void
     {
         $value = 1;
 
-        Loop::run(function () use (&$result, $value) {
-            $promise = new Delayed(50, $value);
+        $promise = new Success($value);
 
-            $promise = Promise\timeout($promise, 100);
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = Promise\timeout($promise, 10);
+        $this->assertInstanceOf(Promise::class, $promise);
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
+        $callback = function ($exception, $value) use (&$result) {
+            $result = $value;
+        };
 
-            $promise->onResolve($callback);
-        });
+        $promise->onResolve($callback);
 
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
+    }
+
+    public function testFailedPromise(): void
+    {
+        $exception = new \Exception;
+
+        $promise = new Failure($exception);
+
+        try {
+            await(Promise\timeout($promise, 10));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
+
+        $this->fail("Promise should have failed");
     }
 
     /**
      * @depends testSuccessfulPromise
      */
-    public function testSlowPending()
+    public function testFastPending(): void
     {
-        Loop::run(function () use (&$reason) {
-            $promise = new Delayed(200);
+        $value = 1;
 
-            $promise = Promise\timeout($promise, 100);
-            $this->assertInstanceOf(Promise::class, $promise);
+        $promise = new Delayed(10, $value);
 
-            $callback = function ($exception, $value) use (&$reason) {
-                $reason = $exception;
-            };
+        $this->assertSame($value, await(Promise\timeout($promise, 20)));
 
-            $promise->onResolve($callback);
-        });
-
-        $this->assertInstanceOf(\Amp\TimeoutException::class, $reason);
+        sleep(0); // Tick event loop to invoke onResolve callback to remove watcher.
     }
 
     /**
      * @depends testSuccessfulPromise
      */
-    public function testReactPromise()
+    public function testSlowPending(): void
     {
-        Loop::run(function () {
-            $value = 1;
+        $promise = new Delayed(20);
 
-            $promise = resolve($value);
-
-            $promise = Promise\timeout($promise, 100);
-            $this->assertInstanceOf(Promise::class, $promise);
-
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            $promise->onResolve($callback);
-
-            $this->assertSame($value, $result);
-        });
+        try {
+            await(Promise\timeout($promise, 10));
+            $this->fail("Promise did not fail");
+        } catch (TimeoutException $reason) {
+            $this->assertNull(await($promise));
+        }
     }
 
-    public function testNonPromise()
+    /**
+     * @depends testSuccessfulPromise
+     */
+    public function testSlowPendingWithDefault(): void
     {
-        $this->expectException(\TypeError::class);
-        Promise\timeout(42, 42);
+        $value = 0;
+        $default = 1;
+
+        $promise = new Delayed(20, $value);
+
+        $this->assertSame($default, await(Promise\timeoutWithDefault($promise, 10, $default)));
+
+        $this->assertSame($value, await($promise));
+    }
+
+    /**
+     * @depends testSuccessfulPromise
+     */
+    public function testReactPromise(): void
+    {
+        $value = 1;
+
+        $promise = resolve($value);
+
+        $this->assertSame($value, await(Promise\timeout($promise, 10)));
     }
 }

@@ -7,10 +7,11 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\PipelineSource;
+use function Amp\await;
 
 class FilterTest extends AsyncTestCase
 {
-    public function testNoValuesEmitted()
+    public function testNoValuesEmitted(): void
     {
         $source = new PipelineSource;
 
@@ -18,17 +19,17 @@ class FilterTest extends AsyncTestCase
 
         $source->complete();
 
-        yield Pipeline\discard($pipeline);
+        await(Pipeline\discard($pipeline));
     }
 
-    public function testValuesEmitted()
+    public function testValuesEmitted(): void
     {
         $count = 0;
         $values = [1, 2, 3];
         $expected = [1, 3];
-        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+        $generator = new AsyncGenerator(static function () use ($values) {
             foreach ($values as $value) {
-                yield $yield($value);
+                yield $value;
             }
         });
 
@@ -38,7 +39,7 @@ class FilterTest extends AsyncTestCase
             return $value & 1;
         });
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
 
@@ -48,13 +49,13 @@ class FilterTest extends AsyncTestCase
     /**
      * @depends testValuesEmitted
      */
-    public function testCallbackThrows()
+    public function testCallbackThrows(): void
     {
         $values = [1, 2, 3];
         $exception = new TestException;
-        $generator = new AsyncGenerator(static function (callable $yield) use ($values) {
+        $generator = new AsyncGenerator(static function () use ($values) {
             foreach ($values as $value) {
-                yield $yield($value);
+                yield $value;
             }
         });
 
@@ -64,10 +65,10 @@ class FilterTest extends AsyncTestCase
 
         $this->expectExceptionObject($exception);
 
-        yield $pipeline->continue();
+        $pipeline->continue();
     }
 
-    public function testPipelineFails()
+    public function testPipelineFails(): void
     {
         $exception = new TestException;
         $source = new PipelineSource;
@@ -78,6 +79,6 @@ class FilterTest extends AsyncTestCase
 
         $this->expectExceptionObject($exception);
 
-        yield $pipeline->continue();
+        $pipeline->continue();
     }
 }

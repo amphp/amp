@@ -4,102 +4,77 @@ namespace Amp\Test;
 
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
 use Amp\MultiReasonException;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise;
+use function Amp\await;
+use function React\Promise\resolve;
 
-class FirstTest extends BaseTest
+class FirstTest extends AsyncTestCase
 {
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage No promises provided
-     */
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage("No promises provided");
+
         Promise\first([]);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\first($promises)->onResolve($callback);
-
-        $this->assertSame(1, $result);
+        $this->assertSame(1, await(Promise\first($promises)));
     }
 
-    public function testFailedPromisesArray()
+    public function testFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
 
-        $callback = function ($exception, $value) use (&$reason) {
-            $reason = $exception;
-        };
+        try {
+            await(Promise\first($promises));
+        } catch (MultiReasonException $reason) {
+            $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+            return;
+        }
 
-        Promise\first($promises)->onResolve($callback);
-
-        $this->assertInstanceOf(MultiReasonException::class, $reason);
-        $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+        $this->fail("Promise was not failed");
     }
 
-    public function testMixedPromisesArray()
+    public function testMixedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\first($promises)->onResolve($callback);
-
-        $this->assertSame(3, $result);
+        $this->assertSame(3, await(Promise\first($promises)));
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
-        $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
+        $promises = [resolve(1), resolve(2), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\first($promises)->onResolve($callback);
-
-        $this->assertSame(1, $result);
+        $this->assertSame(1, await(Promise\first($promises)));
     }
 
-    public function testPendingPromiseArray()
+    public function testPendingPromiseArray(): void
     {
-        Loop::run(function () use (&$result) {
-            $promises = [
-                new Delayed(20, 1),
-                new Delayed(30, 2),
-                new Delayed(10, 3),
-            ];
+        $promises = [
+            new Delayed(20, 1),
+            new Delayed(30, 2),
+            new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
+        $this->assertSame(3, await(Promise\first($promises)));
 
-            Promise\first($promises)->onResolve($callback);
-        });
-
-        $this->assertSame(3, $result);
+        await(Promise\all($promises)); // Clear event loop.
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\TypeError::class);
+
         Promise\first([1]);
     }
 }

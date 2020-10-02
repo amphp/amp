@@ -230,12 +230,6 @@ final class Loop
      */
     public static function disable(string $watcherId): void
     {
-        if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
-            // Prior to PHP 7.2, self::$driver may be unset during destruct.
-            // See https://github.com/amphp/amp/issues/212.
-            return;
-        }
-
         self::$driver->disable($watcherId);
     }
 
@@ -251,12 +245,6 @@ final class Loop
      */
     public static function cancel(string $watcherId): void
     {
-        if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
-            // Prior to PHP 7.2, self::$driver may be unset during destruct.
-            // See https://github.com/amphp/amp/issues/212.
-            return;
-        }
-
         self::$driver->cancel($watcherId);
     }
 
@@ -289,12 +277,6 @@ final class Loop
      */
     public static function unreference(string $watcherId): void
     {
-        if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
-            // Prior to PHP 7.2, self::$driver may be unset during destruct.
-            // See https://github.com/amphp/amp/issues/212.
-            return;
-        }
-
         self::$driver->unreference($watcherId);
     }
 
@@ -324,7 +306,7 @@ final class Loop
      *
      * @return void
      */
-    public static function setState(string $key, $value): void
+    public static function setState(string $key, mixed $value): void
     {
         self::$driver->setState($key, $value);
     }

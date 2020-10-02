@@ -2,57 +2,41 @@
 
 namespace Amp\Test;
 
-use Amp;
-use Amp\Coroutine;
 use Amp\Failure;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise as FulfilledReactPromise;
+use function Amp\await;
+use function Amp\call;
+use function React\Promise\resolve;
 
-class CallTest extends BaseTest
+class CallTest extends AsyncTestCase
 {
-    public function testCallWithFunctionReturningPromise()
+    public function testCallWithFunctionReturningPromise(): void
     {
         $value = 1;
-        $promise = Amp\call(function ($value) {
+        $promise = call(function ($value) {
             return new Success($value);
         }, $value);
 
-        $this->assertInstanceOf(Promise::class, $promise);
-
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
-    public function testCallWithFunctionReturningValue()
+    public function testCallWithFunctionReturningValue(): void
     {
         $value = 1;
-        $promise = Amp\call(function ($value) {
+        $promise = call(function ($value) {
             return $value;
         }, $value);
 
-        $this->assertInstanceOf(Promise::class, $promise);
-
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
-    public function testCallWithThrowingFunction()
+    public function testCallWithThrowingFunction(): void
     {
         $exception = new \Exception;
-        $promise = Amp\call(function () use ($exception) {
+        $promise = call(function () use ($exception) {
             throw $exception;
         });
 
@@ -63,54 +47,49 @@ class CallTest extends BaseTest
             $result = $value;
         });
 
-        $this->assertSame($exception, $reason);
-        $this->assertNull($result);
+        try {
+            await($promise);
+        } catch (\Exception $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
+
+        $this->fail("Returned promise was not failed");
     }
 
-    public function testCallWithFunctionReturningReactPromise()
+    public function testCallWithFunctionReturningReactPromise(): void
     {
         $value = 1;
-        $promise = Amp\call(function ($value) {
-            return new FulfilledReactPromise($value);
+        $promise = call(function ($value) {
+            return resolve($value);
         }, $value);
-
-        $this->assertInstanceOf(Promise::class, $promise);
 
         $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
             $reason = $exception;
             $result = $value;
         });
 
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
     public function testCallWithGeneratorFunction()
     {
         $value = 1;
-        $promise = Amp\call(function ($value) {
+        $promise = call(function ($value) {
             return yield new Success($value);
         }, $value);
 
-        $this->assertInstanceOf(Coroutine::class, $promise);
-
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
-    public function testAsyncCallFunctionWithFailure()
+    public function testCallFunctionWithFailure()
     {
-        \Amp\asyncCall(function ($value) {
+        $promise = call(function () {
             return new Failure(new TestException);
-        }, 42);
+        });
 
         $this->expectException(TestException::class);
 
-        Loop::run();
+        await($promise);
     }
 }

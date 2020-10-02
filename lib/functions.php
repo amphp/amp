@@ -886,11 +886,11 @@ namespace Amp\Pipeline
     use Amp\PipelineSource;
     use Amp\Promise;
     use React\Promise\PromiseInterface as ReactPromise;
+    use function Amp\async;
+    use function Amp\asyncCallable;
     use function Amp\await;
-    use function Amp\call;
-    use function Amp\coroutine;
-    use function Amp\Internal\createTypeError;
     use function Amp\sleep;
+    use function Amp\Internal\createTypeError;
 
     /**
      * Creates a pipeline from the given iterable, emitting the each value. The iterable may contain promises. If any
@@ -983,9 +983,9 @@ namespace Amp\Pipeline
         $source = new PipelineSource;
         $result = $source->pipe();
 
-        $coroutine = coroutine(static function (Pipeline $stream) use (&$source) {
-            while ((null !== $value = yield $stream->continue()) && $source !== null) {
-                yield $source->emit($value);
+        $coroutine = asyncCallable(static function (Pipeline $stream) use (&$source) {
+            while ((null !== $value = $stream->continue()) && $source !== null) {
+                $source->yield($value);
             }
         });
 
@@ -1051,10 +1051,10 @@ namespace Amp\Pipeline
      */
     function discard(Pipeline $pipeline): Promise
     {
-        return call(static function () use ($pipeline): \Generator {
+        return async(static function () use ($pipeline): int {
             $count = 0;
 
-            while (null !== yield $pipeline->continue()) {
+            while (null !== $pipeline->continue()) {
                 $count++;
             }
 

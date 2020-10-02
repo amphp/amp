@@ -3,80 +3,55 @@
 namespace Amp\Test;
 
 use Amp\Delayed;
-use Amp\Loop;
-use function Amp\Promise\wait;
+use Amp\PHPUnit\AsyncTestCase;
+use function Amp\await;
 
-class DelayedTest extends BaseTest
+class DelayedTest extends AsyncTestCase
 {
-    public function testDelayed()
+    public function testDelayed(): void
     {
         $time = 100;
         $value = "test";
         $start = \microtime(true);
 
-        Loop::run(static function () use (&$result, $time, $value) {
-            $promise = new Delayed($time, $value);
+        $promise = new Delayed($time, $value);
 
-            $callback = static function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            $promise->onResolve($callback);
-        });
+        $this->assertSame($value, await($promise));
 
         $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
-        $this->assertSame($value, $result);
     }
 
-    public function testUnreference()
+    public function testUnreference(): void
     {
         $time = 100;
         $value = "test";
-        $start = \microtime(true);
 
-        $invoked = false;
-        Loop::run(static function () use (&$invoked, $time, $value, &$promise) {
-            $promise = new Delayed($time, $value);
-            $promise->unreference();
+        $promise = new Delayed($time, $value);
+        $promise->unreference();
 
-            $callback = static function () use (&$invoked) {
-                $invoked = true;
-            };
+        $this->ignoreLoopWatchers();
 
-            $promise->onResolve($callback);
-        });
+        $this->expectException(\FiberError::class);
+        $this->expectExceptionMessage("Scheduler ended");
 
-        $this->assertLessThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
-        $this->assertFalse($invoked);
-
-        // clear watcher
-        $promise->reference();
-        wait($promise);
+        await($promise);
     }
 
     /**
      * @depends testUnreference
      */
-    public function testReference()
+    public function testReference(): void
     {
         $time = 100;
         $value = "test";
         $start = \microtime(true);
 
-        $invoked = false;
-        Loop::run(static function () use (&$invoked, $time, $value) {
-            $promise = new Delayed($time, $value);
-            $promise->unreference();
-            $promise->reference();
+        $promise = new Delayed($time, $value);
+        $promise->unreference();
+        $promise->reference();
 
-            $callback = static function ($exception, $value) use (&$invoked) {
-                $invoked = true;
-            };
-
-            $promise->onResolve($callback);
-        });
+        await($promise);
 
         $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
-        $this->assertTrue($invoked);
     }
 }

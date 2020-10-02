@@ -21,18 +21,18 @@ class ConcatTest extends AsyncTestCase
     /**
      * @dataProvider getArrays
      *
-     * @param array $iterators
+     * @param array $array
      * @param array $expected
      */
-    public function testConcat(array $iterators, array $expected)
+    public function testConcat(array $array, array $expected): void
     {
-        $iterators = \array_map(static function (array $iterator): Pipeline {
-            return Pipeline\fromIterable($iterator);
-        }, $iterators);
+        $pipelines = \array_map(static function (iterable $iterable): Pipeline {
+            return Pipeline\fromIterable($iterable);
+        }, $array);
 
-        $pipeline = Pipeline\concat($iterators);
+        $pipeline = Pipeline\concat($pipelines);
 
-        while (null !== $value = yield $pipeline->continue()) {
+        while (null !== $value = $pipeline->continue()) {
             $this->assertSame(\array_shift($expected), $value);
         }
     }
@@ -40,12 +40,12 @@ class ConcatTest extends AsyncTestCase
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedPipeline()
+    public function testConcatWithFailedPipeline(): void
     {
         $exception = new TestException;
         $expected = \range(1, 6);
-        $generator = new AsyncGenerator(static function (callable $yield) use ($exception) {
-            yield $yield(6); // Emit once before failing.
+        $generator = new AsyncGenerator(static function () use ($exception) {
+            yield 6; // Emit once before failing.
             throw $exception;
         });
 
@@ -56,7 +56,7 @@ class ConcatTest extends AsyncTestCase
         ]);
 
         try {
-            while (null !== $value = yield $pipeline->continue()) {
+            while (null !== $value = $pipeline->continue()) {
                 $this->assertSame(\array_shift($expected), $value);
             }
 
@@ -68,7 +68,7 @@ class ConcatTest extends AsyncTestCase
         $this->assertEmpty($expected);
     }
 
-    public function testNonPipeline()
+    public function testNonPipeline(): void
     {
         $this->expectException(\TypeError::class);
 

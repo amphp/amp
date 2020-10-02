@@ -3,100 +3,64 @@
 namespace Amp\Test;
 
 use Amp\Delayed;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise;
+use function React\Promise\resolve;
+use function Amp\await;
 
-class AllTest extends BaseTest
+class AllTest extends AsyncTestCase
 {
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\all([])->onResolve($callback);
-
-        $this->assertSame([], $result);
+        $this->assertSame([], await(Promise\all([])));
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $callback = function ($exception, $value) use (&$result) {
-            $result = $value;
-        };
-
-        Promise\all($promises)->onResolve($callback);
-
-        $this->assertSame([1, 2, 3], $result);
+        $this->assertSame([1, 2, 3], await(Promise\all($promises)));
     }
 
-    public function testPendingPromiseArray()
+    public function testPendingPromiseArray(): void
     {
-        Loop::run(function () use (&$result) {
-            $promises = [
-                new Delayed(20, 1),
-                new Delayed(30, 2),
-                new Delayed(10, 3),
-            ];
+        $promises = [
+            new Delayed(20, 1),
+            new Delayed(30, 2),
+            new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\all($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals([1, 2, 3], $result);
+        $this->assertSame([1, 2, 3], await(Promise\all($promises)));
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
-        Loop::run(function () use (&$result) {
-            $promises = [
-                new Delayed(20, 1),
-                new FulfilledPromise(2),
-            ];
+        $promises = [
+            new Delayed(20, 1),
+            resolve(2),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\all($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals([1, 2], $result);
+        $this->assertEquals([1, 2], await(Promise\all($promises)));
     }
 
-    public function testArrayKeysPreserved()
+    public function testArrayKeysPreserved(): void
     {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
-        Loop::run(function () use (&$result) {
-            $promises = [
-                'one' => new Delayed(20, 1),
-                'two' => new Delayed(30, 2),
-                'three' => new Delayed(10, 3),
-            ];
+        $promises = [
+            'one' => new Delayed(20, 1),
+            'two' => new Delayed(30, 2),
+            'three' => new Delayed(10, 3),
+        ];
 
-            $callback = function ($exception, $value) use (&$result) {
-                $result = $value;
-            };
-
-            Promise\all($promises)->onResolve($callback);
-        });
-
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, await(Promise\all($promises)));
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\TypeError::class);
+
         Promise\all([1]);
     }
 }

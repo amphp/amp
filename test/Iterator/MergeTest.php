@@ -4,14 +4,13 @@ namespace Amp\Test\Iterator;
 
 use Amp\Delayed;
 use Amp\Iterator;
-use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
-use Amp\Test\BaseTest;
 
-class MergeTest extends BaseTest
+class MergeTest extends AsyncTestCase
 {
-    public function getArrays()
+    public function getArrays(): array
     {
         return [
             [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
@@ -26,80 +25,73 @@ class MergeTest extends BaseTest
      * @param array $iterators
      * @param array $expected
      */
-    public function testMerge(array $iterators, array $expected)
+    public function testMerge(array $iterators, array $expected): \Generator
     {
-        Loop::run(function () use ($iterators, $expected) {
-            $iterators = \array_map(function (array $iterator): Iterator {
-                return Iterator\fromIterable($iterator);
-            }, $iterators);
+        $iterators = \array_map(function (array $iterator): Iterator {
+            return Iterator\fromIterable($iterator);
+        }, $iterators);
 
-            $iterator = Iterator\merge($iterators);
+        $iterator = Iterator\merge($iterators);
 
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
-            }
-        });
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
     }
 
     /**
      * @depends testMerge
      */
-    public function testMergeWithDelayedEmits()
+    public function testMergeWithDelayedEmits(): \Generator
     {
-        Loop::run(function () {
-            $iterators = [];
-            $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
-            $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
-            $expected = [1, 4, 5, 2, 6, 3];
+        $iterators = [];
+        $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
+        $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
+        $expected = [1, 4, 5, 2, 6, 3];
 
-            $iterators[] = new Producer(function (callable $emit) use ($values1) {
-                foreach ($values1 as $value) {
-                    yield $emit($value);
-                }
-            });
-
-            $iterators[] = new Producer(function (callable $emit) use ($values2) {
-                foreach ($values2 as $value) {
-                    yield $emit($value);
-                }
-            });
-
-            $iterator = Iterator\merge($iterators);
-
-            while (yield $iterator->advance()) {
-                $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        $iterators[] = new Producer(function (callable $emit) use ($values1) {
+            foreach ($values1 as $value) {
+                yield $emit($value);
             }
         });
+
+        $iterators[] = new Producer(function (callable $emit) use ($values2) {
+            foreach ($values2 as $value) {
+                yield $emit($value);
+            }
+        });
+
+        $iterator = Iterator\merge($iterators);
+
+        while (yield $iterator->advance()) {
+            $this->assertSame(\array_shift($expected), $iterator->getCurrent());
+        }
     }
 
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedIterator()
+    public function testMergeWithFailedIterator(): \Generator
     {
-        Loop::run(function () {
-            $exception = new TestException;
-            $producer = new Producer(function (callable $emit) use ($exception) {
-                yield $emit(1); // Emit once before failing.
-                throw $exception;
-            });
-
-            $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
-
-            try {
-                while (yield $iterator->advance()) ;
-                $this->fail("The exception used to fail the iterator should be thrown from advance()");
-            } catch (TestException $reason) {
-                $this->assertSame($exception, $reason);
-            }
+        $exception = new TestException;
+        $producer = new Producer(function (callable $emit) use ($exception) {
+            yield $emit(1); // Emit once before failing.
+            throw $exception;
         });
+
+        $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
+
+        try {
+            while (yield $iterator->advance()) ;
+            $this->fail("The exception used to fail the iterator should be thrown from advance()");
+        } catch (TestException $reason) {
+            $this->assertSame($exception, $reason);
+        }
     }
 
-    /**
-     * @expectedException \TypeError
-     */
     public function testNonIterator()
     {
+        $this->expectException(\TypeError::class);
+
         Iterator\merge([1]);
     }
 }

@@ -2,8 +2,7 @@
 
 namespace Amp\Test\Loop;
 
-use Amp\Coroutine;
-use Amp\Delayed;
+use Amp\Deferred;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Loop\Driver;
@@ -11,8 +10,11 @@ use Amp\Loop\DriverControl;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
 use PHPUnit\Framework\TestCase;
-use React\Promise\RejectedPromise as RejectedReactPromise;
+use function Amp\asyncCallable;
+use function Amp\await;
 use function Amp\getCurrentTime;
+use function Amp\sleep;
+use function React\Promise\reject;
 
 if (!\defined("SIGUSR1")) {
     \define("SIGUSR1", 30);
@@ -1470,21 +1472,7 @@ abstract class DriverTest extends TestCase
         foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
             $promises = [
                 new Failure(new \Exception("rethrow test")),
-                new RejectedReactPromise(new \Exception("rethrow test")),
-                new Coroutine((function () {
-                    if (false) {
-                        yield;
-                    }
-
-                    throw new \Exception("rethrow test");
-                })()),
-                (function () {
-                    if (false) {
-                        yield;
-                    }
-
-                    throw new \Exception("rethrow test");
-                })(),
+                reject(new \Exception("rethrow test")),
                 null,
             ];
 
@@ -1676,17 +1664,24 @@ abstract class DriverTest extends TestCase
 
     public function testBug163ConsecutiveDelayed(): void
     {
+        $deferred = new Deferred;
+
         $emits = 3;
 
-        $this->loop->defer(function () use (&$time, $emits) {
-            $time = \microtime(true);
-            for ($i = 0; $i < $emits; ++$i) {
-                yield new Delayed(100);
+        $this->loop->defer(asyncCallable(function () use (&$time, $deferred, $emits) {
+            try {
+                $time = \microtime(true);
+                for ($i = 0; $i < $emits; ++$i) {
+                    sleep(100);
+                }
+                $time = \microtime(true) - $time;
+                $deferred->resolve();
+            } catch (\Throwable $exception) {
+                $deferred->fail($exception);
             }
-            $time = \microtime(true) - $time;
-        });
+        }));
 
-        $this->loop->createControl()->run();
+        await($deferred->promise());
 
         $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }

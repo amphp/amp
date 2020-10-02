@@ -5,20 +5,22 @@ namespace Amp\Test;
 use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\InvalidYieldError;
 use Amp\Loop;
+use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\FulfilledPromise as FulfilledReactPromise;
 use React\Promise\Promise as ReactPromise;
+use function Amp\await;
 use function Amp\call;
+use function Amp\sleep;
+use function React\Promise\resolve;
 
-class CoroutineTest extends BaseTest
+class CoroutineTest extends AsyncTestCase
 {
     const TIMEOUT = 100;
 
-    public function testYieldSuccessfulPromise()
+    public function testYieldSuccessfulPromise(): void
     {
         $value = 1;
 
@@ -26,12 +28,12 @@ class CoroutineTest extends BaseTest
             $yielded = yield new Success($value);
         };
 
-        new Coroutine($generator());
+        await(new Coroutine($generator()));
 
         $this->assertSame($value, $yielded);
     }
 
-    public function testYieldFailedPromise()
+    public function testYieldFailedPromise(): void
     {
         $exception = new \Exception;
 
@@ -41,11 +43,15 @@ class CoroutineTest extends BaseTest
 
         $coroutine = new Coroutine($generator());
 
+        sleep(0); // Force loop to tick once.
+
         $this->assertNull($yielded);
 
         $coroutine->onResolve(function ($exception) use (&$reason) {
             $reason = $exception;
         });
+
+        sleep(0); // Force loop to tick once.
 
         $this->assertSame($exception, $reason);
     }
@@ -53,89 +59,79 @@ class CoroutineTest extends BaseTest
     /**
      * @depends testYieldSuccessfulPromise
      */
-    public function testYieldPendingPromise()
+    public function testYieldPendingPromise(): void
     {
         $value = 1;
 
-        Loop::run(function () use (&$yielded, $value) {
-            $generator = function () use (&$yielded, $value) {
-                $yielded = yield new Delayed(self::TIMEOUT, $value);
-            };
+        $generator = function () use (&$yielded, $value) {
+            $yielded = yield new Delayed(self::TIMEOUT, $value);
+        };
 
-            new Coroutine($generator());
-        });
+        await(new Coroutine($generator()));
 
         $this->assertSame($value, $yielded);
     }
 
-    public function testYieldPromiseArray()
+    public function testYieldPromiseArray(): void
     {
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $generator = function () use (&$yielded, $value) {
-                list($yielded) = yield [
-                    new Success($value),
-                ];
-            };
+        $generator = function () use (&$yielded, $value) {
+            list($yielded) = yield [
+                new Success($value),
+            ];
+        };
 
-            yield new Coroutine($generator());
+        await(new Coroutine($generator()));
 
-            $this->assertSame($value, $yielded);
-        });
+        $this->assertSame($value, $yielded);
     }
 
     public function testYieldNonPromiseArray()
     {
-        $this->expectException(InvalidYieldError::class);
+        $this->expectException(\TypeError::class);
 
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $generator = function () use (&$yielded, $value) {
-                list($yielded) = yield [
-                    $value,
-                ];
-            };
+        $generator = function () use (&$yielded, $value) {
+            list($yielded) = yield [
+                $value,
+            ];
+        };
 
-            yield new Coroutine($generator());
-        });
+        await(new Coroutine($generator()));
     }
 
     public function testYieldPromiseArrayAfterPendingPromise()
     {
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $generator = function () use (&$yielded, $value) {
-                yield new Delayed(10);
-                list($yielded) = yield [
-                    new Success($value),
-                ];
-            };
+        $generator = function () use (&$yielded, $value) {
+            yield new Delayed(10);
+            list($yielded) = yield [
+                new Success($value),
+            ];
+        };
 
-            yield new Coroutine($generator());
+        await(new Coroutine($generator()));
 
-            $this->assertSame($value, $yielded);
-        });
+        $this->assertSame($value, $yielded);
     }
 
     public function testYieldNonPromiseArrayAfterPendingPromise()
     {
-        $this->expectException(InvalidYieldError::class);
+        $this->expectException(\TypeError::class);
 
-        Loop::run(function () {
-            $value = 1;
+        $value = 1;
 
-            $generator = function () use (&$yielded, $value) {
-                yield new Delayed(10);
-                list($yielded) = yield [
-                    $value,
-                ];
-            };
+        $generator = function () use (&$yielded, $value) {
+            yield new Delayed(10);
+            list($yielded) = yield [
+                $value,
+            ];
+        };
 
-            yield new Coroutine($generator());
-        });
+        await(new Coroutine($generator()));
     }
 
     /**
@@ -157,24 +153,20 @@ class CoroutineTest extends BaseTest
             $fail = true;
         };
 
-        new Coroutine($generator());
+        await(new Coroutine($generator()));
 
         $this->assertFalse($fail);
     }
 
     public function testInvalidYield()
     {
+        $this->expectException(\TypeError::class);
+
         $generator = function () {
             yield 1;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+        await(new Coroutine($generator()));
     }
 
     /**
@@ -182,18 +174,14 @@ class CoroutineTest extends BaseTest
      */
     public function testInvalidYieldAfterYieldPromise()
     {
+        $this->expectException(\TypeError::class);
+
         $generator = function () {
             yield new Success;
             yield 1;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertInstanceOf(InvalidYieldError::class, $reason);
+        await(new Coroutine($generator()));
     }
 
     /**
@@ -212,11 +200,7 @@ class CoroutineTest extends BaseTest
             return $value;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
+        $result = await(new Coroutine($generator()));
 
         $this->assertSame($result, $value);
     }
@@ -235,11 +219,7 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$result) {
-            $result = $value;
-        });
+        $result = await(new Coroutine($generator()));
 
         $this->assertSame($result, $value);
     }
@@ -258,13 +238,14 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -281,14 +262,15 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            $this->assertInstanceOf(\TypeError::class, $reason->getPrevious());
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
-        $this->assertInstanceOf(InvalidYieldError::class, $reason->getPrevious());
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -306,14 +288,8 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
+        $result = await(new Coroutine($generator()));
 
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
         $this->assertNull($result);
     }
 
@@ -326,13 +302,12 @@ class CoroutineTest extends BaseTest
             yield;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
     }
 
     /**
@@ -352,14 +327,15 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            $this->assertTrue($invoked);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
-        $this->assertTrue($invoked);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -379,14 +355,15 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            $this->assertTrue($invoked);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
-        $this->assertTrue($invoked);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -397,27 +374,26 @@ class CoroutineTest extends BaseTest
         $exception = new \Exception;
         $value = 1;
 
-        Loop::run(function () use (&$yielded, &$invoked, &$reason, $exception, $value) {
-            $invoked = false;
-            $generator = function () use (&$yielded, &$invoked, $exception, $value) {
-                try {
-                    $yielded = (yield new Delayed(self::TIMEOUT, $value));
-                    throw $exception;
-                } finally {
-                    $invoked = true;
-                }
-            };
+        $invoked = false;
+        $generator = function () use (&$yielded, &$invoked, $exception, $value) {
+            try {
+                $yielded = (yield new Delayed(self::TIMEOUT, $value));
+                throw $exception;
+            } finally {
+                $invoked = true;
+            }
+        };
 
-            $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            $this->assertTrue($invoked);
+            $this->assertSame($value, $yielded);
+            return;
+        }
 
-            $coroutine->onResolve(function ($exception) use (&$reason) {
-                $reason = $exception;
-            });
-        });
-
-        $this->assertSame($exception, $reason);
-        $this->assertTrue($invoked);
-        $this->assertSame($value, $yielded);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -429,24 +405,23 @@ class CoroutineTest extends BaseTest
         $exception = new \Exception;
         $value = 1;
 
-        Loop::run(function () use (&$yielded, &$reason, $exception, $value) {
-            $generator = function () use (&$yielded, $exception, $value) {
-                try {
-                    throw $exception;
-                } finally {
-                    $yielded = yield new Delayed(self::TIMEOUT, $value);
-                }
-            };
+        $generator = function () use (&$yielded, $exception, $value) {
+            try {
+                throw $exception;
+            } finally {
+                $yielded = yield new Delayed(self::TIMEOUT, $value);
+            }
+        };
 
-            $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            $this->assertSame($value, $yielded);
+            return;
+        }
 
-            $coroutine->onResolve(function ($exception) use (&$reason) {
-                $reason = $exception;
-            });
-        });
-
-        $this->assertSame($value, $yielded);
-        $this->assertSame($exception, $reason);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -467,13 +442,14 @@ class CoroutineTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception) use (&$reason) {
-            $reason = $exception;
-        });
-
-        $this->assertSame($exception, $reason);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -504,22 +480,18 @@ class CoroutineTest extends BaseTest
         };
 
         try {
-            new Coroutine($generator());
+            await(new Coroutine($generator()));
         } catch (\Throwable $e) {
             $this->fail("Caught exception that shouldn't be thrown at that place.");
         }
 
-        $this->expectExceptionObject($exception);
+        Loop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
+            $reason = $exception;
+        });
 
-        try {
-            Promise\wait(new Delayed(0)); // make loop tick once to throw errors from loop
-        } catch (\Error $e) {
-            if ($e->getMessage() === "Loop exceptionally stopped without resolving the promise") {
-                throw $e->getPrevious();
-            }
+        sleep(0); // Tick event loop to invoke error callback.
 
-            throw $e;
-        }
+        $this->assertSame($exception, $reason);
     }
 
     /**
@@ -527,25 +499,17 @@ class CoroutineTest extends BaseTest
      */
     public function testYieldConsecutiveSucceeded()
     {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $count = 1000;
-            $promise = new Success;
+        $count = 1000;
+        $promise = new Success;
 
-            $generator = function () use ($count, $promise) {
-                for ($i = 0; $i < $count; ++$i) {
-                    yield $promise;
-                }
-            };
+        $generator = function () use ($count, $promise) {
+            for ($i = 0; $i < $count; ++$i) {
+                yield $promise;
+            }
+            return $count;
+        };
 
-            $coroutine = new Coroutine($generator());
-
-            $coroutine->onResolve(function () use (&$invoked) {
-                $invoked = true;
-            });
-        });
-
-        $this->assertTrue($invoked);
+        $this->assertSame($count, await(new Coroutine($generator())));
     }
 
     /**
@@ -553,28 +517,22 @@ class CoroutineTest extends BaseTest
      */
     public function testYieldConsecutiveFailed()
     {
-        $invoked = false;
-        Loop::run(function () use (&$invoked) {
-            $count = 1000;
-            $promise = new Failure(new \Exception);
+        $count = 1000;
+        $promise = new Failure(new \Exception);
 
-            $generator = function () use ($count, $promise) {
-                for ($i = 0; $i < $count; ++$i) {
-                    try {
-                        yield $promise;
-                    } catch (\Exception $exception) {
-                        // Ignore and continue.
-                    }
+        $generator = function () use ($count, $promise) {
+            for ($i = 0; $i < $count; ++$i) {
+                try {
+                    yield $promise;
+                } catch (\Exception $exception) {
+                    // Ignore and continue.
                 }
-            };
+            }
 
-            $coroutine = new Coroutine($generator());
+            return $count;
+        };
 
-            $coroutine->onResolve(function () use (&$invoked) {
-                $invoked = true;
-            });
-        });
-        $this->assertTrue($invoked);
+        $this->assertSame($count, await(new Coroutine($generator())));
     }
 
     /**
@@ -588,14 +546,7 @@ class CoroutineTest extends BaseTest
             }
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $invoked = false;
-        $coroutine->onResolve(function () use (&$invoked) {
-            $invoked = true;
-        });
-
-        $this->assertTrue($invoked);
+        $this->assertNull(await(new Coroutine($generator())));
     }
 
     public function testCoroutineFunction()
@@ -623,13 +574,7 @@ class CoroutineTest extends BaseTest
 
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
     /**
@@ -647,13 +592,7 @@ class CoroutineTest extends BaseTest
 
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await($promise));
     }
 
     /**
@@ -671,13 +610,14 @@ class CoroutineTest extends BaseTest
 
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
+        try {
+            await($promise);
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $this->assertSame($exception, $reason);
-        $this->assertNull($result);
+        $this->fail("Coroutine should have failed");
     }
 
     /**
@@ -694,19 +634,13 @@ class CoroutineTest extends BaseTest
 
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame(42, $result);
+        $this->assertSame(42, await($promise));
     }
 
     public function testCoroutineFunctionWithReactPromise()
     {
         $callable = \Amp\coroutine(function () {
-            return new FulfilledReactPromise(42);
+            return resolve(42);
         });
 
         /** @var Promise $promise */
@@ -714,13 +648,7 @@ class CoroutineTest extends BaseTest
 
         $this->assertInstanceOf(Promise::class, $promise);
 
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame(42, $result);
+        $this->assertSame(42, await($promise));
     }
 
     public function testCoroutineResolvedWithReturn()
@@ -732,15 +660,7 @@ class CoroutineTest extends BaseTest
             yield; // Unreachable, but makes function a coroutine.
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     /**
@@ -758,15 +678,7 @@ class CoroutineTest extends BaseTest
             return yield from $generator();
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     /**
@@ -786,15 +698,7 @@ class CoroutineTest extends BaseTest
             return -$value;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     public function testYieldingFulfilledReactPromise()
@@ -808,15 +712,7 @@ class CoroutineTest extends BaseTest
             return yield $promise;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     public function testYieldingFulfilledReactPromiseAfterInteropPromise()
@@ -831,15 +727,7 @@ class CoroutineTest extends BaseTest
             return yield $promise;
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     public function testYieldingRejectedReactPromise()
@@ -853,15 +741,14 @@ class CoroutineTest extends BaseTest
             return yield $promise;
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertSame($reason, $exception);
-        $this->assertNull($result);
+        $this->fail("Coroutine should have failed");
     }
 
     public function testYieldingRejectedReactPromiseAfterInteropPromise()
@@ -876,15 +763,14 @@ class CoroutineTest extends BaseTest
             return yield $promise;
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertSame($reason, $exception);
-        $this->assertNull($result);
+        $this->fail("Coroutine should have failed");
     }
 
     public function testReturnFulfilledReactPromise()
@@ -899,15 +785,7 @@ class CoroutineTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         };
 
-        $coroutine = new Coroutine($generator());
-
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertNull($reason);
-        $this->assertSame($value, $result);
+        $this->assertSame($value, await(new Coroutine($generator())));
     }
 
     public function testReturningRejectedReactPromise()
@@ -922,15 +800,14 @@ class CoroutineTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         };
 
-        $coroutine = new Coroutine($generator());
+        try {
+            await(new Coroutine($generator()));
+        } catch (\Throwable $reason) {
+            $this->assertSame($exception, $reason);
+            return;
+        }
 
-        $coroutine->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertSame($reason, $exception);
-        $this->assertNull($result);
+        $this->fail("Coroutine should have failed");
     }
 
     public function testAsyncCoroutineFunctionWithFailure()
@@ -941,8 +818,12 @@ class CoroutineTest extends BaseTest
 
         $coroutine(42);
 
-        $this->expectException(TestException::class);
+        Loop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
+            $reason = $exception;
+        });
 
-        Loop::run();
+        sleep(0); // Tick event loop to invoke error callback.
+
+        $this->assertInstanceOf(TestException::class, $reason);
     }
 }

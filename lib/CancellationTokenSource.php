@@ -47,7 +47,7 @@ final class CancellationTokenSource
 
     public function __construct()
     {
-        $onCancel = null;
+        $onCancel = &$this->onCancel;
 
         $this->token = new class($onCancel) implements CancellationToken {
             private string $nextId = "a";
@@ -59,13 +59,12 @@ final class CancellationTokenSource
             private ?\Throwable $exception = null;
 
             /**
-             * @param mixed $onCancel
+             * @param callable|null $onCancel
              * @param-out callable $onCancel
              */
-            public function __construct(&$onCancel)
+            public function __construct(?callable &$onCancel)
             {
-                /** @psalm-suppress MissingClosureReturnType We still support PHP 7.0 */
-                $onCancel = function (\Throwable $exception) {
+                $onCancel = function (\Throwable $exception): void {
                     $this->exception = $exception;
 
                     $callbacks = $this->callbacks;
@@ -98,7 +97,7 @@ final class CancellationTokenSource
                         rethrow($result);
                     }
                 } catch (\Throwable $exception) {
-                    Loop::defer(static function () use ($exception) {
+                    Loop::defer(static function () use ($exception): void {
                         throw $exception;
                     });
                 }
@@ -134,8 +133,6 @@ final class CancellationTokenSource
                 }
             }
         };
-
-        $this->onCancel = $onCancel;
     }
 
     public function getToken(): CancellationToken
@@ -145,10 +142,8 @@ final class CancellationTokenSource
 
     /**
      * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
-     *
-     * @return void
      */
-    public function cancel(\Throwable $previous = null)
+    public function cancel(\Throwable $previous = null): void
     {
         if ($this->onCancel === null) {
             return;
@@ -156,6 +151,6 @@ final class CancellationTokenSource
 
         $onCancel = $this->onCancel;
         $this->onCancel = null;
-        $onCancel(new CancelledException($previous));
+        Loop::defer(static fn () => $onCancel(new CancelledException($previous)));
     }
 }
