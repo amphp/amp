@@ -5,16 +5,14 @@ namespace Amp;
 final class CombinedCancellationToken implements CancellationToken
 {
     /** @var array{0: CancellationToken, 1: string}[] */
-    private $tokens = [];
+    private array $tokens = [];
 
-    /** @var string */
-    private $nextId = "a";
+    private string $nextId = "a";
 
     /** @var callable[] */
-    private $callbacks = [];
+    private array $callbacks = [];
 
-    /** @var CancelledException|null */
-    private $exception;
+    private ?CancelledException $exception;
 
     public function __construct(CancellationToken ...$tokens)
     {
@@ -26,7 +24,7 @@ final class CombinedCancellationToken implements CancellationToken
                 $this->callbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    asyncCall($callback, $this->exception);
+                    Loop::defer(static fn (): Promise => call($callback, $this->exception));
                 }
             });
 
@@ -48,7 +46,7 @@ final class CombinedCancellationToken implements CancellationToken
         $id = $this->nextId++;
 
         if ($this->exception) {
-            asyncCall($callback, $this->exception);
+            Loop::defer(static fn (): Promise => call($callback)($this->exception));
         } else {
             $this->callbacks[$id] = $callback;
         }
