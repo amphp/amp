@@ -41,15 +41,12 @@ final class AsyncGenerator implements Pipeline
 
             while ($generator->valid()) {
                 try {
-                    $yielded = await($source->emit($yielded));
+                    $yielded = $generator->send(await($source->emit($yielded)));
                 } catch (DisposedException $exception) {
                     throw $exception; // Destroys generator and fails pipeline.
                 } catch (\Throwable $exception) {
                     $yielded = $generator->throw($exception);
-                    continue;
                 }
-
-                $yielded = $generator->send($yielded);
             }
 
             return $generator->getReturn();
