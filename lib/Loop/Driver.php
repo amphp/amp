@@ -471,7 +471,7 @@ abstract class Driver
      *
      * @return void
      */
-    final public function setState(string $key, $value): void
+    final public function setState(string $key, mixed $value): void
     {
         if ($value === null) {
             unset($this->registry[$key]);
@@ -705,6 +705,8 @@ abstract class Driver
      */
     private function tick(): void
     {
+        $runCount = $this->runCount;
+
         if (empty($this->deferQueue)) {
             $this->deferQueue = $this->nextTickQueue;
         } else {
@@ -743,6 +745,11 @@ abstract class Driver
         }
 
         /** @psalm-suppress RedundantCondition */
-        $this->dispatch(empty($this->nextTickQueue) && empty($this->enableQueue) && !$this->isEmpty());
+        $this->dispatch(
+            empty($this->nextTickQueue)
+            && empty($this->enableQueue)
+            && $runCount >= $this->runCount
+            && !$this->isEmpty()
+        );
     }
 }
