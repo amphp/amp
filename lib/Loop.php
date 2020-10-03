@@ -34,6 +34,10 @@ final class Loop
      */
     public static function set(Driver $driver): void
     {
+        if (isset(self::$driver) && self::$driver->isRunning()) {
+            throw new \Error("Can't swap the event loop while it is running");
+        }
+
         try {
             self::$driver = new class extends Driver {
                 protected function activate(array $watchers): void

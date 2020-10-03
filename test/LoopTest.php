@@ -5,7 +5,9 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
+use function Amp\asyncCallable;
 use function Amp\await;
+use function Amp\sleep;
 
 class LoopTest extends AsyncTestCase
 {
@@ -85,5 +87,29 @@ class LoopTest extends AsyncTestCase
     public function testGetInfo(): void
     {
         $this->assertSame(Loop::get()->getInfo(), Loop::getInfo());
+    }
+
+    public function testBug163ConsecutiveDelayed(): void
+    {
+        $deferred = new Deferred;
+
+        $emits = 3;
+
+        Loop::defer(asyncCallable(function () use (&$time, $deferred, $emits) {
+            try {
+                $time = \microtime(true);
+                for ($i = 0; $i < $emits; ++$i) {
+                    sleep(100);
+                }
+                $time = \microtime(true) - $time;
+                $deferred->resolve();
+            } catch (\Throwable $exception) {
+                $deferred->fail($exception);
+            }
+        }));
+
+        await($deferred->promise());
+
+        $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 }

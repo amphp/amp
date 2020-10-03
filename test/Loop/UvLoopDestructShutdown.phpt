@@ -9,23 +9,28 @@ Test order of destruction not interfering with access to UV handles
 
 include __DIR__.'/../../vendor/autoload.php';
 
-use Amp\Loop;
+use Amp\Loop\UvDriver;
 
-Loop::run(function () {
-    Loop::setState('test', new class {
-        private $handle;
-        public function __construct()
-        {
-            $this->handle = Loop::repeat(10, function () {});
-        }
-        public function __destruct()
-        {
-            Loop::cancel($this->handle);
-            print "ok";
-        }
-    });
-    Loop::delay(0, [Loop::class, "stop"]);
+$loop = new UvDriver;
+
+$loop->setState('test', new class($loop) {
+    private UvDriver $loop;
+    private string $handle;
+    public function __construct(UvDriver $loop)
+    {
+        $this->loop = $loop;
+        $this->handle = $this->loop->repeat(10, function () {});
+    }
+    public function __destruct()
+    {
+        $this->loop->cancel($this->handle);
+        print "ok";
+    }
 });
+
+$loop->delay(0, [$loop, "stop"]);
+
+$loop->run();
 
 ?>
 --EXPECT--

@@ -2,19 +2,11 @@
 
 namespace Amp\Test\Loop;
 
-use Amp\Deferred;
-use Amp\Failure;
-use Amp\Loop;
 use Amp\Loop\Driver;
-use Amp\Loop\DriverControl;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
 use PHPUnit\Framework\TestCase;
-use function Amp\asyncCallable;
-use function Amp\await;
 use function Amp\getCurrentTime;
-use function Amp\sleep;
-use function React\Promise\reject;
 
 if (!\defined("SIGUSR1")) {
     \define("SIGUSR1", 30);
@@ -37,7 +29,7 @@ abstract class DriverTest extends TestCase
     abstract public function getFactory(): callable;
 
     /** @var Driver */
-    public $loop;
+    public Driver $loop;
 
     public function setUp(): void
     {
@@ -47,8 +39,6 @@ abstract class DriverTest extends TestCase
             $this->fail("Factory did not return a loop Driver");
         }
 
-        // Required for error handler to work
-        Loop::set($this->loop);
         \gc_collect_cycles();
     }
 
@@ -1463,71 +1453,56 @@ abstract class DriverTest extends TestCase
     public function testRethrowsFromCallbacks(): void
     {
         foreach (["onReadable", "onWritable", "defer", "delay", "repeat", "onSignal"] as $watcher) {
-            $promises = [
-                new Failure(new \Exception("rethrow test")),
-                reject(new \Exception("rethrow test")),
-                null,
-            ];
+            if ($watcher === "onSignal") {
+                $this->checkForSignalCapability();
+            }
 
-            foreach ($promises as $promise) {
-                if ($watcher === "onSignal") {
-                    $this->checkForSignalCapability();
+            try {
+                $args = [];
+
+                switch ($watcher) {
+                    case "onSignal":
+                        $args[] = SIGUSR1;
+                        break;
+
+                    case "onWritable":
+                        $args[] = STDOUT;
+                        break;
+
+                    case "onReadable":
+                        $ends = \stream_socket_pair(
+                            \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
+                            STREAM_SOCK_STREAM,
+                            STREAM_IPPROTO_IP
+                        );
+                        \fwrite($ends[0], "trigger readability watcher");
+                        $args[] = $ends[1];
+                        break;
+
+                    case "delay":
+                    case "repeat":
+                        $args[] = 5;
+                        break;
                 }
 
-                try {
-                    $args = [];
+                $args[] = function ($watcherId) {
+                    $this->loop->cancel($watcherId);
+                    throw new \Exception("rethrow test");
+                };
 
-                    switch ($watcher) {
-                        case "onSignal":
-                            $args[] = SIGUSR1;
-                            break;
+                \call_user_func_array([$this->loop, $watcher], $args);
 
-                        case "onWritable":
-                            $args[] = STDOUT;
-                            break;
-
-                        case "onReadable":
-                            $ends = \stream_socket_pair(
-                                \stripos(PHP_OS, "win") === 0 ? STREAM_PF_INET : STREAM_PF_UNIX,
-                                STREAM_SOCK_STREAM,
-                                STREAM_IPPROTO_IP
-                            );
-                            \fwrite($ends[0], "trigger readability watcher");
-                            $args[] = $ends[1];
-                            break;
-
-                        case "delay":
-                        case "repeat":
-                            $args[] = 5;
-                            break;
-                    }
-
-                    if ($promise === null) {
-                        $args[] = function ($watcherId) {
-                            $this->loop->cancel($watcherId);
-                            throw new \Exception("rethrow test");
-                        };
-                    } else {
-                        $args[] = function ($watcherId) use ($promise) {
-                            $this->loop->cancel($watcherId);
-                            return $promise;
-                        };
-                    }
-
-                    \call_user_func_array([$this->loop, $watcher], $args);
-
-                    if ($watcher == "onSignal") {
-                        $this->loop->delay(100, function () {
-                            \posix_kill(\getmypid(), \SIGUSR1);
-                        });
-                    }
-
-                    $this->loop->run();
-
-                    $this->fail("Didn't throw expected exception.");
-                } catch (\Exception $e) {
-                    $this->assertSame("rethrow test", $e->getMessage());
+                if ($watcher == "onSignal") {
+                    $this->loop->delay(100, function () {
+                        \posix_kill(\getmypid(), \SIGUSR1);
+                    });
                 }
+
+                $this->loop->run();
+
+                $this->fail("Didn't throw expected exception.");
+            } catch (\Exception $e) {
+                $this->assertSame("rethrow test", $e->getMessage());
             }
         }
     }
@@ -1648,29 +1623,5 @@ abstract class DriverTest extends TestCase
             $this->assertLessThanOrEqual($now + 10, $new);
         });
         $this->loop->run();
-    }
-
-    public function testBug163ConsecutiveDelayed(): void
-    {
-        $deferred = new Deferred;
-
-        $emits = 3;
-
-        $this->loop->defer(asyncCallable(function () use (&$time, $deferred, $emits) {
-            try {
-                $time = \microtime(true);
-                for ($i = 0; $i < $emits; ++$i) {
-                    sleep(100);
-                }
-                $time = \microtime(true) - $time;
-                $deferred->resolve();
-            } catch (\Throwable $exception) {
-                $deferred->fail($exception);
-            }
-        }));
-
-        await($deferred->promise());
-
-        $this->assertGreaterThan(100 * $emits - 1 /* 1ms grace period */, $time * 1000);
     }
 }
