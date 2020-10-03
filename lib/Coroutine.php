@@ -25,7 +25,7 @@ final class Coroutine implements Promise
      */
     public function __construct(\Generator $generator)
     {
-        $this->promise = async(function () use ($generator): mixed {
+        $this->promise = async(static function () use ($generator): mixed {
             $yielded = $generator->current();
 
             while ($generator->valid()) {
