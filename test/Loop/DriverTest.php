@@ -53,43 +53,6 @@ abstract class DriverTest extends TestCase
         $this->loop->run();
     }
 
-    // Note: The running nesting is important for being able to continue actually still running loops (i.e. running flag set, if the driver has one) inside register_shutdown_function() for example
-    public function testLoopRunsCanBeConsecutiveAndNested(): void
-    {
-        $this->expectOutputString("123456");
-        $this->start(function (Driver $loop): void {
-            $loop->stop();
-            $loop->defer(function () use (&$run) {
-                echo $run = 1;
-            });
-            $loop->run();
-            if (!$run) {
-                $this->fail("A loop stop before a run must not impact that run");
-            }
-            $loop->defer(function () use ($loop): void {
-                $loop->run();
-                echo 5;
-                $loop->defer(function () use ($loop): void {
-                    echo 6;
-                    $loop->stop();
-                    $loop->defer(function () {
-                        $this->fail("A loop stopped at all levels must not execute further defers");
-                    });
-                });
-                $loop->run();
-            });
-            $loop->defer(function () use ($loop): void {
-                echo 2;
-                $loop->defer(function () {
-                    echo 4;
-                });
-            });
-            $loop->defer(function (): void {
-                echo 3;
-            });
-        });
-    }
-
     public function testCorrectTimeoutIfBlockingBeforeActivate(): void
     {
         $start = 0;

@@ -61,6 +61,10 @@ abstract class Driver implements \FiberScheduler
      */
     public function run(): void
     {
+        if ($this->running) {
+            throw new \Error("The loop was already running");
+        }
+
         $this->running = true;
 
         try {
