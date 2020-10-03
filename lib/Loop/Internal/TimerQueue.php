@@ -24,7 +24,7 @@ final class TimerQueue
      *
      * @return void
      */
-    public function insert(Watcher $watcher)
+    public function insert(Watcher $watcher): void
     {
         \assert($watcher->expiration !== null);
         \assert(!isset($this->pointers[$watcher->id]));
@@ -56,7 +56,7 @@ final class TimerQueue
      *
      * @return void
      */
-    public function remove(Watcher $watcher)
+    public function remove(Watcher $watcher): void
     {
         $id = $watcher->id;
 
@@ -77,7 +77,7 @@ final class TimerQueue
      *
      * @psalm-return Watcher<int>|null
      */
-    public function extract(int $now)
+    public function extract(int $now): ?Watcher
     {
         if (empty($this->data)) {
             return null;
@@ -99,7 +99,7 @@ final class TimerQueue
      *
      * @return int|null Expiration time of the watcher at the top of the heap or null if the heap is empty.
      */
-    public function peek()
+    public function peek(): ?int
     {
         return isset($this->data[0]) ? $this->data[0]->expiration : null;
     }
@@ -109,7 +109,7 @@ final class TimerQueue
      *
      * @return void
      */
-    private function removeAndRebuild(int $node)
+    private function removeAndRebuild(int $node): void
     {
         $length = \count($this->data) - 1;
         $id = $this->data[$node]->watcher->id;

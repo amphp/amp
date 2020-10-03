@@ -59,35 +59,34 @@ abstract class DriverTest extends TestCase
 
     protected function start($cb): void
     {
-        $control = $this->loop->createControl();
-        $cb($this->loop, $control);
-        $control->run();
+        $cb($this->loop);
+        $this->loop->run();
     }
 
     // Note: The running nesting is important for being able to continue actually still running loops (i.e. running flag set, if the driver has one) inside register_shutdown_function() for example
     public function testLoopRunsCanBeConsecutiveAndNested(): void
     {
         $this->expectOutputString("123456");
-        $this->start(function (Driver $loop, DriverControl $control): void {
-            $control->stop();
+        $this->start(function (Driver $loop): void {
+            $loop->stop();
             $loop->defer(function () use (&$run) {
                 echo $run = 1;
             });
-            $control->run();
+            $loop->run();
             if (!$run) {
                 $this->fail("A loop stop before a run must not impact that run");
             }
-            $loop->defer(function () use ($loop, $control): void {
-                $control->run();
+            $loop->defer(function () use ($loop): void {
+                $loop->run();
                 echo 5;
-                $loop->defer(function () use ($loop, $control): void {
+                $loop->defer(function () use ($loop): void {
                     echo 6;
-                    $control->stop();
+                    $loop->stop();
                     $loop->defer(function () {
                         $this->fail("A loop stopped at all levels must not execute further defers");
                     });
                 });
-                $control->run();
+                $loop->run();
             });
             $loop->defer(function () use ($loop): void {
                 echo 2;
@@ -586,9 +585,9 @@ abstract class DriverTest extends TestCase
             $this->checkForSignalCapability();
         }
 
-        $this->start(function (Driver $loop, DriverControl $control) use ($type, $args, $runs) {
+        $this->start(function (Driver $loop) use ($type, $args, $runs) {
             $initialMem = \memory_get_usage();
-            $cb = function ($runs) use ($loop, $control, $type, $args): void {
+            $cb = function ($runs) use ($loop, $type, $args): void {
                 $func = [$loop, $type];
                 for ($watchers = [], $i = 0; $i < $runs; $i++) {
                     $watchers[] = \call_user_func_array($func, $args);
@@ -619,14 +618,14 @@ abstract class DriverTest extends TestCase
                         }
                     });
                 }
-                $control->run();
+                $loop->run();
                 if ($type === "defer") {
                     $loop->defer($fn = function ($watcherId, $i) use (&$fn, $loop): void {
                         if ($i) {
                             $loop->defer($fn, --$i);
                         }
                     }, $runs);
-                    $control->run();
+                    $loop->run();
                 }
                 if ($type === "delay") {
                     $loop->delay($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop): void {
@@ -634,7 +633,7 @@ abstract class DriverTest extends TestCase
                             $loop->delay($msDelay = 0, $fn, --$i);
                         }
                     }, $runs);
-                    $control->run();
+                    $loop->run();
                 }
                 if ($type === "repeat") {
                     $loop->repeat($msDelay = 0, $fn = function ($watcherId, $i) use (&$fn, $loop): void {
@@ -643,7 +642,7 @@ abstract class DriverTest extends TestCase
                             $loop->repeat($msDelay = 0, $fn, --$i);
                         }
                     }, $runs);
-                    $control->run();
+                    $loop->run();
                 }
                 if ($type === "onWritable") {
                     $loop->defer(function ($watcherId, $runs) use ($loop): void {
@@ -670,7 +669,7 @@ abstract class DriverTest extends TestCase
                         };
                         $fn($watcherId, null, $runs);
                     }, $runs + 1);
-                    $control->run();
+                    $loop->run();
                 }
                 if ($type === "onSignal") {
                     $sendSignal = function (): void {
@@ -684,7 +683,7 @@ abstract class DriverTest extends TestCase
                         $loop->cancel($watcherId);
                     }, $runs);
                     $loop->defer($sendSignal);
-                    $control->run();
+                    $loop->run();
                 }
             };
             $closureMem = \memory_get_usage() - $initialMem;
@@ -810,7 +809,7 @@ abstract class DriverTest extends TestCase
         $this->checkForSignalCapability();
 
         $this->expectOutputString("122222");
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $f = function ($i) use ($loop) {
                 return function ($watcherId) use ($loop, $i): void {
                     $loop->cancel($watcherId);
@@ -829,12 +828,12 @@ abstract class DriverTest extends TestCase
             $loop->enable($sig1);
             $loop->cancel($sig3);
             $loop->onSignal(SIGUSR1, $f(2));
-            $loop->defer(function () use ($loop, $control, $sig2): void {
+            $loop->defer(function () use ($loop, $sig2): void {
                 $loop->enable($sig2);
-                $loop->defer(function () use ($loop, $control): void {
+                $loop->defer(function () use ($loop): void {
                     \posix_kill(\getmypid(), \SIGUSR1);
-                    $loop->delay($msDelay = 10, function () use ($control): void {
-                        $control->stop();
+                    $loop->delay($msDelay = 10, function () use ($loop): void {
+                        $loop->stop();
                     });
                 });
             });
@@ -958,33 +957,31 @@ abstract class DriverTest extends TestCase
 
     public function testEnablingWatcherAllowsSubsequentInvocation(): void
     {
-        $loop = $this->loop;
-        $control = $loop->createControl();
         $increment = 0;
-        $watcherId = $loop->defer(function () use (&$increment): void {
+        $watcherId = $this->loop->defer(function () use (&$increment): void {
             $increment++;
         });
-        $loop->disable($watcherId);
-        $loop->delay($msDelay = 5, [$control, "stop"]);
-        $control->run();
+        $this->loop->disable($watcherId);
+        $this->loop->delay($msDelay = 5, [$this->loop, "stop"]);
+        $this->loop->run();
         $this->assertSame(0, $increment);
-        $loop->enable($watcherId);
-        $loop->delay($msDelay = 5, [$control, "stop"]);
-        $control->run();
+        $this->loop->enable($watcherId);
+        $this->loop->delay($msDelay = 5, [$this->loop, "stop"]);
+        $this->loop->run();
         $this->assertSame(1, $increment);
     }
 
     public function testUnresolvedEventsAreReenabledOnRunFollowingPreviousStop(): void
     {
         $increment = 0;
-        $this->start(function (Driver $loop, DriverControl $control) use (&$increment): void {
-            $loop->defer([$control, "stop"]);
-            $control->run();
+        $this->start(function (Driver $loop) use (&$increment): void {
+            $loop->defer([$loop, "stop"]);
+            $loop->run();
 
-            $loop->defer(function () use (&$increment, $loop, $control): void {
-                $loop->delay($msDelay = 100, function () use ($control, &$increment): void {
+            $loop->defer(function () use (&$increment, $loop): void {
+                $loop->delay($msDelay = 100, function () use ($loop, &$increment): void {
                     $increment++;
-                    $control->stop();
+                    $loop->stop();
                 });
             });
 
@@ -996,25 +993,25 @@ abstract class DriverTest extends TestCase
 
     public function testTimerWatcherParameterOrder(): void
     {
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $counter = 0;
-            $loop->defer(function ($watcherId) use ($control, &$counter): void {
+            $loop->defer(function ($watcherId) use ($loop, &$counter): void {
                 $this->assertIsString($watcherId);
                 if (++$counter === 3) {
-                    $control->stop();
+                    $loop->stop();
                 }
             });
-            $loop->delay($msDelay = 5, function ($watcherId) use ($control, &$counter): void {
+            $loop->delay($msDelay = 5, function ($watcherId) use ($loop, &$counter): void {
                 $this->assertIsString($watcherId);
                 if (++$counter === 3) {
-                    $control->stop();
+                    $loop->stop();
                 }
             });
-            $loop->repeat($msDelay = 5, function ($watcherId) use ($loop, $control, &$counter): void {
+            $loop->repeat($msDelay = 5, function ($watcherId) use ($loop, &$counter): void {
                 $this->assertIsString($watcherId);
                 $loop->cancel($watcherId);
                 if (++$counter === 3) {
-                    $control->stop();
+                    $loop->stop();
                 }
             });
         });
@@ -1036,14 +1033,14 @@ abstract class DriverTest extends TestCase
 
     public function testDisablingWatcherPreventsSubsequentInvocation(): void
     {
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $increment = 0;
             $watcherId = $loop->defer(function () use (&$increment): void {
                 $increment++;
             });
 
             $loop->disable($watcherId);
-            $loop->delay($msDelay = 5, [$control, "stop"]);
+            $loop->delay($msDelay = 5, [$loop, "stop"]);
 
             $this->assertSame(0, $increment);
         });
@@ -1053,11 +1050,11 @@ abstract class DriverTest extends TestCase
     {
         $loop = $this->loop;
         $increment = 0;
-        $this->start(function (Driver $loop, DriverControl $control) use (&$increment): void {
+        $this->start(function (Driver $loop) use (&$increment): void {
             $loop->defer(function () use (&$increment): void {
                 $increment++;
             });
-            $loop->defer([$control, "stop"]);
+            $loop->defer([$loop, "stop"]);
         });
         $this->assertSame(1, $increment);
     }
@@ -1065,14 +1062,14 @@ abstract class DriverTest extends TestCase
     public function testImmediatelyCallbacksDoNotRecurseInSameTick(): void
     {
         $increment = 0;
-        $this->start(function (Driver $loop, DriverControl $control) use (&$increment): void {
+        $this->start(function (Driver $loop) use (&$increment): void {
             $loop->defer(function () use ($loop, &$increment) {
                 $increment++;
                 $loop->defer(function () use (&$increment) {
                     $increment++;
                 });
             });
-            $loop->defer([$control, "stop"]);
+            $loop->defer([$loop, "stop"]);
         });
         $this->assertSame(1, $increment);
     }
@@ -1167,10 +1164,10 @@ abstract class DriverTest extends TestCase
         $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
-        $this->start(function (Driver $loop, DriverControl $control): void {
-            $loop->delay($msDelay = 1, function () use ($loop, $control): void {
+        $this->start(function (Driver $loop): void {
+            $loop->delay($msDelay = 1, function () use ($loop): void {
                 \posix_kill(\getmypid(), \SIGUSR1);
-                $loop->delay($msDelay = 10, [$control, "stop"]);
+                $loop->delay($msDelay = 10, [$loop, "stop"]);
             });
 
             $loop->onSignal(SIGUSR1, function ($watcherId) use ($loop): void {
@@ -1185,10 +1182,10 @@ abstract class DriverTest extends TestCase
         $this->checkForSignalCapability();
 
         $this->expectOutputString("caught SIGUSR1");
-        $this->start(function (Driver $loop, DriverControl $control): void {
-            $stop = $loop->delay($msDelay = 100, function () use ($control): void {
+        $this->start(function (Driver $loop): void {
+            $stop = $loop->delay($msDelay = 100, function () use ($loop): void {
                 echo "ERROR: manual stop";
-                $control->stop();
+                $loop->stop();
             });
             $watcherId = $loop->onSignal(SIGUSR1, function ($watcherId) use ($loop, $stop): void {
                 echo "caught SIGUSR1";
@@ -1211,22 +1208,21 @@ abstract class DriverTest extends TestCase
         $this->checkForSignalCapability();
 
         $this->expectOutputString("inner SIGUSR2\nouter SIGUSR1\n");
-        $this->start(function (Driver $loop, DriverControl $control): void {
-            $loop->delay($msDelay = 300, function () use ($control): void {
-                $control->stop();
+        $this->start(function (Driver $loop): void {
+            $loop->delay($msDelay = 300, function () use ($loop): void {
+                $loop->stop();
             });
-            $loop->onSignal(SIGUSR1, function () use ($control): void {
+            $loop->onSignal(SIGUSR1, function () use ($loop): void {
                 echo "outer SIGUSR1\n";
-                $control->stop();
+                $loop->stop();
             });
 
             $loop->delay($msDelay = 1, function (): void {
                 /** @var Driver $loop */
                 $loop = ($this->getFactory())();
-                $control = $loop->createControl();
-                $stop = $loop->delay($msDelay = 100, function () use ($control): void {
+                $stop = $loop->delay($msDelay = 100, function () use ($loop): void {
                     echo "ERROR: manual stop";
-                    $control->stop();
+                    $loop->stop();
                 });
                 $loop->onSignal(SIGUSR2, function ($watcherId) use ($loop, $stop): void {
                     echo "inner SIGUSR2\n";
@@ -1236,7 +1232,7 @@ abstract class DriverTest extends TestCase
                 $loop->delay($msDelay = 1, function (): void {
                     \posix_kill(\getmypid(), SIGUSR2);
                 });
-                $control->run();
+                $loop->run();
             });
 
             $loop->delay($msDelay = 20, function (): void {
@@ -1249,7 +1245,7 @@ abstract class DriverTest extends TestCase
     {
         $invoked = false;
 
-        $this->start(function (Driver $loop, DriverControl $control) use (&$invoked): void {
+        $this->start(function (Driver $loop) use (&$invoked): void {
             $watcherId = $loop->delay($msDelay = 10, function (): void {
                 $this->fail('Watcher was not cancelled as expected');
             });
@@ -1259,7 +1255,7 @@ abstract class DriverTest extends TestCase
                 $invoked = true;
             });
 
-            $loop->delay($msDelay = 5, [$control, "stop"]);
+            $loop->delay($msDelay = 5, [$loop, "stop"]);
         });
 
         $this->assertTrue($invoked);
@@ -1268,12 +1264,12 @@ abstract class DriverTest extends TestCase
     public function testOnWritableWatcher(): void
     {
         $flag = false;
-        $this->start(function (Driver $loop, DriverControl $control) use (&$flag): void {
-            $loop->onWritable(STDOUT, function () use ($control, &$flag) {
+        $this->start(function (Driver $loop) use (&$flag): void {
+            $loop->onWritable(STDOUT, function () use ($loop, &$flag) {
                 $flag = true;
-                $control->stop();
+                $loop->stop();
             });
-            $loop->delay($msDelay = 5, [$control, "stop"]);
+            $loop->delay($msDelay = 5, [$loop, "stop"]);
         });
         $this->assertTrue($flag);
     }
@@ -1281,12 +1277,12 @@ abstract class DriverTest extends TestCase
     public function testInitiallyDisabledWriteWatcher(): void
     {
         $increment = 0;
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $watcherId = $loop->onWritable(STDOUT, function () use (&$increment): void {
                 $increment++;
             });
             $loop->disable($watcherId);
-            $loop->delay($msDelay = 5, [$control, "stop"]);
+            $loop->delay($msDelay = 5, [$loop, "stop"]);
         });
         $this->assertSame(0, $increment);
     }
@@ -1294,10 +1290,10 @@ abstract class DriverTest extends TestCase
     public function testInitiallyDisabledWriteWatcherIsTriggeredOnceEnabled(): void
     {
         $this->expectOutputString("12");
-        $this->start(function (Driver $loop, DriverControl $control): void {
-            $watcherId = $loop->onWritable(STDOUT, function () use ($control): void {
+        $this->start(function (Driver $loop): void {
+            $watcherId = $loop->onWritable(STDOUT, function () use ($loop): void {
                 echo 2;
-                $control->stop();
+                $loop->stop();
             });
             $loop->disable($watcherId);
             $loop->defer(function () use ($loop, $watcherId): void {
@@ -1311,11 +1307,11 @@ abstract class DriverTest extends TestCase
     {
         $this->expectException(\RuntimeException::class);
 
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $loop->onWritable(STDOUT, function () {
                 throw new \RuntimeException;
             });
-            $loop->delay($msDelay = 5, [$control, "stop"]);
+            $loop->delay($msDelay = 5, [$loop, "stop"]);
         });
     }
 
@@ -1391,13 +1387,13 @@ abstract class DriverTest extends TestCase
     public function testLoopStopPreventsTimerExecution(): void
     {
         $t = \microtime(1);
-        $this->start(function (Driver $loop, DriverControl $control): void {
+        $this->start(function (Driver $loop): void {
             $loop->defer(function () use ($loop): void {
                 $loop->delay($msDelay = 1000, function (): void {
                     $this->fail("Timer was executed despite stopped loop");
                 });
             });
-            $loop->defer([$control, "stop"]);
+            $loop->defer([$loop, "stop"]);
         });
         $this->assertGreaterThan(\microtime(1), $t + 0.1);
     }
@@ -1405,9 +1401,8 @@ abstract class DriverTest extends TestCase
     public function testDeferEnabledInNextTick(): void
     {
         $tick = function () {
-            $control = $this->loop->createControl();
-            $this->loop->defer([$control, "stop"]);
-            $control->run();
+            $this->loop->defer([$this->loop, "stop"]);
+            $this->loop->run();
         };
 
         $invoked = 0;
@@ -1430,8 +1425,6 @@ abstract class DriverTest extends TestCase
     // getState and setState are final, but test it here again to be sure
     public function testRegistry(): void
     {
-        $control = $this->loop->createControl();
-
         $this->assertNull($this->loop->getState("foo"));
         $this->loop->setState("foo", NAN);
         $this->assertNan($this->loop->getState("foo"));
@@ -1439,8 +1432,8 @@ abstract class DriverTest extends TestCase
         $this->assertNull($this->loop->getState("bar"));
         $this->loop->setState("baz", -INF);
         // running must not affect state
-        $this->loop->defer([$control, "stop"]);
-        $control->run();
+        $this->loop->defer([$this->loop, "stop"]);
+        $this->loop->run();
         $this->assertSame(-INF, $this->loop->getState("baz"));
         $this->assertSame("1", $this->loop->getState("foo"));
     }
@@ -1529,7 +1522,7 @@ abstract class DriverTest extends TestCase
                         });
                     }
 
-                    $this->loop->createControl()->run();
+                    $this->loop->run();
 
                     $this->fail("Didn't throw expected exception.");
                 } catch (\Exception $e) {
@@ -1573,8 +1566,7 @@ abstract class DriverTest extends TestCase
             });
         });
 
-        $control = $this->loop->createControl();
-        $control->run();
+        $this->loop->run();
 
         $this->assertSame(1212, $invoked);
 
@@ -1586,7 +1578,7 @@ abstract class DriverTest extends TestCase
             $this->loop->enable($watcher4);
         });
 
-        $control->run();
+        $this->loop->run();
 
         $this->assertSame(2323, $invoked);
     }
@@ -1599,7 +1591,7 @@ abstract class DriverTest extends TestCase
 
         \usleep(600000); // 600ms instead of 500ms to allow for variations in timing.
         $start = \microtime(true);
-        $this->loop->createControl()->run();
+        $this->loop->run();
     }
 
     public function testShortTimerDoesNotBlockOtherTimers(): void
@@ -1614,36 +1606,32 @@ abstract class DriverTest extends TestCase
             \usleep(2000);
         });
 
-        $control = $this->loop->createControl();
-
-        $this->loop->delay(2, function () use ($control): void {
+        $this->loop->delay(2, function (): void {
             $this->assertTrue(true);
-            $control->stop();
+            $this->loop->stop();
         });
 
-        $control->run();
+        $this->loop->run();
     }
 
     public function testTwoShortRepeatTimersWorkAsExpected(): void
     {
-        $control = $this->loop->createControl();
-
-        $this->loop->repeat(0, function () use (&$j, $control): void {
+        $this->loop->repeat(0, function () use (&$j): void {
             static $i = 0;
             if (++$i === 5) {
-                $control->stop();
+                $this->loop->stop();
             }
             $j = $i;
         });
-        $this->loop->repeat(0, function () use (&$k, $control): void {
+        $this->loop->repeat(0, function () use (&$k): void {
             static $i = 0;
             if (++$i === 5) {
-                $control->stop();
+                $this->loop->stop();
             }
             $k = $i;
         });
 
-        $control->run();
+        $this->loop->run();
         $this->assertLessThan(2, \abs($j - $k));
         $this->assertNotSame(0, $j);
     }
@@ -1659,7 +1647,7 @@ abstract class DriverTest extends TestCase
             $this->assertGreaterThanOrEqual($now - 1, $new);
             $this->assertLessThanOrEqual($now + 10, $new);
         });
-        $this->loop->createControl()->run();
+        $this->loop->run();
     }
 
     public function testBug163ConsecutiveDelayed(): void

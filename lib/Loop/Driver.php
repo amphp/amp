@@ -15,7 +15,7 @@ use function Amp\Promise\rethrow;
  *
  * All registered callbacks MUST NOT be called from a file with strict types enabled (`declare(strict_types=1)`).
  */
-abstract class Driver
+abstract class Driver implements \FiberScheduler
 {
     // Don't use 1e3 / 1e6, they result in a float instead of int
     const MILLISEC_PER_SEC = 1000;
@@ -42,51 +42,51 @@ abstract class Driver
     /** @var mixed[] */
     private array $registry = [];
 
-    private int $runCount = 0;
+    private bool $running = false;
 
     /**
-     * Create a control that can be used to start and stop a specific iteration of the driver loop.
+     * Run the event loop.
      *
-     * @return DriverControl
+     * One iteration of the loop is called one "tick". A tick covers the following steps:
+     *
+     *  1. Activate watchers created / enabled in the last tick / before `run()`.
+     *  2. Execute all enabled defer watchers.
+     *  3. Execute all due timer, pending signal and actionable stream callbacks, each only once per tick.
+     *
+     * The loop MUST continue to run until it is either stopped explicitly, no referenced watchers exist anymore, or an
+     * exception is thrown that cannot be handled. Exceptions that cannot be handled are exceptions thrown from an
+     * error handler or exceptions that would be passed to an error handler but none exists to handle them.
+     *
+     * @return void
      */
-    public function createControl(): DriverControl
+    public function run(): void
     {
-        return new class(function () use (&$running): void {
-            $this->runCount++;
-            $running = true;
-            try {
-                while ($running) {
-                    if ($this->isEmpty()) {
-                        return;
-                    }
+        $this->running = true;
 
-                    $this->tick();
+        try {
+            while ($this->running) {
+                if ($this->isEmpty()) {
+                    return;
                 }
-            } finally {
-                $this->runCount--;
-            }
-        }, static function () use (&$running): void {
-            $running = false;
-        }) implements DriverControl {
-            private $run;
-            private $stop;
 
-            public function __construct(callable $run, callable $stop)
-            {
-                $this->run = $run;
-                $this->stop = $stop;
+                $this->tick();
             }
+        } finally {
+            $this->stop();
+        }
+    }
 
-            public function run(): void
-            {
-                ($this->run)();
-            }
-
-            public function stop(): void
-            {
-                ($this->stop)();
-            }
-        };
+    /**
+     * Stop the event loop.
+     *
+     * When an event loop is stopped, it continues with its current tick and exits the loop afterwards. Multiple calls
+     * to stop MUST be ignored and MUST NOT raise an exception.
+     *
+     * @return void
+     */
+    public function stop(): void
+    {
+        $this->running = false;
     }
 
     /**
@@ -94,7 +94,7 @@ abstract class Driver
      */
     public function isRunning(): bool
     {
-        return $this->runCount > 0;
+        return $this->running;
     }
 
     /**
@@ -705,8 +705,6 @@ abstract class Driver
      */
     private function tick(): void
     {
-        $runCount = $this->runCount;
-
         if (empty($this->deferQueue)) {
             $this->deferQueue = $this->nextTickQueue;
         } else {
@@ -748,7 +746,7 @@ abstract class Driver
         $this->dispatch(
             empty($this->nextTickQueue)
             && empty($this->enableQueue)
-            && $runCount >= $this->runCount
+            && $this->running
             && !$this->isEmpty()
         );
     }
