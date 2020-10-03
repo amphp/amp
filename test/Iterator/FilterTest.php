@@ -23,6 +23,8 @@ class FilterTest extends AsyncTestCase
 
         $emitter->complete();
 
+        $this->assertFalse(yield $iterator->advance());
+
         $this->assertFalse($invoked);
     }
 
