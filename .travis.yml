@@ -8,11 +8,6 @@ addons:
       - libevent-dev
 
 php:
-  - 7.0
-  - 7.1
-  - 7.2
-  - 7.3
-  - 7.4
   - nightly
 
 matrix:
@@ -27,6 +22,7 @@ before_install:
   - php travis/change-composer.php drop-config
 
 install:
+  - travis/install-fiber.sh
   - travis/install-uv.sh
   - travis/install-ev.sh
   - travis/install-event.sh
