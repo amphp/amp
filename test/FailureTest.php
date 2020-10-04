@@ -69,20 +69,4 @@ class FailureTest extends AsyncTestCase
 
         $this->fail("Promise was not failed");
     }
-
-    public function testFailFunction(): void
-    {
-        $exception = new \Exception;
-
-        $failure = Promise\fail($exception);
-
-        try {
-            await($failure);
-        } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail("Promise was not failed");
-    }
 }

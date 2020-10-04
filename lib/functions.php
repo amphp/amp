@@ -275,49 +275,6 @@ namespace Amp\Promise
     }
 
     /**
-     * Returns a successful promise using the given value, which can be anything other than a promise. This function
-     * optimizes the case where null is used as the value, always returning the same object.
-     *
-     * @template TValue
-     *
-     * @param mixed $value Anything other than a Promise object.
-     *
-     * @psalm-param TValue $value
-     *
-     * @return Promise
-     *
-     * @psalm-return Promise<TValue>
-     *
-     * @throws \Error If a promise is given as the value.
-     */
-    function succeed(mixed $value = null): Promise
-    {
-        static $empty;
-
-        if ($value === null) {
-            return $empty ?? ($empty = new Success);
-        }
-
-        return new Success($value);
-    }
-
-    /**
-     * Returns a failed promise using the given exception.
-     *
-     * @template TValue
-     *
-     * @param \Throwable $exception
-     *
-     * @return Promise
-     *
-     * @psalm-return Promise<TValue>
-     */
-    function fail(\Throwable $exception): Promise
-    {
-        return new Failure($exception);
-    }
-
-    /**
      * @param Promise|ReactPromise $promise Promise to wait for.
      *
      * @return mixed Promise success value.

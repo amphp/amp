@@ -4,9 +4,11 @@ namespace Amp\Internal;
 
 use Amp\Deferred;
 use Amp\DisposedException;
+use Amp\Failure;
 use Amp\Loop;
 use Amp\Pipeline;
 use Amp\Promise;
+use Amp\Success;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\await;
 
@@ -50,7 +52,7 @@ final class EmitSource
      */
     public function continue(): mixed
     {
-        return $this->next(Promise\succeed());
+        return $this->next(new Success);
     }
 
     /**
@@ -64,7 +66,7 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(Promise\succeed($value));
+        return $this->next(new Success($value));
     }
 
     /**
@@ -76,7 +78,7 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(Promise\fail($exception));
+        return $this->next(new Failure($exception));
     }
 
     /**
@@ -101,7 +103,8 @@ final class EmitSource
             $value = $this->emittedValues[$position];
             unset($this->emittedValues[$position]);
 
-            return await(Promise\succeed($value));
+            // Defer next value to avoid creating a blocking loop.
+            return await(new Success($value));
         }
 
         if ($this->result) {
@@ -146,7 +149,7 @@ final class EmitSource
                 return; // Pipeline already completed or failed.
             }
 
-            $this->finalize(Promise\fail(new DisposedException), true);
+            $this->finalize(new Failure(new DisposedException), true);
         } finally {
             if ($this->disposed && $cancelPending) {
                 $this->triggerDisposal();
@@ -235,7 +238,7 @@ final class EmitSource
                 $this->triggerDisposal();
             }
 
-            return Promise\succeed();
+            return new Success;
         }
 
         $this->backPressure[$position] = $deferred = new Deferred;
@@ -268,7 +271,7 @@ final class EmitSource
      */
     public function complete(): void
     {
-        $this->finalize(Promise\succeed());
+        $this->finalize(new Success);
     }
 
     /**
@@ -284,7 +287,7 @@ final class EmitSource
             throw new \Error("Cannot fail a pipeline with an instance of " . DisposedException::class);
         }
 
-        $this->finalize(Promise\fail($exception));
+        $this->finalize(new Failure($exception));
     }
 
     /**

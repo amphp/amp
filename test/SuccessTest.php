@@ -86,20 +86,4 @@ class SuccessTest extends AsyncTestCase
         sleep(0); // Tick event loop to execute coroutine
         $this->assertTrue($invoked);
     }
-
-    public function testSucceedFunction(): void
-    {
-        $value = 1;
-
-        $success = Promise\succeed($value);
-
-        $this->assertSame($value, await($success));
-    }
-
-    public function testSucceedFunctionWithNull(): void
-    {
-        $success = Promise\succeed();
-        $this->assertSame($success, Promise\succeed());
-        $this->assertNull(await($success));
-    }
 }
