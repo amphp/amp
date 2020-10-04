@@ -76,6 +76,18 @@ namespace Amp
     }
 
     /**
+     * Executes the given callback in a new green thread using {@see async()}, forwarding any exceptions thrown to
+     * the event loop error handler using {@see Promise\rethrow()}.
+     *
+     * @param callable(mixed ...$args):void $callback
+     * @param mixed    ...$args
+     */
+    function defer(callable $callback, mixed ...$args): void
+    {
+        Promise\rethrow(async($callback, ...$args));
+    }
+
+    /**
      * Returns a new function that wraps $callback in a promise/coroutine-aware function that automatically runs
      * Generators as coroutines. The returned function always returns a promise when invoked. Errors have to be handled
      * by the callback caller or they will go unnoticed.
@@ -156,7 +168,7 @@ namespace Amp
      *
      * @deprecated No longer necessary with ext-fiber
      */
-    function call(callable $callback, ...$args): Promise
+    function call(callable $callback, mixed ...$args): Promise
     {
         try {
             $result = $callback(...$args);
@@ -190,7 +202,7 @@ namespace Amp
      *
      * @deprecated No longer necessary with ext-fiber
      */
-    function asyncCall(callable $callback, ...$args): void
+    function asyncCall(callable $callback, mixed ...$args): void
     {
         Promise\rethrow(call($callback, ...$args));
     }
@@ -204,6 +216,14 @@ namespace Amp
     }
 
     /**
+     * Async sleep for the specified number of milliseconds.
+     */
+    function sleep(int $milliseconds): void
+    {
+        await(delay($milliseconds));
+    }
+
+    /**
      * Returns the current time relative to an arbitrary point in time.
      *
      * @return int Time in milliseconds.
@@ -211,14 +231,6 @@ namespace Amp
     function getCurrentTime(): int
     {
         return Internal\getCurrentTime();
-    }
-
-    /**
-     * Async sleep for the specified number of milliseconds.
-     */
-    function sleep(int $milliseconds): void
-    {
-        await(delay($milliseconds));
     }
 }
 
@@ -249,7 +261,7 @@ namespace Amp\Promise
      * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
      *
      */
-    function rethrow(Promise|ReactPromise $promise)
+    function rethrow(Promise|ReactPromise $promise): void
     {
         if (!$promise instanceof Promise) {
             $promise = adapt($promise);
@@ -629,17 +641,15 @@ namespace Amp\Promise
      *
      * @return Promise
      */
-    function wrap($promise, callable $callback): Promise
+    function wrap(Promise|ReactPromise $promise, callable $callback): Promise
     {
         if ($promise instanceof ReactPromise) {
             $promise = adapt($promise);
-        } elseif (!$promise instanceof Promise) {
-            throw createTypeError([Promise::class, ReactPromise::class], $promise);
         }
 
-        $deferred = new Deferred();
+        $deferred = new Deferred;
 
-        $promise->onResolve(static function (\Throwable $exception = null, $result) use ($deferred, $callback) {
+        $promise->onResolve(static function (?\Throwable $exception, mixed $result) use ($deferred, $callback): void {
             try {
                 $result = $callback($exception, $result);
             } catch (\Throwable $exception) {
