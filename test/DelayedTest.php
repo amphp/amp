@@ -21,25 +21,6 @@ class DelayedTest extends AsyncTestCase
         $this->assertGreaterThanOrEqual($time - 1 /* 1ms grace period */, (\microtime(true) - $start) * 1000);
     }
 
-    public function testUnreference(): void
-    {
-        $time = 100;
-        $value = "test";
-
-        $promise = new Delayed($time, $value);
-        $promise->unreference();
-
-        $this->ignoreLoopWatchers();
-
-        $this->expectException(\FiberError::class);
-        $this->expectExceptionMessage("Scheduler ended");
-
-        await($promise);
-    }
-
-    /**
-     * @depends testUnreference
-     */
     public function testReference(): void
     {
         $time = 100;

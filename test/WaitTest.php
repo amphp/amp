@@ -2,12 +2,9 @@
 
 namespace Amp\Test;
 
-use Amp\Deferred;
 use Amp\Delayed;
 use Amp\Failure;
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
@@ -55,14 +52,6 @@ class WaitTest extends AsyncTestCase
         $result = Promise\wait($promise);
 
         $this->assertSame($value, $result);
-    }
-
-    public function testPromiseWithNoResolutionPathThrowsException(): void
-    {
-        $this->expectException(\FiberError::class);
-        $this->expectExceptionMessage("Scheduler ended");
-
-        Promise\wait((new Deferred)->promise());
     }
 
     /**
