@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function Amp\sleep;
+use function Amp\delay;
 
 class DeferredTest extends AsyncTestCase
 {
@@ -44,7 +44,7 @@ class DeferredTest extends AsyncTestCase
 
         $this->assertFalse($invoked); // Resolution should be async.
 
-        sleep(0); // Force loop to tick once.
+        delay(0); // Force loop to tick once.
 
         $this->assertTrue($this->deferred->isResolved());
         $this->assertTrue($invoked);
@@ -69,7 +69,7 @@ class DeferredTest extends AsyncTestCase
 
         $this->assertFalse($invoked); // Resolution should be async.
 
-        sleep(0); // Force loop to tick once.
+        delay(0); // Force loop to tick once.
 
         $this->assertTrue($invoked);
         $this->assertSame($exception, $result);

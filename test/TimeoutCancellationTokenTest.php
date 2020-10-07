@@ -7,7 +7,7 @@ use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellationToken;
 use Amp\TimeoutException;
-use function Amp\sleep;
+use function Amp\delay;
 
 class TimeoutCancellationTokenTest extends AsyncTestCase
 {
@@ -17,7 +17,7 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
         $token = new TimeoutCancellationToken(10);
 
         $this->assertFalse($token->isRequested());
-        sleep(20);
+        delay(20);
         $this->assertTrue($token->isRequested());
 
         try {

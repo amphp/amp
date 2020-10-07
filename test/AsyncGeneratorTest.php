@@ -4,13 +4,12 @@ namespace Amp\Test;
 
 use Amp\AsyncGenerator;
 use Amp\Deferred;
-use Amp\Delayed;
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use function Amp\async;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 class AsyncGeneratorTest extends AsyncTestCase
 {
@@ -54,7 +53,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $value = 1;
         $send = 2;
         $generator = new AsyncGenerator(function () use (&$result, $value) {
-            sleep(100); // Wait so send() is called before $yield().
+            delay(100); // Wait so send() is called before $yield().
             $result = yield $value;
         });
 
@@ -91,7 +90,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $value = 1;
         $exception = new \Exception;
         $generator = new AsyncGenerator(function () use (&$result, $value) {
-            sleep(100); // Wait so throw() is called before $yield().
+            delay(100); // Wait so throw() is called before $yield().
             try {
                 $result = yield $value;
             } catch (\Throwable $exception) {
@@ -181,7 +180,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         while (null !== $yielded = $generator->continue()) {
             $output .= $yielded;
-            sleep(self::TIMEOUT);
+            delay(self::TIMEOUT);
         }
 
         $expected = \implode('', \range(0, $yields - 1));
@@ -269,7 +268,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         $this->assertFalse($invoked);
 
-        sleep(0); // Tick event loop to start generator.
+        delay(0); // Tick event loop to start generator.
 
         $this->assertTrue($invoked);
 

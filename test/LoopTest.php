@@ -7,7 +7,7 @@ use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use function Amp\asyncCallable;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 class LoopTest extends AsyncTestCase
 {
@@ -99,7 +99,7 @@ class LoopTest extends AsyncTestCase
             try {
                 $time = \microtime(true);
                 for ($i = 0; $i < $emits; ++$i) {
-                    sleep(100);
+                    delay(100);
                 }
                 $time = \microtime(true) - $time;
                 $deferred->resolve();

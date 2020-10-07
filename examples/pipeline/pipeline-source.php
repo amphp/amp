@@ -6,7 +6,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 use Amp\Loop;
 use Amp\Pipeline;
 use Amp\PipelineSource;
-use function Amp\sleep;
+use function Amp\delay;
 
 try {
     /** @psalm-var PipelineSource<int> $source */
@@ -32,7 +32,7 @@ try {
     // Use Amp\Pipeline\toIterator() to use a pipeline with foreach.
     foreach (Pipeline\toIterator($pipeline) as $value) {
         \printf("Pipeline source yielded %d\n", $value);
-        sleep(100); // Listener consumption takes 100 ms.
+        delay(100); // Listener consumption takes 100 ms.
     }
 } catch (\Throwable $exception) {
     \printf("Exception: %s\n", (string) $exception);

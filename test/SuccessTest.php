@@ -7,7 +7,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 use function React\Promise\reject;
 
 class SuccessTest extends AsyncTestCase
@@ -49,7 +49,7 @@ class SuccessTest extends AsyncTestCase
 
         $success->onResolve($callback);
 
-        sleep(0); // Tick event loop to execute onResolve callback.
+        delay(0); // Tick event loop to execute onResolve callback.
 
         $this->assertSame(1, $invoked);
     }
@@ -66,7 +66,7 @@ class SuccessTest extends AsyncTestCase
 
         $success->onResolve(fn () => reject(new \Exception("Success")));
 
-        sleep(0); // Tick event loop to execute onResolve callback.
+        delay(0); // Tick event loop to execute onResolve callback.
 
         $this->assertSame(1, $invoked);
     }
@@ -83,7 +83,7 @@ class SuccessTest extends AsyncTestCase
         });
 
         $this->assertSame($value, await($success));
-        sleep(0); // Tick event loop to execute coroutine
+        delay(0); // Tick event loop to execute coroutine
         $this->assertTrue($invoked);
     }
 }

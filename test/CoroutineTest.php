@@ -13,7 +13,7 @@ use Amp\Success;
 use React\Promise\Promise as ReactPromise;
 use function Amp\await;
 use function Amp\call;
-use function Amp\sleep;
+use function Amp\delay;
 use function React\Promise\resolve;
 
 class CoroutineTest extends AsyncTestCase
@@ -43,7 +43,7 @@ class CoroutineTest extends AsyncTestCase
 
         $coroutine = new Coroutine($generator());
 
-        sleep(0); // Force loop to tick once.
+        delay(0); // Force loop to tick once.
 
         $this->assertNull($yielded);
 
@@ -51,7 +51,7 @@ class CoroutineTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Force loop to tick once.
+        delay(0); // Force loop to tick once.
 
         $this->assertSame($exception, $reason);
     }
@@ -489,7 +489,7 @@ class CoroutineTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Tick event loop to invoke error callback.
+        delay(0); // Tick event loop to invoke error callback.
 
         $this->assertSame($exception, $reason);
     }
@@ -822,7 +822,7 @@ class CoroutineTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Tick event loop to invoke error callback.
+        delay(0); // Tick event loop to invoke error callback.
 
         $this->assertInstanceOf(TestException::class, $reason);
     }

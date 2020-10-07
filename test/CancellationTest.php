@@ -11,7 +11,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\Success;
-use function Amp\sleep;
+use function Amp\delay;
 
 class CancellationTest extends AsyncTestCase
 {
@@ -100,7 +100,7 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource->cancel();
 
-        sleep(0); // Tick event loop to invoke callbacks.
+        delay(0); // Tick event loop to invoke callbacks.
 
         $this->assertInstanceOf(TestException::class, $reason);
     }
@@ -122,7 +122,7 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource->cancel();
 
-        sleep(1); // Tick event loop a couple of times to invoke callbacks.
+        delay(1); // Tick event loop a couple of times to invoke callbacks.
 
         $this->assertInstanceOf(TestException::class, $reason);
     }

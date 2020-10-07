@@ -6,7 +6,7 @@ use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use function Amp\defer;
-use function Amp\sleep;
+use function Amp\delay;
 
 class DeferTest extends AsyncTestCase
 {
@@ -22,7 +22,7 @@ class DeferTest extends AsyncTestCase
             throw $exception;
         });
 
-        sleep(0); // Tick event loop.
+        delay(0); // Tick event loop.
 
         $this->assertSame($exception, $reason);
     }

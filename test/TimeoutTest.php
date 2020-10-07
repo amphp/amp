@@ -9,7 +9,7 @@ use Amp\Promise;
 use Amp\Success;
 use Amp\TimeoutException;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 use function React\Promise\resolve;
 
 class TimeoutTest extends AsyncTestCase
@@ -59,7 +59,7 @@ class TimeoutTest extends AsyncTestCase
 
         $this->assertSame($value, await(Promise\timeout($promise, 20)));
 
-        sleep(0); // Tick event loop to invoke onResolve callback to remove watcher.
+        delay(0); // Tick event loop to invoke onResolve callback to remove watcher.
     }
 
     /**

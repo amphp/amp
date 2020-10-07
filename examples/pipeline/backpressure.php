@@ -8,7 +8,7 @@ use Amp\PipelineSource;
 use Amp\Promise;
 use function Amp\async;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 try {
     /** @psalm-var PipelineSource<int> $source */
@@ -31,7 +31,7 @@ try {
 
     while (null !== $value = $pipeline->continue()) {
         \printf("Pipeline source yielded %d\n", $value);
-        sleep(500); // Listener consumption takes 500 ms.
+        delay(500); // Listener consumption takes 500 ms.
     }
 } catch (\Exception $exception) {
     \printf("Exception: %s\n", (string) $exception);

@@ -8,7 +8,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\Success;
-use function Amp\sleep;
+use function Amp\delay;
 
 class FromIterableTest extends AsyncTestCase
 {
@@ -129,7 +129,7 @@ class FromIterableTest extends AsyncTestCase
         $pipeline = Pipeline\fromIterable(\range(1, $count), self::TIMEOUT);
 
         for ($i = 0; $value = $pipeline->continue(); ++$i) {
-            sleep(self::TIMEOUT * 2);
+            delay(self::TIMEOUT * 2);
         }
 
         $this->assertSame($count, $i);

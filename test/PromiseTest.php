@@ -6,7 +6,7 @@ use Amp\Deferred;
 use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function Amp\sleep;
+use function Amp\delay;
 use function React\Promise\reject;
 
 class PromiseTest extends AsyncTestCase
@@ -64,7 +64,7 @@ class PromiseTest extends AsyncTestCase
 
         $succeeder($value);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -80,7 +80,7 @@ class PromiseTest extends AsyncTestCase
             $invoked = true;
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -114,7 +114,7 @@ class PromiseTest extends AsyncTestCase
             $invoked++;
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(4, $invoked);
     }
@@ -128,7 +128,7 @@ class PromiseTest extends AsyncTestCase
         });
         $failer(new \RuntimeException);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -142,7 +142,7 @@ class PromiseTest extends AsyncTestCase
             $invoked = true;
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -172,7 +172,7 @@ class PromiseTest extends AsyncTestCase
             $invoked++;
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(4, $invoked);
     }
@@ -190,7 +190,7 @@ class PromiseTest extends AsyncTestCase
         });
         $failer(new \Error);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -208,7 +208,7 @@ class PromiseTest extends AsyncTestCase
             $invoked = true;
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -235,7 +235,7 @@ class PromiseTest extends AsyncTestCase
                 $this->assertNotInstanceOf(Promise::class, $v);
             });
 
-            sleep(0); // Tick event loop to invoke onResolve callback.
+            delay(0); // Tick event loop to invoke onResolve callback.
 
             $this->assertTrue($invoked);
         }
@@ -269,7 +269,7 @@ class PromiseTest extends AsyncTestCase
         });
         $succeeder(true);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(4, $invoked);
     }
@@ -297,7 +297,7 @@ class PromiseTest extends AsyncTestCase
         });
         $succeeder(true);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(3, $invoked);
     }
@@ -331,7 +331,7 @@ class PromiseTest extends AsyncTestCase
         });
         $failer($exception);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(4, $invoked);
     }
@@ -353,7 +353,7 @@ class PromiseTest extends AsyncTestCase
             $this->assertSame((int) $expectedData, $v);
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(2, $invoked);
     }
@@ -393,7 +393,7 @@ class PromiseTest extends AsyncTestCase
         $f();
         $deferred->resolve();
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -410,7 +410,7 @@ class PromiseTest extends AsyncTestCase
         });
         $succeeder();
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
     }
 
     /**
@@ -428,7 +428,7 @@ class PromiseTest extends AsyncTestCase
             return reject(new \Exception("Success"));
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
     }
 
     public function testOnResolveWithGenerator(): void
@@ -443,7 +443,7 @@ class PromiseTest extends AsyncTestCase
 
         $succeeder(1);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -462,7 +462,7 @@ class PromiseTest extends AsyncTestCase
             yield; // Unreachable, but makes function a generator.
         });
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
     }
@@ -483,7 +483,7 @@ class PromiseTest extends AsyncTestCase
 
         $succeeder(1);
 
-        sleep(0); // Tick event loop to invoke onResolve callback.
+        delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertSame(3, $invoked);
     }

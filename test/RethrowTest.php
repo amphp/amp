@@ -7,7 +7,7 @@ use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use function React\Promise\reject;
-use function Amp\sleep;
+use function Amp\delay;
 
 class RethrowTest extends AsyncTestCase
 {
@@ -25,7 +25,7 @@ class RethrowTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Tick the event loop.
+        delay(0); // Tick the event loop.
 
         $this->assertTrue($invoked);
         $this->assertSame($reason, $exception);
@@ -48,7 +48,7 @@ class RethrowTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Tick the event loop.
+        delay(0); // Tick the event loop.
 
         $this->assertTrue($invoked);
         $this->assertSame($reason, $exception);

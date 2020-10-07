@@ -8,7 +8,6 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
-use function Amp\delay;
 use function React\Promise\resolve;
 
 class WaitTest extends AsyncTestCase
@@ -71,7 +70,7 @@ class WaitTest extends AsyncTestCase
     public function testWaitNested(): void
     {
         $promise = call(static function () {
-            yield delay(10);
+            yield new Delayed(10);
 
             return Promise\wait(new Delayed(10, 1));
         });
@@ -84,11 +83,11 @@ class WaitTest extends AsyncTestCase
     public function testWaitNestedDelayed(): void
     {
         $promise = call(static function () {
-            yield delay(10);
+            yield new Delayed(10);
 
             $result = Promise\wait(new Delayed(10, 1));
 
-            yield delay(0);
+            yield new Delayed(0);
 
             return $result;
         });

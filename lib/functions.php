@@ -208,19 +208,11 @@ namespace Amp
     }
 
     /**
-     * Returns a promise that is resolved in the specified number of milliseconds.
-     */
-    function delay(int $milliseconds): Delayed
-    {
-        return new Delayed($milliseconds);
-    }
-
-    /**
      * Async sleep for the specified number of milliseconds.
      */
-    function sleep(int $milliseconds): void
+    function delay(int $milliseconds): void
     {
-        await(delay($milliseconds));
+        await(new Delayed($milliseconds));
     }
 
     /**
@@ -238,7 +230,6 @@ namespace Amp\Promise
 {
 
     use Amp\Deferred;
-    use Amp\Failure;
     use Amp\Loop;
     use Amp\MultiReasonException;
     use Amp\Promise;
@@ -849,7 +840,7 @@ namespace Amp\Pipeline
     use function Amp\async;
     use function Amp\asyncCallable;
     use function Amp\await;
-    use function Amp\sleep;
+    use function Amp\delay;
     use function Amp\Internal\createTypeError;
 
     /**
@@ -874,7 +865,7 @@ namespace Amp\Pipeline
         return new AsyncGenerator(static function () use ($iterable, $delay): \Generator {
             foreach ($iterable as $value) {
                 if ($delay) {
-                    sleep($delay);
+                    delay($delay);
                 }
 
                 if ($value instanceof Promise || $value instanceof ReactPromise) {

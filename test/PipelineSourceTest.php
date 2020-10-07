@@ -9,7 +9,7 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\async;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 class PipelineSourceTest extends AsyncTestCase
 {
@@ -193,7 +193,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         unset($pipeline); // Should relieve all back-pressure.
 
-        sleep(0); // Tick event loop to invoke promise callbacks.
+        delay(0); // Tick event loop to invoke promise callbacks.
 
         $this->assertSame(5, $invoked);
 

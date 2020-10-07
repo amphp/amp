@@ -9,7 +9,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 class ProducerTest extends AsyncTestCase
 {
@@ -91,7 +91,7 @@ class ProducerTest extends AsyncTestCase
         });
 
         while (await($producer->advance())) {
-            sleep(self::TIMEOUT);
+            delay(self::TIMEOUT);
         }
 
         $this->assertGreaterThan(self::TIMEOUT * ($emits - 1), $time * 1000);

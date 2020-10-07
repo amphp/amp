@@ -6,7 +6,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 use Amp\AsyncGenerator;
 use Amp\Delayed;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 
 try {
     /** @psalm-var AsyncGenerator<int, int, int> $generator */
@@ -31,7 +31,7 @@ try {
         // Use AsyncGenerator::send() to send values into the generator and get the next emitted value.
         while (null !== $value = $generator->send($value + 1)) {
             \printf("Async Generator yielded %d\n", $value);
-            sleep(100); // Listener consumption takes 100 ms.
+            delay(100); // Listener consumption takes 100 ms.
         }
     }
 

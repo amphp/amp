@@ -8,7 +8,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use function Amp\await;
-use function Amp\sleep;
+use function Amp\delay;
 use function React\Promise\reject;
 
 class FailureTest extends AsyncTestCase
@@ -40,7 +40,7 @@ class FailureTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        sleep(0); // Tick event loop to invoke error callback.
+        delay(0); // Tick event loop to invoke error callback.
 
         $this->assertSame("Success", $reason->getMessage());
     }
@@ -62,7 +62,7 @@ class FailureTest extends AsyncTestCase
             await($failure);
         } catch (\Exception $reason) {
             $this->assertSame($exception, $reason);
-            sleep(0); // Tick event loop to execute coroutine
+            delay(0); // Tick event loop to execute coroutine
             $this->assertTrue($invoked);
             return;
         }
