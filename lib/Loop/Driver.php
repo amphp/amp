@@ -37,7 +37,7 @@ abstract class Driver implements \FiberScheduler
     private array $nextTickQueue = [];
 
     /** @var callable(\Throwable):void|null */
-    private $errorHandler;
+    private $errorHandler = null;
 
     /** @var mixed[] */
     private array $registry = [];
@@ -645,14 +645,17 @@ abstract class Driver implements \FiberScheduler
     }
 
     /**
-     * Removes all watchers from the event loop. This method is intended for clearing the loop between
-     * tests and not intended for use in an application.
+     * Removes all watchers, registry data, and error handler from the event loop. This method is intended for
+     * clearing the loop between tests and not intended for use in an application.
      */
     final public function clear(): void
     {
         foreach ($this->watchers as $watcher) {
             $this->cancel($watcher->id);
         }
+
+        $this->registry = [];
+        $this->errorHandler = null;
     }
 
     /**
