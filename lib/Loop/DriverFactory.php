@@ -3,7 +3,7 @@
 namespace Amp\Loop;
 
 // @codeCoverageIgnoreStart
-class DriverFactory
+final class DriverFactory
 {
     /**
      * Creates a new loop instance and chooses the best available driver.

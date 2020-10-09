@@ -18,8 +18,8 @@ use function Amp\Promise\rethrow;
 abstract class Driver implements \FiberScheduler
 {
     // Don't use 1e3 / 1e6, they result in a float instead of int
-    const MILLISEC_PER_SEC = 1000;
-    const MICROSEC_PER_SEC = 1000000;
+    protected const MILLISEC_PER_SEC = 1000;
+    protected const MICROSEC_PER_SEC = 1000000;
 
     /** @var string Next watcher ID. */
     private string $nextId = "a";

@@ -9,18 +9,18 @@ use Amp\Struct;
  *
  * @psalm-suppress MissingConstructor
  */
-class Watcher
+final class Watcher
 {
     use Struct;
 
-    const IO = 0b00000011;
-    const READABLE = 0b00000001;
-    const WRITABLE = 0b00000010;
-    const DEFER = 0b00000100;
-    const TIMER = 0b00011000;
-    const DELAY = 0b00001000;
-    const REPEAT = 0b00010000;
-    const SIGNAL = 0b00100000;
+    public const IO = 0b00000011;
+    public const READABLE = 0b00000001;
+    public const WRITABLE = 0b00000010;
+    public const DEFER = 0b00000100;
+    public const TIMER = 0b00011000;
+    public const DELAY = 0b00001000;
+    public const REPEAT = 0b00010000;
+    public const SIGNAL = 0b00100000;
 
     public int $type;
 

@@ -8,7 +8,7 @@ use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
-class EventDriver extends Driver
+final class EventDriver extends Driver
 {
     /** @var \Event[]|null */
     private static ?array $activeSignals = null;

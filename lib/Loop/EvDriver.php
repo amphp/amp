@@ -8,7 +8,7 @@ use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
-class EvDriver extends Driver
+final class EvDriver extends Driver
 {
     /** @var \EvSignal[]|null */
     private static ?array $activeSignals = null;
@@ -24,7 +24,6 @@ class EvDriver extends Driver
     private array $events = [];
 
     private \Closure $ioCallback;
-    /** @var callable */
 
     private \Closure $timerCallback;
 

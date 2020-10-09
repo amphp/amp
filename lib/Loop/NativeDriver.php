@@ -8,7 +8,7 @@ use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
-class NativeDriver extends Driver
+final class NativeDriver extends Driver
 {
     /** @var resource[] */
     private array $readStreams = [];

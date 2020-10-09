@@ -7,7 +7,7 @@ use Amp\Promise;
 use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
-class UvDriver extends Driver
+final class UvDriver extends Driver
 {
     /** @var resource|\UVLoop A uv_loop resource created with uv_loop_new() */
     private $handle;
