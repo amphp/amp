@@ -23,10 +23,18 @@ final class Delayed implements Promise
     {
         $this->placeholder = $placeholder = new Internal\Placeholder;
 
-        $this->watcher = Loop::delay($time, function () use ($value, $placeholder): void {
-            $this->watcher = null;
+        $watcher = &$this->watcher;
+        $this->watcher = Loop::delay($time, static function () use (&$watcher, $value, $placeholder): void {
+            $watcher = null;
             $placeholder->resolve($value);
         });
+    }
+
+    public function __destruct()
+    {
+        if ($this->watcher !== null) {
+            Loop::cancel($this->watcher);
+        }
     }
 
     /**

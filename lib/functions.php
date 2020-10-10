@@ -209,10 +209,25 @@ namespace Amp
 
     /**
      * Async sleep for the specified number of milliseconds.
+     *
+     * @param int $milliseconds Numberr of milliseconds to sleep.
      */
     function delay(int $milliseconds): void
     {
         await(new Delayed($milliseconds));
+    }
+
+    /**
+     * Await the arrival of a signal to the process.
+     *
+     * @param int $signal Required signal to await.
+     * @param int ...$signals Additional signals to await.
+     *
+     * @return int The signal number received.
+     */
+    function signal(int $signal, int ...$signals): int
+    {
+        return await(new Signal($signal, ...$signals));
     }
 
     /**
