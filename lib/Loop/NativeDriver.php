@@ -235,7 +235,12 @@ class NativeDriver extends Driver
             return;
         }
 
-        if ($timeout > 0) { // Otherwise sleep with usleep() if $timeout > 0.
+        if ($timeout < 0) { // Only signal watchers are enabled, so sleep indefinitely.
+            \usleep(\PHP_INT_MAX);
+            return;
+        }
+
+        if ($timeout > 0) { // Sleep until next timer expires.
             \usleep((int) ($timeout * self::MICROSEC_PER_SEC));
         }
     }

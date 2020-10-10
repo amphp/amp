@@ -414,7 +414,7 @@ abstract class DriverTest extends TestCase
             \call_user_func_array([$loop, $type], $args);
 
             if ($type == "onSignal") {
-                $loop->defer(function () {
+                $loop->delay(1, function () {
                     \posix_kill(\getmypid(), \SIGUSR1);
                 });
             }
@@ -685,11 +685,11 @@ abstract class DriverTest extends TestCase
                     $loop->onSignal(\SIGUSR1, $fn = function ($watcherId, $signo, $i) use (&$fn, $loop, $sendSignal) {
                         if ($i) {
                             $loop->onSignal(\SIGUSR1, $fn, --$i);
-                            $loop->defer($sendSignal);
+                            $loop->delay(1, $sendSignal);
                         }
                         $loop->cancel($watcherId);
                     }, $runs);
-                    $loop->defer($sendSignal);
+                    $loop->delay(1, $sendSignal);
                     $loop->run();
                 }
             };
@@ -837,7 +837,7 @@ abstract class DriverTest extends TestCase
             $loop->onSignal(SIGUSR1, $f(2));
             $loop->defer(function () use ($loop, $sig2) {
                 $loop->enable($sig2);
-                $loop->defer(function () use ($loop) {
+                $loop->delay(1, function () use ($loop) {
                     \posix_kill(\getmypid(), \SIGUSR1);
                     $loop->delay($msDelay = 10, function () use ($loop) {
                         $loop->stop();
