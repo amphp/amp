@@ -24,7 +24,7 @@ final class CombinedCancellationToken implements CancellationToken
                 $this->callbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    Loop::defer(static fn (): Promise => call($callback, $this->exception));
+                    Loop::defer(fn(): Promise => call($callback, $this->exception));
                 }
             });
 
@@ -34,7 +34,7 @@ final class CombinedCancellationToken implements CancellationToken
 
     public function __destruct()
     {
-        foreach ($this->tokens as list($token, $id)) {
+        foreach ($this->tokens as [$token, $id]) {
             /** @var CancellationToken $token */
             $token->unsubscribe($id);
         }
@@ -46,7 +46,7 @@ final class CombinedCancellationToken implements CancellationToken
         $id = $this->nextId++;
 
         if (isset($this->exception)) {
-            Loop::defer(static fn (): Promise => call($callback, $this->exception));
+            Loop::defer(fn(): Promise => call($callback, $this->exception));
         } else {
             $this->callbacks[$id] = $callback;
         }
@@ -63,7 +63,7 @@ final class CombinedCancellationToken implements CancellationToken
     /** @inheritdoc */
     public function isRequested(): bool
     {
-        foreach ($this->tokens as list($token)) {
+        foreach ($this->tokens as [$token]) {
             if ($token->isRequested()) {
                 return true;
             }
@@ -75,7 +75,7 @@ final class CombinedCancellationToken implements CancellationToken
     /** @inheritdoc */
     public function throwIfRequested(): void
     {
-        foreach ($this->tokens as list($token)) {
+        foreach ($this->tokens as [$token]) {
             $token->throwIfRequested();
         }
     }
