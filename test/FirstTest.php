@@ -9,7 +9,6 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\await;
-use function React\Promise\resolve;
 
 class FirstTest extends AsyncTestCase
 {
@@ -49,13 +48,6 @@ class FirstTest extends AsyncTestCase
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
         $this->assertSame(3, await(Promise\first($promises)));
-    }
-
-    public function testReactPromiseArray(): void
-    {
-        $promises = [resolve(1), resolve(2), new Success(3)];
-
-        $this->assertSame(1, await(Promise\first($promises)));
     }
 
     public function testPendingPromiseArray(): void

@@ -40,7 +40,6 @@
         "ext-json": "*",
         "amphp/phpunit-util": "^2-dev",
         "amphp/php-cs-fixer-config": "dev-master",
-        "react/promise": "^2",
         "phpunit/phpunit": "^9",
         "psalm/phar": "^3.11@dev",
         "jetbrains/phpstorm-stubs": "^2019.3"

@@ -9,7 +9,6 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\await;
 use function Amp\call;
-use function React\Promise\resolve;
 
 class CallTest extends AsyncTestCase
 {
@@ -55,21 +54,6 @@ class CallTest extends AsyncTestCase
         }
 
         $this->fail("Returned promise was not failed");
-    }
-
-    public function testCallWithFunctionReturningReactPromise(): void
-    {
-        $value = 1;
-        $promise = call(function ($value) {
-            return resolve($value);
-        }, $value);
-
-        $promise->onResolve(function ($exception, $value) use (&$reason, &$result) {
-            $reason = $exception;
-            $result = $value;
-        });
-
-        $this->assertSame($value, await($promise));
     }
 
     public function testCallWithGeneratorFunction()

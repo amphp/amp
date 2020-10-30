@@ -4,7 +4,6 @@ namespace Amp\Loop;
 
 use Amp\Coroutine;
 use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
@@ -69,7 +68,7 @@ final class EvDriver extends Driver
                     $result = new Coroutine($result);
                 }
 
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Promise) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
@@ -106,7 +105,7 @@ final class EvDriver extends Driver
                     $result = new Coroutine($result);
                 }
 
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Promise) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {
@@ -134,7 +133,7 @@ final class EvDriver extends Driver
                     $result = new Coroutine($result);
                 }
 
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Promise) {
                     rethrow($result);
                 }
             } catch (\Throwable $exception) {

@@ -2,11 +2,9 @@
 
 namespace Amp;
 
-use React\Promise\PromiseInterface as ReactPromise;
-
 /**
  * Creates a successful promise using the given value (which can be any value except an object implementing
- * `Amp\Promise` or `React\Promise\PromiseInterface`).
+ * `Amp\Promise`).
  *
  * @template-covariant TValue
  * @template-implements Promise<TValue>
@@ -24,7 +22,7 @@ final class Success implements Promise
      */
     public function __construct(mixed $value = null)
     {
-        if ($value instanceof Promise || $value instanceof ReactPromise) {
+        if ($value instanceof Promise) {
             throw new \Error("Cannot use a promise as success value");
         }
 
@@ -61,7 +59,7 @@ final class Success implements Promise
                 $result = new Coroutine($result);
             }
 
-            if ($result instanceof Promise || $result instanceof ReactPromise) {
+            if ($result instanceof Promise) {
                 Promise\rethrow($result);
             }
         });

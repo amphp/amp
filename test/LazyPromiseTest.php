@@ -8,10 +8,7 @@ use Amp\LazyPromise;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\await;
-use function React\Promise\reject;
-use function React\Promise\resolve;
 
 class LazyPromiseTest extends AsyncTestCase
 {
@@ -68,31 +65,6 @@ class LazyPromiseTest extends AsyncTestCase
         $lazy = new LazyPromise(function () use ($exception): void {
             throw $exception;
         });
-
-        try {
-            await($lazy);
-        } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail("Promise was not failed");
-    }
-
-    public function testPromisorReturningSuccessfulReactPromise(): void
-    {
-        $value = 1;
-        $promise = resolve($value);
-        $lazy = new LazyPromise(static fn (): ReactPromise => $promise);
-
-        $this->assertSame($value, await($lazy));
-    }
-
-    public function testPromisorReturningFailedReactPromise(): void
-    {
-        $exception = new \Exception;
-        $promise = reject($exception);
-        $lazy = new LazyPromise(static fn (): ReactPromise => $promise);
 
         try {
             await($lazy);

@@ -10,11 +10,9 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\Promise as ReactPromise;
 use function Amp\await;
 use function Amp\call;
 use function Amp\delay;
-use function React\Promise\resolve;
 
 class CoroutineTest extends AsyncTestCase
 {
@@ -637,20 +635,6 @@ class CoroutineTest extends AsyncTestCase
         $this->assertSame(42, await($promise));
     }
 
-    public function testCoroutineFunctionWithReactPromise()
-    {
-        $callable = \Amp\coroutine(function () {
-            return resolve(42);
-        });
-
-        /** @var Promise $promise */
-        $promise = $callable();
-
-        $this->assertInstanceOf(Promise::class, $promise);
-
-        $this->assertSame(42, await($promise));
-    }
-
     public function testCoroutineResolvedWithReturn()
     {
         $value = 1;
@@ -699,115 +683,6 @@ class CoroutineTest extends AsyncTestCase
         };
 
         $this->assertSame($value, await(new Coroutine($generator())));
-    }
-
-    public function testYieldingFulfilledReactPromise()
-    {
-        $value = 1;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
-            $resolve($value);
-        });
-
-        $generator = function () use ($promise) {
-            return yield $promise;
-        };
-
-        $this->assertSame($value, await(new Coroutine($generator())));
-    }
-
-    public function testYieldingFulfilledReactPromiseAfterInteropPromise()
-    {
-        $value = 1;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
-            $resolve($value);
-        });
-
-        $generator = function () use ($promise) {
-            $value = yield new Success(-1);
-            return yield $promise;
-        };
-
-        $this->assertSame($value, await(new Coroutine($generator())));
-    }
-
-    public function testYieldingRejectedReactPromise()
-    {
-        $exception = new \Exception;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
-            $reject($exception);
-        });
-
-        $generator = function () use ($promise) {
-            return yield $promise;
-        };
-
-        try {
-            await(new Coroutine($generator()));
-        } catch (\Throwable $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail("Coroutine should have failed");
-    }
-
-    public function testYieldingRejectedReactPromiseAfterInteropPromise()
-    {
-        $exception = new \Exception;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
-            $reject($exception);
-        });
-
-        $generator = function () use ($promise) {
-            $value = yield new Success(-1);
-            return yield $promise;
-        };
-
-        try {
-            await(new Coroutine($generator()));
-        } catch (\Throwable $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail("Coroutine should have failed");
-    }
-
-    public function testReturnFulfilledReactPromise()
-    {
-        $value = 1;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($value) {
-            $resolve($value);
-        });
-
-        $generator = function () use ($promise) {
-            return $promise;
-            yield; // Unreachable, but makes function a generator.
-        };
-
-        $this->assertSame($value, await(new Coroutine($generator())));
-    }
-
-    public function testReturningRejectedReactPromise()
-    {
-        $exception = new \Exception;
-        $promise = new ReactPromise(function ($resolve, $reject) use ($exception) {
-            $reject($exception);
-        });
-
-        $generator = function () use ($promise) {
-            return $promise;
-            yield; // Unreachable, but makes function a generator.
-        };
-
-        try {
-            await(new Coroutine($generator()));
-        } catch (\Throwable $reason) {
-            $this->assertSame($exception, $reason);
-            return;
-        }
-
-        $this->fail("Coroutine should have failed");
     }
 
     public function testAsyncCoroutineFunctionWithFailure()

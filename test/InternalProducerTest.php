@@ -9,7 +9,6 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
-use function React\Promise\resolve;
 
 class InternalProducerTest extends AsyncTestCase
 {
@@ -81,20 +80,6 @@ class InternalProducerTest extends AsyncTestCase
         $this->producer->emit($deferred->promise());
 
         $deferred->resolve($value);
-
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame($value, $this->producer->getCurrent());
-    }
-
-    /**
-     * @depends testEmit
-     */
-    public function testEmitSuccessfulReactPromise(): \Generator
-    {
-        $value = 1;
-        $promise = resolve($value);
-
-        $this->producer->emit($promise);
 
         $this->assertTrue(yield $this->producer->advance());
         $this->assertSame($value, $this->producer->getCurrent());

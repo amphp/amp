@@ -3,17 +3,15 @@
 namespace Amp
 {
 
-    use React\Promise\PromiseInterface as ReactPromise;
-
     /**
      * Await the resolution of the given promise. The function does not return until the promise has been
      * resolved. The promise resolution value is returned or the promise failure reason is thrown.
      *
      * @template TValue
      *
-     * @param Promise|ReactPromise|array<Promise|ReactPromise> $promise
+     * @param Promise|array<Promise> $promise
      *
-     * @psalm-param Promise<TValue>|ReactPromise|array<Promise<TValue>|ReactPromise> $promise
+     * @psalm-param Promise<TValue>|array<Promise<TValue>> $promise
      *
      * @return mixed Promise resolution value.
      *
@@ -21,14 +19,10 @@ namespace Amp
      *
      * @psalm-return TValue|array<TValue>
      */
-    function await(Promise|ReactPromise|array $promise): mixed
+    function await(Promise|array $promise): mixed
     {
         if (!$promise instanceof Promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = Promise\adapt($promise);
-            } else {
-                $promise = Promise\all($promise);
-            }
+            $promise = Promise\all($promise);
         }
 
         return \Fiber::await($promise, Loop::get());
@@ -184,10 +178,6 @@ namespace Amp
             return $result;
         }
 
-        if ($result instanceof ReactPromise) {
-            return Promise\adapt($result);
-        }
-
         return new Success($result);
     }
 
@@ -250,7 +240,6 @@ namespace Amp\Promise
     use Amp\Promise;
     use Amp\Success;
     use Amp\TimeoutException;
-    use React\Promise\PromiseInterface as ReactPromise;
     use function Amp\await;
     use function Amp\call;
     use function Amp\Internal\createTypeError;
@@ -261,13 +250,13 @@ namespace Amp\Promise
      * Use this function if you neither return the promise nor handle a possible error yourself to prevent errors from
      * going entirely unnoticed.
      *
-     * @param Promise|ReactPromise $promise Promise to register the handler on.
+     * @param Promise $promise Promise to register the handler on.
      *
      * @return void
-     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     * @throws \TypeError If $promise is not an instance of \Amp\Promise.
      *
      */
-    function rethrow(Promise|ReactPromise $promise): void
+    function rethrow(Promise $promise): void
     {
         if (!$promise instanceof Promise) {
             $promise = adapt($promise);
@@ -281,7 +270,7 @@ namespace Amp\Promise
     }
 
     /**
-     * @param Promise|ReactPromise $promise Promise to wait for.
+     * @param Promise $promise Promise to wait for.
      *
      * @return mixed Promise success value.
      *
@@ -293,9 +282,9 @@ namespace Amp\Promise
      * @deprecated Use {@see await()} instead.
      *
      * @template TPromise
-     * @template T as Promise<TPromise>|ReactPromise
+     * @template T as Promise<TPromise>
      */
-    function wait(Promise|ReactPromise $promise): mixed
+    function wait(Promise $promise): mixed
     {
         return await($promise);
     }
@@ -308,14 +297,14 @@ namespace Amp\Promise
      *
      * @template TReturn
      *
-     * @param Promise<TReturn>|ReactPromise $promise Promise to which the timeout is applied.
+     * @param Promise<TReturn> $promise Promise to which the timeout is applied.
      * @param int                           $timeout Timeout in milliseconds.
      *
      * @return Promise<TReturn>
      *
-     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     * @throws \TypeError If $promise is not an instance of \Amp\Promise.
      */
-    function timeout(Promise|ReactPromise $promise, int $timeout): Promise
+    function timeout(Promise $promise, int $timeout): Promise
     {
         if (!$promise instanceof Promise) {
             $promise = adapt($promise);
@@ -349,15 +338,15 @@ namespace Amp\Promise
      *
      * @template TReturn
      *
-     * @param Promise<TReturn>|ReactPromise $promise Promise to which the timeout is applied.
-     * @param int                           $timeout Timeout in milliseconds.
-     * @param TReturn                       $default
+     * @param Promise<TReturn> $promise Promise to which the timeout is applied.
+     * @param int              $timeout Timeout in milliseconds.
+     * @param TReturn          $default
      *
      * @return Promise<TReturn>
      *
-     * @throws \TypeError If $promise is not an instance of \Amp\Promise or \React\Promise\PromiseInterface.
+     * @throws \TypeError If $promise is not an instance of \Amp\Promise.
      */
-    function timeoutWithDefault(Promise|ReactPromise $promise, int $timeout, mixed $default = null): Promise
+    function timeoutWithDefault(Promise $promise, int $timeout, mixed $default = null): Promise
     {
         $promise = timeout($promise, $timeout);
 
@@ -404,7 +393,7 @@ namespace Amp\Promise
      * This function is the same as some() with the notable exception that it will never fail even
      * if all promises in the array resolve unsuccessfully.
      *
-     * @param Promise[]|ReactPromise[] $promises
+     * @param Promise[] $promises
      *
      * @return Promise
      *
@@ -420,7 +409,7 @@ namespace Amp\Promise
      * promise succeeds with an array of values used to succeed each contained promise, with keys corresponding to
      * the array of promises.
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
+     * @param Promise[] $promises Array of only promises.
      *
      * @return Promise
      *
@@ -428,8 +417,8 @@ namespace Amp\Promise
      *
      * @template TValue
      *
-     * @psalm-param array<array-key, Promise<TValue>|ReactPromise> $promises
-     * @psalm-assert array<array-key, Promise<TValue>|ReactPromise> $promises $promises
+     * @psalm-param array<array-key, Promise<TValue>> $promises
+     * @psalm-assert array<array-key, Promise<TValue>> $promises $promises
      * @psalm-return Promise<array<array-key, TValue>>
      */
     function all(array $promises): Promise
@@ -445,10 +434,8 @@ namespace Amp\Promise
         $values = [];
 
         foreach ($promises as $key => $promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } elseif (!$promise instanceof Promise) {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
+            if (!$promise instanceof Promise) {
+                throw createTypeError([Promise::class], $promise);
             }
 
             $values[$key] = null; // add entry to array to preserve order
@@ -477,7 +464,7 @@ namespace Amp\Promise
     /**
      * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
+     * @param Promise[] $promises Array of only promises.
      *
      * @return Promise
      *
@@ -496,10 +483,8 @@ namespace Amp\Promise
         $exceptions = [];
 
         foreach ($promises as $key => $promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } elseif (!$promise instanceof Promise) {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
+            if (!$promise instanceof Promise) {
+                throw createTypeError([Promise::class], $promise);
             }
 
             $exceptions[$key] = null; // add entry to array to preserve order
@@ -530,8 +515,8 @@ namespace Amp\Promise
      *
      * The returned promise will only fail if the given number of required promises fail.
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
-     * @param int                      $required Number of promises that must succeed for the
+     * @param Promise[] $promises Array of only promises.
+     * @param int       $required Number of promises that must succeed for the
      *     returned promise to succeed.
      *
      * @return Promise
@@ -560,10 +545,8 @@ namespace Amp\Promise
         $exceptions = [];
 
         foreach ($promises as $key => $promise) {
-            if ($promise instanceof ReactPromise) {
-                $promise = adapt($promise);
-            } elseif (!$promise instanceof Promise) {
-                throw createTypeError([Promise::class, ReactPromise::class], $promise);
+            if (!$promise instanceof Promise) {
+                throw createTypeError([Promise::class], $promise);
             }
 
             $values[$key] = $exceptions[$key] = null; // add entry to arrays to preserve order
@@ -599,17 +582,13 @@ namespace Amp\Promise
     /**
      * Wraps a promise into another promise, altering the exception or result.
      *
-     * @param Promise|ReactPromise $promise
-     * @param callable             $callback
+     * @param Promise  $promise
+     * @param callable $callback
      *
      * @return Promise
      */
-    function wrap(Promise|ReactPromise $promise, callable $callback): Promise
+    function wrap(Promise $promise, callable $callback): Promise
     {
-        if ($promise instanceof ReactPromise) {
-            $promise = adapt($promise);
-        }
-
         $deferred = new Deferred;
 
         $promise->onResolve(static function (?\Throwable $exception, mixed $result) use ($deferred, $callback): void {
@@ -851,7 +830,6 @@ namespace Amp\Pipeline
     use Amp\Pipeline;
     use Amp\PipelineSource;
     use Amp\Promise;
-    use React\Promise\PromiseInterface as ReactPromise;
     use function Amp\async;
     use function Amp\asyncCallable;
     use function Amp\await;
@@ -883,7 +861,7 @@ namespace Amp\Pipeline
                     delay($delay);
                 }
 
-                if ($value instanceof Promise || $value instanceof ReactPromise) {
+                if ($value instanceof Promise) {
                     $value = await($value);
                 }
 

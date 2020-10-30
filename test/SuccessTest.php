@@ -8,7 +8,6 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\await;
 use function Amp\delay;
-use function React\Promise\reject;
 
 class SuccessTest extends AsyncTestCase
 {
@@ -48,23 +47,6 @@ class SuccessTest extends AsyncTestCase
         $success = new Success;
 
         $success->onResolve($callback);
-
-        delay(0); // Tick event loop to execute onResolve callback.
-
-        $this->assertSame(1, $invoked);
-    }
-
-    public function testOnResolveWithReactPromise(): void
-    {
-        $invoked = 0;
-        $success = new Success;
-
-        Loop::setErrorHandler(function (\Throwable $exception) use (&$invoked, &$reason): void {
-            ++$invoked;
-            $reason = $exception;
-        });
-
-        $success->onResolve(fn () => reject(new \Exception("Success")));
 
         delay(0); // Tick event loop to execute onResolve callback.
 

@@ -6,7 +6,6 @@ use Amp\Delayed;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
-use function React\Promise\resolve;
 use function Amp\await;
 
 class AllTest extends AsyncTestCase
@@ -32,16 +31,6 @@ class AllTest extends AsyncTestCase
         ];
 
         $this->assertSame([1, 2, 3], await(Promise\all($promises)));
-    }
-
-    public function testReactPromiseArray(): void
-    {
-        $promises = [
-            new Delayed(20, 1),
-            resolve(2),
-        ];
-
-        $this->assertEquals([1, 2], await(Promise\all($promises)));
     }
 
     public function testArrayKeysPreserved(): void

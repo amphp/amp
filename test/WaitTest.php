@@ -8,7 +8,6 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
-use function React\Promise\resolve;
 
 class WaitTest extends AsyncTestCase
 {
@@ -47,20 +46,6 @@ class WaitTest extends AsyncTestCase
         $value = 1;
 
         $promise = new Delayed(100, $value);
-
-        $result = Promise\wait($promise);
-
-        $this->assertSame($value, $result);
-    }
-
-    /**
-     * @depends testWaitOnSuccessfulPromise
-     */
-    public function testReactPromise(): void
-    {
-        $value = 1;
-
-        $promise = resolve($value);
 
         $result = Promise\wait($promise);
 

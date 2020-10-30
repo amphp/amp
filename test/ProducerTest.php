@@ -3,8 +3,6 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
-use Amp\Delayed;
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Producer;

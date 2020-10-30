@@ -5,7 +5,6 @@ namespace Amp\Internal;
 use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.
@@ -77,7 +76,7 @@ final class ResolutionQueue
                     $result = new Coroutine($result);
                 }
 
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Promise) {
                     Promise\rethrow($result);
                 }
             } catch (\Throwable $exception) {

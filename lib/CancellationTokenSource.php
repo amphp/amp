@@ -2,7 +2,6 @@
 
 namespace Amp;
 
-use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\Promise\rethrow;
 
 /**
@@ -93,7 +92,7 @@ final class CancellationTokenSource
                         $result = new Coroutine($result);
                     }
 
-                    if ($result instanceof Promise || $result instanceof ReactPromise) {
+                    if ($result instanceof Promise) {
                         rethrow($result);
                     }
                 } catch (\Throwable $exception) {

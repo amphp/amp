@@ -6,7 +6,6 @@ use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Promise;
-use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Class used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
@@ -50,7 +49,7 @@ final class Placeholder
                     $result = new Coroutine($result);
                 }
 
-                if ($result instanceof Promise || $result instanceof ReactPromise) {
+                if ($result instanceof Promise) {
                     Promise\rethrow($result);
                 }
             });
@@ -122,10 +121,6 @@ final class Placeholder
             return true;
         })());
 
-        if ($value instanceof ReactPromise) {
-            $value = Promise\adapt($value);
-        }
-
         $this->resolved = true;
         $this->result = $value;
 
@@ -154,7 +149,7 @@ final class Placeholder
                 $result = new Coroutine($result);
             }
 
-            if ($result instanceof Promise || $result instanceof ReactPromise) {
+            if ($result instanceof Promise) {
                 Promise\rethrow($result);
             }
         });

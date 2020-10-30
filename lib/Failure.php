@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use React\Promise\PromiseInterface as ReactPromise;
-
 /**
  * Creates a failed promise using the given exception.
  *
@@ -39,7 +37,7 @@ final class Failure implements Promise
                 $result = new Coroutine($result);
             }
 
-            if ($result instanceof Promise || $result instanceof ReactPromise) {
+            if ($result instanceof Promise) {
                 Promise\rethrow($result);
             }
         });

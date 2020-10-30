@@ -6,7 +6,6 @@ use Amp\Deferred;
 use Amp\Failure;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\PromiseInterface as ReactPromise;
 
 /**
  * Trait used by Iterator implementations. Do not use this trait in your code, instead compose your class from one of
@@ -103,10 +102,6 @@ final class Producer
     {
         if ($this->complete) {
             throw new \Error("Iterators cannot emit values after calling complete");
-        }
-
-        if ($value instanceof ReactPromise) {
-            $value = Promise\adapt($value);
         }
 
         if ($value instanceof Promise) {

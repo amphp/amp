@@ -6,7 +6,6 @@ use Amp\Failure;
 use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function React\Promise\reject;
 use function Amp\delay;
 
 class RethrowTest extends AsyncTestCase
@@ -16,29 +15,6 @@ class RethrowTest extends AsyncTestCase
         $exception = new \Exception;
 
         $promise = new Failure($exception);
-
-        Promise\rethrow($promise);
-
-        $invoked = false;
-        Loop::setErrorHandler(function (\Throwable $exception) use (&$invoked, &$reason): void {
-            $invoked = true;
-            $reason = $exception;
-        });
-
-        delay(0); // Tick the event loop.
-
-        $this->assertTrue($invoked);
-        $this->assertSame($reason, $exception);
-    }
-
-    /**
-     * @depends testRethrow
-     */
-    public function testReactPromise(): void
-    {
-        $exception = new \Exception;
-
-        $promise = reject($exception);
 
         Promise\rethrow($promise);
 

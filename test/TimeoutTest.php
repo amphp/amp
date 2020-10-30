@@ -10,7 +10,6 @@ use Amp\Success;
 use Amp\TimeoutException;
 use function Amp\await;
 use function Amp\delay;
-use function React\Promise\resolve;
 
 class TimeoutTest extends AsyncTestCase
 {
@@ -90,17 +89,5 @@ class TimeoutTest extends AsyncTestCase
         $this->assertSame($default, await(Promise\timeoutWithDefault($promise, 10, $default)));
 
         $this->assertSame($value, await($promise));
-    }
-
-    /**
-     * @depends testSuccessfulPromise
-     */
-    public function testReactPromise(): void
-    {
-        $value = 1;
-
-        $promise = resolve($value);
-
-        $this->assertSame($value, await(Promise\timeout($promise, 10)));
     }
 }

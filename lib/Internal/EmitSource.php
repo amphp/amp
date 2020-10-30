@@ -9,7 +9,6 @@ use Amp\Loop;
 use Amp\Pipeline;
 use Amp\Promise;
 use Amp\Success;
-use React\Promise\PromiseInterface as ReactPromise;
 use function Amp\await;
 
 /**
@@ -206,7 +205,7 @@ final class EmitSource
             throw new \TypeError("Pipelines cannot emit NULL");
         }
 
-        if ($value instanceof Promise || $value instanceof ReactPromise) {
+        if ($value instanceof Promise) {
             throw new \TypeError("Pipelines cannot emit promises");
         }
 

@@ -7,7 +7,6 @@ use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use function Amp\delay;
-use function React\Promise\reject;
 
 class PromiseTest extends AsyncTestCase
 {
@@ -396,39 +395,6 @@ class PromiseTest extends AsyncTestCase
         delay(0); // Tick event loop to invoke onResolve callback.
 
         $this->assertTrue($invoked);
-    }
-
-    public function testOnResolveWithReactPromise(): void
-    {
-        Loop::setErrorHandler(function (\Throwable $exception): void {
-            $this->assertSame("Success", $exception->getMessage());
-        });
-
-        [$promise, $succeeder] = $this->promise();
-        $promise->onResolve(function ($exception, $value) {
-            return reject(new \Exception("Success"));
-        });
-        $succeeder();
-
-        delay(0); // Tick event loop to invoke onResolve callback.
-    }
-
-    /**
-     * @depends testOnResolveWithReactPromise
-     */
-    public function testOnResolveWithReactPromiseAfterResolve(): void
-    {
-        Loop::setErrorHandler(function (\Throwable $exception): void {
-            $this->assertSame("Success", $exception->getMessage());
-        });
-
-        [$promise, $succeeder] = $this->promise();
-        $succeeder();
-        $promise->onResolve(function ($exception, $value) {
-            return reject(new \Exception("Success"));
-        });
-
-        delay(0); // Tick event loop to invoke onResolve callback.
     }
 
     public function testOnResolveWithGenerator(): void
