@@ -42,17 +42,17 @@ namespace Amp
      */
     function async(callable $callback, mixed ...$args): Promise
     {
-        $deferred = new Deferred;
+        $placeholder = new Internal\Placeholder;
 
-        Loop::defer(static fn() => \Fiber::run(static function () use ($deferred, $callback, $args): void {
+        Loop::defer(static fn() => \Fiber::run(static function () use ($placeholder, $callback, $args): void {
             try {
-                $deferred->resolve($callback(...$args));
+                $placeholder->resolve($callback(...$args));
             } catch (\Throwable $exception) {
-                $deferred->fail($exception);
+                $placeholder->fail($exception);
             }
         }));
 
-        return $deferred->promise();
+        return new Internal\PrivatePromise($placeholder);
     }
 
     /**
