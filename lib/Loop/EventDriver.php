@@ -2,7 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
 use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
@@ -56,14 +55,6 @@ final class EventDriver extends Driver
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
                 if ($result instanceof Promise) {
                     rethrow($result);
                 }
@@ -91,14 +82,6 @@ final class EventDriver extends Driver
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
                 if ($result instanceof Promise) {
                     rethrow($result);
                 }
@@ -117,14 +100,6 @@ final class EventDriver extends Driver
         $this->signalCallback = function ($signum, $what, Watcher $watcher): void {
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     rethrow($result);

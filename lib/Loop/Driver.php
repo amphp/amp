@@ -2,7 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
 use Amp\Promise;
 use function Amp\Promise\rethrow;
 
@@ -742,14 +741,6 @@ abstract class Driver implements \FiberScheduler
             try {
                 /** @var mixed $result */
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     rethrow($result);

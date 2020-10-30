@@ -65,14 +65,6 @@ final class UvDriver extends Driver
                 try {
                     $result = ($watcher->callback)($watcher->id, $resource, $watcher->data);
 
-                    if ($result === null) {
-                        continue;
-                    }
-
-                    if ($result instanceof \Generator) {
-                        $result = new Coroutine($result);
-                    }
-
                     if ($result instanceof Promise) {
                         rethrow($result);
                     }
@@ -103,14 +95,6 @@ final class UvDriver extends Driver
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
                 if ($result instanceof Promise) {
                     rethrow($result);
                 }
@@ -130,14 +114,6 @@ final class UvDriver extends Driver
 
             try {
                 $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     rethrow($result);

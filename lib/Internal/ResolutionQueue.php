@@ -2,7 +2,6 @@
 
 namespace Amp\Internal;
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Promise;
 
@@ -67,14 +66,6 @@ final class ResolutionQueue
         foreach ($this->queue as $callback) {
             try {
                 $result = $callback($exception, $value);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     Promise\rethrow($result);

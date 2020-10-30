@@ -24,7 +24,7 @@ final class CombinedCancellationToken implements CancellationToken
                 $this->callbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    Loop::defer(fn(): Promise => call($callback, $this->exception));
+                    Loop::defer(fn() => $callback($this->exception));
                 }
             });
 
@@ -46,7 +46,7 @@ final class CombinedCancellationToken implements CancellationToken
         $id = $this->nextId++;
 
         if (isset($this->exception)) {
-            Loop::defer(fn(): Promise => call($callback, $this->exception));
+            Loop::defer(fn() => $callback($this->exception));
         } else {
             $this->callbacks[$id] = $callback;
         }

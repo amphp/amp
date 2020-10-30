@@ -29,14 +29,6 @@ final class Failure implements Promise
             /** @var mixed $result */
             $result = $onResolved($this->exception, null);
 
-            if ($result === null) {
-                return;
-            }
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
-
             if ($result instanceof Promise) {
                 Promise\rethrow($result);
             }

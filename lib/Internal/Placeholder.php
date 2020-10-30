@@ -2,7 +2,6 @@
 
 namespace Amp\Internal;
 
-use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Promise;
@@ -40,14 +39,6 @@ final class Placeholder
             Loop::defer(function () use ($onResolved): void {
                 /** @var mixed $result */
                 $result = $onResolved(null, $this->result);
-
-                if ($result === null) {
-                    return;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     Promise\rethrow($result);
@@ -140,14 +131,6 @@ final class Placeholder
             /** @var mixed $result */
             $result = $onResolved(null, $this->result);
             $onResolved = null; // allow garbage collection of $onResolved, to catch any exceptions from destructors
-
-            if ($result === null) {
-                return;
-            }
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
 
             if ($result instanceof Promise) {
                 Promise\rethrow($result);

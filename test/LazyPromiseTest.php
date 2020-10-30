@@ -76,17 +76,6 @@ class LazyPromiseTest extends AsyncTestCase
         $this->fail("Promise was not failed");
     }
 
-    public function testPromisorReturningGenerator(): void
-    {
-        $value = 1;
-        $lazy = new LazyPromise(function () use ($value): \Generator {
-            return $value;
-            yield; // Unreachable, but makes function a generator.
-        });
-
-        $this->assertSame($value, await($lazy));
-    }
-
     public function testPromisorCallingAwait(): void
     {
         $value = 1;

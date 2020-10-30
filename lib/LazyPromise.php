@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * Creates a promise that calls $promisor only when the result of the promise is requested (i.e. onResolve() is called
  * on the promise). $promisor can return a promise or any value. If $promisor throws an exception, the promise fails
- * with that exception. If $promisor returns a Generator, it will be run as a coroutine.
+ * with that exception.
  */
 final class LazyPromise implements Promise
 {
@@ -34,7 +34,7 @@ final class LazyPromise implements Promise
 
             $provider = $this->promisor;
             $this->promisor = null;
-            $this->promise = async(static fn (): Promise => call($provider));
+            $this->promise = async($provider);
         }
 
         \assert($this->promise !== null);

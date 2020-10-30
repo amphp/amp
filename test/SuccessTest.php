@@ -52,20 +52,4 @@ class SuccessTest extends AsyncTestCase
 
         $this->assertSame(1, $invoked);
     }
-
-    public function testOnResolveWithGenerator(): void
-    {
-        $value = 1;
-        $success = new Success($value);
-        $invoked = false;
-        $success->onResolve(function ($exception, $value) use (&$invoked) {
-            $invoked = true;
-            return $value;
-            yield; // Unreachable, but makes function a generator.
-        });
-
-        $this->assertSame($value, await($success));
-        delay(0); // Tick event loop to execute coroutine
-        $this->assertTrue($invoked);
-    }
 }

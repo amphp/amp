@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use function Amp\Promise\rethrow;
-
 /**
  * A cancellation token source provides a mechanism to cancel operations.
  *
@@ -87,13 +85,8 @@ final class CancellationTokenSource
                     /** @var mixed $result */
                     $result = $callback($this->exception);
 
-                    if ($result instanceof \Generator) {
-                        /** @psalm-var \Generator<mixed, Promise|ReactPromise|(Promise|ReactPromise)[], mixed, mixed> $result */
-                        $result = new Coroutine($result);
-                    }
-
                     if ($result instanceof Promise) {
-                        rethrow($result);
+                        Promise\rethrow($result);
                     }
                 } catch (\Throwable $exception) {
                     Loop::defer(static function () use ($exception): void {

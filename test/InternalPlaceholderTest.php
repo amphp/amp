@@ -5,7 +5,6 @@ namespace Amp\Test;
 use Amp\Internal\Placeholder;
 use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use function Amp\delay;
 
@@ -365,40 +364,5 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         $this->assertInstanceOf(\Error::class, $reason);
         $this->assertStringContainsString("Promise has already been resolved", $reason->getMessage());
-    }
-
-    public function testOnResolveWithGenerator()
-    {
-        $invoked = false;
-        $this->placeholder->onResolve(function ($exception, $value) use (&$invoked) {
-            $invoked = true;
-            return $value;
-            yield; // Unreachable, but makes function a generator.
-        });
-
-        $this->placeholder->resolve(1);
-
-        delay(0); // Tick event loop to invoke callbacks.
-
-        $this->assertTrue($invoked);
-    }
-
-    /**
-     * @depends testOnResolveWithGenerator
-     */
-    public function testOnResolveWithGeneratorAfterResolve()
-    {
-        $this->placeholder->resolve(1);
-
-        $invoked = false;
-        $this->placeholder->onResolve(function ($exception, $value) use (&$invoked) {
-            $invoked = true;
-            return $value;
-            yield; // Unreachable, but makes function a generator.
-        });
-
-        delay(0); // Tick event loop to invoke callbacks.
-
-        $this->assertTrue($invoked);
     }
 }

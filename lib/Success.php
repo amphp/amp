@@ -51,14 +51,6 @@ final class Success implements Promise
         Loop::defer(function () use ($onResolved): void {
             $result = $onResolved(null, $this->value);
 
-            if ($result === null) {
-                return;
-            }
-
-            if ($result instanceof \Generator) {
-                $result = new Coroutine($result);
-            }
-
             if ($result instanceof Promise) {
                 Promise\rethrow($result);
             }

@@ -2,7 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
 use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
@@ -104,14 +103,6 @@ final class NativeDriver extends Driver
                 // Execute the timer.
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
-
                 if ($result instanceof Promise) {
                     rethrow($result);
                 }
@@ -176,14 +167,6 @@ final class NativeDriver extends Driver
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
 
-                        if ($result === null) {
-                            continue;
-                        }
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
-
                         if ($result instanceof Promise) {
                             rethrow($result);
                         }
@@ -208,14 +191,6 @@ final class NativeDriver extends Driver
 
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
-
-                        if ($result === null) {
-                            continue;
-                        }
-
-                        if ($result instanceof \Generator) {
-                            $result = new Coroutine($result);
-                        }
 
                         if ($result instanceof Promise) {
                             rethrow($result);
@@ -373,14 +348,6 @@ final class NativeDriver extends Driver
 
             try {
                 $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
-
-                if ($result === null) {
-                    continue;
-                }
-
-                if ($result instanceof \Generator) {
-                    $result = new Coroutine($result);
-                }
 
                 if ($result instanceof Promise) {
                     rethrow($result);
