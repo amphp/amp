@@ -6,7 +6,7 @@ use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
-final class NativeDriver extends Driver
+final class NativeDriver extends DriverFoundation
 {
     /** @var resource[] */
     private array $readStreams = [];

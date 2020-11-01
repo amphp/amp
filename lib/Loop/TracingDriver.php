@@ -4,7 +4,7 @@ namespace Amp\Loop;
 
 use function Amp\Internal\formatStacktrace;
 
-final class TracingDriver extends Driver
+final class TracingDriver implements Driver
 {
     private Driver $driver;
 
@@ -33,6 +33,11 @@ final class TracingDriver extends Driver
     public function stop(): void
     {
         $this->driver->stop();
+    }
+
+    public function isRunning(): bool
+    {
+        return $this->driver->isRunning();
     }
 
     public function defer(callable $callback, $data = null): string
@@ -198,36 +203,6 @@ final class TracingDriver extends Driver
         $this->driver->error($exception);
     }
 
-    /**
-     * @inheritdoc
-     *
-     * @return void
-     */
-    protected function activate(array $watchers): void
-    {
-        // nothing to do in a decorator
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @return void
-     */
-    protected function dispatch(bool $blocking): void
-    {
-        // nothing to do in a decorator
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @return void
-     */
-    protected function deactivate(Watcher $watcher): void
-    {
-        // nothing to do in a decorator
-    }
-
     private function getTraces(string $watcherId): string
     {
         return "Creation Trace:\r\n" . $this->getCreationTrace($watcherId) . "\r\n\r\n" .
@@ -250,5 +225,20 @@ final class TracingDriver extends Driver
         }
 
         return $this->cancelTraces[$watcher];
+    }
+
+    public function setState(string $key, mixed $value): void
+    {
+        $this->driver->setState($key, $value);
+    }
+
+    public function getState(string $key): mixed
+    {
+        return $this->driver->getState($key);
+    }
+
+    public function clear(): void
+    {
+        $this->driver->clear();
     }
 }

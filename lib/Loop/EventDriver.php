@@ -6,7 +6,7 @@ use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
 use function Amp\Promise\rethrow;
 
-final class EventDriver extends Driver
+final class EventDriver extends DriverFoundation
 {
     /** @var \Event[]|null */
     private static ?array $activeSignals = null;

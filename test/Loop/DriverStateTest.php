@@ -3,16 +3,16 @@
 namespace Amp\Test\Loop;
 
 use Amp\Loop;
-use Amp\Loop\Driver;
+use Amp\Loop\DriverFoundation;
 use PHPUnit\Framework\TestCase;
 
 class DriverStateTest extends TestCase
 {
-    private Driver $loop;
+    private DriverFoundation $loop;
 
     protected function setUp(): void
     {
-        $this->loop = $this->getMockForAbstractClass(Driver::class);
+        $this->loop = $this->getMockForAbstractClass(DriverFoundation::class);
     }
 
     /** @test */

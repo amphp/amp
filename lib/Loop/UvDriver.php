@@ -6,7 +6,7 @@ use Amp\Coroutine;
 use Amp\Promise;
 use function Amp\Promise\rethrow;
 
-final class UvDriver extends Driver
+final class UvDriver extends DriverFoundation
 {
     /** @var resource|\UVLoop A uv_loop resource created with uv_loop_new() */
     private $handle;

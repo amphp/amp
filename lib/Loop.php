@@ -4,6 +4,7 @@ namespace Amp;
 
 use Amp\Loop\Driver;
 use Amp\Loop\DriverFactory;
+use Amp\Loop\DriverFoundation;
 use Amp\Loop\InvalidWatcherError;
 use Amp\Loop\UnsupportedFeatureException;
 use Amp\Loop\Watcher;
@@ -39,7 +40,7 @@ final class Loop
         }
 
         try {
-            self::$driver = new class extends Driver {
+            self::$driver = new class extends DriverFoundation {
                 protected function activate(array $watchers): void
                 {
                     throw new \Error("Can't activate watcher during garbage collection.");
