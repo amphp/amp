@@ -25,13 +25,6 @@ final class Failure implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(function () use ($onResolved): void {
-            /** @var mixed $result */
-            $result = $onResolved($this->exception, null);
-
-            if ($result instanceof Promise) {
-                Promise\rethrow($result);
-            }
-        });
+        Loop::defer(fn() => $onResolved($this->exception, null));
     }
 }

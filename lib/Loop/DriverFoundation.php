@@ -2,9 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Promise;
-use function Amp\Promise\rethrow;
-
 /**
  * Event loop driver which implements all basic operations to allow interoperability.
  *
@@ -689,6 +686,20 @@ abstract class DriverFoundation implements Driver
     }
 
     /**
+     * Attaches a callback that forwards the Awaitable failure reason to the loop error handler.
+     *
+     * @param \Awaitable $awaitable
+     */
+    protected function rethrow(\Awaitable $awaitable): void
+    {
+        $awaitable->onResolve(function (?\Throwable $exception): void {
+            if ($exception) {
+                $this->error($exception);
+            }
+        });
+    }
+
+    /**
      * @return bool True if no enabled and referenced watchers remain in the loop.
      */
     private function isEmpty(): bool
@@ -730,8 +741,8 @@ abstract class DriverFoundation implements Driver
                 /** @var mixed $result */
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);

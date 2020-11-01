@@ -2,10 +2,6 @@
 
 namespace Amp\Loop;
 
-use Amp\Coroutine;
-use Amp\Promise;
-use function Amp\Promise\rethrow;
-
 final class UvDriver extends DriverFoundation
 {
     /** @var resource|\UVLoop A uv_loop resource created with uv_loop_new() */
@@ -65,8 +61,8 @@ final class UvDriver extends DriverFoundation
                 try {
                     $result = ($watcher->callback)($watcher->id, $resource, $watcher->data);
 
-                    if ($result instanceof Promise) {
-                        rethrow($result);
+                    if ($result instanceof \Awaitable) {
+                        $this->rethrow($result);
                     }
                 } catch (\Throwable $exception) {
                     $this->error($exception);
@@ -95,8 +91,8 @@ final class UvDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);
@@ -115,8 +111,8 @@ final class UvDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);

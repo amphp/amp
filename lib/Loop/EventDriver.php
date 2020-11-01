@@ -2,9 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
-use function Amp\Promise\rethrow;
 
 final class EventDriver extends DriverFoundation
 {
@@ -55,8 +53,8 @@ final class EventDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);
@@ -82,8 +80,8 @@ final class EventDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);
@@ -101,8 +99,8 @@ final class EventDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $watcher->value, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);

@@ -37,7 +37,7 @@ final class Success implements Promise
         try {
             $this->value = null;
         } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e) {
+            Loop::defer(static function () use ($e): void {
                 throw $e;
             });
         }
@@ -48,12 +48,6 @@ final class Success implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(function () use ($onResolved): void {
-            $result = $onResolved(null, $this->value);
-
-            if ($result instanceof Promise) {
-                Promise\rethrow($result);
-            }
-        });
+        Loop::defer(fn() => $onResolved(null, $this->value));
     }
 }

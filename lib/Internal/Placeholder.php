@@ -36,14 +36,7 @@ final class Placeholder
                 return;
             }
 
-            Loop::defer(function () use ($onResolved): void {
-                /** @var mixed $result */
-                $result = $onResolved(null, $this->result);
-
-                if ($result instanceof Promise) {
-                    Promise\rethrow($result);
-                }
-            });
+            Loop::defer(fn() => $onResolved(null, $this->result));
             return;
         }
 
@@ -127,15 +120,7 @@ final class Placeholder
             return;
         }
 
-        Loop::defer(function () use ($onResolved): void {
-            /** @var mixed $result */
-            $result = $onResolved(null, $this->result);
-            $onResolved = null; // allow garbage collection of $onResolved, to catch any exceptions from destructors
-
-            if ($result instanceof Promise) {
-                Promise\rethrow($result);
-            }
-        });
+        Loop::defer(fn() => $onResolved(null, $this->result));
     }
 
     /**

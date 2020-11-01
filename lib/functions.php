@@ -262,7 +262,7 @@ namespace Amp\Promise
             $promise = adapt($promise);
         }
 
-        $promise->onResolve(static function ($exception) {
+        $promise->onResolve(static function (?\Throwable $exception): void {
             if ($exception) {
                 throw $exception;
             }

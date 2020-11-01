@@ -2,9 +2,7 @@
 
 namespace Amp\Loop;
 
-use Amp\Promise;
 use function Amp\Internal\getCurrentTime;
-use function Amp\Promise\rethrow;
 
 final class NativeDriver extends DriverFoundation
 {
@@ -103,8 +101,8 @@ final class NativeDriver extends DriverFoundation
                 // Execute the timer.
                 $result = ($watcher->callback)($watcher->id, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);
@@ -167,8 +165,8 @@ final class NativeDriver extends DriverFoundation
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
 
-                        if ($result instanceof Promise) {
-                            rethrow($result);
+                        if ($result instanceof \Awaitable) {
+                            $this->rethrow($result);
                         }
                     } catch (\Throwable $exception) {
                         $this->error($exception);
@@ -192,8 +190,8 @@ final class NativeDriver extends DriverFoundation
                     try {
                         $result = ($watcher->callback)($watcher->id, $stream, $watcher->data);
 
-                        if ($result instanceof Promise) {
-                            rethrow($result);
+                        if ($result instanceof \Awaitable) {
+                            $this->rethrow($result);
                         }
                     } catch (\Throwable $exception) {
                         $this->error($exception);
@@ -349,8 +347,8 @@ final class NativeDriver extends DriverFoundation
             try {
                 $result = ($watcher->callback)($watcher->id, $signo, $watcher->data);
 
-                if ($result instanceof Promise) {
-                    rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $this->rethrow($result);
                 }
             } catch (\Throwable $exception) {
                 $this->error($exception);

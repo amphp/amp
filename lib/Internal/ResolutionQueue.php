@@ -67,11 +67,15 @@ final class ResolutionQueue
             try {
                 $result = $callback($exception, $value);
 
-                if ($result instanceof Promise) {
-                    Promise\rethrow($result);
+                if ($result instanceof \Awaitable) {
+                    $result->onResolve(static function (?\Throwable $exception): void {
+                        if ($exception) {
+                            throw $exception;
+                        }
+                    });
                 }
             } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception) {
+                Loop::defer(static function () use ($exception): void {
                     throw $exception;
                 });
             }
