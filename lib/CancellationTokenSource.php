@@ -68,31 +68,9 @@ final class CancellationTokenSource
                     $this->callbacks = [];
 
                     foreach ($callbacks as $callback) {
-                        $this->invokeCallback($callback);
+                        defer($callback, $this->exception);
                     }
                 };
-            }
-
-            /**
-             * @param callable $callback
-             *
-             * @return void
-             */
-            private function invokeCallback(callable $callback): void
-            {
-                // No type declaration to prevent exception outside the try!
-                try {
-                    /** @var mixed $result */
-                    $result = $callback($this->exception);
-
-                    if ($result instanceof Promise) {
-                        Promise\rethrow($result);
-                    }
-                } catch (\Throwable $exception) {
-                    Loop::defer(static function () use ($exception): void {
-                        throw $exception;
-                    });
-                }
             }
 
             public function subscribe(callable $callback): string
@@ -100,7 +78,7 @@ final class CancellationTokenSource
                 $id = $this->nextId++;
 
                 if ($this->exception) {
-                    $this->invokeCallback($callback);
+                    defer($callback, $this->exception);
                 } else {
                     $this->callbacks[$id] = $callback;
                 }
@@ -143,6 +121,6 @@ final class CancellationTokenSource
 
         $onCancel = $this->onCancel;
         $this->onCancel = null;
-        Loop::defer(static fn () => $onCancel(new CancelledException($previous)));
+        $onCancel(new CancelledException($previous));
     }
 }
