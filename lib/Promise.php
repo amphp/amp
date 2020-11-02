@@ -8,7 +8,7 @@ namespace Amp;
  * @template-covariant TValue
  * @psalm-yield TValue
  */
-interface Promise extends \Awaitable
+interface Promise
 {
     /**
      * Registers a callback to be invoked when the promise is resolved.

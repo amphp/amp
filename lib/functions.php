@@ -25,7 +25,11 @@ namespace Amp
             $promise = Promise\all($promise);
         }
 
-        return \Fiber::await($promise, Loop::get());
+        return \Fiber::suspend(static fn(\Fiber $fiber) => $promise->onResolve(
+            static fn(?\Throwable $exception, mixed $value) => $exception
+                ? $fiber->throw($exception)
+                : $fiber->resume($value)
+        ), Loop::get());
     }
 
     /**

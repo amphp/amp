@@ -16,15 +16,45 @@ final class Fiber
     private function __construct() { }
 
     /**
-     * Suspend execution of the fiber until the given awaitable is resolved.
+     * @return bool True if the fiber is suspended.
+     */
+    public function isSuspended(): bool { }
+
+    /**
+     * @return bool True if the fiber is currently running.
+     */
+    public function isRunning(): bool { }
+
+    /**
+     * @return bool True if the fiber has completed execution.
+     */
+    public function isTerminated(): bool { }
+
+    /**
+     * Resumes the fiber, returning the given value from {@see Fiber::suspend()}.
      *
-     * @param Awaitable $awaitable
+     * @param mixed $value
+     */
+    public function resume(mixed $value = null): void { }
+
+    /**
+     * Throws the given exception into the fiber from {@see Fiber::suspend()}.
+     *
+     * @param Throwable $exception
+     */
+    public function throw(Throwable $exception): void { }
+
+    /**
+     * Suspend execution of the fiber. The Fiber object is provided as the first argument to the given callback.
+     * The fiber may be resumed with {@see Fiber::resume()} or {@see Fiber::throw()}.
+     *
+     * @param callable(Fiber):void $enqueue
      * @param FiberScheduler $scheduler
      *
-     * @return mixed Resolution value of the awaitable.
+     * @return mixed Value provided to {@see Fiber::resume()}.
      *
      * @throws FiberError Thrown if within {@see FiberScheduler::run()}.
-     * @throws Throwable Awaitable failure reason.
+     * @throws Throwable Exception provided to {@see Fiber::throw()}.
      */
-    public static function await(Awaitable $awaitable, FiberScheduler $scheduler): mixed { }
+    public static function suspend(callable $enqueue, FiberScheduler $scheduler): mixed { }
 }
