@@ -321,9 +321,12 @@ class PipelineSourceTest extends AsyncTestCase
 
     public function testFailWithDisposedException(): void
     {
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Cannot fail a pipeline with an instance of');
-
+        // Using DisposedException, but should be treated as fail, not disposal.
         $this->source->fail(new DisposedException);
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Pipeline has already been completed');
+
+        $this->source->complete();
     }
 }

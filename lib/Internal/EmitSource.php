@@ -278,10 +278,6 @@ final class EmitSource
      */
     public function fail(\Throwable $exception): void
     {
-        if ($exception instanceof DisposedException) {
-            throw new \Error("Cannot fail a pipeline with an instance of " . DisposedException::class);
-        }
-
         $this->finalize($exception);
     }
 
