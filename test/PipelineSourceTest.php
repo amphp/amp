@@ -217,6 +217,8 @@ class PipelineSourceTest extends AsyncTestCase
         $pipeline = $this->source->pipe();
         $pipeline->dispose();
 
+        delay(0);
+
         $this->assertTrue($invoked);
 
         $this->source->onDisposal($this->createCallback(1));
@@ -239,6 +241,8 @@ class PipelineSourceTest extends AsyncTestCase
         $this->assertFalse($invoked);
 
         $this->source->onDisposal($this->createCallback(0));
+
+        delay(0);
     }
 
     public function testEmitAfterDisposal(): void
