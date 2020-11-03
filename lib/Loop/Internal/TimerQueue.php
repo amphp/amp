@@ -16,6 +16,60 @@ final class TimerQueue
     private $pointers = [];
 
     /**
+     * @param int $node Rebuild the data array from the given node upward.
+     *
+     * @return void
+     */
+    private function heapifyUp(int $node)
+    {
+        $entry = $this->data[$node];
+        while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
+            $temp = $this->data[$parent];
+            $this->data[$node] = $temp;
+            $this->pointers[$temp->watcher->id] = $node;
+
+            $this->data[$parent] = $entry;
+            $this->pointers[$entry->watcher->id] = $parent;
+
+            $node = $parent;
+        }
+    }
+
+    /**
+     * @param int $node Rebuild the data array from the given node downward.
+     *
+     * @return void
+     */
+    private function heapifyDown(int $node)
+    {
+        $length = \count($this->data);
+        while (($child = ($node << 1) + 1) < $length) {
+            if ($this->data[$child]->expiration < $this->data[$node]->expiration
+                && ($child + 1 >= $length || $this->data[$child]->expiration < $this->data[$child + 1]->expiration)
+            ) {
+                // Left child is less than parent and right child.
+                $swap = $child;
+            } elseif ($child + 1 < $length && $this->data[$child + 1]->expiration < $this->data[$node]->expiration) {
+                // Right child is less than parent and left child.
+                $swap = $child + 1;
+            } else { // Left and right child are greater than parent.
+                break;
+            }
+
+            $left = $this->data[$node];
+            $right = $this->data[$swap];
+
+            $this->data[$node] = $right;
+            $this->pointers[$right->watcher->id] = $node;
+
+            $this->data[$swap] = $left;
+            $this->pointers[$left->watcher->id] = $swap;
+
+            $node = $swap;
+        }
+    }
+
+    /**
      * Inserts the watcher into the queue. Time complexity: O(log(n)).
      *
      * @param Watcher $watcher
@@ -35,16 +89,7 @@ final class TimerQueue
         $this->data[$node] = $entry;
         $this->pointers[$watcher->id] = $node;
 
-        while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
-            $temp = $this->data[$parent];
-            $this->data[$node] = $temp;
-            $this->pointers[$temp->watcher->id] = $node;
-
-            $this->data[$parent] = $entry;
-            $this->pointers[$watcher->id] = $parent;
-
-            $node = $parent;
-        }
+        $this->heapifyUp($node);
     }
 
     /**
@@ -105,7 +150,7 @@ final class TimerQueue
     }
 
     /**
-     * @param int $node Remove the given node and then rebuild the data array from that node downward.
+     * @param int $node Remove the given node and then rebuild the data array.
      *
      * @return void
      */
@@ -117,29 +162,13 @@ final class TimerQueue
         $this->pointers[$left->watcher->id] = $node;
         unset($this->data[$length], $this->pointers[$id]);
 
-        while (($child = ($node << 1) + 1) < $length) {
-            if ($this->data[$child]->expiration < $this->data[$node]->expiration
-                && ($child + 1 >= $length || $this->data[$child]->expiration < $this->data[$child + 1]->expiration)
-            ) {
-                // Left child is less than parent and right child.
-                $swap = $child;
-            } elseif ($child + 1 < $length && $this->data[$child + 1]->expiration < $this->data[$node]->expiration) {
-                // Right child is less than parent and left child.
-                $swap = $child + 1;
-            } else { // Left and right child are greater than parent.
-                break;
+        if ($node < $length) { // don't need to do anything if we removed the last element
+            $parent = ($node - 1) >> 1;
+            if ($parent >= 0 && $this->data[$node]->expiration < $this->data[$parent]->expiration) {
+                $this->heapifyUp($node);
+            } else {
+                $this->heapifyDown($node);
             }
-
-            $left = $this->data[$node];
-            $right = $this->data[$swap];
-
-            $this->data[$node] = $right;
-            $this->pointers[$right->watcher->id] = $node;
-
-            $this->data[$swap] = $left;
-            $this->pointers[$left->watcher->id] = $swap;
-
-            $node = $swap;
         }
     }
 }
