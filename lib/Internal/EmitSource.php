@@ -35,7 +35,7 @@ final class EmitSource
     /** @var Deferred[] */
     private array $backPressure = [];
 
-    /** @var \Fiber[] */
+    /** @var \Continuation[] */
     private array $waiting = [];
 
     private int $consumePosition = 0;
@@ -116,7 +116,10 @@ final class EmitSource
             return null;
         }
 
-        return \Fiber::suspend(fn(\Fiber $fiber) => $this->waiting[$position] = $fiber, Loop::get());
+        return \Fiber::suspend(
+            fn(\Continuation $continuation) => $this->waiting[$position] = $continuation,
+            Loop::get()
+        );
     }
 
     public function pipe(): Pipeline
@@ -210,9 +213,9 @@ final class EmitSource
         $position = $this->emitPosition++;
 
         if (isset($this->waiting[$position])) {
-            $fiber = $this->waiting[$position];
+            $continuation = $this->waiting[$position];
             unset($this->waiting[$position]);
-            Loop::defer(fn() => $fiber->resume($value));
+            Loop::defer(static fn() => $continuation->resume($value));
 
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {
@@ -356,11 +359,11 @@ final class EmitSource
             }
         }
 
-        foreach ($waiting as $fiber) {
+        foreach ($waiting as $continuation) {
             if (isset($this->exception)) {
-                $fiber->throw($this->exception);
+                $continuation->throw($this->exception);
             } else {
-                $fiber->resume();
+                $continuation->resume();
             }
         }
     }

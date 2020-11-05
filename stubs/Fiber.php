@@ -11,50 +11,21 @@ final class Fiber
     public static function run(callable $callback, mixed ...$args): void { }
 
     /**
-     * Private constructor to force use of {@see run()}.
-     */
-    private function __construct() { }
-
-    /**
-     * @return bool True if the fiber is suspended.
-     */
-    public function isSuspended(): bool { }
-
-    /**
-     * @return bool True if the fiber is currently running.
-     */
-    public function isRunning(): bool { }
-
-    /**
-     * @return bool True if the fiber has completed execution.
-     */
-    public function isTerminated(): bool { }
-
-    /**
-     * Resumes the fiber, returning the given value from {@see Fiber::suspend()}.
-     *
-     * @param mixed $value
-     */
-    public function resume(mixed $value = null): void { }
-
-    /**
-     * Throws the given exception into the fiber from {@see Fiber::suspend()}.
-     *
-     * @param Throwable $exception
-     */
-    public function throw(Throwable $exception): void { }
-
-    /**
-     * Suspend execution of the fiber. The Fiber object is provided as the first argument to the given callback.
-     * The fiber may be resumed with {@see Fiber::resume()} or {@see Fiber::throw()}.
+     * Suspend execution of the fiber. A Continuation object is provided as the first argument to the given callback.
+     * The fiber may be resumed with {@see Continuation::resume()} or {@see Continuation::throw()}.
      *
      * @param callable(Fiber):void $enqueue
      * @param FiberScheduler $scheduler
      *
-     * @return mixed Value provided to {@see Fiber::resume()}.
+     * @return mixed Value provided to {@see Continuation::resume()}.
      *
      * @throws FiberError Thrown if within {@see FiberScheduler::run()}.
-     * @throws Throwable Exception provided to {@see Fiber::throw()}.
+     * @throws Throwable Exception provided to {@see Continuation::throw()}.
      */
     public static function suspend(callable $enqueue, FiberScheduler $scheduler): mixed { }
+
+    /**
+     * Private constructor to force use of {@see run()}.
+     */
+    private function __construct() { }
 }
