@@ -13,21 +13,20 @@ final class Signal implements Promise
     {
         $this->placeholder = $placeholder = new Internal\Placeholder;
 
-        \array_unshift($signals, $signal);
+        $signals[] = $signal;
 
         $watchers = &$this->watchers;
-        foreach ($signals as $signal) {
-            $this->watchers[] = Loop::onSignal($signal, static function (string $id, int $signo) use (
-                &$watchers,
-                $placeholder
-            ): void {
-                foreach ($watchers as $watcher) {
-                    Loop::cancel($watcher);
-                }
-                $watchers = [];
+        $callback = static function (string $id, int $signo) use (&$watchers, $placeholder): void {
+            foreach ($watchers as $watcher) {
+                Loop::cancel($watcher);
+            }
+            $watchers = [];
 
-                $placeholder->resolve($signo);
-            });
+            $placeholder->resolve($signo);
+        };
+
+        foreach ($signals as $signal) {
+            $this->watchers[] = Loop::onSignal($signal, $callback);
         }
     }
 

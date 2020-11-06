@@ -26,9 +26,10 @@ namespace Amp
         }
 
         return \Fiber::suspend(static fn(\Continuation $continuation) => $promise->onResolve(
-            static fn(?\Throwable $exception, mixed $value) => $exception
-                ? $continuation->throw($exception)
-                : $continuation->resume($value)
+            static fn(?\Throwable $exception, mixed $value) => match ($exception) {
+                null => $continuation->resume($value),
+                default => $continuation->throw($exception),
+            }
         ), Loop::get());
     }
 
@@ -204,11 +205,14 @@ namespace Amp
     /**
      * Async sleep for the specified number of milliseconds.
      *
-     * @param int $milliseconds Numberr of milliseconds to sleep.
+     * @param int $milliseconds Number of milliseconds to sleep.
      */
     function delay(int $milliseconds): void
     {
-        await(new Delayed($milliseconds));
+        \Fiber::suspend(static fn(\Continuation $continuation) => Loop::delay(
+            $milliseconds,
+            static fn() => $continuation->resume()
+        ), Loop::get());
     }
 
     /**
@@ -221,7 +225,21 @@ namespace Amp
      */
     function signal(int $signal, int ...$signals): int
     {
-        return await(new Signal($signal, ...$signals));
+        $signals[] = $signal;
+
+        return \Fiber::suspend(static function (\Continuation $continuation) use ($signals): void {
+            $watchers = [];
+            $callback = static function (string $id, int $signo) use (&$watchers, $continuation): void {
+                foreach ($watchers as $watcher) {
+                    Loop::cancel($watcher);
+                }
+                $continuation->resume($signo);
+            };
+
+            foreach ($signals as $signal) {
+                $watchers[] = Loop::onSignal($signal, $callback);
+            }
+        }, Loop::get());
     }
 
     /**
@@ -244,8 +262,8 @@ namespace Amp\Promise
     use Amp\Promise;
     use Amp\Success;
     use Amp\TimeoutException;
+    use function Amp\async;
     use function Amp\await;
-    use function Amp\call;
     use function Amp\Internal\createTypeError;
 
     /**
@@ -262,10 +280,6 @@ namespace Amp\Promise
      */
     function rethrow(Promise $promise): void
     {
-        if (!$promise instanceof Promise) {
-            $promise = adapt($promise);
-        }
-
         $promise->onResolve(static function (?\Throwable $exception): void {
             if ($exception) {
                 throw $exception;
@@ -310,10 +324,6 @@ namespace Amp\Promise
      */
     function timeout(Promise $promise, int $timeout): Promise
     {
-        if (!$promise instanceof Promise) {
-            $promise = adapt($promise);
-        }
-
         $deferred = new Deferred;
 
         $watcher = Loop::delay($timeout, static function () use (&$deferred) {
@@ -354,9 +364,9 @@ namespace Amp\Promise
     {
         $promise = timeout($promise, $timeout);
 
-        return call(static function () use ($promise, $default) {
+        return async(static function () use ($promise, $default) {
             try {
-                return yield $promise;
+                return await($promise);
             } catch (TimeoutException $exception) {
                 return $default;
             }
@@ -590,24 +600,18 @@ namespace Amp\Promise
      * @param callable $callback
      *
      * @return Promise
+     *
+     * @deprecated Use {@see await()} instead.
      */
     function wrap(Promise $promise, callable $callback): Promise
     {
-        $deferred = new Deferred;
-
-        $promise->onResolve(static function (?\Throwable $exception, mixed $result) use ($deferred, $callback): void {
+        return async(function () use ($promise, $callback) {
             try {
-                $result = $callback($exception, $result);
+                return $callback(null, await($promise));
             } catch (\Throwable $exception) {
-                $deferred->fail($exception);
-
-                return;
+                return $callback($exception, null);
             }
-
-            $deferred->resolve($result);
         });
-
-        return $deferred->promise();
     }
 }
 

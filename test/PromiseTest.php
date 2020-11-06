@@ -296,7 +296,7 @@ class PromiseTest extends AsyncTestCase
         });
         $succeeder(true);
 
-        delay(0); // Tick event loop to invoke onResolve callback.
+        delay(5); // Tick event loop a few times to invoke onResolve callback.
 
         $this->assertSame(3, $invoked);
     }

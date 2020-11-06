@@ -22,7 +22,7 @@ class DeferTest extends AsyncTestCase
             throw $exception;
         });
 
-        delay(0); // Tick event loop.
+        delay(1); // Tick event loop.
 
         $this->assertSame($exception, $reason);
     }

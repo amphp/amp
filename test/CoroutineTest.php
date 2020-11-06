@@ -41,7 +41,7 @@ class CoroutineTest extends AsyncTestCase
 
         $coroutine = new Coroutine($generator());
 
-        delay(0); // Force loop to tick once.
+        delay(1); // Force loop to tick once.
 
         $this->assertNull($yielded);
 
@@ -49,7 +49,7 @@ class CoroutineTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        delay(0); // Force loop to tick once.
+        delay(1); // Force loop to tick once.
 
         $this->assertSame($exception, $reason);
     }

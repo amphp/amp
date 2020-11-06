@@ -193,7 +193,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         unset($pipeline); // Should relieve all back-pressure.
 
-        delay(0); // Tick event loop to invoke promise callbacks.
+        delay(1); // Tick event loop to invoke promise callbacks.
 
         $this->assertSame(5, $invoked);
 
