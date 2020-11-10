@@ -56,6 +56,8 @@ final class PipelineSource
      *
      * @param mixed $value
      *
+     * @psalm-param TValue $value
+     *
      * @throws DisposedException Thrown if the pipeline is disposed.
      */
     public function yield(mixed $value): void

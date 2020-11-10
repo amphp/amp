@@ -17,7 +17,7 @@ interface Pipeline extends \Traversable
      *
      * @return mixed Returns null if the pipeline has completed.
      *
-     * @psalm-return TValue
+     * @psalm-return TValue|null
      *
      * @throws \Throwable The exception used to fail the pipeline.
      */

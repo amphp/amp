@@ -12,6 +12,7 @@ use Amp\Pipeline;
  *
  * @template-covariant TValue
  * @template-implements Pipeline<TValue>
+ * @template-implements \IteratorAggregate<int, TValue>
  */
 final class AutoDisposingPipeline implements Pipeline, \IteratorAggregate
 {
@@ -46,10 +47,12 @@ final class AutoDisposingPipeline implements Pipeline, \IteratorAggregate
 
     /**
      * @inheritDoc
+     *
+     * @psalm-return \Iterator<int, TValue>
      */
     public function getIterator(): \Iterator
     {
-        while (null !== $value = $this->continue()) {
+        while (null !== $value = $this->source->continue()) {
             yield $value;
         }
     }

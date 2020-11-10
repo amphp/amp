@@ -6,6 +6,9 @@ namespace Amp;
  * @template TValue
  * @template TSend
  * @template TReturn
+ *
+ * @template-implements Pipeline<TValue>
+ * @template-implements \IteratorAggregate<int, TValue>
  */
 final class AsyncGenerator implements Pipeline, \IteratorAggregate
 {
@@ -73,6 +76,8 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
 
     /**
      * @inheritDoc
+     *
+     * @psalm-return TValue|null
      */
     public function continue(): mixed
     {
@@ -135,10 +140,12 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
 
     /**
      * @inheritDoc
+     *
+     * @paslm-return \Iterator<int, TValue>
      */
     public function getIterator(): \Iterator
     {
-        while (null !== $value = $this->continue()) {
+        while (null !== $value = $this->source->continue()) {
             yield $value;
         }
     }
