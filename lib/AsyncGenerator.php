@@ -7,7 +7,7 @@ namespace Amp;
  * @template TSend
  * @template TReturn
  */
-final class AsyncGenerator implements Pipeline
+final class AsyncGenerator implements Pipeline, \IteratorAggregate
 {
     /** @var Internal\EmitSource<TValue, TSend> */
     private Internal\EmitSource $source;
@@ -131,5 +131,15 @@ final class AsyncGenerator implements Pipeline
     public function getReturn(): mixed
     {
         return await($this->promise);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIterator(): \Iterator
+    {
+        while (null !== $value = $this->continue()) {
+            yield $value;
+        }
     }
 }

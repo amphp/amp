@@ -13,7 +13,7 @@ use Amp\Pipeline;
  * @template-covariant TValue
  * @template-implements Pipeline<TValue>
  */
-final class AutoDisposingPipeline implements Pipeline
+final class AutoDisposingPipeline implements Pipeline, \IteratorAggregate
 {
     /** @var EmitSource<TValue, null> */
     private EmitSource $source;
@@ -42,5 +42,15 @@ final class AutoDisposingPipeline implements Pipeline
     public function dispose(): void
     {
         $this->source->dispose();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIterator(): \Iterator
+    {
+        while (null !== $value = $this->continue()) {
+            yield $value;
+        }
     }
 }

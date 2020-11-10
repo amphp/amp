@@ -7,11 +7,13 @@ namespace Amp;
  *
  * @template-covariant TValue
  */
-interface Pipeline
+interface Pipeline extends \Traversable
 {
     /**
-     * Succeeds with the emitted value if the pipeline has emitted a value or null if the pipeline has completed.
-     * If the pipeline fails, the returned promise will fail with the same exception.
+     * Returns the emitted value if the pipeline has emitted a value or null if the pipeline has completed.
+     * If the pipeline fails, the exception will be thrown from this method.
+     *
+     * This method exists primarily for async consumption using Amp\async(fn() => $pipeline->continue()).
      *
      * @return mixed Returns null if the pipeline has completed.
      *

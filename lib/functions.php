@@ -1038,24 +1038,4 @@ namespace Amp\Pipeline
 
         return $array;
     }
-
-    /**
-     * Converts the given pipeline to an object implementing \Iterator.
-     *
-     * @template TValue
-     *
-     * @param Pipeline $pipeline
-     *
-     * @psalm-param Pipeline<TValue> $pipeline
-     *
-     * @return \Iterator
-     *
-     * @psalm-return \Iterator<TValue>
-     */
-    function toIterator(Pipeline $pipeline): \Iterator
-    {
-        while (null !== $value = $pipeline->continue()) {
-            yield $value;
-        }
-    }
 }

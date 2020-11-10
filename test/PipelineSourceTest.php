@@ -9,6 +9,7 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\async;
 use function Amp\await;
+use function Amp\defer;
 use function Amp\delay;
 
 class PipelineSourceTest extends AsyncTestCase
@@ -328,5 +329,27 @@ class PipelineSourceTest extends AsyncTestCase
         $this->expectExceptionMessage('Pipeline has already been completed');
 
         $this->source->complete();
+    }
+
+    public function testTraversable(): void
+    {
+        defer(function (): void {
+            try {
+                $this->source->yield(1);
+                $this->source->yield(2);
+                $this->source->yield(3);
+                $this->source->complete();
+            } catch (\Throwable $exception) {
+                $this->source->fail($exception);
+            }
+        });
+
+        $values = [];
+
+        foreach ($this->source->pipe() as $value) {
+            $values[] = $value;
+        }
+
+        $this->assertSame([1, 2, 3], $values);
     }
 }

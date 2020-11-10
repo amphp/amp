@@ -30,7 +30,7 @@ try {
     $pipeline = $source->pipe();
 
     // Use Amp\Pipeline\toIterator() to use a pipeline with foreach.
-    foreach (Pipeline\toIterator($pipeline) as $value) {
+    foreach ($pipeline as $value) {
         \printf("Pipeline source yielded %d\n", $value);
         delay(100); // Listener consumption takes 100 ms.
     }

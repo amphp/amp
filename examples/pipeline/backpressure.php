@@ -29,7 +29,7 @@ try {
         $source->complete();
     }, $source));
 
-    while (null !== $value = $pipeline->continue()) {
+    foreach ($pipeline as $value) {
         \printf("Pipeline source yielded %d\n", $value);
         delay(500); // Listener consumption takes 500 ms.
     }

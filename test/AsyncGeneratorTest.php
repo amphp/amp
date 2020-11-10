@@ -274,4 +274,21 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         $this->assertSame(0, $generator->continue());
     }
+
+    public function testTraversable(): void
+    {
+        $values = [];
+
+        $generator = new AsyncGenerator(function () {
+            yield 1;
+            yield 2;
+            yield 3;
+        });
+
+        foreach ($generator as $value) {
+            $values[] = $value;
+        }
+
+        $this->assertSame([1, 2, 3], $values);
+    }
 }
