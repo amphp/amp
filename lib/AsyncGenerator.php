@@ -141,9 +141,9 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
     /**
      * @inheritDoc
      *
-     * @paslm-return \Iterator<int, TValue>
+     * @paslm-return \Traversable<int, TValue>
      */
-    public function getIterator(): \Iterator
+    public function getIterator(): \Traversable
     {
         while (null !== $value = $this->source->continue()) {
             yield $value;

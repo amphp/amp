@@ -48,9 +48,9 @@ final class AutoDisposingPipeline implements Pipeline, \IteratorAggregate
     /**
      * @inheritDoc
      *
-     * @psalm-return \Iterator<int, TValue>
+     * @psalm-return \Traversable<int, TValue>
      */
-    public function getIterator(): \Iterator
+    public function getIterator(): \Traversable
     {
         while (null !== $value = $this->source->continue()) {
             yield $value;

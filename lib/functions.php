@@ -1029,13 +1029,6 @@ namespace Amp\Pipeline
      */
     function toArray(Pipeline $pipeline): array
     {
-        /** @psalm-var list<TValue> $array */
-        $array = [];
-
-        while (null !== $value = $pipeline->continue()) {
-            $array[] = $value;
-        }
-
-        return $array;
+        return \iterator_to_array($pipeline);
     }
 }
