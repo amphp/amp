@@ -9,7 +9,7 @@ use Amp\Loop\Watcher;
  */
 final class TimerQueue
 {
-    /** @var TimerQueueEntry[] */
+    /** @var Watcher[] */
     private $data = [];
 
     /** @var int[] */
@@ -24,13 +24,7 @@ final class TimerQueue
     {
         $entry = $this->data[$node];
         while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
-            $temp = $this->data[$parent];
-            $this->data[$node] = $temp;
-            $this->pointers[$temp->watcher->id] = $node;
-
-            $this->data[$parent] = $entry;
-            $this->pointers[$entry->watcher->id] = $parent;
-
+            $this->swap($node, $parent);
             $node = $parent;
         }
     }
@@ -56,17 +50,20 @@ final class TimerQueue
                 break;
             }
 
-            $left = $this->data[$node];
-            $right = $this->data[$swap];
-
-            $this->data[$node] = $right;
-            $this->pointers[$right->watcher->id] = $node;
-
-            $this->data[$swap] = $left;
-            $this->pointers[$left->watcher->id] = $swap;
-
+            $this->swap($node, $swap);
             $node = $swap;
         }
+    }
+
+    private function swap(int $left, int $right)
+    {
+        $temp = $this->data[$left];
+
+        $this->data[$left] = $this->data[$right];
+        $this->pointers[$this->data[$right]->id] = $left;
+
+        $this->data[$right] = $temp;
+        $this->pointers[$temp->id] = $right;
     }
 
     /**
@@ -83,10 +80,8 @@ final class TimerQueue
         \assert($watcher->expiration !== null);
         \assert(!isset($this->pointers[$watcher->id]));
 
-        $entry = new TimerQueueEntry($watcher, $watcher->expiration);
-
         $node = \count($this->data);
-        $this->data[$node] = $entry;
+        $this->data[$node] = $watcher;
         $this->pointers[$watcher->id] = $node;
 
         $this->heapifyUp($node);
@@ -128,15 +123,15 @@ final class TimerQueue
             return null;
         }
 
-        $data = $this->data[0];
+        $watcher = $this->data[0];
 
-        if ($data->expiration > $now) {
+        if ($watcher->expiration > $now) {
             return null;
         }
 
         $this->removeAndRebuild(0);
 
-        return $data->watcher;
+        return $watcher;
     }
 
     /**
@@ -157,9 +152,9 @@ final class TimerQueue
     private function removeAndRebuild(int $node)
     {
         $length = \count($this->data) - 1;
-        $id = $this->data[$node]->watcher->id;
+        $id = $this->data[$node]->id;
         $left = $this->data[$node] = $this->data[$length];
-        $this->pointers[$left->watcher->id] = $node;
+        $this->pointers[$left->id] = $node;
         unset($this->data[$length], $this->pointers[$id]);
 
         if ($node < $length) { // don't need to do anything if we removed the last element
