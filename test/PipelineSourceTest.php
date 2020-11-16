@@ -194,7 +194,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         unset($pipeline); // Should relieve all back-pressure.
 
-        delay(1); // Tick event loop to invoke promise callbacks.
+        delay(5); // Tick event loop to invoke promise callbacks.
 
         $this->assertSame(5, $invoked);
 
@@ -248,29 +248,42 @@ class PipelineSourceTest extends AsyncTestCase
 
     public function testEmitAfterDisposal(): void
     {
-        $this->expectException(DisposedException::class);
-
         $pipeline = $this->source->pipe();
-        $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
         $pipeline->dispose();
         $this->source->onDisposal($this->createCallback(1));
         $this->assertTrue($this->source->isDisposed());
-        $this->assertNull(await($promise));
+
+        $this->expectException(DisposedException::class);
+
         await($this->source->emit(1));
     }
 
     public function testEmitAfterAutomaticDisposal(): void
     {
-        $this->expectException(DisposedException::class);
-
         $pipeline = $this->source->pipe();
-        $promise = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
         $this->assertTrue($this->source->isDisposed());
-        $this->assertNull(await($promise));
+
+        $this->expectException(DisposedException::class);
+
+        await($this->source->emit(1));
+    }
+
+    public function testEmitAfterAutomaticDisposalAfterDelay(): void
+    {
+        $pipeline = $this->source->pipe();
+        $this->source->onDisposal($this->createCallback(1));
+        unset($pipeline); // Trigger automatic disposal.
+        $this->source->onDisposal($this->createCallback(1));
+        $this->assertTrue($this->source->isDisposed());
+
+        delay(10);
+
+        $this->expectException(DisposedException::class);
+
         await($this->source->emit(1));
     }
 

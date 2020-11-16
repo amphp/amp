@@ -217,6 +217,12 @@ final class EmitSource
             unset($this->waiting[$position]);
             Loop::defer(static fn() => $continuation->resume($value));
 
+            if ($this->disposed && empty($this->waiting)) {
+                \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
+                $this->triggerDisposal();
+                return new Success; // Subsequent emit() calls will return a Failure.
+            }
+
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {
                 $promise = $this->sendValues[$position];
@@ -225,18 +231,12 @@ final class EmitSource
             }
         } elseif ($this->completed) {
             throw new \Error("Pipelines cannot emit values after calling complete");
-        } elseif (isset($this->exception)) {
+        } elseif ($this->disposed) {
+            \assert(isset($this->exception), "Failure exception must be set when disposed");
+            // Pipeline has been disposed and no Continuations are still pending.
             return new Failure($this->exception);
         } else {
             $this->emittedValues[$position] = $value;
-        }
-
-        if ($this->disposed) {
-            if (empty($this->waiting)) {
-                $this->triggerDisposal();
-            }
-
-            return new Success;
         }
 
         $this->backPressure[$position] = $deferred = new Deferred;
@@ -346,10 +346,9 @@ final class EmitSource
     private function resolvePending(): void
     {
         $backPressure = $this->backPressure;
-        $this->backPressure = [];
-
         $waiting = $this->waiting;
-        $this->waiting = [];
+
+        unset($this->emittedValues, $this->sendValues, $this->waiting, $this->backPressure);
 
         foreach ($backPressure as $deferred) {
             if (isset($this->exception)) {
