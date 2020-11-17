@@ -62,7 +62,7 @@ final class PipelineSource
      */
     public function yield(mixed $value): void
     {
-        await($this->source->emit($value));
+        $this->source->yield($value);
     }
 
     /**

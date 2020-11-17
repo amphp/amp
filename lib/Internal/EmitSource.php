@@ -29,11 +29,14 @@ final class EmitSource
     /** @var mixed[] */
     private array $emittedValues = [];
 
-    /** @var Promise[] */
+    /** @var [\Throwable, mixed][] */
     private array $sendValues = [];
 
     /** @var Deferred[] */
     private array $backPressure = [];
+
+    /** @var \Continuation[] */
+    private array $yielding = [];
 
     /** @var \Continuation[] */
     private array $waiting = [];
@@ -56,13 +59,13 @@ final class EmitSource
      */
     public function continue(): mixed
     {
-        return $this->next(new Success);
+        return $this->next(null, null);
     }
 
     /**
      * @psalm-param TSend $value
      *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      */
     public function send(mixed $value): mixed
     {
@@ -70,11 +73,11 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(new Success($value));
+        return $this->next(null, $value);
     }
 
     /**
-     * @psalm-return mixed
+     * @psalm-return TValue
      */
     public function throw(\Throwable $exception): mixed
     {
@@ -82,28 +85,40 @@ final class EmitSource
             throw new \Error("Must initialize async generator by calling continue() first");
         }
 
-        return $this->next(new Failure($exception));
+        return $this->next($exception, null);
     }
 
     /**
-     * @psalm-param Promise<TSend|null> $promise
+     * @psalm-param TSend|null $value
      *
      * @psalm-return TValue
      */
-    private function next(Promise $promise): mixed
+    private function next(?\Throwable $exception, mixed $value): mixed
     {
         $position = $this->consumePosition++;
 
-        if (isset($this->backPressure[$position - 1])) {
+        if (isset($this->yielding[$position - 1])) {
+            $continuation = $this->yielding[$position - 1];
+            unset($this->yielding[$position - 1]);
+            if ($exception) {
+                Loop::defer(static fn() => $continuation->throw($exception));
+            } else {
+                Loop::defer(static fn() => $continuation->resume($value));
+            }
+        } elseif (isset($this->backPressure[$position - 1])) {
             $deferred = $this->backPressure[$position - 1];
             unset($this->backPressure[$position - 1]);
-            $deferred->resolve($promise);
+            if ($exception) {
+                $deferred->fail($exception);
+            } else {
+                $deferred->resolve($value);
+            }
         } elseif ($position > 0) {
             // Send-values are indexed as $this->consumePosition - 1.
-            $this->sendValues[$position - 1] = $promise;
+            $this->sendValues[$position - 1] = [$exception, $value];
         }
 
-        if (\array_key_exists($position, $this->emittedValues)) {
+        if (isset($this->emittedValues[$position])) {
             $value = $this->emittedValues[$position];
             unset($this->emittedValues[$position]);
             return $value;
@@ -189,6 +204,7 @@ final class EmitSource
      * if the pipeline is completed, failed, or disposed.
      *
      * @param mixed $value
+     * @param int $position
      *
      * @psalm-param TValue $value
      *
@@ -200,7 +216,7 @@ final class EmitSource
      *
      * @throws \Error If the pipeline has completed.
      */
-    public function emit(mixed $value): Promise
+    private function push(mixed $value, int $position): ?array
     {
         if ($value === null) {
             throw new \TypeError("Pipelines cannot emit NULL");
@@ -210,8 +226,6 @@ final class EmitSource
             throw new \TypeError("Pipelines cannot emit promises");
         }
 
-        $position = $this->emitPosition++;
-
         if (isset($this->waiting[$position])) {
             $continuation = $this->waiting[$position];
             unset($this->waiting[$position]);
@@ -220,28 +234,80 @@ final class EmitSource
             if ($this->disposed && empty($this->waiting)) {
                 \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
                 $this->triggerDisposal();
-                return new Success; // Subsequent emit() calls will return a Failure.
+                return [null, null]; // Subsequent push() calls will throw.
             }
 
             // Send-values are indexed as $this->consumePosition - 1, so use $position for the next value.
             if (isset($this->sendValues[$position])) {
-                $promise = $this->sendValues[$position];
+                $pair = $this->sendValues[$position];
                 unset($this->sendValues[$position]);
-                return $promise;
+                return $pair;
             }
         } elseif ($this->completed) {
             throw new \Error("Pipelines cannot emit values after calling complete");
         } elseif ($this->disposed) {
             \assert(isset($this->exception), "Failure exception must be set when disposed");
             // Pipeline has been disposed and no Continuations are still pending.
-            return new Failure($this->exception);
+            return [$this->exception, null];
         } else {
             $this->emittedValues[$position] = $value;
         }
 
-        $this->backPressure[$position] = $deferred = new Deferred;
+        return null;
+    }
 
-        return $deferred->promise();
+    /**
+     * @psalm-param TValue $value
+     * @psalm-return Promise<TSend>
+     */
+    public function emit(mixed $value): Promise
+    {
+        $position = $this->emitPosition;
+
+        $pair = $this->push($value, $position);
+
+        ++$this->emitPosition;
+
+        if ($pair === null) {
+            $this->backPressure[$position] = $deferred = new Deferred;
+            return $deferred->promise();
+        }
+
+        [$exception, $value] = $pair;
+
+        if ($exception) {
+            return new Failure($exception);
+        }
+
+        return new Success($value);
+    }
+
+    /**
+     * @psalm-param TValue $value
+     * @psalm-return TSend
+     */
+    public function yield(mixed $value): mixed
+    {
+        $position = $this->emitPosition;
+
+        $pair = $this->push($value, $position);
+
+        ++$this->emitPosition;
+
+        if ($pair === null) {
+            return \Fiber::suspend(
+                fn(\Continuation $continuation) => $this->yielding[$position] = $continuation,
+                Loop::get()
+            );
+        }
+
+        [$exception, $value] = $pair;
+
+        if ($exception) {
+            throw $exception;
+        }
+
+        return $value;
     }
 
     /**
@@ -341,25 +407,37 @@ final class EmitSource
     }
 
     /**
-     * Resolves all pending promises returned from {@see continue()} with the result promise.
+     * Resolves all backpressure and outstanding calls for emitted values.
      */
     private function resolvePending(): void
     {
-        $backPressure = $this->backPressure;
+        $backPressure = \array_merge($this->backPressure, $this->yielding);
         $waiting = $this->waiting;
 
-        unset($this->emittedValues, $this->sendValues, $this->waiting, $this->backPressure);
+        unset($this->waiting, $this->backPressure, $this->yielding);
+
+        $exception = isset($this->exception) ? $this->exception : null;
 
         foreach ($backPressure as $deferred) {
-            if (isset($this->exception)) {
-                $deferred->fail($this->exception);
+            if ($deferred instanceof \Continuation) {
+                // Using a defer watcher to maintain backpressure execution order.
+                if ($exception) {
+                    Loop::defer(static fn() => $deferred->throw($exception));
+                } else {
+                    Loop::defer(static fn() => $deferred->resume());
+                }
+                continue;
+            }
+
+            if ($exception) {
+                $deferred->fail($exception);
             } else {
                 $deferred->resolve();
             }
         }
 
         foreach ($waiting as $continuation) {
-            if (isset($this->exception)) {
+            if ($exception) {
                 $continuation->throw($this->exception);
             } else {
                 $continuation->resume();
