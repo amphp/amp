@@ -29,7 +29,7 @@ final class EmitSource
     /** @var mixed[] */
     private array $emittedValues = [];
 
-    /** @var [\Throwable, mixed][] */
+    /** @var [?\Throwable, mixed][] */
     private array $sendValues = [];
 
     /** @var Deferred[] */
@@ -95,28 +95,31 @@ final class EmitSource
      */
     private function next(?\Throwable $exception, mixed $value): mixed
     {
-        $position = $this->consumePosition++;
+        $position = $this->consumePosition++ - 1;
 
-        if (isset($this->yielding[$position - 1])) {
-            $continuation = $this->yielding[$position - 1];
-            unset($this->yielding[$position - 1]);
+        // Relieve backpressure from prior emit.
+        if (isset($this->yielding[$position])) {
+            $continuation = $this->yielding[$position];
+            unset($this->yielding[$position]);
             if ($exception) {
                 Loop::defer(static fn() => $continuation->throw($exception));
             } else {
                 Loop::defer(static fn() => $continuation->resume($value));
             }
-        } elseif (isset($this->backPressure[$position - 1])) {
-            $deferred = $this->backPressure[$position - 1];
-            unset($this->backPressure[$position - 1]);
+        } elseif (isset($this->backPressure[$position])) {
+            $deferred = $this->backPressure[$position];
+            unset($this->backPressure[$position]);
             if ($exception) {
                 $deferred->fail($exception);
             } else {
                 $deferred->resolve($value);
             }
-        } elseif ($position > 0) {
+        } elseif ($position >= 0) {
             // Send-values are indexed as $this->consumePosition - 1.
-            $this->sendValues[$position - 1] = [$exception, $value];
+            $this->sendValues[$position] = [$exception, $value];
         }
+
+        ++$position; // Move forward to next emitted value if available.
 
         if (isset($this->emittedValues[$position])) {
             $value = $this->emittedValues[$position];
@@ -131,6 +134,7 @@ final class EmitSource
             return null;
         }
 
+        // No value has been emitted, suspend fiber to await next value.
         return \Fiber::suspend(
             fn(\Continuation $continuation) => $this->waiting[$position] = $continuation,
             Loop::get()
@@ -200,19 +204,12 @@ final class EmitSource
     }
 
     /**
-     * Emits a value from the pipeline. The returned promise is resolved once the emitted value has been consumed or
-     * if the pipeline is completed, failed, or disposed.
-     *
      * @param mixed $value
      * @param int $position
      *
      * @psalm-param TValue $value
      *
-     * @return Promise<mixed> Resolves with the sent value once the value has been consumed. Fails with the failure
-     *                        reason if the {@see fail()} is called, or with {@see DisposedException} if the pipeline
-     *                        is destroyed.
-     *
-     * @psalm-return Promise<TSend|null>
+     * @return array|null Returns [?\Throwable, mixed] or null if no send value is available.
      *
      * @throws \Error If the pipeline has completed.
      */
@@ -257,6 +254,9 @@ final class EmitSource
     }
 
     /**
+     * Emits a value from the pipeline. The returned promise is resolved once the emitted value has been consumed or
+     * if the pipeline is completed, failed, or disposed.
+     *
      * @psalm-param TValue $value
      * @psalm-return Promise<TSend>
      */
@@ -283,6 +283,8 @@ final class EmitSource
     }
 
     /**
+     * Emits a value from the pipeline, suspending execution until the value is consumed.
+     *
      * @psalm-param TValue $value
      * @psalm-return TSend
      */
