@@ -33,6 +33,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         });
 
         $this->assertSame($value, $generator->continue());
+        $this->assertNull($generator->continue());
     }
 
     public function testSend(): void
@@ -273,6 +274,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $this->assertTrue($invoked);
 
         $this->assertSame(0, $generator->continue());
+        $this->assertNull($generator->continue());
     }
 
     public function testTraversable(): void

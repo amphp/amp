@@ -79,16 +79,15 @@ class MergeTest extends AsyncTestCase
             throw $exception;
         });
 
-        $pipeline = Pipeline\merge([$generator, Pipeline\fromIterable(\range(1, 5))]);
+        $pipeline = Pipeline\merge([$generator, $unused = Pipeline\fromIterable(\range(1, 5))]);
 
         try {
-            /** @noinspection PhpStatementHasEmptyBodyInspection */
-            while ($pipeline->continue()) {
-                ;
-            }
+            await(Pipeline\discard($pipeline));
             $this->fail("The exception used to fail the pipeline should be thrown from continue()");
         } catch (TestException $reason) {
             $this->assertSame($exception, $reason);
+        } finally {
+            await(Pipeline\discard($unused));
         }
     }
 
