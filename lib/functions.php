@@ -25,10 +25,10 @@ namespace Amp
             $promise = Promise\all($promise);
         }
 
-        return \Fiber::suspend(static fn(\Continuation $continuation) => $promise->onResolve(
+        return \Fiber::suspend(static fn(\Fiber $fiber) => $promise->onResolve(
             static fn(?\Throwable $exception, mixed $value) => match ($exception) {
-                null => $continuation->resume($value),
-                default => $continuation->throw($exception),
+                null => $fiber->resume($value),
+                default => $fiber->throw($exception),
             }
         ), Loop::get());
     }
@@ -49,13 +49,13 @@ namespace Amp
     {
         $placeholder = new Internal\Placeholder;
 
-        Loop::defer(static fn() => \Fiber::run(static function () use ($placeholder, $callback, $args): void {
+        Loop::defer(static fn() => \Fiber::create(static function () use ($placeholder, $callback, $args): void {
             try {
                 $placeholder->resolve($callback(...$args));
             } catch (\Throwable $exception) {
                 $placeholder->fail($exception);
             }
-        }));
+        })->start());
 
         return new Internal\PrivatePromise($placeholder);
     }
@@ -209,9 +209,9 @@ namespace Amp
      */
     function delay(int $milliseconds): void
     {
-        \Fiber::suspend(static fn(\Continuation $continuation) => Loop::delay(
+        \Fiber::suspend(static fn(\Fiber $fiber) => Loop::delay(
             $milliseconds,
-            static fn() => $continuation->resume()
+            static fn() => $fiber->resume()
         ), Loop::get());
     }
 
@@ -227,13 +227,13 @@ namespace Amp
     {
         $signals[] = $signal;
 
-        return \Fiber::suspend(static function (\Continuation $continuation) use ($signals): void {
+        return \Fiber::suspend(static function (\Fiber $fiber) use ($signals): void {
             $watchers = [];
-            $callback = static function (string $id, int $signo) use (&$watchers, $continuation): void {
+            $callback = static function (string $id, int $signo) use (&$watchers, $fiber): void {
                 foreach ($watchers as $watcher) {
                     Loop::cancel($watcher);
                 }
-                $continuation->resume($signo);
+                $fiber->resume($signo);
             };
 
             foreach ($signals as $signal) {

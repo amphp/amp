@@ -35,10 +35,10 @@ final class EmitSource
     /** @var Deferred[] */
     private array $backPressure = [];
 
-    /** @var \Continuation[] */
+    /** @var \Fiber[] */
     private array $yielding = [];
 
-    /** @var \Continuation[] */
+    /** @var \Fiber[] */
     private array $waiting = [];
 
     private int $consumePosition = 0;
@@ -99,12 +99,12 @@ final class EmitSource
 
         // Relieve backpressure from prior emit.
         if (isset($this->yielding[$position])) {
-            $continuation = $this->yielding[$position];
+            $fiber = $this->yielding[$position];
             unset($this->yielding[$position]);
             if ($exception) {
-                Loop::defer(static fn() => $continuation->throw($exception));
+                Loop::defer(static fn() => $fiber->throw($exception));
             } else {
-                Loop::defer(static fn() => $continuation->resume($value));
+                Loop::defer(static fn() => $fiber->resume($value));
             }
         } elseif (isset($this->backPressure[$position])) {
             $deferred = $this->backPressure[$position];
@@ -135,10 +135,7 @@ final class EmitSource
         }
 
         // No value has been emitted, suspend fiber to await next value.
-        return \Fiber::suspend(
-            fn(\Continuation $continuation) => $this->waiting[$position] = $continuation,
-            Loop::get()
-        );
+        return \Fiber::suspend(fn(\Fiber $fiber) => $this->waiting[$position] = $fiber, Loop::get());
     }
 
     public function pipe(): Pipeline
@@ -224,9 +221,9 @@ final class EmitSource
         }
 
         if (isset($this->waiting[$position])) {
-            $continuation = $this->waiting[$position];
+            $fiber = $this->waiting[$position];
             unset($this->waiting[$position]);
-            Loop::defer(static fn() => $continuation->resume($value));
+            Loop::defer(static fn() => $fiber->resume($value));
 
             if ($this->disposed && empty($this->waiting)) {
                 \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
@@ -244,7 +241,7 @@ final class EmitSource
             throw new \Error("Pipelines cannot emit values after calling complete");
         } elseif ($this->disposed) {
             \assert(isset($this->exception), "Failure exception must be set when disposed");
-            // Pipeline has been disposed and no Continuations are still pending.
+            // Pipeline has been disposed and no Fibers are still pending.
             return [$this->exception, null];
         } else {
             $this->emittedValues[$position] = $value;
@@ -297,10 +294,7 @@ final class EmitSource
         ++$this->emitPosition;
 
         if ($pair === null) {
-            return \Fiber::suspend(
-                fn(\Continuation $continuation) => $this->yielding[$position] = $continuation,
-                Loop::get()
-            );
+            return \Fiber::suspend(fn(\Fiber $fiber) => $this->yielding[$position] = $fiber, Loop::get());
         }
 
         [$exception, $value] = $pair;
@@ -421,7 +415,7 @@ final class EmitSource
         $exception = isset($this->exception) ? $this->exception : null;
 
         foreach ($backPressure as $deferred) {
-            if ($deferred instanceof \Continuation) {
+            if ($deferred instanceof \Fiber) {
                 // Using a defer watcher to maintain backpressure execution order.
                 if ($exception) {
                     Loop::defer(static fn() => $deferred->throw($exception));
@@ -438,11 +432,11 @@ final class EmitSource
             }
         }
 
-        foreach ($waiting as $continuation) {
+        foreach ($waiting as $fiber) {
             if ($exception) {
-                $continuation->throw($this->exception);
+                $fiber->throw($this->exception);
             } else {
-                $continuation->resume();
+                $fiber->resume();
             }
         }
     }
