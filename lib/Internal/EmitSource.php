@@ -212,6 +212,10 @@ final class EmitSource
      */
     private function push(mixed $value, int $position): ?array
     {
+        if ($this->completed) {
+            throw new \Error("Pipelines cannot emit values after calling complete");
+        }
+
         if ($value === null) {
             throw new \TypeError("Pipelines cannot emit NULL");
         }
@@ -237,15 +241,17 @@ final class EmitSource
                 unset($this->sendValues[$position]);
                 return $pair;
             }
-        } elseif ($this->completed) {
-            throw new \Error("Pipelines cannot emit values after calling complete");
-        } elseif ($this->disposed) {
+
+            return null;
+        }
+
+        if ($this->disposed) {
             \assert(isset($this->exception), "Failure exception must be set when disposed");
             // Pipeline has been disposed and no Fibers are still pending.
             return [$this->exception, null];
-        } else {
-            $this->emittedValues[$position] = $value;
         }
+
+        $this->emittedValues[$position] = $value;
 
         return null;
     }
