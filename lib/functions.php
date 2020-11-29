@@ -49,13 +49,15 @@ namespace Amp
     {
         $placeholder = new Internal\Placeholder;
 
-        Loop::defer(static fn() => \Fiber::create(static function () use ($placeholder, $callback, $args): void {
+        $fiber = \Fiber::create(static function () use ($placeholder, $callback, $args): void {
             try {
                 $placeholder->resolve($callback(...$args));
             } catch (\Throwable $exception) {
                 $placeholder->fail($exception);
             }
-        })->start());
+        });
+
+        Loop::defer(static fn() => $fiber->start());
 
         return new Internal\PrivatePromise($placeholder);
     }
