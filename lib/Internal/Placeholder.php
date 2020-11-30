@@ -58,10 +58,8 @@ final class Placeholder
     {
         try {
             $this->result = null;
-        } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e): void {
-                throw $e;
-            });
+        } catch (\Throwable $exception) {
+            Loop::defer(static fn() => throw $exception);
         }
     }
 

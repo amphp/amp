@@ -18,11 +18,9 @@ class DeferTest extends AsyncTestCase
 
         $exception = new TestException;
 
-        defer(function () use ($exception): void {
-            throw $exception;
-        });
+        defer(fn() => throw $exception);
 
-        delay(1); // Tick event loop.
+        delay(5); // Tick event loop.
 
         $this->assertSame($exception, $reason);
     }

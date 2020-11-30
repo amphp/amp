@@ -71,9 +71,7 @@ final class ResolutionQueue
                     Promise\rethrow($result);
                 }
             } catch (\Throwable $exception) {
-                Loop::defer(static function () use ($exception): void {
-                    throw $exception;
-                });
+                Loop::defer(static fn() => throw $exception);
             }
         }
     }
