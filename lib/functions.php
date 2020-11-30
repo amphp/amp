@@ -77,15 +77,24 @@ namespace Amp
     }
 
     /**
-     * Executes the given callback in a new green thread using {@see async()}, forwarding any exceptions thrown to
-     * the event loop error handler using {@see Promise\rethrow()}.
+     * Executes the given callback in a new green thread similar to {@see async()}, except instead of returning a
+     * promise, any exceptions thrown are forwarded to the event loop error handler. The return value of the function
+     * is discarded.
      *
      * @param callable(mixed ...$args):void $callback
-     * @param mixed    ...$args
+     * @param mixed ...$args
      */
     function defer(callable $callback, mixed ...$args): void
     {
-        Promise\rethrow(async($callback, ...$args));
+        $fiber = \Fiber::create(static function () use ($callback, $args): void {
+            try {
+                $callback(...$args);
+            } catch (\Throwable $exception) {
+                Loop::defer(static fn() => throw $exception);
+            }
+        });
+
+        Loop::defer(fn() => $fiber->start());
     }
 
     /**
