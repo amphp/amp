@@ -94,7 +94,7 @@ namespace Amp
             }
         });
 
-        Loop::defer(fn() => $fiber->start());
+        Loop::defer(static fn() => $fiber->start());
     }
 
     /**
