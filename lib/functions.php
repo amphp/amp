@@ -25,12 +25,16 @@ namespace Amp
             $promise = Promise\all($promise);
         }
 
-        return \Fiber::suspend(static fn(\Fiber $fiber) => $promise->onResolve(
+        $fiber = \Fiber::this();
+
+        $promise->onResolve(
             static fn(?\Throwable $exception, mixed $value) => match ($exception) {
                 null => $fiber->resume($value),
                 default => $fiber->throw($exception),
             }
-        ), Loop::get());
+        );
+
+        return \Fiber::suspend(Loop::get());
     }
 
     /**
@@ -220,10 +224,9 @@ namespace Amp
      */
     function delay(int $milliseconds): void
     {
-        \Fiber::suspend(static fn(\Fiber $fiber) => Loop::delay(
-            $milliseconds,
-            static fn() => $fiber->resume()
-        ), Loop::get());
+        $fiber = \Fiber::this();
+        Loop::delay($milliseconds, fn() => $fiber->resume());
+        \Fiber::suspend(Loop::get());
     }
 
     /**
@@ -238,19 +241,21 @@ namespace Amp
     {
         $signals[] = $signal;
 
-        return \Fiber::suspend(static function (\Fiber $fiber) use ($signals): void {
-            $watchers = [];
-            $callback = static function (string $id, int $signo) use (&$watchers, $fiber): void {
-                foreach ($watchers as $watcher) {
-                    Loop::cancel($watcher);
-                }
-                $fiber->resume($signo);
-            };
+        $fiber = \Fiber::this();
 
-            foreach ($signals as $signal) {
-                $watchers[] = Loop::onSignal($signal, $callback);
+        $watchers = [];
+        $callback = static function (string $id, int $signo) use (&$watchers, $fiber): void {
+            foreach ($watchers as $watcher) {
+                Loop::cancel($watcher);
             }
-        }, Loop::get());
+            $fiber->resume($signo);
+        };
+
+        foreach ($signals as $signal) {
+            $watchers[] = Loop::onSignal($signal, $callback);
+        }
+
+        return \Fiber::suspend(Loop::get());
     }
 
     /**
