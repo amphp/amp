@@ -350,9 +350,11 @@ namespace Amp\Promise
      * This function is the same as some() with the notable exception that it will never fail even
      * if all promises in the array resolve unsuccessfully.
      *
-     * @param Promise[]|ReactPromise[] $promises
+     * @template TValue
      *
-     * @return Promise
+     * @param Promise<TValue>[]|ReactPromise[] $promises
+     *
+     * @return Promise<array{0: \Throwable[], 1: TValue[]}>
      *
      * @throws \Error If a non-Promise is in the array.
      */
@@ -423,9 +425,11 @@ namespace Amp\Promise
     /**
      * Returns a promise that succeeds when the first promise succeeds, and fails only if all promises fail.
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
+     * @template TValue
      *
-     * @return Promise
+     * @param Promise<TValue>[]|ReactPromise[] $promises Array of only promises.
+     *
+     * @return Promise<TValue>
      *
      * @throws \Error If the array is empty or a non-Promise is in the array.
      */
@@ -475,12 +479,14 @@ namespace Amp\Promise
      * Resolves with a two-item array delineating successful and failed Promise results.
      *
      * The returned promise will only fail if the given number of required promises fail.
+     * 
+     * @template TValue
      *
-     * @param Promise[]|ReactPromise[] $promises Array of only promises.
-     * @param int                      $required Number of promises that must succeed for the
+     * @param Promise<TValue>[]|ReactPromise[] $promises Array of only promises.
+     * @param int                              $required Number of promises that must succeed for the
      *     returned promise to succeed.
      *
-     * @return Promise
+     * @return Promise<array{0: \Throwable[], 1: TValue[]}>
      *
      * @throws \Error If a non-Promise is in the array.
      */
