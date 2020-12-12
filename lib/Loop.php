@@ -33,7 +33,7 @@ final class Loop
      *
      * @return void
      */
-    public static function set(Driver $driver): void
+    public static function setDriver(Driver $driver): void
     {
         if (isset(self::$driver) && self::$driver->isRunning()) {
             throw new \Error("Can't swap the event loop while it is running");
@@ -384,7 +384,7 @@ final class Loop
      *
      * @return Driver
      */
-    public static function get(): Driver
+    public static function getDriver(): Driver
     {
         return self::$driver;
     }
@@ -394,5 +394,5 @@ final class Loop
 // implementations might have issues setting a default loop, because it's overridden by us then.
 
 // @codeCoverageIgnoreStart
-Loop::set((new DriverFactory)->create());
+Loop::setDriver((new DriverFactory)->create());
 // @codeCoverageIgnoreEnd

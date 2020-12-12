@@ -136,7 +136,7 @@ final class EmitSource
 
         // No value has been emitted, suspend fiber to await next value.
         $this->waiting[$position] = \Fiber::this();
-        return \Fiber::suspend(Loop::get());
+        return \Fiber::suspend(Loop::getDriver());
     }
 
     public function pipe(): Pipeline
@@ -302,7 +302,7 @@ final class EmitSource
 
         if ($pair === null) {
             $this->yielding[$position] = \Fiber::this();
-            return \Fiber::suspend(Loop::get());
+            return \Fiber::suspend(Loop::getDriver());
         }
 
         [$exception, $value] = $pair;

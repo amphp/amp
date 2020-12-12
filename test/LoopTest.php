@@ -81,12 +81,12 @@ class LoopTest extends AsyncTestCase
 
     public function testGet(): void
     {
-        $this->assertInstanceOf(Loop\Driver::class, Loop::get());
+        $this->assertInstanceOf(Loop\Driver::class, Loop::getDriver());
     }
 
     public function testGetInfo(): void
     {
-        $this->assertSame(Loop::get()->getInfo(), Loop::getInfo());
+        $this->assertSame(Loop::getDriver()->getInfo(), Loop::getInfo());
     }
 
     public function testBug163ConsecutiveDelayed(): void
