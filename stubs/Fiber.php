@@ -3,11 +3,9 @@
 final class Fiber
 {
     /**
-     * @param callable $callback Function to invoke when running the fiber.
-     *
-     * @return self A new Fiber that has not been started.
+     * @param callable $callback Function to invoke when starting the fiber.
      */
-    public static function create(callable $callback): self { }
+    public function __construct(callable $callback) { }
 
     /**
      * Starts execution of the fiber. Returns when the fiber suspends or terminates.
@@ -46,6 +44,11 @@ final class Fiber
      * @throw Throwable If the fiber callable throws an uncaught exception.
      */
     public function throw(Throwable $exception): void { }
+
+    /**
+     * @return bool True if the fiber has been started.
+     */
+    public function isStarted(): bool { }
 
     /**
      * @return bool True if the fiber is suspended.
@@ -87,9 +90,4 @@ final class Fiber
      * @throws Throwable Exception provided to {@see Fiber::throw()}.
      */
     public static function suspend(FiberScheduler $scheduler): mixed { }
-
-    /**
-     * Private constructor to force use of {@see create()}.
-     */
-    private function __construct() { }
 }

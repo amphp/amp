@@ -27,12 +27,17 @@ class ReflectionFiber
     public function getTrace(int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT): array { }
 
     /**
-     * @return bool True if the fiber is currently suspended, false otherwise.
+     * @return bool True if the fiber has been started.
+     */
+    public function isStarted(): bool { }
+
+    /**
+     * @return bool True if the fiber is currently suspended.
      */
     public function isSuspended(): bool { }
 
     /**
-     * @return bool True if the fiber is currently running, false otherwise.
+     * @return bool True if the fiber is currently running.
      */
     public function isRunning(): bool { }
 

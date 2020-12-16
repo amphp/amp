@@ -53,7 +53,7 @@ namespace Amp
     {
         $placeholder = new Internal\Placeholder;
 
-        $fiber = \Fiber::create(static function () use ($placeholder, $callback, $args): void {
+        $fiber = new \Fiber(static function () use ($placeholder, $callback, $args): void {
             try {
                 $placeholder->resolve($callback(...$args));
             } catch (\Throwable $exception) {
@@ -90,7 +90,7 @@ namespace Amp
      */
     function defer(callable $callback, mixed ...$args): void
     {
-        $fiber = \Fiber::create(static function () use ($callback, $args): void {
+        $fiber = new \Fiber(static function () use ($callback, $args): void {
             try {
                 $callback(...$args);
             } catch (\Throwable $exception) {
