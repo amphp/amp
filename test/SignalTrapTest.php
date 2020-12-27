@@ -4,25 +4,26 @@ namespace Amp\Test;
 
 use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Signal;
+use Amp\SignalTrap;
 use function Amp\await;
+use function Amp\trap;
 
 /**
  * @requires ext-pcntl
  */
-class SignalTest extends AsyncTestCase
+class SignalTrapTest extends AsyncTestCase
 {
     public function testDelayed(): void
     {
         $this->setMinimumRuntime(20);
 
-        $promise = new Signal(\SIGUSR1, \SIGUSR2);
+        $promise = new SignalTrap(\SIGUSR1, \SIGUSR2);
 
         Loop::delay(10, fn() => \posix_kill(\getmypid(), \SIGUSR1));
 
         $this->assertSame(\SIGUSR1, await($promise));
 
-        $promise = new Signal(\SIGUSR1, \SIGUSR2);
+        $promise = new SignalTrap(\SIGUSR1, \SIGUSR2);
 
         Loop::delay(10, fn() => \posix_kill(\getmypid(), \SIGUSR2));
 
@@ -35,10 +36,19 @@ class SignalTest extends AsyncTestCase
 
         Loop::delay(10, fn() => \posix_kill(\getmypid(), \SIGUSR1));
 
-        $promise = new Signal(\SIGUSR1, \SIGUSR2);
+        $promise = new SignalTrap(\SIGUSR1, \SIGUSR2);
         $promise->unreference();
         $promise->reference();
 
         await($promise);
+    }
+
+    public function testTrapFunction(): void
+    {
+        $this->setMinimumRuntime(10);
+
+        Loop::delay(10, fn() => \posix_kill(\getmypid(), \SIGUSR1));
+
+        trap(\SIGUSR1, \SIGUSR2);
     }
 }

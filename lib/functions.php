@@ -237,7 +237,7 @@ namespace Amp
      *
      * @return int The signal number received.
      */
-    function signal(int $signal, int ...$signals): int
+    function trap(int $signal, int ...$signals): int
     {
         $signals[] = $signal;
 

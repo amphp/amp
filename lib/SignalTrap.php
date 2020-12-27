@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-final class Signal implements Promise
+final class SignalTrap implements Promise
 {
     private Internal\Placeholder $placeholder;
 
