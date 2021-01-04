@@ -41,6 +41,22 @@ abstract class DriverFoundation implements Driver
 
     private bool $running = false;
 
+    private \FiberScheduler $scheduler;
+
+    /**
+     * Get the fiber scheduler associated with this driver.
+     *
+     * @return \FiberScheduler
+     */
+    public function getScheduler(): \FiberScheduler
+    {
+        if (!isset($this->scheduler) || $this->scheduler->isTerminated()) {
+            $this->scheduler = new \FiberScheduler(fn() => $this->run());
+        }
+
+        return $this->scheduler;
+    }
+
     /**
      * Run the event loop.
      *
@@ -55,6 +71,8 @@ abstract class DriverFoundation implements Driver
      * error handler or exceptions that would be passed to an error handler but none exists to handle them.
      *
      * @return void
+     *
+     * @throw \Error Thrown if the event loop is already running.
      */
     public function run(): void
     {

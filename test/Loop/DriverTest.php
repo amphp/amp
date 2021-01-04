@@ -28,17 +28,11 @@ abstract class DriverTest extends TestCase
      */
     abstract public function getFactory(): callable;
 
-    /** @var Driver */
     public Driver $loop;
 
     public function setUp(): void
     {
         $this->loop = ($this->getFactory())();
-
-        if (!$this->loop instanceof Driver) {
-            $this->fail("Factory did not return a loop Driver");
-        }
-
         \gc_collect_cycles();
     }
 

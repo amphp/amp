@@ -34,7 +34,7 @@ namespace Amp
             }
         );
 
-        return \Fiber::suspend(Loop::getDriver());
+        return \Fiber::suspend(Loop::getScheduler());
     }
 
     /**
@@ -226,7 +226,7 @@ namespace Amp
     {
         $fiber = \Fiber::this();
         Loop::delay($milliseconds, fn() => $fiber->resume());
-        \Fiber::suspend(Loop::getDriver());
+        \Fiber::suspend(Loop::getScheduler());
     }
 
     /**
@@ -255,7 +255,7 @@ namespace Amp
             $watchers[] = Loop::onSignal($signal, $callback);
         }
 
-        return \Fiber::suspend(Loop::getDriver());
+        return \Fiber::suspend(Loop::getScheduler());
     }
 
     /**
