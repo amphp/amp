@@ -3,7 +3,7 @@
 set -e
 
 wget https://github.com/libuv/libuv/archive/v1.24.1.tar.gz -O /tmp/libuv.tar.gz -q &
-wget https://github.com/bwoebi/php-uv/archive/master.tar.gz -O /tmp/php-uv.tar.gz -q &
+wget https://github.com/bwoebi/php-uv/archive/444acfb9636094c2c96d1e7b43332027f464efc5.tar.gz -O /tmp/php-uv.tar.gz -q &
 wait
 
 mkdir libuv && tar -xf /tmp/libuv.tar.gz -C libuv --strip-components=1
