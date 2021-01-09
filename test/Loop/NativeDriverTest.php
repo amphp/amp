@@ -36,7 +36,7 @@ class NativeDriverTest extends DriverTest
                 // here to provide timeout to stream_select, as the warning is only issued after the system call returns
             });
 
-            foreach ($sockets as [$left, $right]) {
+            foreach ($sockets as list($left, $right)) {
                 $loop->onReadable($left, function () {
                     // nothing
                 });
