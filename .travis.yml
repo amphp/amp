@@ -43,7 +43,7 @@ install:
 script:
   # Run testNoMemoryLeak separately, as those are skipped with enabled coverage
   - php vendor/bin/phpunit --verbose --group memoryleak
-  - php vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
+  - php -dxdebug.mode=coverage vendor/bin/phpunit --verbose --exclude-group memoryleak --coverage-php coverage/cov/main.cov
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
   - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.0" ]]; then echo "Skipped psalm static analysis"; else vendor/bin/psalm.phar; fi
 
