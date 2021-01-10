@@ -296,14 +296,14 @@ class NativeDriver extends Driver
                 \restore_error_handler();
             }
 
-            if ($this->streamSelectIgnoreResult) {
+            if ($this->streamSelectIgnoreResult || $result === 0) {
                 $this->streamSelectIgnoreResult = false;
-            } elseif (!$result) {
-                if ($result === 0) {
-                    return;
-                }
+                return;
+            }
 
+            if (!$result) {
                 $this->error(new \Exception('Unknown error during stream_select'));
+                return;
             }
 
             foreach ($read as $stream) {
