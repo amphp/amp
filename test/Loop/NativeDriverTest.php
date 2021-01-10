@@ -74,7 +74,7 @@ class NativeDriverTest extends DriverTest
             });
 
             $loop->delay(100, function () {
-                \proc_open('sh -c "sleep 1; kill -12 ' . \getmypid() . '"', [], $pipes);
+                \proc_open('bash -c "sleep 1; kill -12 ' . \getmypid() . '"', [], $pipes);
             });
         });
     }
