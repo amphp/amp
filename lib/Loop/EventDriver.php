@@ -144,9 +144,9 @@ final class EventDriver extends DriverFoundation
 
         // Manually free the loop handle to fully release loop resources.
         // See https://github.com/amphp/amp/issues/177.
-        if ($this->handle !== null) {
+        if (isset($this->handle)) {
             $this->handle->free();
-            $this->handle = null;
+            unset($this->handle);
         }
     }
 
