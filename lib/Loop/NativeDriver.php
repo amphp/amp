@@ -43,6 +43,7 @@ class NativeDriver extends Driver
     /** @var callable */
     private $streamSelectErrorHandler;
 
+    /** @var bool */
     private $streamSelectIgnoreResult = false;
 
     public function __construct()
