@@ -68,7 +68,7 @@ class NativeDriver extends Driver
                     $helpLink = 'https://amphp.org/amp/event-loop/#implementations';
 
                     $message = 'You have reached the limits of stream_select(). It has a FD_SETSIZE of ' . $match[1]
-                        . ', but you have file descriptors numbered at least as high as ' . $match[2] . '.'
+                        . ', but you have file descriptors numbered at least as high as ' . $match[2] . '. '
                         . "You can install one of the extensions listed on {$helpLink} to support a higher number of "
                         . "concurrent file descriptors. If a large number of open file descriptors is unexpected, you "
                         . "might be leaking file descriptors that aren't closed correctly.";
