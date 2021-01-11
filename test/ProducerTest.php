@@ -99,7 +99,7 @@ class ProducerTest extends BaseTest
             }
         });
 
-        $this->assertGreaterThan(self::TIMEOUT * ($emits - 1), $time * 1000);
+        $this->assertGreaterThan(self::TIMEOUT * ($emits - 1), $time * 1000 - 1);
     }
 
     /**
