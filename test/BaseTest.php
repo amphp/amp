@@ -9,7 +9,7 @@ use function Amp\Promise\wait;
 
 abstract class BaseTest extends TestCase
 {
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
 
@@ -39,7 +39,8 @@ abstract class BaseTest extends TestCase
         $info = Loop::getInfo();
         if ($info['enabled_watchers']['referenced'] + $info['enabled_watchers']['unreferenced'] > 0) {
             \set_error_handler(null);
-            \trigger_error("Found enabled watchers on test end: " . \json_encode($info, \JSON_PRETTY_PRINT), E_USER_ERROR);
+            \trigger_error("Found enabled watchers on test end: " . \json_encode($info, \JSON_PRETTY_PRINT),
+                E_USER_ERROR);
         }
     }
 }

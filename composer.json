@@ -33,14 +33,14 @@
         }
     ],
     "require": {
-        "php": ">=7"
+        "php": ">=7.1"
     },
     "require-dev": {
         "ext-json": "*",
         "amphp/phpunit-util": "^1",
         "amphp/php-cs-fixer-config": "dev-master",
         "react/promise": "^2",
-        "phpunit/phpunit": "^6.0.9 | ^7",
+        "phpunit/phpunit": "^7 | ^8 | ^9",
         "psalm/phar": "^3.11@dev",
         "jetbrains/phpstorm-stubs": "^2019.3"
     },

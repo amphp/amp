@@ -21,18 +21,18 @@ class PsalmTest extends TestCase
             $fileLines = \explode("\n", $file);
 
             if (!\preg_match('(// psalm-expect (.*))', $fileLines[$issue['line_from'] - 2] ?? '', $match)) {
-                $this->fail('Psalm reports an issue that isn\'t marked as expected: ' . \json_encode(
-                    $issue,
-                    \JSON_PRETTY_PRINT
-                ));
+                self::fail('Psalm reports an issue that isn\'t marked as expected: ' . \json_encode(
+                        $issue,
+                        \JSON_PRETTY_PRINT
+                    ));
             }
 
             $expectedIssues = \array_map('trim', \explode(',', $match[1]));
             if (!\in_array($issue['type'], $expectedIssues, true)) {
-                $this->fail('Psalm reports an issue that isn\'t marked as expected: ' . \json_encode(
-                    $issue,
-                    \JSON_PRETTY_PRINT
-                ));
+                self::fail('Psalm reports an issue that isn\'t marked as expected: ' . \json_encode(
+                        $issue,
+                        \JSON_PRETTY_PRINT
+                    ));
             }
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+require __DIR__ . '/../../vendor/autoload.php';
+
 use function Amp\call;
 use function Amp\delay;
 use function Amp\Promise\wait;

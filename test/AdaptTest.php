@@ -8,7 +8,7 @@ use Amp\Success;
 
 class PromiseMock
 {
-    /** @var \Amp\Promise */
+    /** @var Promise */
     private $promise;
 
     public function __construct(Promise $promise)
@@ -16,7 +16,7 @@ class PromiseMock
         $this->promise = $promise;
     }
 
-    public function then(callable $onFulfilled = null, callable $onRejected = null)
+    public function then(callable $onFulfilled = null, callable $onRejected = null): void
     {
         $this->promise->onResolve(function ($exception, $value) use ($onFulfilled, $onRejected) {
             if ($exception) {
@@ -35,32 +35,32 @@ class PromiseMock
 
 class AdaptTest extends BaseTest
 {
-    public function testThenCalled()
+    public function testThenCalled(): void
     {
         $mock = $this->getMockBuilder(PromiseMock::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mock->expects($this->once())
+        $mock->expects(self::once())
             ->method("then")
             ->with(
-                $this->callback(function ($resolve) {
+                self::callback(function ($resolve) {
                     return \is_callable($resolve);
                 }),
-                $this->callback(function ($reject) {
+                self::callback(function ($reject) {
                     return \is_callable($reject);
                 })
             );
 
         $promise = Promise\adapt($mock);
 
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
      * @depends testThenCalled
      */
-    public function testPromiseFulfilled()
+    public function testPromiseFulfilled(): void
     {
         $value = 1;
 
@@ -72,13 +72,13 @@ class AdaptTest extends BaseTest
             $result = $value;
         });
 
-        $this->assertSame($value, $result);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testThenCalled
      */
-    public function testPromiseRejected()
+    public function testPromiseRejected(): void
     {
         $exception = new \Exception;
 
@@ -90,22 +90,20 @@ class AdaptTest extends BaseTest
             $reason = $exception;
         });
 
-        $this->assertSame($exception, $reason);
+        self::assertSame($exception, $reason);
     }
 
-    /**
-     * @expectedException \Error
-     */
-    public function testScalarValue()
+    public function testScalarValue(): void
     {
+        $this->expectException(\Error::class);
+
         Promise\adapt(1);
     }
 
-    /**
-     * @expectedException \Error
-     */
-    public function testNonThenableObject()
+    public function testNonThenableObject(): void
     {
+        $this->expectException(\Error::class);
+
         Promise\adapt(new \stdClass);
     }
 }

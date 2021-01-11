@@ -12,16 +12,15 @@ use React\Promise\FulfilledPromise;
 
 class FirstTest extends BaseTest
 {
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage No promises provided
-     */
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('No promises provided');
+
         Promise\first([]);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
@@ -31,10 +30,10 @@ class FirstTest extends BaseTest
 
         Promise\first($promises)->onResolve($callback);
 
-        $this->assertSame(1, $result);
+        self::assertSame(1, $result);
     }
 
-    public function testFailedPromisesArray()
+    public function testFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
@@ -45,11 +44,11 @@ class FirstTest extends BaseTest
 
         Promise\first($promises)->onResolve($callback);
 
-        $this->assertInstanceOf(MultiReasonException::class, $reason);
-        $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+        self::assertInstanceOf(MultiReasonException::class, $reason);
+        self::assertSame([$exception, $exception, $exception], $reason->getReasons());
     }
 
-    public function testMixedPromisesArray()
+    public function testMixedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
@@ -60,10 +59,10 @@ class FirstTest extends BaseTest
 
         Promise\first($promises)->onResolve($callback);
 
-        $this->assertSame(3, $result);
+        self::assertSame(3, $result);
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
         $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
 
@@ -73,10 +72,10 @@ class FirstTest extends BaseTest
 
         Promise\first($promises)->onResolve($callback);
 
-        $this->assertSame(1, $result);
+        self::assertSame(1, $result);
     }
 
-    public function testPendingPromiseArray()
+    public function testPendingPromiseArray(): void
     {
         Loop::run(function () use (&$result) {
             $promises = [
@@ -92,14 +91,13 @@ class FirstTest extends BaseTest
             Promise\first($promises)->onResolve($callback);
         });
 
-        $this->assertSame(3, $result);
+        self::assertSame(3, $result);
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\TypeError::class);
+
         Promise\first([1]);
     }
 }

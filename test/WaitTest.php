@@ -56,24 +56,22 @@ class WaitTest extends BaseTest
         });
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Loop stopped without resolving the promise
-     */
     public function testPromiseWithNoResolutionPathThrowsException()
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Loop stopped without resolving the promise');
+
         Promise\wait((new Deferred)->promise());
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Loop exceptionally stopped without resolving the promise
-     */
     public function testPromiseWithErrorBeforeResolutionThrowsException()
     {
         Loop::defer(function () {
             throw new TestException;
         });
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Loop exceptionally stopped without resolving the promise');
 
         Promise\wait((new Deferred)->promise());
     }

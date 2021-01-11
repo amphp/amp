@@ -10,7 +10,7 @@ class DeferredTest extends BaseTest
     /** @var \Amp\Deferred */
     private $deferred;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->deferred = new Deferred;
     }

@@ -9,7 +9,7 @@ use Amp\Producer;
 
 class ConcatTest extends BaseTest
 {
-    public function getArrays()
+    public function getArrays(): array
     {
         return [
             [[\range(1, 3), \range(4, 6)], \range(1, 6)],
@@ -24,7 +24,7 @@ class ConcatTest extends BaseTest
      * @param array $iterators
      * @param array $expected
      */
-    public function testConcat(array $iterators, array $expected)
+    public function testConcat(array $iterators, array $expected): void
     {
         Loop::run(function () use ($iterators, $expected) {
             $iterators = \array_map(function (array $iterator): Iterator {
@@ -42,7 +42,7 @@ class ConcatTest extends BaseTest
     /**
      * @depends testConcat
      */
-    public function testConcatWithFailedIterator()
+    public function testConcatWithFailedIterator(): void
     {
         Loop::run(function () {
             $exception = new TestException;
@@ -52,7 +52,11 @@ class ConcatTest extends BaseTest
                 throw $exception;
             });
 
-            $iterator = Iterator\concat([Iterator\fromIterable(\range(1, 5)), $producer, Iterator\fromIterable(\range(7, 10))]);
+            $iterator = Iterator\concat([
+                Iterator\fromIterable(\range(1, 5)),
+                $producer,
+                Iterator\fromIterable(\range(7, 10)),
+            ]);
 
             try {
                 while (yield $iterator->advance()) {
@@ -67,11 +71,10 @@ class ConcatTest extends BaseTest
         });
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonIterator()
+    public function testNonIterator(): void
     {
+        $this->expectException(\TypeError::class);
+
         Iterator\concat([1]);
     }
 }

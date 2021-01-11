@@ -5,6 +5,7 @@ namespace Amp\Test;
 use Amp\CancellationToken;
 use Amp\CancellationTokenSource;
 use Amp\Emitter;
+use Amp\Iterator;
 use Amp\Loop;
 use Amp\PHPUnit\TestException;
 use Amp\Success;
@@ -12,7 +13,7 @@ use function Amp\asyncCall;
 
 class CancellationTest extends BaseTest
 {
-    private function createAsyncIterator(CancellationToken $cancellationToken)
+    private function createAsyncIterator(CancellationToken $cancellationToken): Iterator
     {
         $emitter = new Emitter;
 
@@ -33,7 +34,7 @@ class CancellationTest extends BaseTest
         return $emitter->iterate();
     }
 
-    public function testCancellationCancelsIterator()
+    public function testCancellationCancelsIterator(): void
     {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
@@ -45,7 +46,7 @@ class CancellationTest extends BaseTest
             while (yield $iterator->advance()) {
                 $current = $iterator->getCurrent();
 
-                $this->assertInternalType("int", $current);
+                $this->assertIsInt($current);
 
                 if ($current === 3) {
                     $cancellationSource->cancel();
@@ -56,7 +57,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testUnsubscribeWorks()
+    public function testUnsubscribeWorks(): void
     {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
@@ -75,7 +76,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testSubscriptionsRunAsCoroutine()
+    public function testSubscriptionsRunAsCoroutine(): void
     {
         $this->expectOutputString("abc");
 
@@ -91,7 +92,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testThrowingCallbacksEndUpInLoop()
+    public function testThrowingCallbacksEndUpInLoop(): void
     {
         Loop::run(function () {
             $this->expectException(TestException::class);
@@ -109,7 +110,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testThrowingCallbacksEndUpInLoopIfCoroutine()
+    public function testThrowingCallbacksEndUpInLoopIfCoroutine(): void
     {
         Loop::run(function () {
             $this->expectException(TestException::class);
@@ -131,7 +132,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testDoubleCancelOnlyInvokesOnce()
+    public function testDoubleCancelOnlyInvokesOnce(): void
     {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;
@@ -142,7 +143,7 @@ class CancellationTest extends BaseTest
         });
     }
 
-    public function testCalledIfSubscribingAfterCancel()
+    public function testCalledIfSubscribingAfterCancel(): void
     {
         Loop::run(function () {
             $cancellationSource = new CancellationTokenSource;

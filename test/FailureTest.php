@@ -8,15 +8,14 @@ use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class FailureTest extends BaseTest
 {
-    /**
-     * @expectedException \TypeError
-     */
-    public function testConstructWithNonException()
+    public function testConstructWithNonException(): void
     {
+        $this->expectException(\TypeError::class);
+
         $failure = new Failure(1);
     }
 
-    public function testOnResolve()
+    public function testOnResolve(): void
     {
         $exception = new \Exception;
 
@@ -30,16 +29,15 @@ class FailureTest extends BaseTest
 
         $failure->onResolve($callback);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $reason);
+        self::assertSame(1, $invoked);
+        self::assertSame($exception, $reason);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
-     */
-    public function testOnResolveWithReactPromise()
+    public function testOnResolveWithReactPromise(): void
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Success');
+
         Loop::run(function () {
             $failure = new Failure(new \Exception);
             $failure->onResolve(function ($exception, $value) {
@@ -48,7 +46,7 @@ class FailureTest extends BaseTest
         });
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
         $exception = new \Exception;
         $failure = new Failure($exception);
@@ -59,6 +57,6 @@ class FailureTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 }

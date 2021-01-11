@@ -24,12 +24,12 @@ class ProducerTraitTest extends BaseTest
     /** @var \Amp\Test\Producer */
     private $producer;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->producer = new Producer;
     }
 
-    public function testEmit()
+    public function testEmit(): void
     {
         Loop::run(function () {
             $value = 1;
@@ -46,7 +46,7 @@ class ProducerTraitTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulPromise()
+    public function testEmitSuccessfulPromise(): void
     {
         Loop::run(function () {
             $value = 1;
@@ -64,7 +64,7 @@ class ProducerTraitTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitFailedPromise()
+    public function testEmitFailedPromise(): void
     {
         Loop::run(function () {
             $exception = new TestException;
@@ -86,7 +86,7 @@ class ProducerTraitTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromise()
+    public function testEmitPendingPromise(): void
     {
         Loop::run(function () {
             $value = 1;
@@ -104,7 +104,7 @@ class ProducerTraitTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulReactPromise()
+    public function testEmitSuccessfulReactPromise(): void
     {
         Loop::run(function () {
             $value = 1;
@@ -120,7 +120,7 @@ class ProducerTraitTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenNonPromise()
+    public function testEmitPendingPromiseThenNonPromise(): void
     {
         Loop::run(function () {
             $deferred = new Deferred;
@@ -141,31 +141,30 @@ class ProducerTraitTest extends BaseTest
 
     /**
      * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage Iterators cannot emit values after calling complete
      */
-    public function testEmitAfterComplete()
+    public function testEmitAfterComplete(): void
     {
         $this->producer->complete();
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Iterators cannot emit values after calling complete');
+
         $this->producer->emit(1);
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage The iterator has completed
-     */
-    public function testGetCurrentAfterComplete()
+    public function testGetCurrentAfterComplete(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('The iterator has completed');
+
         $this->producer->complete();
         $this->producer->getCurrent();
     }
 
     /**
      * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
-    public function testEmitPendingPromiseThenComplete()
+    public function testEmitPendingPromiseThenComplete(): void
     {
         $invoked = false;
         $deferred = new Deferred;
@@ -180,16 +179,18 @@ class ProducerTraitTest extends BaseTest
             $reason = $exception;
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('The iterator was completed before the promise result could be emitted');
+
         throw $reason;
     }
 
     /**
      * @depends testEmit
-     * @expectedException \Error
-     * @expectedExceptionMessage The iterator was completed before the promise result could be emitted
      */
-    public function testEmitPendingPromiseThenFail()
+    public function testEmitPendingPromiseThenFail(): void
     {
         $invoked = false;
         $deferred = new Deferred;
@@ -204,36 +205,39 @@ class ProducerTraitTest extends BaseTest
             $reason = $exception;
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('The iterator was completed before the promise result could be emitted');
+
         throw $reason;
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage The prior promise returned must resolve before invoking this method again
-     */
-    public function testDoubleAdvance()
+    public function testDoubleAdvance(): void
     {
         $this->producer->advance();
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('The prior promise returned must resolve before invoking this method again');
+
         $this->producer->advance();
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Promise returned from advance() must resolve before calling this method
-     */
-    public function testGetCurrentBeforeAdvance()
+    public function testGetCurrentBeforeAdvance(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Promise returned from advance() must resolve before calling this method');
+
         $this->producer->getCurrent();
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Iterator has already been completed
-     */
-    public function testDoubleComplete()
+    public function testDoubleComplete(): void
     {
         $this->producer->complete();
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Iterator has already been completed');
+
         $this->producer->complete();
     }
 }

@@ -12,30 +12,28 @@ use React\Promise\FulfilledPromise;
 
 class SomeTest extends BaseTest
 {
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
         $this->assertSame([[], []], Promise\wait(Promise\some([], 0)));
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Too few promises provided
-     */
-    public function testEmptyArrayWithNonZeroRequired()
+    public function testEmptyArrayWithNonZeroRequired(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Too few promises provided');
+
         Promise\some([], 1);
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage non-negative
-     */
-    public function testInvalidRequiredNumberOfPromises()
+    public function testInvalidRequiredNumberOfPromises(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('non-negative');
+
         Promise\some([], -1);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
@@ -48,7 +46,7 @@ class SomeTest extends BaseTest
         $this->assertSame([[], [1, 2, 3]], $result);
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
         $promises = [new FulfilledPromise(1), new FulfilledPromise(2), new Success(3)];
 
@@ -61,7 +59,7 @@ class SomeTest extends BaseTest
         $this->assertSame([[], [1, 2, 3]], $result);
     }
 
-    public function testFailedPromisesArray()
+    public function testFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
@@ -76,7 +74,7 @@ class SomeTest extends BaseTest
         $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
     }
 
-    public function testSuccessfulAndFailedPromisesArray()
+    public function testSuccessfulAndFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
@@ -90,7 +88,7 @@ class SomeTest extends BaseTest
         $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], $result);
     }
 
-    public function testPendingAwatiablesArray()
+    public function testPendingAwatiablesArray(): void
     {
         Loop::run(function () use (&$result) {
             $promises = [
@@ -109,7 +107,7 @@ class SomeTest extends BaseTest
         $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], $result);
     }
 
-    public function testArrayKeysPreserved()
+    public function testArrayKeysPreserved(): void
     {
         $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
@@ -130,11 +128,10 @@ class SomeTest extends BaseTest
         $this->assertEquals($expected, $result);
     }
 
-    /**
-     * @expectedException \Error
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\Error::class);
+
         Promise\some([1]);
     }
 }

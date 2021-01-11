@@ -1,16 +1,20 @@
 <?xml version="1.0"?>
 <psalm
         totallyTyped="true"
-        phpVersion="7.0"
+        phpVersion="7.1"
         resolveFromConfigFile="true"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="https://getpsalm.org/schema/config"
         xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
 >
     <projectFiles>
-        <directory name="examples/psalm"/>
+        <directory name="examples/psalm" />
         <ignoreFiles>
-            <directory name="vendor"/>
+            <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
+
+    <stubs>
+        <file name="lib/functions.php" />
+    </stubs>
 </psalm>

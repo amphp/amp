@@ -7,7 +7,7 @@ use Amp\Promise;
 
 class WrapTest extends BaseTest
 {
-    public function testSuccess()
+    public function testSuccess(): void
     {
         $deferred = new Deferred();
 
@@ -19,14 +19,10 @@ class WrapTest extends BaseTest
 
         $result = Promise\wait($promise);
 
-        $this->assertSame(2, $result);
+        self::assertSame(2, $result);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage bar
-     */
-    public function testFailure()
+    public function testFailure(): void
     {
         $deferred = new Deferred();
 
@@ -35,6 +31,9 @@ class WrapTest extends BaseTest
         });
 
         $deferred->fail(new \Exception('foo'));
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('bar');
 
         Promise\wait($promise);
     }

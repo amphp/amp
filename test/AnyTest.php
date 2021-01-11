@@ -10,7 +10,7 @@ use Amp\Success;
 
 class AnyTest extends BaseTest
 {
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
@@ -18,10 +18,10 @@ class AnyTest extends BaseTest
 
         Promise\any([])->onResolve($callback);
 
-        $this->assertSame([[], []], $result);
+        self::assertSame([[], []], $result);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
@@ -31,10 +31,10 @@ class AnyTest extends BaseTest
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertSame([[], [1, 2, 3]], $result);
+        self::assertSame([[], [1, 2, 3]], $result);
     }
 
-    public function testFailedPromisesArray()
+    public function testFailedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Failure($exception)];
@@ -45,10 +45,10 @@ class AnyTest extends BaseTest
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertSame([[$exception, $exception, $exception], []], $result);
+        self::assertSame([[$exception, $exception, $exception], []], $result);
     }
 
-    public function testMixedPromisesArray()
+    public function testMixedPromisesArray(): void
     {
         $exception = new \Exception;
         $promises = [new Success(1), new Failure($exception), new Success(3)];
@@ -59,10 +59,10 @@ class AnyTest extends BaseTest
 
         Promise\any($promises)->onResolve($callback);
 
-        $this->assertSame([[1 => $exception], [0 => 1, 2 => 3]], $result);
+        self::assertSame([[1 => $exception], [0 => 1, 2 => 3]], $result);
     }
 
-    public function testPendingPromiseArray()
+    public function testPendingPromiseArray(): void
     {
         Loop::run(function () use (&$result) {
             $promises = [
@@ -78,13 +78,13 @@ class AnyTest extends BaseTest
             Promise\any($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([[], [1, 2, 3]], $result);
+        self::assertEquals([[], [1, 2, 3]], $result);
     }
 
     /**
      * @depends testMixedPromisesArray
      */
-    public function testArrayKeysPreserved()
+    public function testArrayKeysPreserved(): void
     {
         $exception = new \Exception;
         $expected = [['two' => $exception], ['one' => 1, 'three' => 3]];
@@ -103,14 +103,13 @@ class AnyTest extends BaseTest
             Promise\any($promises)->onResolve($callback);
         });
 
-        $this->assertEquals($expected, $result);
+        self::assertEquals($expected, $result);
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\TypeError::class);
+
         Promise\any([1]);
     }
 }

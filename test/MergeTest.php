@@ -10,7 +10,7 @@ use Amp\Producer;
 
 class MergeTest extends BaseTest
 {
-    public function getArrays()
+    public function getArrays(): array
     {
         return [
             [[\range(1, 3), \range(4, 6)], [1, 4, 2, 5, 3, 6]],
@@ -25,7 +25,7 @@ class MergeTest extends BaseTest
      * @param array $iterators
      * @param array $expected
      */
-    public function testMerge(array $iterators, array $expected)
+    public function testMerge(array $iterators, array $expected): void
     {
         Loop::run(function () use ($iterators, $expected) {
             $iterators = \array_map(function (array $iterator): Iterator {
@@ -43,7 +43,7 @@ class MergeTest extends BaseTest
     /**
      * @depends testMerge
      */
-    public function testMergeWithDelayedEmits()
+    public function testMergeWithDelayedEmits(): void
     {
         Loop::run(function () {
             $iterators = [];
@@ -74,7 +74,7 @@ class MergeTest extends BaseTest
     /**
      * @depends testMerge
      */
-    public function testMergeWithFailedIterator()
+    public function testMergeWithFailedIterator(): void
     {
         Loop::run(function () {
             $exception = new TestException;
@@ -86,7 +86,9 @@ class MergeTest extends BaseTest
             $iterator = Iterator\merge([$producer, Iterator\fromIterable(\range(1, 5))]);
 
             try {
-                while (yield $iterator->advance()) ;
+                while (yield $iterator->advance()) {
+                    ;
+                }
                 $this->fail("The exception used to fail the iterator should be thrown from advance()");
             } catch (TestException $reason) {
                 $this->assertSame($exception, $reason);
@@ -94,11 +96,10 @@ class MergeTest extends BaseTest
         });
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonIterator()
+    public function testNonIterator(): void
     {
+        $this->expectException(\TypeError::class);
+
         Iterator\merge([1]);
     }
 }

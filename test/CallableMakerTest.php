@@ -9,12 +9,12 @@ class CallableMaker
         callableFromStaticMethod as public;
     }
 
-    public function instanceMethod()
+    public function instanceMethod(): string
     {
         return __METHOD__;
     }
 
-    public static function staticMethod()
+    public static function staticMethod(): string
     {
         return __METHOD__;
     }
@@ -22,25 +22,25 @@ class CallableMaker
 
 class CallableMakerTest extends BaseTest
 {
-    /** @var \Amp\Test\CallableMaker */
+    /** @var CallableMaker */
     private $maker;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->maker = new CallableMaker;
     }
 
-    public function testCallableFromInstanceMethod()
+    public function testCallableFromInstanceMethod(): void
     {
         $callable = $this->maker->callableFromInstanceMethod("instanceMethod");
-        $this->assertInternalType("callable", $callable);
-        $this->assertSame(\sprintf("%s::%s", CallableMaker::class, "instanceMethod"), $callable());
+        self::assertIsCallable($callable);
+        self::assertSame(\sprintf("%s::%s", CallableMaker::class, "instanceMethod"), $callable());
     }
 
-    public function testCallableFromStaticMethod()
+    public function testCallableFromStaticMethod(): void
     {
         $callable = $this->maker->callableFromInstanceMethod("staticMethod");
-        $this->assertInternalType("callable", $callable);
-        $this->assertSame(\sprintf("%s::%s", CallableMaker::class, "staticMethod"), $callable());
+        self::assertIsCallable($callable);
+        self::assertSame(\sprintf("%s::%s", CallableMaker::class, "staticMethod"), $callable());
     }
 }

@@ -10,19 +10,18 @@ use Amp\Producer;
 
 class ProducerTest extends BaseTest
 {
-    const TIMEOUT = 100;
+    private const TIMEOUT = 100;
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage The callable did not return a Generator
-     */
-    public function testNonGeneratorCallable()
+    public function testNonGeneratorCallable(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('The callable did not return a Generator');
+
         new Producer(function () {
         });
     }
 
-    public function testEmit()
+    public function testEmit(): void
     {
         Loop::run(function () {
             $value = 1;
@@ -39,7 +38,7 @@ class ProducerTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitSuccessfulPromise()
+    public function testEmitSuccessfulPromise(): void
     {
         Loop::run(function () {
             $deferred = new Deferred();
@@ -59,7 +58,7 @@ class ProducerTest extends BaseTest
     /**
      * @depends testEmitSuccessfulPromise
      */
-    public function testEmitFailedPromise()
+    public function testEmitFailedPromise(): void
     {
         $exception = new TestException;
         Loop::run(function () use ($exception) {
@@ -83,7 +82,7 @@ class ProducerTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testEmitBackPressure()
+    public function testEmitBackPressure(): void
     {
         $emits = 3;
         Loop::run(function () use (&$time, $emits) {
@@ -106,7 +105,7 @@ class ProducerTest extends BaseTest
     /**
      * @depends testEmit
      */
-    public function testProducerCoroutineThrows()
+    public function testProducerCoroutineThrows(): void
     {
         $exception = new TestException;
 
@@ -117,7 +116,9 @@ class ProducerTest extends BaseTest
                     throw $exception;
                 });
 
-                while (yield $producer->advance()) ;
+                while (yield $producer->advance()) {
+                    ;
+                }
                 $this->fail("The exception thrown from the coroutine should fail the iterator");
             });
         } catch (TestException $caught) {

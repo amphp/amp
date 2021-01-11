@@ -9,15 +9,14 @@ use React\Promise\RejectedPromise as RejectedReactPromise;
 
 class SuccessTest extends BaseTest
 {
-    /**
-     * @expectedException \Error
-     */
-    public function testConstructWithNonException()
+    public function testConstructWithNonException(): void
     {
-        $failure = new Success($this->getMockBuilder(Promise::class)->getMock());
+        $this->expectException(\Error::class);
+
+        new Success($this->getMockBuilder(Promise::class)->getMock());
     }
 
-    public function testOnResolve()
+    public function testOnResolve(): void
     {
         $value = "Resolution value";
 
@@ -31,14 +30,14 @@ class SuccessTest extends BaseTest
 
         $success->onResolve($callback);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testOnResolve
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess()
+    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess(): void
     {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
@@ -58,15 +57,14 @@ class SuccessTest extends BaseTest
             $success->onResolve($callback);
         });
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
-     */
-    public function testOnResolveWithReactPromise()
+    public function testOnResolveWithReactPromise(): void
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Success');
+
         Loop::run(function () {
             $success = new Success;
             $success->onResolve(function ($exception, $value) {
@@ -75,7 +73,7 @@ class SuccessTest extends BaseTest
         });
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
         $value = 1;
         $success = new Success($value);
@@ -86,6 +84,6 @@ class SuccessTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 }

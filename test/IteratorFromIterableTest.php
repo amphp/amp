@@ -11,9 +11,9 @@ use Amp\Success;
 
 class IteratorFromIterableTest extends BaseTest
 {
-    const TIMEOUT = 10;
+    public const TIMEOUT = 10;
 
-    public function testSuccessfulPromises()
+    public function testSuccessfulPromises(): void
     {
         Loop::run(function () {
             $expected = \range(1, 3);
@@ -25,7 +25,7 @@ class IteratorFromIterableTest extends BaseTest
         });
     }
 
-    public function testFailedPromises()
+    public function testFailedPromises(): void
     {
         Loop::run(function () {
             $exception = new \Exception;
@@ -39,12 +39,17 @@ class IteratorFromIterableTest extends BaseTest
         });
     }
 
-    public function testMixedPromises()
+    public function testMixedPromises(): void
     {
         Loop::run(function () {
             $exception = new TestException;
             $expected = \range(1, 2);
-            $iterator = Iterator\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+            $iterator = Iterator\fromIterable([
+                new Success(1),
+                new Success(2),
+                new Failure($exception),
+                new Success(4),
+            ]);
 
             try {
                 while (yield $iterator->advance()) {
@@ -59,11 +64,16 @@ class IteratorFromIterableTest extends BaseTest
         });
     }
 
-    public function testPendingPromises()
+    public function testPendingPromises(): void
     {
         Loop::run(function () {
             $expected = \range(1, 4);
-            $iterator = Iterator\fromIterable([new Delayed(30, 1), new Delayed(10, 2), new Delayed(20, 3), new Success(4)]);
+            $iterator = Iterator\fromIterable([
+                new Delayed(30, 1),
+                new Delayed(10, 2),
+                new Delayed(20, 3),
+                new Success(4),
+            ]);
 
             while (yield $iterator->advance()) {
                 $this->assertSame(\array_shift($expected), $iterator->getCurrent());
@@ -71,7 +81,7 @@ class IteratorFromIterableTest extends BaseTest
         });
     }
 
-    public function testTraversable()
+    public function testTraversable(): void
     {
         Loop::run(function () {
             $expected = \range(1, 4);
@@ -92,15 +102,16 @@ class IteratorFromIterableTest extends BaseTest
     }
 
     /**
-     * @expectedException \TypeError
      * @dataProvider provideInvalidIteratorArguments
      */
-    public function testInvalid($arg)
+    public function testInvalid($arg): void
     {
+        $this->expectException(\TypeError::class);
+
         Iterator\fromIterable($arg);
     }
 
-    public function provideInvalidIteratorArguments()
+    public function provideInvalidIteratorArguments(): array
     {
         return [
             [null],
@@ -112,7 +123,7 @@ class IteratorFromIterableTest extends BaseTest
         ];
     }
 
-    public function testInterval()
+    public function testInterval(): void
     {
         Loop::run(function () {
             $count = 3;
@@ -130,7 +141,7 @@ class IteratorFromIterableTest extends BaseTest
     /**
      * @depends testInterval
      */
-    public function testSlowConsumer()
+    public function testSlowConsumer(): void
     {
         $count = 5;
         Loop::run(function () use ($count) {

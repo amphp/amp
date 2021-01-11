@@ -26,7 +26,7 @@ class PromiseTest extends BaseTest
      * @return array(Promise, callable, callable) where the last two callables are resolving the Promise with a result
      *     or a Throwable/Exception respectively
      */
-    public function promise()
+    public function promise(): array
     {
         $promise = new Promise;
         return [
@@ -36,7 +36,7 @@ class PromiseTest extends BaseTest
         ];
     }
 
-    public function provideSuccessValues()
+    public function provideSuccessValues(): array
     {
         return [
             ["string"],
@@ -52,41 +52,41 @@ class PromiseTest extends BaseTest
         ];
     }
 
-    public function testPromiseImplementsPromise()
+    public function testPromiseImplementsPromise(): void
     {
-        list($promise) = $this->promise();
-        $this->assertInstanceOf(Promise::class, $promise);
+        [$promise] = $this->promise();
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testPromiseSucceed($value)
+    public function testPromiseSucceed($value): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
             $this->assertNull($e);
             $this->assertSame($value, $v);
             $invoked = true;
         });
         $succeeder($value);
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /** @dataProvider provideSuccessValues */
-    public function testOnResolveOnSucceededPromise($value)
+    public function testOnResolveOnSucceededPromise($value): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $succeeder($value);
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
             $this->assertNull($e);
             $this->assertSame($value, $v);
             $invoked = true;
         });
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    public function testSuccessAllOnResolvesExecuted()
+    public function testSuccessAllOnResolvesExecuted(): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $invoked = 0;
 
         $promise->onResolve(function ($e, $v) use (&$invoked) {
@@ -113,34 +113,34 @@ class PromiseTest extends BaseTest
             $invoked++;
         });
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
-    public function testPromiseExceptionFailure()
+    public function testPromiseExceptionFailure(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
         });
         $failer(new \RuntimeException);
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    public function testOnResolveOnExceptionFailedPromise()
+    public function testOnResolveOnExceptionFailedPromise(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $failer(new \RuntimeException);
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
         });
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    public function testFailureAllOnResolvesExecuted()
+    public function testFailureAllOnResolvesExecuted(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $invoked = 0;
 
         $promise->onResolve(function ($e) use (&$invoked) {
@@ -163,46 +163,46 @@ class PromiseTest extends BaseTest
             $invoked++;
         });
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
-    public function testPromiseErrorFailure()
+    public function testPromiseErrorFailure(): void
     {
         if (PHP_VERSION_ID < 70000) {
-            $this->markTestSkipped("Error only exists on PHP 7+");
+            self::markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "Error");
             $invoked = true;
         });
         $failer(new \Error);
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    public function testOnResolveOnErrorFailedPromise()
+    public function testOnResolveOnErrorFailedPromise(): void
     {
         if (PHP_VERSION_ID < 70000) {
-            $this->markTestSkipped("Error only exists on PHP 7+");
+            self::markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $failer(new \Error);
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "Error");
             $invoked = true;
         });
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /** Implementations MAY fail upon resolution with a Promise, but they definitely MUST NOT return a Promise */
-    public function testPromiseResolutionWithPromise()
+    public function testPromiseResolutionWithPromise(): void
     {
-        list($success, $succeeder) = $this->promise();
+        [$success, $succeeder] = $this->promise();
         $succeeder(true);
 
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
 
         $ex = false;
         try {
@@ -217,11 +217,11 @@ class PromiseTest extends BaseTest
                 $invoked = true;
                 $this->assertNotInstanceOf(Promise::class, $v);
             });
-            $this->assertTrue($invoked);
+            self::assertTrue($invoked);
         }
     }
 
-    public function testThrowingInCallback()
+    public function testThrowingInCallback(): void
     {
         Loop::run(function () {
             $invoked = 0;
@@ -230,7 +230,7 @@ class PromiseTest extends BaseTest
                 $invoked++;
             });
 
-            list($promise, $succeeder) = $this->promise();
+            [$promise, $succeeder] = $this->promise();
             $succeeder(true);
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
                 $this->assertNull($e);
@@ -240,7 +240,7 @@ class PromiseTest extends BaseTest
                 throw new \Exception;
             });
 
-            list($promise, $succeeder) = $this->promise();
+            [$promise, $succeeder] = $this->promise();
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
                 $this->assertNull($e);
                 $this->assertTrue($v);
@@ -254,7 +254,7 @@ class PromiseTest extends BaseTest
         });
     }
 
-    public function testThrowingInCallbackContinuesOtherOnResolves()
+    public function testThrowingInCallbackContinuesOtherOnResolves(): void
     {
         Loop::run(function () {
             $invoked = 0;
@@ -263,7 +263,7 @@ class PromiseTest extends BaseTest
                 $invoked++;
             });
 
-            list($promise, $succeeder) = $this->promise();
+            [$promise, $succeeder] = $this->promise();
             $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
                 $this->assertNull($e);
                 $this->assertTrue($v);
@@ -282,7 +282,7 @@ class PromiseTest extends BaseTest
         });
     }
 
-    public function testThrowingInCallbackOnFailure()
+    public function testThrowingInCallbackOnFailure(): void
     {
         Loop::run(function () {
             $invoked = 0;
@@ -290,7 +290,7 @@ class PromiseTest extends BaseTest
                 $invoked++;
             });
 
-            list($promise, , $failer) = $this->promise();
+            [$promise, , $failer] = $this->promise();
             $exception = new \Exception;
             $failer($exception);
             $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
@@ -301,7 +301,7 @@ class PromiseTest extends BaseTest
                 throw $e;
             });
 
-            list($promise, , $failer) = $this->promise();
+            [$promise, , $failer] = $this->promise();
             $exception = new \Exception;
             $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
                 $this->assertSame($exception, $e);
@@ -319,10 +319,10 @@ class PromiseTest extends BaseTest
     /**
      * @requires PHP 7
      */
-    public function testWeakTypes()
+    public function testWeakTypes(): void
     {
         $invoked = 0;
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
 
         $expectedData = "15.24";
 
@@ -336,10 +336,10 @@ class PromiseTest extends BaseTest
             $this->assertSame((int) $expectedData, $v);
         });
 
-        $this->assertSame(2, $invoked);
+        self::assertSame(2, $invoked);
     }
 
-    public function testResolvedQueueUnrolling()
+    public function testResolvedQueueUnrolling(): void
     {
         $count = 50;
         $invoked = false;
@@ -374,15 +374,14 @@ class PromiseTest extends BaseTest
         $f();
         $last->resolve();
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    /**
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
-     */
-    public function testOnResolveWithReactPromise()
+    public function testOnResolveWithReactPromise(): void
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Success');
+
         Loop::run(function () {
             $promise = new Promise;
             $promise->onResolve(function ($exception, $value) {
@@ -394,11 +393,12 @@ class PromiseTest extends BaseTest
 
     /**
      * @depends testOnResolveWithReactPromise
-     * @expectedException \Exception
-     * @expectedExceptionMessage Success
      */
-    public function testOnResolveWithReactPromiseAfterResolve()
+    public function testOnResolveWithReactPromiseAfterResolve(): void
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Success');
+
         Loop::run(function () {
             $promise = new Promise;
             $promise->resolve();
@@ -408,7 +408,7 @@ class PromiseTest extends BaseTest
         });
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
         $promise = new Promise;
         $invoked = false;
@@ -420,13 +420,13 @@ class PromiseTest extends BaseTest
 
         $promise->resolve(1);
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /**
      * @depends testOnResolveWithGenerator
      */
-    public function testOnResolveWithGeneratorAfterResolve()
+    public function testOnResolveWithGeneratorAfterResolve(): void
     {
         $promise = new Promise;
         $invoked = false;
@@ -437,10 +437,10 @@ class PromiseTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
-    public function testOnResolveWithGeneratorWithMultipleCallbacks()
+    public function testOnResolveWithGeneratorWithMultipleCallbacks(): void
     {
         $promise = new Promise;
         $invoked = 0;
@@ -456,6 +456,6 @@ class PromiseTest extends BaseTest
 
         $promise->resolve(1);
 
-        $this->assertSame(3, $invoked);
+        self::assertSame(3, $invoked);
     }
 }

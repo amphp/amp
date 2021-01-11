@@ -11,7 +11,7 @@ class DriverStateTest extends TestCase
     /** @var Driver */
     private $loop;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->loop = $this->getMockForAbstractClass(Driver::class);
     }

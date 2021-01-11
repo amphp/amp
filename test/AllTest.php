@@ -10,7 +10,7 @@ use React\Promise\FulfilledPromise;
 
 class AllTest extends BaseTest
 {
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
@@ -18,10 +18,10 @@ class AllTest extends BaseTest
 
         Promise\all([])->onResolve($callback);
 
-        $this->assertSame([], $result);
+        self::assertSame([], $result);
     }
 
-    public function testSuccessfulPromisesArray()
+    public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
@@ -31,10 +31,10 @@ class AllTest extends BaseTest
 
         Promise\all($promises)->onResolve($callback);
 
-        $this->assertSame([1, 2, 3], $result);
+        self::assertSame([1, 2, 3], $result);
     }
 
-    public function testPendingPromiseArray()
+    public function testPendingPromiseArray(): void
     {
         Loop::run(function () use (&$result) {
             $promises = [
@@ -50,10 +50,10 @@ class AllTest extends BaseTest
             Promise\all($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([1, 2, 3], $result);
+        self::assertEquals([1, 2, 3], $result);
     }
 
-    public function testReactPromiseArray()
+    public function testReactPromiseArray(): void
     {
         Loop::run(function () use (&$result) {
             $promises = [
@@ -68,10 +68,10 @@ class AllTest extends BaseTest
             Promise\all($promises)->onResolve($callback);
         });
 
-        $this->assertEquals([1, 2], $result);
+        self::assertEquals([1, 2], $result);
     }
 
-    public function testArrayKeysPreserved()
+    public function testArrayKeysPreserved(): void
     {
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
@@ -89,14 +89,13 @@ class AllTest extends BaseTest
             Promise\all($promises)->onResolve($callback);
         });
 
-        $this->assertEquals($expected, $result);
+        self::assertEquals($expected, $result);
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testNonPromise()
+    public function testNonPromise(): void
     {
+        $this->expectException(\TypeError::class);
+
         Promise\all([1]);
     }
 }

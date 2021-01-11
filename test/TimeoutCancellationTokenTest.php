@@ -10,7 +10,7 @@ use function Amp\delay;
 
 class TimeoutCancellationTokenTest extends BaseTest
 {
-    public function testTimeout()
+    public function testTimeout(): void
     {
         Loop::run(function () {
             $line = __LINE__ + 1;
@@ -26,13 +26,13 @@ class TimeoutCancellationTokenTest extends BaseTest
                 $this->assertInstanceOf(TimeoutException::class, $exception->getPrevious());
 
                 $message = $exception->getPrevious()->getMessage();
-                $this->assertContains('TimeoutCancellationToken was created here', $message);
-                $this->assertContains('TimeoutCancellationTokenTest.php:' . $line, $message);
+                $this->assertStringContainsString('TimeoutCancellationToken was created here', $message);
+                $this->assertStringContainsString('TimeoutCancellationTokenTest.php:' . $line, $message);
             }
         });
     }
 
-    public function testWatcherCancellation()
+    public function testWatcherCancellation(): void
     {
         Loop::run(function () {
             $token = new TimeoutCancellationToken(1);

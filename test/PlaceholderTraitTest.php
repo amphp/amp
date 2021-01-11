@@ -18,12 +18,12 @@ class PlaceholderTraitTest extends BaseTest
     /** @var Placeholder */
     private $placeholder;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->placeholder = new Placeholder;
     }
 
-    public function testOnResolveOnSuccess()
+    public function testOnResolveOnSuccess(): void
     {
         $value = "Resolution value";
 
@@ -37,14 +37,14 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->resolve($value);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testOnResolveOnSuccess
      */
-    public function testMultipleOnResolvesOnSuccess()
+    public function testMultipleOnResolvesOnSuccess(): void
     {
         $value = "Resolution value";
 
@@ -60,14 +60,14 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->resolve($value);
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testOnResolveOnSuccess
      */
-    public function testOnResolveAfterSuccess()
+    public function testOnResolveAfterSuccess(): void
     {
         $value = "Resolution value";
 
@@ -81,14 +81,14 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->onResolve($callback);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testOnResolveAfterSuccess
      */
-    public function testMultipleOnResolveAfterSuccess()
+    public function testMultipleOnResolveAfterSuccess(): void
     {
         $value = "Resolution value";
 
@@ -104,14 +104,14 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
         $this->placeholder->onResolve($callback);
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
      * @depends testOnResolveOnSuccess
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess()
+    public function testOnResolveThrowingForwardsToLoopHandlerOnSuccess(): void
     {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
@@ -131,13 +131,13 @@ class PlaceholderTraitTest extends BaseTest
             $this->placeholder->resolve($expected);
         });
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
     /**
      * @depends testOnResolveAfterSuccess
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerAfterSuccess()
+    public function testOnResolveThrowingForwardsToLoopHandlerAfterSuccess(): void
     {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
@@ -157,10 +157,10 @@ class PlaceholderTraitTest extends BaseTest
             $this->placeholder->onResolve($callback);
         });
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
-    public function testOnResolveOnFail()
+    public function testOnResolveOnFail(): void
     {
         $exception = new \Exception;
 
@@ -174,37 +174,37 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->fail($exception);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $result);
-    }
-
-    /**
-     * @depends testOnResolveOnFail
-     */
-    public function testMultipleOnResolvesOnFail()
-    {
-        $exception = new \Exception;
-
-        $invoked = 0;
-        $callback = function ($exception, $value) use (&$invoked, &$result) {
-            $result = $exception;
-            ++$invoked;
-        };
-
-        $this->placeholder->onResolve($callback);
-        $this->placeholder->onResolve($callback);
-        $this->placeholder->onResolve($callback);
-
-        $this->placeholder->fail($exception);
-
-        $this->assertSame(3, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
      * @depends testOnResolveOnFail
      */
-    public function testOnResolveAfterFail()
+    public function testMultipleOnResolvesOnFail(): void
+    {
+        $exception = new \Exception;
+
+        $invoked = 0;
+        $callback = function ($exception, $value) use (&$invoked, &$result) {
+            $result = $exception;
+            ++$invoked;
+        };
+
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+        $this->placeholder->onResolve($callback);
+
+        $this->placeholder->fail($exception);
+
+        self::assertSame(3, $invoked);
+        self::assertSame($exception, $result);
+    }
+
+    /**
+     * @depends testOnResolveOnFail
+     */
+    public function testOnResolveAfterFail(): void
     {
         $exception = new \Exception;
 
@@ -218,14 +218,14 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->onResolve($callback);
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
      * @depends testOnResolveAfterFail
      */
-    public function testMultipleOnResolvesAfterFail()
+    public function testMultipleOnResolvesAfterFail(): void
     {
         $exception = new \Exception;
 
@@ -241,14 +241,14 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->onResolve($callback);
         $this->placeholder->onResolve($callback);
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
      * @depends testOnResolveOnSuccess
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerOnFail()
+    public function testOnResolveThrowingForwardsToLoopHandlerOnFail(): void
     {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
@@ -268,13 +268,13 @@ class PlaceholderTraitTest extends BaseTest
             $this->placeholder->fail(new \Exception);
         });
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
     /**
      * @depends testOnResolveOnSuccess
      */
-    public function testOnResolveThrowingForwardsToLoopHandlerAfterFail()
+    public function testOnResolveThrowingForwardsToLoopHandlerAfterFail(): void
     {
         Loop::run(function () use (&$invoked) {
             $invoked = 0;
@@ -294,16 +294,16 @@ class PlaceholderTraitTest extends BaseTest
             $this->placeholder->onResolve($callback);
         });
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
-    public function testResolveWithPromiseBeforeOnResolve()
+    public function testResolveWithPromiseBeforeOnResolve(): void
     {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $promise->expects($this->once())
+        $promise->expects(self::once())
             ->method("onResolve")
-            ->with($this->callback("is_callable"));
+            ->with(self::callback("is_callable"));
 
         $this->placeholder->resolve($promise);
 
@@ -311,13 +311,13 @@ class PlaceholderTraitTest extends BaseTest
         });
     }
 
-    public function testResolveWithPromiseAfterOnResolve()
+    public function testResolveWithPromiseAfterOnResolve(): void
     {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $promise->expects($this->once())
+        $promise->expects(self::once())
             ->method("onResolve")
-            ->with($this->callback("is_callable"));
+            ->with(self::callback("is_callable"));
 
         $this->placeholder->onResolve(function () {
         });
@@ -325,22 +325,20 @@ class PlaceholderTraitTest extends BaseTest
         $this->placeholder->resolve($promise);
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Promise has already been resolved
-     */
-    public function testDoubleResolve()
+    public function testDoubleResolve(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Promise has already been resolved');
+
         $this->placeholder->resolve();
         $this->placeholder->resolve();
     }
 
-    /**
-     * @expectedException \Error
-     * @expectedExceptionMessage Promise has already been resolved
-     */
-    public function testResolveAgainWithinOnResolveCallback()
+    public function testResolveAgainWithinOnResolveCallback(): void
     {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Promise has already been resolved');
+
         Loop::run(function () {
             $this->placeholder->onResolve(function () {
                 $this->placeholder->resolve();
@@ -350,7 +348,7 @@ class PlaceholderTraitTest extends BaseTest
         });
     }
 
-    public function testOnResolveWithGenerator()
+    public function testOnResolveWithGenerator(): void
     {
         $invoked = false;
         $this->placeholder->onResolve(function ($exception, $value) use (&$invoked) {
@@ -361,13 +359,13 @@ class PlaceholderTraitTest extends BaseTest
 
         $this->placeholder->resolve(1);
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /**
      * @depends testOnResolveWithGenerator
      */
-    public function testOnResolveWithGeneratorAfterResolve()
+    public function testOnResolveWithGeneratorAfterResolve(): void
     {
         $this->placeholder->resolve(1);
 
@@ -378,6 +376,6 @@ class PlaceholderTraitTest extends BaseTest
             yield; // Unreachable, but makes function a generator.
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 }
