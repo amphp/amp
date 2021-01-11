@@ -16,11 +16,15 @@ class NativeDriverTest extends DriverTest
 
     public function testHandle()
     {
-        $this->assertNull($this->loop->getHandle());
+        self::assertNull($this->loop->getHandle());
     }
 
     public function testTooLargeFileDescriptorSet()
     {
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            self::markTestSkipped('Skipped on Windows');
+        }
+
         $sockets = [];
         $domain = \stripos(PHP_OS, 'win') === 0 ? STREAM_PF_INET : STREAM_PF_UNIX;
 
@@ -36,7 +40,7 @@ class NativeDriverTest extends DriverTest
                 // here to provide timeout to stream_select, as the warning is only issued after the system call returns
             });
 
-            foreach ($sockets as list($left, $right)) {
+            foreach ($sockets as [$left, $right]) {
                 $loop->onReadable($left, function () {
                     // nothing
                 });
@@ -50,6 +54,10 @@ class NativeDriverTest extends DriverTest
 
     public function testSignalDuringStreamSelectIgnored()
     {
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            self::markTestSkipped('Skipped on Windows');
+        }
+
         $domain = \stripos(PHP_OS, 'win') === 0 ? STREAM_PF_INET : STREAM_PF_UNIX;
         $sockets = \stream_socket_pair($domain, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
@@ -100,6 +108,6 @@ class NativeDriverTest extends DriverTest
             \pcntl_async_signals(false);
         }
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 }
