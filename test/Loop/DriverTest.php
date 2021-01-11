@@ -715,9 +715,9 @@ abstract class DriverTest extends TestCase
     public function testExecutionOrderGuarantees(): void
     {
         $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat(
-                "13 ",
-                4
-            ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
+            "13 ",
+            4
+        ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
