@@ -92,6 +92,10 @@ class NativeDriverTest extends DriverTest
      */
     public function testAsyncSignals()
     {
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            self::markTestSkipped('Skipped on Windows');
+        }
+
         \pcntl_async_signals(true);
 
         try {
