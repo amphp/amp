@@ -29,7 +29,7 @@ class NativeDriverTest extends DriverTest
         }
 
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("You have reached the limits of stream_select(). It has a FD_SETSIZE of 1024, but you have file descriptors numbered at least as high as 200");
+        $this->expectExceptionMessage("You have reached the limits of stream_select(). It has a FD_SETSIZE of 1024, but you have file descriptors numbered at least as high as 20");
 
         $this->start(function (Driver $loop) use ($sockets) {
             $loop->delay(100, function () {
