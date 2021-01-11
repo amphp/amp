@@ -150,7 +150,7 @@ abstract class DriverTest extends TestCase
         self::assertNotSame(0, $invoked);
 
         self::assertGreaterThanOrEqual(1500, $invoked - $start);
-        self::assertLessThan(1600, $invoked - $start);
+        self::assertLessThan(1750, $invoked - $start);
     }
 
     public function testLoopTerminatesWithOnlyUnreferencedWatchers(): void
@@ -715,9 +715,9 @@ abstract class DriverTest extends TestCase
     public function testExecutionOrderGuarantees(): void
     {
         $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat(
-            "13 ",
-            4
-        ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
+                "13 ",
+                4
+            ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
@@ -1666,13 +1666,13 @@ abstract class DriverTest extends TestCase
     public function testNow(): void
     {
         $now = $this->loop->now();
-        $this->loop->delay(100, function () use ($now) {
-            $now += 100;
+        $this->loop->delay(500, function () use ($now) {
+            $now += 500;
             $new = $this->loop->now();
 
             // Allow a few milliseconds of inaccuracy.
             $this->assertGreaterThanOrEqual($now - 1, $new);
-            $this->assertLessThanOrEqual($now + 10, $new);
+            $this->assertLessThanOrEqual($now + 150, $new);
         });
         $this->loop->run();
     }
