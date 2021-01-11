@@ -128,7 +128,7 @@ abstract class DriverTest extends TestCase
         self::assertNotSame(0, $invoked);
 
         self::assertGreaterThanOrEqual(999, $invoked - $start);
-        self::assertLessThan(1100, $invoked - $start);
+        self::assertLessThan(1300, $invoked - $start);
     }
 
     public function testCorrectTimeoutIfBlockingBeforeDelay(): void
@@ -1672,7 +1672,7 @@ abstract class DriverTest extends TestCase
 
             // Allow a few milliseconds of inaccuracy.
             $this->assertGreaterThanOrEqual($now - 1, $new);
-            $this->assertLessThanOrEqual($now + 150, $new);
+            $this->assertLessThanOrEqual($now + 250, $new);
         });
         $this->loop->run();
     }
