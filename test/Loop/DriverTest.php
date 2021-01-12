@@ -719,9 +719,9 @@ abstract class DriverTest extends TestCase
     public function testExecutionOrderGuarantees(): void
     {
         $this->expectOutputString("01 02 03 04 " . \str_repeat("05 ", 8) . "10 11 12 " . \str_repeat(
-            "13 ",
-            4
-        ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
+                "13 ",
+                4
+            ) . "20 " . \str_repeat("21 ", 4) . "30 40 41 ");
         $this->start(function (Driver $loop) {
             // Wrap in extra defer, so driver creation time doesn't count for timers, as timers are driver creation
             // relative instead of last tick relative before first tick.
@@ -1612,6 +1612,70 @@ abstract class DriverTest extends TestCase
         $this->loop->run();
 
         self::assertSame(2323, $invoked);
+    }
+
+    /**
+     * This test case is based on React's tests.
+     *
+     * The MIT License (MIT)
+     *
+     * Copyright (c) 2012 Christian Lück, Cees-Jan Kiewiet, Jan Sorgalla, Chris Boden, Igor Wiedler
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is furnished
+     * to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in all
+     * copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     *
+     * @link https://github.com/reactphp/event-loop/blob/8bd064ce23c26c4decf186c2a5a818c9a8209eb0/tests/AbstractLoopTest.php#L115-L146
+     */
+    public function testStreamWritableIfConnectFails(): void
+    {
+        // first verify the operating system actually refuses the connection and no firewall is in place
+        // use higher timeout because Windows retires multiple times and has a noticeable delay
+        // @link https://stackoverflow.com/questions/19440364/why-do-failed-attempts-of-socket-connect-take-1-sec-on-windows
+        $errno = $errstr = null;
+        if (
+            @\stream_socket_client('127.0.0.1:1', $errno, $errstr, 10) !== false
+            || (\defined('SOCKET_ECONNREFUSED') && $errno !== \SOCKET_ECONNREFUSED)
+        ) {
+            self::markTestSkipped('Expected host to refuse connection, but got error ' . $errno . ': ' . $errstr);
+        }
+
+        $connecting = \stream_socket_client(
+            '127.0.0.1:1',
+            $errno,
+            $errstr,
+            0,
+            STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
+        );
+
+        $called = 0;
+        $this->loop->onWritable($connecting, function (string $watcher) use (&$called) {
+            ++$called;
+
+            $this->loop->cancel($watcher);
+        });
+
+        $this->loop->unreference($this->loop->delay(10000, function () use ($connecting) {
+            $this->loop->cancel($connecting);
+        }));
+
+        $this->loop->run();
+
+        self::assertEquals(1, $called);
     }
 
     public function testTimerIntervalCountedWhenNotRunning(): void
