@@ -293,7 +293,7 @@ class NativeDriver extends Driver
             if (\DIRECTORY_SEPARATOR === '\\') {
                 $except = [];
                 foreach ($write as $key => $socket) {
-                    if (!isset($read[$key]) && @\ftell($socket) === 0) {
+                    if (@\stream_socket_get_name($socket, true) === false) {
                         $except[$key] = $socket;
                     }
                 }
