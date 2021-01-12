@@ -1662,6 +1662,8 @@ abstract class DriverTest extends TestCase
             STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
         );
 
+        \fwrite(\STDOUT, \var_export(\stream_socket_get_name($connecting, true), true));
+
         $called = 0;
         $writeWatcher = $this->loop->onWritable($connecting, function (string $watcher) use (&$called) {
             ++$called;
