@@ -351,7 +351,7 @@ class NativeDriver extends Driver
             \assert(\is_array($write)); // See https://github.com/vimeo/psalm/issues/3036
 
             if ($except) {
-                // $write = \array_merge($write, $except);
+                $write = \array_merge($write, $except);
             }
 
             foreach ($write as $stream) {
