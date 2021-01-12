@@ -1669,9 +1669,7 @@ abstract class DriverTest extends TestCase
             $this->loop->cancel($watcher);
         });
 
-        $this->loop->unreference($this->loop->delay(10000, function () use ($writeWatcher, $connecting) {
-            \fwrite(STDOUT, \var_export(@\stream_socket_get_name($connecting, true), true));
-
+        $this->loop->unreference($this->loop->delay(10000, function () use ($writeWatcher) {
             $this->loop->cancel($writeWatcher);
         }));
 
