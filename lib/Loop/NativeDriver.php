@@ -291,12 +291,7 @@ class NativeDriver extends Driver
             // @link https://docs.microsoft.com/de-de/windows/win32/api/winsock2/nf-winsock2-select
             $except = null;
             if (\DIRECTORY_SEPARATOR === '\\') {
-                $except = [];
-                foreach ($write as $key => $socket) {
-                    if (@\stream_socket_get_name($socket, true) === false) {
-                        $except[$key] = $socket;
-                    }
-                }
+                $except = $write;
             }
 
             \set_error_handler($this->streamSelectErrorHandler);
