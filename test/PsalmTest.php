@@ -11,6 +11,10 @@ class PsalmTest extends TestCase
      */
     public function test()
     {
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            self::markTestSkipped('Skipped on Windows');
+        }
+
         $issues = \json_decode(
             \shell_exec('./vendor/bin/psalm.phar --output-format=json --no-progress --config=psalm.examples.xml'),
             true

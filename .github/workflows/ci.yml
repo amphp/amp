@@ -38,6 +38,11 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
 
     steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - name: Checkout code
         uses: actions/checkout@v2
 

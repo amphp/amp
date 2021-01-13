@@ -286,7 +286,13 @@ class NativeDriver extends Driver
                 $microseconds = null;
             }
 
+            // Failed connection attempts are indicated via except on Windows
+            // @link https://github.com/reactphp/event-loop/blob/8bd064ce23c26c4decf186c2a5a818c9a8209eb0/src/StreamSelectLoop.php#L279-L287
+            // @link https://docs.microsoft.com/de-de/windows/win32/api/winsock2/nf-winsock2-select
             $except = null;
+            if (\DIRECTORY_SEPARATOR === '\\') {
+                $except = $write;
+            }
 
             \set_error_handler($this->streamSelectErrorHandler);
 
@@ -338,6 +344,12 @@ class NativeDriver extends Driver
             }
 
             \assert(\is_array($write)); // See https://github.com/vimeo/psalm/issues/3036
+
+            if ($except) {
+                foreach ($except as $key => $socket) {
+                    $write[$key] = $socket;
+                }
+            }
 
             foreach ($write as $stream) {
                 $streamId = (int) $stream;

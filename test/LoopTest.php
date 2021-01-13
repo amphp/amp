@@ -55,13 +55,13 @@ class LoopTest extends BaseTest
     {
         Loop::run(function () {
             $now = Loop::now();
-            Loop::delay(100, function () use ($now) {
-                $now += 100;
+            Loop::delay(500, function () use ($now) {
+                $now += 500;
                 $new = Loop::now();
 
                 // Allow a few milliseconds of inaccuracy.
                 $this->assertGreaterThanOrEqual($now - 1, $new);
-                $this->assertLessThanOrEqual($now + 100, $new);
+                $this->assertLessThanOrEqual($now + 250, $new);
             });
         });
     }
