@@ -74,7 +74,7 @@ jobs:
           retry_wait_seconds: 30
           command: |
             php_version=$(php -v)
-            if [ ${php_version:4:3} == "7.1" ] || [ ${php_version:4:3} == "7.2" ]; then composer remove --dev psalm/phar; fi
+            if [ ${php_version:4:3} = "7.1" ] || [ ${php_version:4:3} = "7.2" ]; then composer remove --dev psalm/phar; fi
             composer update --optimize-autoloader --no-interaction --no-progress ${{ matrix.composer-flags }}
             composer info -D
 
@@ -83,7 +83,7 @@ jobs:
 
       - name: Run static analysis
         run: |
-          if [ ${php_version:4:3} == "7.1" ] || [ ${php_version:4:3} == "7.2" ]; then
+          if [ ${php_version:4:3} = "7.1" ] || [ ${php_version:4:3} = "7.2" ]; then
             echo 'Skipping static analysis, as PHP version is not supported.'
           else
             vendor/bin/psalm.phar ${{ matrix.psalm-flags }}
