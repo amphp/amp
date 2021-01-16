@@ -83,6 +83,7 @@ jobs:
 
       - name: Run static analysis
         run: |
+          php_version=$(php -v)
           if [ ${php_version:4:3} = "7.1" ] || [ ${php_version:4:3} = "7.2" ]; then
             echo 'Skipping static analysis, as PHP version is not supported.'
           else
