@@ -68,12 +68,12 @@ function getCurrentTime(): int
     if (\PHP_INT_SIZE === 4) {
         // @codeCoverageIgnoreStart
         if ($startTime === null) {
-            $startTime = \PHP_VERSION_ID >= 70300 ? \hrtime()[0] : \time();
+            $startTime = \PHP_VERSION_ID >= 70300 ? \hrtime(false)[0] : \time();
             $nextWarning = \PHP_INT_MAX - 86400 * 7;
         }
 
         if (\PHP_VERSION_ID >= 70300) {
-            [$seconds, $nanoseconds] = \hrtime();
+            [$seconds, $nanoseconds] = \hrtime(false);
             $seconds -= $startTime;
 
             if ($seconds >= $nextWarning) {
@@ -109,7 +109,7 @@ function getCurrentTime(): int
     }
 
     if (\PHP_VERSION_ID >= 70300) {
-        [$seconds, $nanoseconds] = \hrtime();
+        [$seconds, $nanoseconds] = \hrtime(false);
         return (int) ($seconds * 1000 + $nanoseconds / 1000000);
     }
 
