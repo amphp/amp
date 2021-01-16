@@ -736,7 +736,7 @@ abstract class Driver
             "on_readable" => $onReadable,
             "on_writable" => $onWritable,
             "on_signal" => $onSignal,
-            "running" => (bool) $this->running,
+            "running" => $this->running,
         ];
     }
 }

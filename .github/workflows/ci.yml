@@ -73,12 +73,12 @@ jobs:
           max_attempts: 5
           retry_wait_seconds: 30
           command: |
+            php_version=$(php -v)
+            if [ ${php_version:4:3} == "7.1" ] || [ ${php_version:4:3} == "7.2" ]; then composer remove --dev psalm/phar; fi
             composer update --optimize-autoloader --no-interaction --no-progress ${{ matrix.composer-flags }}
             composer info -D
 
       - name: Run tests
-        env:
-          PHP_CS_FIXER_IGNORE_ENV: 1
         run: vendor/bin/phpunit ${{ matrix.phpunit-flags }}
 
       - name: Run style fixer

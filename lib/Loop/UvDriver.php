@@ -239,7 +239,7 @@ class UvDriver extends Driver
                     } elseif (isset($this->events[$id])) {
                         $event = $this->streams[$streamId] = $this->events[$id];
                     } else {
-                        /** @psalm-suppress UndefinedFunction */
+                        /** @psalm-suppress TooManyArguments */
                         $event = $this->streams[$streamId] = \uv_poll_init_socket($this->handle, $watcher->value);
                     }
 
@@ -280,13 +280,13 @@ class UvDriver extends Driver
                     if (isset($this->events[$id])) {
                         $event = $this->events[$id];
                     } else {
-                        /** @psalm-suppress UndefinedFunction */
+                        /** @psalm-suppress TooManyArguments */
                         $event = $this->events[$id] = \uv_signal_init($this->handle);
                     }
 
                     $this->watchers[(int) $event] = [$watcher];
 
-                    /** @psalm-suppress UndefinedFunction */
+                    /** @psalm-suppress TooManyArguments */
                     \uv_signal_start($event, $this->signalCallback, $watcher->value);
                     break;
 

@@ -67,6 +67,7 @@ class DriverFactory
             ));
         }
 
+        /** @psalm-suppress UnsafeInstantiation */
         return new $driver;
     }
 }

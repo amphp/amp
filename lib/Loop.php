@@ -275,6 +275,7 @@ final class Loop
      */
     public static function disable(string $watcherId)
     {
+        /** @psalm-suppress RedundantPropertyInitializationCheck */
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
@@ -296,6 +297,7 @@ final class Loop
      */
     public static function cancel(string $watcherId)
     {
+        /** @psalm-suppress RedundantPropertyInitializationCheck */
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
@@ -334,6 +336,7 @@ final class Loop
      */
     public static function unreference(string $watcherId)
     {
+        /** @psalm-suppress RedundantPropertyInitializationCheck */
         if (\PHP_VERSION_ID < 70200 && !isset(self::$driver)) {
             // Prior to PHP 7.2, self::$driver may be unset during destruct.
             // See https://github.com/amphp/amp/issues/212.
