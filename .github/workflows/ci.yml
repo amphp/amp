@@ -81,6 +81,14 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit ${{ matrix.phpunit-flags }}
 
+      - name: Run static analysis
+        run: |
+          if [ ${php_version:4:3} == "7.1" ] || [ ${php_version:4:3} == "7.2" ]; then
+            echo 'Skipping static analysis, as PHP version is not supported.'
+          else
+            vendor/bin/psalm.phar ${{ matrix.psalm-flags }}
+          fi
+
       - name: Run style fixer
         env:
           PHP_CS_FIXER_IGNORE_ENV: 1
