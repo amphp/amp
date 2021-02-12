@@ -267,10 +267,6 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield 0;
         });
 
-        $this->assertFalse($invoked);
-
-        delay(0); // Tick event loop to start generator.
-
         $this->assertTrue($invoked);
 
         $this->assertSame(0, $generator->continue());

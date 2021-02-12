@@ -9,6 +9,7 @@ use Amp\Loop;
 use Amp\Pipeline;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\await;
 use function Amp\defer;
 
 /**
@@ -35,10 +36,10 @@ final class EmitSource
     /** @var Deferred[] */
     private array $backPressure = [];
 
-    /** @var \Fiber[] */
+    /** @var Placeholder[] */
     private array $yielding = [];
 
-    /** @var \Fiber[] */
+    /** @var Placeholder[] */
     private array $waiting = [];
 
     private int $consumePosition = 0;
@@ -99,12 +100,12 @@ final class EmitSource
 
         // Relieve backpressure from prior emit.
         if (isset($this->yielding[$position])) {
-            $fiber = $this->yielding[$position];
+            $placeholder = $this->yielding[$position];
             unset($this->yielding[$position]);
             if ($exception) {
-                Loop::defer(static fn() => $fiber->throw($exception));
+                $placeholder->fail($exception);
             } else {
-                Loop::defer(static fn() => $fiber->resume($value));
+                $placeholder->resolve($value);
             }
         } elseif (isset($this->backPressure[$position])) {
             $deferred = $this->backPressure[$position];
@@ -135,8 +136,8 @@ final class EmitSource
         }
 
         // No value has been emitted, suspend fiber to await next value.
-        $this->waiting[$position] = \Fiber::this();
-        return \Fiber::suspend(Loop::getScheduler());
+        $this->waiting[$position] = $placeholder = new Placeholder;
+        return await(new PrivatePromise($placeholder));
     }
 
     public function pipe(): Pipeline
@@ -226,9 +227,9 @@ final class EmitSource
         }
 
         if (isset($this->waiting[$position])) {
-            $fiber = $this->waiting[$position];
+            $placeholder = $this->waiting[$position];
             unset($this->waiting[$position]);
-            Loop::defer(static fn() => $fiber->resume($value));
+            $placeholder->resolve($value);
 
             if ($this->disposed && empty($this->waiting)) {
                 \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
@@ -301,8 +302,8 @@ final class EmitSource
         ++$this->emitPosition;
 
         if ($pair === null) {
-            $this->yielding[$position] = \Fiber::this();
-            return \Fiber::suspend(Loop::getScheduler());
+            $this->yielding[$position] = $placeholder = new Placeholder;
+            return await(new PrivatePromise($placeholder));
         }
 
         [$exception, $value] = $pair;
@@ -406,7 +407,7 @@ final class EmitSource
                 $this->triggerDisposal();
             }
         } else {
-            Loop::defer(fn() => $this->resolvePending());
+            $this->resolvePending();
         }
     }
 
@@ -423,16 +424,6 @@ final class EmitSource
         $exception = isset($this->exception) ? $this->exception : null;
 
         foreach ($backPressure as $deferred) {
-            if ($deferred instanceof \Fiber) {
-                // Using a defer watcher to maintain backpressure execution order.
-                if ($exception) {
-                    Loop::defer(static fn() => $deferred->throw($exception));
-                } else {
-                    Loop::defer(static fn() => $deferred->resume());
-                }
-                continue;
-            }
-
             if ($exception) {
                 $deferred->fail($exception);
             } else {
@@ -440,11 +431,11 @@ final class EmitSource
             }
         }
 
-        foreach ($waiting as $fiber) {
+        foreach ($waiting as $placeholder) {
             if ($exception) {
-                $fiber->throw($this->exception);
+                $placeholder->fail($this->exception);
             } else {
-                $fiber->resume();
+                $placeholder->resolve();
             }
         }
     }
@@ -463,7 +454,7 @@ final class EmitSource
         $onDisposal = $this->onDisposal;
         $this->onDisposal = null;
 
-        Loop::defer(fn() => $this->resolvePending());
+        $this->resolvePending();
 
         /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
         foreach ($onDisposal as $callback) {

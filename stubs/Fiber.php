@@ -10,40 +10,40 @@ final class Fiber
     /**
      * Starts execution of the fiber. Returns when the fiber suspends or terminates.
      *
-     * Must be called within a {@see FiberScheduler}.
-     *
      * @param mixed ...$args Arguments passed to fiber function.
+     *
+     * @return mixed Value from the first suspension point.
      *
      * @throw FiberError If the fiber is running or terminated.
      * @throw Throwable If the fiber callable throws an uncaught exception.
      */
-    public function start(mixed ...$args): void { }
+    public function start(mixed ...$args): mixed { }
 
     /**
      * Resumes the fiber, returning the given value from {@see Fiber::suspend()}.
      * Returns when the fiber suspends or terminates.
      *
-     * Must be called within a {@see FiberScheduler}.
-     *
      * @param mixed $value
+     *
+     * @return mixed Value from the next suspension point or NULL if the fiber terminates.
      *
      * @throw FiberError If the fiber is running or terminated.
      * @throw Throwable If the fiber callable throws an uncaught exception.
      */
-    public function resume(mixed $value = null): void { }
+    public function resume(mixed $value = null): mixed { }
 
     /**
      * Throws the given exception into the fiber from {@see Fiber::suspend()}.
      * Returns when the fiber suspends or terminates.
      *
-     * Must be called within a {@see FiberScheduler}.
-     *
      * @param Throwable $exception
+     *
+     * @return mixed Value from the next suspension point or NULL if the fiber terminates.
      *
      * @throw FiberError If the fiber is running or terminated.
      * @throw Throwable If the fiber callable throws an uncaught exception.
      */
-    public function throw(Throwable $exception): void { }
+    public function throw(Throwable $exception): mixed { }
 
     /**
      * @return bool True if the fiber has been started.
@@ -66,28 +66,27 @@ final class Fiber
     public function isTerminated(): bool { }
 
     /**
-     * Returns the currently executing Fiber instance.
+     * @return mixed Return value of the fiber callback.
      *
-     * Cannot be called within {@see FiberScheduler}.
-     *
-     * @return self The currently executing fiber.
-     *
-     * @throws FiberError Thrown if within {@see FiberScheduler}.
+     * @throws FiberError If the fiber has not terminated or did not return a value.
      */
-    public static function this(): self { }
+    public function getReturn(): mixed { }
 
     /**
-     * Suspend execution of the fiber. The fiber may be resumed with {@see Fiber::resume()} or {@see Fiber::throw()}
-     * within the callback used to create the {@see FiberScheduler} given.
+     * @return self|null Returns the currently executing fiber instance or NULL if in {main}.
+     */
+    public static function this(): ?self { }
+
+    /**
+     * Suspend execution of the fiber. The fiber may be resumed with {@see Fiber::resume()} or {@see Fiber::throw()}.
      *
-     * Cannot be called within a {@see FiberScheduler}.
+     * Cannot be called from {main}.
      *
-     * @param FiberScheduler $scheduler
+     * @param mixed $value Value to return from {@see Fiber::resume()} or {@see Fiber::throw()}.
      *
      * @return mixed Value provided to {@see Fiber::resume()}.
      *
-     * @throws FiberError Thrown if within {@see FiberScheduler::run()}.
      * @throws Throwable Exception provided to {@see Fiber::throw()}.
      */
-    public static function suspend(FiberScheduler $scheduler): mixed { }
+    public static function suspend(mixed $value = null): mixed { }
 }

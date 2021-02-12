@@ -21,20 +21,87 @@ namespace Amp
      */
     function await(Promise|array $promise): mixed
     {
+        static $loop;
+
         if (!$promise instanceof Promise) {
             $promise = Promise\all($promise);
         }
 
         $fiber = \Fiber::this();
 
-        $promise->onResolve(
-            static fn(?\Throwable $exception, mixed $value) => match ($exception) {
-                null => $fiber->resume($value),
-                default => $fiber->throw($exception),
-            }
-        );
+        $resolved = false;
+        $error = null;
+        $result = null;
 
-        return \Fiber::suspend(Loop::getScheduler());
+        if ($fiber instanceof \Fiber) {
+            if (isset($loop) && $fiber === $loop) {
+                throw new \Error(\sprintf('Cannot call %s within an event loop callback', __FUNCTION__));
+            }
+
+            $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved, &$error, &$result, $fiber): void {
+                $resolved = true;
+                $error = $exception;
+                $result = $value;
+
+                $fiber->resume();
+            });
+
+            if (!$resolved) {
+                try {
+                    // Suspend the current fiber until the promise is resolved.
+                    \Fiber::suspend();
+                } catch (\Throwable $exception) {
+                    throw new \Error('Exception unexpectedly thrown from Fiber::suspend()', 0, $exception);
+                }
+
+                if (!$resolved) {
+                    // $resolved should only be false if the function set in Promise::onResolve() did not resume the fiber.
+                    throw new \Error('Fiber resumed before promise was resolved');
+                }
+            }
+        } else {
+            if (!isset($loop) || $loop->isTerminated()) {
+                $loop = new \Fiber(static fn() => Loop::getDriver()->run());
+                // Run event loop to completion on shutdown.
+                \register_shutdown_function(static function () use ($loop): void {
+                    if ($loop->isSuspended()) {
+                        $loop->resume();
+                    }
+                });
+            }
+
+            $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved, &$error, &$result, $loop): void {
+                $resolved = true;
+                $error = $exception;
+                $result = $value;
+
+                // Suspend event loop fiber to {main}.
+                \Fiber::suspend();
+            });
+
+            if (!$resolved) {
+                try {
+                    if ($loop->isStarted()) {
+                        $loop->resume();
+                    } else {
+                        $loop->start();
+                    }
+                } catch (\Throwable $exception) {
+                    throw new \Error('Exception unexpectedly thrown from event loop', 0, $exception);
+                }
+
+                if (!$resolved) {
+                    // $resolved should only be false if the function set in Promise::onResolve() did not resume the fiber.
+                    throw new \Error('Event loop suspended or exited without resolving the promise');
+                }
+            }
+        }
+
+        if ($error) {
+            throw $error;
+        }
+
+        return $result;
     }
 
     /**
@@ -49,11 +116,11 @@ namespace Amp
      *
      * @psalm-return Promise<TValue>
      */
-    function async(callable $callback, mixed ...$args): Promise
+    function async(callable $callback, ...$args): Promise
     {
         $placeholder = new Internal\Placeholder;
 
-        $fiber = new \Fiber(static function () use ($placeholder, $callback, $args): void {
+        $fiber = new \Fiber(function () use ($placeholder, $callback, $args): void {
             try {
                 $placeholder->resolve($callback(...$args));
             } catch (\Throwable $exception) {
@@ -61,7 +128,7 @@ namespace Amp
             }
         });
 
-        Loop::defer(static fn() => $fiber->start());
+        $fiber->start();
 
         return new Internal\PrivatePromise($placeholder);
     }
@@ -224,9 +291,7 @@ namespace Amp
      */
     function delay(int $milliseconds): void
     {
-        $fiber = \Fiber::this();
-        Loop::delay($milliseconds, fn() => $fiber->resume());
-        \Fiber::suspend(Loop::getScheduler());
+        await(new Delayed($milliseconds));
     }
 
     /**
@@ -239,23 +304,7 @@ namespace Amp
      */
     function trap(int $signal, int ...$signals): int
     {
-        $signals[] = $signal;
-
-        $fiber = \Fiber::this();
-
-        $watchers = [];
-        $callback = static function (string $id, int $signo) use (&$watchers, $fiber): void {
-            foreach ($watchers as $watcher) {
-                Loop::cancel($watcher);
-            }
-            $fiber->resume($signo);
-        };
-
-        foreach ($signals as $signal) {
-            $watchers[] = Loop::onSignal($signal, $callback);
-        }
-
-        return \Fiber::suspend(Loop::getScheduler());
+        return await(new SignalTrap($signal, ...$signals));
     }
 
     /**

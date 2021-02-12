@@ -388,16 +388,6 @@ final class Loop
     {
         return self::$driver;
     }
-
-    /**
-     * Retrieve the active {@see FiberScheduler} instance associated with the event loop driver.
-     *
-     * @return \FiberScheduler
-     */
-    public static function getScheduler(): \FiberScheduler
-    {
-        return self::$driver->getScheduler();
-    }
 }
 
 // Default factory, don't move this to a file loaded by the composer "files" autoload mechanism, otherwise custom

@@ -4,7 +4,6 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\Loop;
-use Amp\Pipeline;
 use Amp\PipelineSource;
 use function Amp\delay;
 
@@ -37,4 +36,3 @@ try {
 } catch (\Throwable $exception) {
     \printf("Exception: %s\n", (string) $exception);
 }
-

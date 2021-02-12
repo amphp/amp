@@ -119,6 +119,7 @@ final class Placeholder
         }
 
         Loop::defer(fn() => $onResolved(null, $this->result));
+
     }
 
     /**

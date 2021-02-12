@@ -15,7 +15,7 @@ function asyncTask(int $id): int
     }
 
     return $value;
-};
+}
 
 // Invoking $callback returns an int, but is executed asynchronously.
 $result = asyncTask(2); // Call a subroutine within this green thread, taking 1 second to return.
@@ -30,4 +30,3 @@ try {
 
 $result = asyncTask(5); // Make another async subroutine call that will now throw from green thread.
 \var_dump($result);
-
