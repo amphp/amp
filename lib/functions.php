@@ -30,13 +30,14 @@ namespace Amp
         $fiber = \Fiber::this();
         $resolved = false;
 
-        if ($fiber) {
-            if (isset($loop) && $fiber === $loop) {
+        if ($fiber) { // Awaiting from within a fiber.
+            if ($fiber === $loop) {
                 throw new \Error(\sprintf('Cannot call %s() within an event loop callback', __FUNCTION__));
             }
 
             $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved, $fiber): void {
                 $resolved = true;
+
                 if ($exception) {
                     $fiber->throw($exception);
                     return;
@@ -49,14 +50,16 @@ namespace Amp
             $value = \Fiber::suspend();
 
             if (!$resolved) {
-                // $resolved should only be false if the function set in Promise::onResolve() did not resume the fiber.
+                // $resolved should only be false if the fiber was manually resumed outside of the callback above.
                 throw new \Error('Fiber resumed before promise was resolved');
             }
 
             return $value;
         }
 
-        if (!isset($loop) || $loop->isTerminated()) {
+        // Awaiting from {main}.
+
+        if (!$loop || $loop->isTerminated()) {
             $loop = new \Fiber(static fn() => Loop::getDriver()->run());
             // Run event loop to completion on shutdown.
             \register_shutdown_function(static function () use ($loop): void {
@@ -68,26 +71,28 @@ namespace Amp
 
         $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved): void {
             $resolved = true;
+
             // Suspend event loop fiber to {main}.
-            \Fiber::suspend([$exception, $value]);
+            if ($exception) {
+                \Fiber::suspend(static fn() => throw $exception);
+                return;
+            }
+
+            \Fiber::suspend(static fn() => $value);
         });
 
         try {
-            [$exception, $value] = $loop->isStarted() ? $loop->resume() : $loop->start();
+            $lambda = $loop->isStarted() ? $loop->resume() : $loop->start();
         } catch (\Throwable $exception) {
             throw new \Error('Exception unexpectedly thrown from event loop', 0, $exception);
         }
 
         if (!$resolved) {
-            // $resolved should only be false if the function set in Promise::onResolve() did not resume the fiber.
+            // $resolved should only be false if the event loop exited without resolving the promise.
             throw new \Error('Event loop suspended or exited without resolving the promise');
         }
 
-        if ($exception) {
-            throw $exception;
-        }
-
-        return $value;
+        return $lambda();
     }
 
     /**
