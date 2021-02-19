@@ -21,8 +21,6 @@ namespace Amp
      */
     function await(Promise|array $promise): mixed
     {
-        static $loop;
-
         if (!$promise instanceof Promise) {
             $promise = Promise\all($promise);
         }
@@ -31,7 +29,7 @@ namespace Amp
         $resolved = false;
 
         if ($fiber) { // Awaiting from within a fiber.
-            if ($fiber === $loop) {
+            if ($fiber === Loop::getFiber()) {
                 throw new \Error(\sprintf('Cannot call %s() within an event loop callback', __FUNCTION__));
             }
 
@@ -46,28 +44,21 @@ namespace Amp
                 $fiber->resume($value);
             });
 
-            // Suspend the current fiber until the promise is resolved.
-            $value = \Fiber::suspend();
-
-            if (!$resolved) {
-                // $resolved should only be false if the fiber was manually resumed outside of the callback above.
-                throw new \Error('Fiber resumed before promise was resolved');
+            try {
+                // Suspend the current fiber until the promise is resolved.
+                $value = \Fiber::suspend();
+            } finally {
+                if (!$resolved) {
+                    // $resolved should only be false if the fiber was manually resumed outside of the callback above.
+                    throw new \Error('Fiber resumed before promise was resolved');
+                }
             }
 
             return $value;
         }
 
         // Awaiting from {main}.
-
-        if (!$loop || $loop->isTerminated()) {
-            $loop = new \Fiber(static fn() => Loop::getDriver()->run());
-            // Run event loop to completion on shutdown.
-            \register_shutdown_function(static function () use ($loop): void {
-                if ($loop->isSuspended()) {
-                    $loop->resume();
-                }
-            });
-        }
+        $fiber = Loop::getFiber();
 
         $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved): void {
             $resolved = true;
@@ -82,7 +73,7 @@ namespace Amp
         });
 
         try {
-            $lambda = $loop->isStarted() ? $loop->resume() : $loop->start();
+            $lambda = $fiber->isStarted() ? $fiber->resume() : $fiber->start();
         } catch (\Throwable $exception) {
             throw new \Error('Exception unexpectedly thrown from event loop', 0, $exception);
         }
@@ -119,7 +110,7 @@ namespace Amp
             }
         });
 
-        $fiber->start();
+        Loop::defer(static fn() => $fiber->start());
 
         return new Internal\PrivatePromise($placeholder);
     }

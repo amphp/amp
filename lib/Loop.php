@@ -18,6 +18,8 @@ final class Loop
 {
     private static Driver $driver;
 
+    private static \Fiber $fiber;
+
     /**
      * Disable construction as this is a static class.
      */
@@ -35,8 +37,8 @@ final class Loop
      */
     public static function setDriver(Driver $driver): void
     {
-        if (isset(self::$driver) && self::$driver->isRunning()) {
-            throw new \Error("Can't swap the event loop while it is running");
+        if (isset(self::$fiber)) {
+            throw new \Error("Can't swap the event loop once an associated fiber has been created");
         }
 
         try {
@@ -387,6 +389,26 @@ final class Loop
     public static function getDriver(): Driver
     {
         return self::$driver;
+    }
+
+    /**
+     * Retrieve the fiber instance associated with the event loop driver.
+     *
+     * @return \Fiber
+     */
+    public static function getFiber(): \Fiber
+    {
+        if (!isset(self::$fiber) || self::$fiber->isTerminated()) {
+            self::$fiber = $fiber = new \Fiber(static fn() => self::$driver->run());
+            // Run event loop to completion on shutdown.
+            \register_shutdown_function(static function () use ($fiber): void {
+                if ($fiber->isSuspended()) {
+                    $fiber->resume();
+                }
+            });
+        }
+
+        return self::$fiber;
     }
 }
 
