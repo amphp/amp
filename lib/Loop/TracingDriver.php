@@ -25,11 +25,6 @@ final class TracingDriver implements Driver
         $this->driver = $driver;
     }
 
-    public function getScheduler(): \FiberScheduler
-    {
-        return $this->driver->getScheduler();
-    }
-
     public function run(): void
     {
         $this->driver->run();

@@ -41,22 +41,6 @@ abstract class DriverFoundation implements Driver
 
     private bool $running = false;
 
-    private \FiberScheduler $scheduler;
-
-    /**
-     * Get the fiber scheduler associated with this driver.
-     *
-     * @return \FiberScheduler
-     */
-    public function getScheduler(): \FiberScheduler
-    {
-        if (!isset($this->scheduler) || $this->scheduler->isTerminated()) {
-            $this->scheduler = new \FiberScheduler(fn() => $this->run());
-        }
-
-        return $this->scheduler;
-    }
-
     /**
      * Run the event loop.
      *

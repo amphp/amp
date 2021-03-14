@@ -5,13 +5,6 @@ namespace Amp\Loop;
 interface Driver
 {
     /**
-     * Get the fiber scheduler associated with this driver.
-     *
-     * @return \FiberScheduler
-     */
-    public function getScheduler(): \FiberScheduler;
-
-    /**
      * Run the event loop.
      *
      * One iteration of the loop is called one "tick". A tick covers the following steps:
