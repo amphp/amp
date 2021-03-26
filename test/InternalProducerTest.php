@@ -9,6 +9,8 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\async;
+use function Amp\await;
 
 class InternalProducerTest extends AsyncTestCase
 {
@@ -21,16 +23,16 @@ class InternalProducerTest extends AsyncTestCase
         $this->producer = new Producer;
     }
 
-    public function testEmit(): \Generator
+    public function testEmit(): void
     {
         $value = 1;
 
-        $promise = $this->producer->emit($value);
+        $promise = async(fn () => $this->producer->emit($value));
 
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame($value, $this->producer->getCurrent());
+        self::assertTrue(await($this->producer->advance()));
+        self::assertSame($value, $this->producer->getCurrent());
 
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
@@ -43,10 +45,10 @@ class InternalProducerTest extends AsyncTestCase
 
         $promise = $this->producer->emit($promise);
 
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame($value, $this->producer->getCurrent());
+        self::assertTrue(yield $this->producer->advance());
+        self::assertSame($value, $this->producer->getCurrent());
 
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
@@ -60,19 +62,19 @@ class InternalProducerTest extends AsyncTestCase
         $promise = $this->producer->emit($promise);
 
         try {
-            $this->assertTrue(yield $this->producer->advance());
-            $this->fail("The exception used to fail the iterator should be thrown from advance()");
+            self::assertTrue(yield $this->producer->advance());
+            self::fail("The exception used to fail the iterator should be thrown from advance()");
         } catch (TestException $reason) {
-            $this->assertSame($reason, $exception);
+            self::assertSame($reason, $exception);
         }
 
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromise(): \Generator
+    public function testEmitPendingPromise(): void
     {
         $value = 1;
         $deferred = new Deferred;
@@ -81,28 +83,27 @@ class InternalProducerTest extends AsyncTestCase
 
         $deferred->resolve($value);
 
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame($value, $this->producer->getCurrent());
+        self::assertTrue(await($this->producer->advance()));
+        self::assertSame($value, $this->producer->getCurrent());
     }
 
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenNonPromise(): \Generator
+    public function testEmitPendingPromiseThenNonPromise(): void
     {
         $deferred = new Deferred;
 
         $this->producer->emit($deferred->promise());
-
         $this->producer->emit(2);
 
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame(2, $this->producer->getCurrent());
+        self::assertTrue(await($this->producer->advance()));
+        self::assertSame(2, $this->producer->getCurrent());
 
         $deferred->resolve(1);
 
-        $this->assertTrue(yield $this->producer->advance());
-        $this->assertSame(1, $this->producer->getCurrent());
+        self::assertTrue(await($this->producer->advance()));
+        self::assertSame(1, $this->producer->getCurrent());
     }
 
     /**
@@ -129,7 +130,7 @@ class InternalProducerTest extends AsyncTestCase
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenComplete(): \Generator
+    public function testEmitPendingPromiseThenComplete(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("The iterator was completed before the promise result could be emitted");
@@ -141,13 +142,13 @@ class InternalProducerTest extends AsyncTestCase
         $this->producer->complete();
         $deferred->resolve();
 
-        yield $promise;
+        await($promise);
     }
 
     /**
      * @depends testEmit
      */
-    public function testEmitPendingPromiseThenFail(): \Generator
+    public function testEmitPendingPromiseThenFail(): void
     {
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("The iterator was completed before the promise result could be emitted");
@@ -159,7 +160,7 @@ class InternalProducerTest extends AsyncTestCase
         $this->producer->complete();
         $deferred->fail(new \Exception);
 
-        yield $promise;
+        await($promise);
     }
 
     public function testDoubleAdvance(): void

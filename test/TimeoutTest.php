@@ -2,14 +2,14 @@
 
 namespace Amp\Test;
 
-use Amp\Delayed;
 use Amp\Failure;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
 use Amp\TimeoutException;
+use function Amp\asyncValue;
 use function Amp\await;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 class TimeoutTest extends AsyncTestCase
 {
@@ -20,7 +20,7 @@ class TimeoutTest extends AsyncTestCase
         $promise = new Success($value);
 
         $promise = Promise\timeout($promise, 10);
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
 
         $callback = function ($exception, $value) use (&$result) {
             $result = $value;
@@ -28,7 +28,7 @@ class TimeoutTest extends AsyncTestCase
 
         $promise->onResolve($callback);
 
-        $this->assertSame($value, await($promise));
+        self::assertSame($value, await($promise));
     }
 
     public function testFailedPromise(): void
@@ -40,11 +40,11 @@ class TimeoutTest extends AsyncTestCase
         try {
             await(Promise\timeout($promise, 10));
         } catch (\Throwable $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
             return;
         }
 
-        $this->fail("Promise should have failed");
+        self::fail("Promise should have failed");
     }
 
     /**
@@ -54,9 +54,9 @@ class TimeoutTest extends AsyncTestCase
     {
         $value = 1;
 
-        $promise = new Delayed(10, $value);
+        $promise = asyncValue(10, $value);
 
-        $this->assertSame($value, await(Promise\timeout($promise, 20)));
+        self::assertSame($value, await(Promise\timeout($promise, 20)));
 
         delay(0); // Tick event loop to invoke onResolve callback to remove watcher.
     }
@@ -66,13 +66,13 @@ class TimeoutTest extends AsyncTestCase
      */
     public function testSlowPending(): void
     {
-        $promise = new Delayed(20);
+        $promise = asyncValue(20);
 
         try {
             await(Promise\timeout($promise, 10));
-            $this->fail("Promise did not fail");
+            self::fail("Promise did not fail");
         } catch (TimeoutException $reason) {
-            $this->assertNull(await($promise));
+            self::assertNull(await($promise));
         }
     }
 
@@ -84,10 +84,10 @@ class TimeoutTest extends AsyncTestCase
         $value = 0;
         $default = 1;
 
-        $promise = new Delayed(20, $value);
+        $promise = asyncValue(20, $value);
 
-        $this->assertSame($default, await(Promise\timeoutWithDefault($promise, 10, $default)));
+        self::assertSame($default, await(Promise\timeoutWithDefault($promise, 10, $default)));
 
-        $this->assertSame($value, await($promise));
+        self::assertSame($value, await($promise));
     }
 }

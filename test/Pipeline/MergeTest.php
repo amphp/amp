@@ -3,10 +3,10 @@
 namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
-use Amp\Delayed;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
+use function Amp\asyncValue;
 use function Amp\await;
 
 class MergeTest extends AsyncTestCase
@@ -35,7 +35,7 @@ class MergeTest extends AsyncTestCase
         $pipeline = Pipeline\merge($pipelines);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -45,8 +45,8 @@ class MergeTest extends AsyncTestCase
     public function testMergeWithDelayedYields(): void
     {
         $pipelines = [];
-        $values1 = [new Delayed(10, 1), new Delayed(50, 2), new Delayed(70, 3)];
-        $values2 = [new Delayed(20, 4), new Delayed(40, 5), new Delayed(60, 6)];
+        $values1 = [asyncValue(10, 1), asyncValue(50, 2), asyncValue(70, 3)];
+        $values2 = [asyncValue(20, 4), asyncValue(40, 5), asyncValue(60, 6)];
         $expected = [1, 4, 5, 2, 6, 3];
 
         $pipelines[] = new AsyncGenerator(function () use ($values1) {
@@ -64,7 +64,7 @@ class MergeTest extends AsyncTestCase
         $pipeline = Pipeline\merge($pipelines);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -83,9 +83,9 @@ class MergeTest extends AsyncTestCase
 
         try {
             await(Pipeline\discard($pipeline));
-            $this->fail("The exception used to fail the pipeline should be thrown from continue()");
+            self::fail("The exception used to fail the pipeline should be thrown from continue()");
         } catch (TestException $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
         } finally {
             await(Pipeline\discard($unused));
         }

@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use function Revolt\EventLoop\defer;
+
 final class CombinedCancellationToken implements CancellationToken
 {
     /** @var array{0: CancellationToken, 1: string}[] */

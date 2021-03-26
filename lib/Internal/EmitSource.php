@@ -5,12 +5,11 @@ namespace Amp\Internal;
 use Amp\Deferred;
 use Amp\DisposedException;
 use Amp\Failure;
-use Amp\Loop;
 use Amp\Pipeline;
 use Amp\Promise;
 use Amp\Success;
 use function Amp\await;
-use function Amp\defer;
+use function Revolt\EventLoop\defer;
 
 /**
  * Class used internally by {@see Pipeline} implementations. Do not use this class in your code, instead compose your
@@ -203,8 +202,8 @@ final class EmitSource
     }
 
     /**
-     * @param mixed $value
-     * @param int $position
+     * @param mixed        $value
+     * @param int          $position
      *
      * @psalm-param TValue $value
      *
@@ -421,7 +420,7 @@ final class EmitSource
 
         unset($this->waiting, $this->backPressure, $this->yielding);
 
-        $exception = isset($this->exception) ? $this->exception : null;
+        $exception = $this->exception ?? null;
 
         foreach ($backPressure as $deferred) {
             if ($exception) {

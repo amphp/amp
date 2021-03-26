@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use Revolt\EventLoop\Loop;
+
 /**
  * Creates a successful promise using the given value (which can be any value except an object implementing
  * `Amp\Promise`).
@@ -14,7 +16,7 @@ final class Success implements Promise
     private mixed $value;
 
     /**
-     * @param mixed $value Anything other than a Promise object.
+     * @param mixed        $value Anything other than a Promise object.
      *
      * @psalm-param TValue $value
      *
@@ -48,6 +50,6 @@ final class Success implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(fn() => $onResolved(null, $this->value));
+        Loop::defer(fn () => $onResolved(null, $this->value));
     }
 }

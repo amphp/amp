@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use Revolt\EventLoop\Loop;
+
 /**
  * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
  */

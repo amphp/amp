@@ -33,7 +33,7 @@ class ConcatTest extends AsyncTestCase
         $pipeline = Pipeline\concat($pipelines);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -57,15 +57,15 @@ class ConcatTest extends AsyncTestCase
 
         try {
             while (null !== $value = $pipeline->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
+                self::assertSame(\array_shift($expected), $value);
             }
 
-            $this->fail("The exception used to fail the pipeline should be thrown from continue()");
+            self::fail("The exception used to fail the pipeline should be thrown from continue()");
         } catch (TestException $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
         }
 
-        $this->assertEmpty($expected);
+        self::assertEmpty($expected);
     }
 
     public function testNonPipeline(): void

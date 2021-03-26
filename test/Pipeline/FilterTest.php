@@ -40,10 +40,10 @@ class FilterTest extends AsyncTestCase
         });
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
 
-        $this->assertSame(3, $count);
+        self::assertSame(3, $count);
     }
 
     /**

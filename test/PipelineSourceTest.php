@@ -9,8 +9,8 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\async;
 use function Amp\await;
-use function Amp\defer;
-use function Amp\delay;
+use function Revolt\EventLoop\defer;
+use function Revolt\EventLoop\delay;
 
 class PipelineSourceTest extends AsyncTestCase
 {
@@ -30,34 +30,35 @@ class PipelineSourceTest extends AsyncTestCase
         $promise = $this->source->emit($value);
         $pipeline = $this->source->pipe();
 
-        $this->assertSame($value, $pipeline->continue());
+        self::assertSame($value, $pipeline->continue());
 
-        $continue = async(fn () => $pipeline->continue()); // Promise will not resolve until another value is emitted or pipeline completed.
+        $continue = async(fn (
+        ) => $pipeline->continue()); // Promise will not resolve until another value is emitted or pipeline completed.
 
-        $this->assertInstanceOf(Promise::class, $promise);
-        $this->assertNull(await($promise));
+        self::assertInstanceOf(Promise::class, $promise);
+        self::assertNull(await($promise));
 
-        $this->assertFalse($this->source->isComplete());
+        self::assertFalse($this->source->isComplete());
 
         $this->source->complete();
 
-        $this->assertTrue($this->source->isComplete());
+        self::assertTrue($this->source->isComplete());
 
-        $this->assertNull(await($continue));
+        self::assertNull(await($continue));
     }
 
     public function testFail(): void
     {
-        $this->assertFalse($this->source->isComplete());
+        self::assertFalse($this->source->isComplete());
         $this->source->fail($exception = new \Exception);
-        $this->assertTrue($this->source->isComplete());
+        self::assertTrue($this->source->isComplete());
 
         $pipeline = $this->source->pipe();
 
         try {
             $pipeline->continue();
         } catch (\Exception $caught) {
-            $this->assertSame($exception, $caught);
+            self::assertSame($exception, $caught);
         }
     }
 
@@ -133,11 +134,11 @@ class PipelineSourceTest extends AsyncTestCase
 
         $backPressure = $this->source->emit($value);
 
-        $this->assertSame($value, await($promise));
+        self::assertSame($value, await($promise));
 
         $promise = async(fn () => $pipeline->continue());
 
-        $this->assertNull(await($backPressure));
+        self::assertNull(await($backPressure));
 
         $this->source->complete();
     }
@@ -148,7 +149,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         $this->source->complete();
 
-        $this->assertNull($pipeline->continue());
+        self::assertNull($pipeline->continue());
     }
 
     public function testContinueAfterFail(): void
@@ -163,17 +164,16 @@ class PipelineSourceTest extends AsyncTestCase
         $pipeline->continue();
     }
 
-
     public function testCompleteAfterContinue(): void
     {
         $pipeline = $this->source->pipe();
 
         $promise = async(fn () => $pipeline->continue());
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
 
         $this->source->complete();
 
-        $this->assertNull(await($promise));
+        self::assertNull(await($promise));
     }
 
     public function testDestroyingPipelineRelievesBackPressure(): void
@@ -190,13 +190,13 @@ class PipelineSourceTest extends AsyncTestCase
             $promise->onResolve($onResolved);
         }
 
-        $this->assertSame(0, $invoked);
+        self::assertSame(0, $invoked);
 
         unset($pipeline); // Should relieve all back-pressure.
 
         delay(5); // Tick event loop to invoke promise callbacks.
 
-        $this->assertSame(5, $invoked);
+        self::assertSame(5, $invoked);
 
         $this->source->complete(); // Should not throw.
 
@@ -213,14 +213,14 @@ class PipelineSourceTest extends AsyncTestCase
             $invoked = true;
         });
 
-        $this->assertFalse($invoked);
+        self::assertFalse($invoked);
 
         $pipeline = $this->source->pipe();
         $pipeline->dispose();
 
         delay(0);
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
 
         $this->source->onDisposal($this->createCallback(1));
     }
@@ -232,14 +232,14 @@ class PipelineSourceTest extends AsyncTestCase
             $invoked = true;
         });
 
-        $this->assertFalse($invoked);
+        self::assertFalse($invoked);
 
         $this->source->complete();
 
         $pipeline = $this->source->pipe();
         $pipeline->dispose();
 
-        $this->assertFalse($invoked);
+        self::assertFalse($invoked);
 
         $this->source->onDisposal($this->createCallback(0));
 
@@ -252,7 +252,7 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         $pipeline->dispose();
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertTrue($this->source->isDisposed());
+        self::assertTrue($this->source->isDisposed());
 
         $this->expectException(DisposedException::class);
 
@@ -265,7 +265,7 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertTrue($this->source->isDisposed());
+        self::assertTrue($this->source->isDisposed());
 
         $this->expectException(DisposedException::class);
 
@@ -278,7 +278,7 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertTrue($this->source->isDisposed());
+        self::assertTrue($this->source->isDisposed());
 
         delay(10);
 
@@ -294,11 +294,11 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertFalse($this->source->isDisposed());
+        self::assertFalse($this->source->isDisposed());
         $this->source->emit(1);
-        $this->assertSame(1, await($promise));
+        self::assertSame(1, await($promise));
 
-        $this->assertTrue($this->source->isDisposed());
+        self::assertTrue($this->source->isDisposed());
 
         $this->expectException(DisposedException::class);
 
@@ -312,11 +312,11 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         $pipeline->dispose();
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertTrue($this->source->isDisposed());
+        self::assertTrue($this->source->isDisposed());
 
         $this->expectException(DisposedException::class);
 
-        $this->assertSame(1, await($promise));
+        self::assertSame(1, await($promise));
     }
 
     public function testEmitAfterDestruct(): void
@@ -328,8 +328,8 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline);
         $this->source->onDisposal($this->createCallback(1));
-        $this->assertTrue($this->source->isDisposed());
-        $this->assertNull(await($promise));
+        self::assertTrue($this->source->isDisposed());
+        self::assertNull(await($promise));
         await($this->source->emit(1));
     }
 
@@ -363,6 +363,6 @@ class PipelineSourceTest extends AsyncTestCase
             $values[] = $value;
         }
 
-        $this->assertSame([1, 2, 3], $values);
+        self::assertSame([1, 2, 3], $values);
     }
 }

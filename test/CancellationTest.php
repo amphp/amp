@@ -5,29 +5,14 @@ namespace Amp\Test;
 use Amp\AsyncGenerator;
 use Amp\CancellationToken;
 use Amp\CancellationTokenSource;
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
-use function Amp\delay;
+use Revolt\EventLoop\Loop;
+use function Revolt\EventLoop\delay;
 
 class CancellationTest extends AsyncTestCase
 {
-    private function createAsyncIterator(CancellationToken $cancellationToken): Pipeline
-    {
-        return new AsyncGenerator(function () use ($cancellationToken): \Generator {
-            $running = true;
-            $cancellationToken->subscribe(function () use (&$running): void {
-                $running = false;
-            });
-
-            $i = 0;
-            while ($running) {
-                yield $i++;
-            }
-        });
-    }
-
     public function testCancellationCancelsIterator(): void
     {
         $cancellationSource = new CancellationTokenSource;
@@ -39,14 +24,14 @@ class CancellationTest extends AsyncTestCase
         while (null !== $current = $pipeline->continue()) {
             $count++;
 
-            $this->assertIsInt($current);
+            self::assertIsInt($current);
 
             if ($current === 3) {
                 $cancellationSource->cancel();
             }
         }
 
-        $this->assertSame(4, $count);
+        self::assertSame(4, $count);
     }
 
     public function testUnsubscribeWorks(): void
@@ -79,9 +64,9 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource->cancel();
 
-        delay(1); // Tick event loop to invoke callbacks.
+        delay(10); // Tick event loop to invoke callbacks.
 
-        $this->assertInstanceOf(TestException::class, $reason);
+        self::assertInstanceOf(TestException::class, $reason);
     }
 
     public function testDoubleCancelOnlyInvokesOnce(): void
@@ -98,5 +83,20 @@ class CancellationTest extends AsyncTestCase
         $cancellationSource = new CancellationTokenSource;
         $cancellationSource->cancel();
         $cancellationSource->getToken()->subscribe($this->createCallback(1));
+    }
+
+    private function createAsyncIterator(CancellationToken $cancellationToken): Pipeline
+    {
+        return new AsyncGenerator(function () use ($cancellationToken): \Generator {
+            $running = true;
+            $cancellationToken->subscribe(function () use (&$running): void {
+                $running = false;
+            });
+
+            $i = 0;
+            while ($running) {
+                yield $i++;
+            }
+        });
     }
 }

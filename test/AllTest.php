@@ -2,35 +2,35 @@
 
 namespace Amp\Test;
 
-use Amp\Delayed;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\asyncValue;
 use function Amp\await;
 
 class AllTest extends AsyncTestCase
 {
     public function testEmptyArray(): void
     {
-        $this->assertSame([], await(Promise\all([])));
+        self::assertSame([], await(Promise\all([])));
     }
 
     public function testSuccessfulPromisesArray(): void
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $this->assertSame([1, 2, 3], await(Promise\all($promises)));
+        self::assertSame([1, 2, 3], await(Promise\all($promises)));
     }
 
     public function testPendingPromiseArray(): void
     {
         $promises = [
-            new Delayed(20, 1),
-            new Delayed(30, 2),
-            new Delayed(10, 3),
+            asyncValue(20, 1),
+            asyncValue(30, 2),
+            asyncValue(10, 3),
         ];
 
-        $this->assertSame([1, 2, 3], await(Promise\all($promises)));
+        self::assertSame([1, 2, 3], await(Promise\all($promises)));
     }
 
     public function testArrayKeysPreserved(): void
@@ -38,12 +38,12 @@ class AllTest extends AsyncTestCase
         $expected = ['one' => 1, 'two' => 2, 'three' => 3];
 
         $promises = [
-            'one' => new Delayed(20, 1),
-            'two' => new Delayed(30, 2),
-            'three' => new Delayed(10, 3),
+            'one' => asyncValue(20, 1),
+            'two' => asyncValue(30, 2),
+            'three' => asyncValue(10, 3),
         ];
 
-        $this->assertEquals($expected, await(Promise\all($promises)));
+        self::assertEquals($expected, await(Promise\all($promises)));
     }
 
     public function testNonPromise(): void

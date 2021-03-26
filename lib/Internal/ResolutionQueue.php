@@ -2,8 +2,8 @@
 
 namespace Amp\Internal;
 
-use Amp\Loop;
 use Amp\Promise;
+use Revolt\EventLoop\Loop;
 
 /**
  * Stores a set of functions to be invoked when a promise is resolved.
@@ -71,7 +71,7 @@ final class ResolutionQueue
                     Promise\rethrow($result);
                 }
             } catch (\Throwable $exception) {
-                Loop::defer(static fn() => throw $exception);
+                Loop::defer(static fn () => throw $exception);
             }
         }
     }

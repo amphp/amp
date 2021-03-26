@@ -42,20 +42,20 @@ class AdaptTest extends AsyncTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mock->expects($this->once())
+        $mock->expects(self::once())
             ->method("then")
             ->with(
-                $this->callback(function ($resolve) {
+                self::callback(function ($resolve) {
                     return \is_callable($resolve);
                 }),
-                $this->callback(function ($reject) {
+                self::callback(function ($reject) {
                     return \is_callable($reject);
                 })
             );
 
         $promise = Promise\adapt($mock);
 
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
@@ -69,7 +69,7 @@ class AdaptTest extends AsyncTestCase
 
         $promise = Promise\adapt($promise);
 
-        $this->assertSame($value, await($promise));
+        self::assertSame($value, await($promise));
     }
 
     /**
@@ -86,10 +86,10 @@ class AdaptTest extends AsyncTestCase
         try {
             await($promise);
         } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
             return;
         }
 
-        $this->fail("Promise was not failed");
+        self::fail("Promise was not failed");
     }
 }

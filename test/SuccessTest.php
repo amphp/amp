@@ -2,12 +2,12 @@
 
 namespace Amp\Test;
 
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use Revolt\EventLoop\Loop;
 use function Amp\await;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 class SuccessTest extends AsyncTestCase
 {
@@ -24,7 +24,7 @@ class SuccessTest extends AsyncTestCase
 
         $success = new Success($value);
 
-        $this->assertSame($value, await($success));
+        self::assertSame($value, await($success));
     }
 
     /**
@@ -50,6 +50,6 @@ class SuccessTest extends AsyncTestCase
 
         delay(0); // Tick event loop to execute onResolve callback.
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 }

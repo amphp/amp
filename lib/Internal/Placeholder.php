@@ -3,12 +3,12 @@
 namespace Amp\Internal;
 
 use Amp\Failure;
-use Amp\Loop;
 use Amp\Promise;
+use Revolt\EventLoop\Loop;
 
 /**
  * Class used by Promise implementations. Do not use this trait in your code, instead compose your class from one of
- * the available classes implementing {@see Promise}
+ * the available classes implementing {@see Promise}.
  *
  * @internal
  */
@@ -36,7 +36,7 @@ final class Placeholder
                 return;
             }
 
-            Loop::defer(fn() => $onResolved(null, $this->result));
+            Loop::defer(fn () => $onResolved(null, $this->result));
             return;
         }
 
@@ -59,7 +59,7 @@ final class Placeholder
         try {
             $this->result = null;
         } catch (\Throwable $exception) {
-            Loop::defer(static fn() => throw $exception);
+            Loop::defer(static fn () => throw $exception);
         }
     }
 
@@ -118,8 +118,7 @@ final class Placeholder
             return;
         }
 
-        Loop::defer(fn() => $onResolved(null, $this->result));
-
+        Loop::defer(fn () => $onResolved(null, $this->result));
     }
 
     /**

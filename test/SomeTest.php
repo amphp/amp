@@ -2,19 +2,19 @@
 
 namespace Amp\Test;
 
-use Amp\Delayed;
 use Amp\Failure;
 use Amp\MultiReasonException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\asyncValue;
 use function Amp\await;
 
 class SomeTest extends AsyncTestCase
 {
     public function testEmptyArray()
     {
-        $this->assertSame([[], []], Promise\wait(Promise\some([], 0)));
+        self::assertSame([[], []], await(Promise\some([], 0)));
     }
 
     public function testEmptyArrayWithNonZeroRequired(): void
@@ -37,7 +37,7 @@ class SomeTest extends AsyncTestCase
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $this->assertSame([[], [1, 2, 3]], await(Promise\some($promises)));
+        self::assertSame([[], [1, 2, 3]], await(Promise\some($promises)));
     }
 
     public function testFailedPromisesArray(): void
@@ -48,11 +48,11 @@ class SomeTest extends AsyncTestCase
         try {
             await(Promise\some($promises));
         } catch (MultiReasonException $reason) {
-            $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+            self::assertSame([$exception, $exception, $exception], $reason->getReasons());
             return;
         }
 
-        $this->fail("Promise should have failed");
+        self::fail("Promise should have failed");
     }
 
     public function testSuccessfulAndFailedPromisesArray(): void
@@ -60,18 +60,18 @@ class SomeTest extends AsyncTestCase
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
-        $this->assertSame([[0 => $exception, 1 => $exception], [2 => 3]], await(Promise\some($promises)));
+        self::assertSame([[0 => $exception, 1 => $exception], [2 => 3]], await(Promise\some($promises)));
     }
 
     public function testPendingPromiseArray(): void
     {
         $promises = [
-            new Delayed(20, 1),
-            new Delayed(30, 2),
-            new Delayed(10, 3),
+            asyncValue(20, 1),
+            asyncValue(30, 2),
+            asyncValue(10, 3),
         ];
 
-        $this->assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], await(Promise\some($promises)));
+        self::assertEquals([[], [0 => 1, 1 => 2, 2 => 3]], await(Promise\some($promises)));
     }
 
     public function testArrayKeysPreserved(): void
@@ -79,13 +79,12 @@ class SomeTest extends AsyncTestCase
         $expected = [[], ['one' => 1, 'two' => 2, 'three' => 3]];
 
         $promises = [
-            'one' => new Delayed(20, 1),
-            'two' => new Delayed(30, 2),
-            'three' => new Delayed(10, 3),
+            'one' => asyncValue(20, 1),
+            'two' => asyncValue(30, 2),
+            'three' => asyncValue(10, 3),
         ];
 
-
-        $this->assertEquals($expected, await(Promise\some($promises)));
+        self::assertEquals($expected, await(Promise\some($promises)));
     }
 
     public function testNonPromise(): void

@@ -3,10 +3,10 @@
 namespace Amp\Test;
 
 use Amp\Internal\Placeholder;
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function Amp\delay;
+use Revolt\EventLoop\Loop;
+use function Revolt\EventLoop\delay;
 
 class InternalPlaceholderTest extends AsyncTestCase
 {
@@ -35,8 +35,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
@@ -60,8 +60,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
@@ -83,8 +83,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
@@ -108,8 +108,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($value, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($value, $result);
     }
 
     /**
@@ -159,7 +159,7 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
     public function testOnResolveOnFail()
@@ -178,8 +178,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
@@ -203,8 +203,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
@@ -226,8 +226,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(1, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
@@ -251,8 +251,8 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(3, $invoked);
-        $this->assertSame($exception, $result);
+        self::assertSame(3, $invoked);
+        self::assertSame($exception, $result);
     }
 
     /**
@@ -278,7 +278,7 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
     /**
@@ -304,16 +304,16 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke callbacks.
 
-        $this->assertSame(1, $invoked);
+        self::assertSame(1, $invoked);
     }
 
     public function testResolveWithPromiseBeforeOnResolve()
     {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $promise->expects($this->once())
+        $promise->expects(self::once())
             ->method("onResolve")
-            ->with($this->callback("is_callable"));
+            ->with(self::callback("is_callable"));
 
         $this->placeholder->resolve($promise);
 
@@ -327,9 +327,9 @@ class InternalPlaceholderTest extends AsyncTestCase
     {
         $promise = $this->getMockBuilder(Promise::class)->getMock();
 
-        $promise->expects($this->once())
+        $promise->expects(self::once())
             ->method("onResolve")
-            ->with($this->callback("is_callable"));
+            ->with(self::callback("is_callable"));
 
         $this->placeholder->onResolve(function () {
         });
@@ -362,7 +362,7 @@ class InternalPlaceholderTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke error callback.
 
-        $this->assertInstanceOf(\Error::class, $reason);
-        $this->assertStringContainsString("Promise has already been resolved", $reason->getMessage());
+        self::assertInstanceOf(\Error::class, $reason);
+        self::assertStringContainsString("Promise has already been resolved", $reason->getMessage());
     }
 }

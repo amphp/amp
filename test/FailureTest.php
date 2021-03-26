@@ -17,10 +17,10 @@ class FailureTest extends AsyncTestCase
         try {
             await($failure);
         } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
             return;
         }
 
-        $this->fail("Promise was not failed");
+        self::fail("Promise was not failed");
     }
 }

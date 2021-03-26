@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use function Revolt\EventLoop\defer;
+
 /**
  * A cancellation token source provides a mechanism to cancel operations.
  *

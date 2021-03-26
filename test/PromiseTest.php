@@ -3,10 +3,10 @@
 namespace Amp\Test;
 
 use Amp\Deferred;
-use Amp\Loop;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function Amp\delay;
+use Revolt\EventLoop\Loop;
+use function Revolt\EventLoop\delay;
 
 class PromiseTest extends AsyncTestCase
 {
@@ -47,14 +47,14 @@ class PromiseTest extends AsyncTestCase
 
     public function testPromiseImplementsPromise(): void
     {
-        list($promise) = $this->promise();
-        $this->assertInstanceOf(Promise::class, $promise);
+        [$promise] = $this->promise();
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /** @dataProvider provideSuccessValues */
     public function testPromiseSucceed(mixed $value): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
             $this->assertNull($e);
             $this->assertSame($value, $v);
@@ -65,13 +65,13 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /** @dataProvider provideSuccessValues */
     public function testOnResolveOnSucceededPromise(mixed $value): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $succeeder($value);
         $promise->onResolve(function ($e, $v) use (&$invoked, $value) {
             $this->assertNull($e);
@@ -81,12 +81,12 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     public function testSuccessAllOnResolvesExecuted(): void
     {
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $invoked = 0;
 
         $promise->onResolve(function ($e, $v) use (&$invoked) {
@@ -115,12 +115,12 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
     public function testPromiseExceptionFailure(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "RuntimeException");
             $invoked = true;
@@ -129,12 +129,12 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     public function testOnResolveOnExceptionFailedPromise(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $failer(new \RuntimeException);
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "RuntimeException");
@@ -143,12 +143,12 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     public function testFailureAllOnResolvesExecuted(): void
     {
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $invoked = 0;
 
         $promise->onResolve(function ($e) use (&$invoked) {
@@ -173,16 +173,16 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
     public function testPromiseErrorFailure(): void
     {
         if (PHP_VERSION_ID < 70000) {
-            $this->markTestSkipped("Error only exists on PHP 7+");
+            self::markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "Error");
             $invoked = true;
@@ -191,16 +191,16 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     public function testOnResolveOnErrorFailedPromise(): void
     {
         if (PHP_VERSION_ID < 70000) {
-            $this->markTestSkipped("Error only exists on PHP 7+");
+            self::markTestSkipped("Error only exists on PHP 7+");
         }
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $failer(new \Error);
         $promise->onResolve(function ($e) use (&$invoked) {
             $this->assertSame(\get_class($e), "Error");
@@ -209,23 +209,21 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 
     /** Implementations MAY fail upon resolution with a Promise, but they definitely MUST NOT return a Promise */
     public function testPromiseResolutionWithPromise(): void
     {
-        list($success, $succeeder) = $this->promise();
+        [$success, $succeeder] = $this->promise();
         $succeeder(true);
 
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
 
         $ex = false;
         try {
             $succeeder($success);
         } catch (\Throwable $e) {
-            $ex = true;
-        } catch (\Exception $e) {
             $ex = true;
         }
         if (!$ex) {
@@ -236,7 +234,7 @@ class PromiseTest extends AsyncTestCase
 
             delay(0); // Tick event loop to invoke onResolve callback.
 
-            $this->assertTrue($invoked);
+            self::assertTrue($invoked);
         }
     }
 
@@ -248,7 +246,7 @@ class PromiseTest extends AsyncTestCase
             $invoked++;
         });
 
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $succeeder(true);
         $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
             $this->assertNull($e);
@@ -258,7 +256,7 @@ class PromiseTest extends AsyncTestCase
             throw new \Exception;
         });
 
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
             $this->assertNull($e);
             $this->assertTrue($v);
@@ -270,7 +268,7 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
     public function testThrowingInCallbackContinuesOtherOnResolves(): void
@@ -281,7 +279,7 @@ class PromiseTest extends AsyncTestCase
             $invoked++;
         });
 
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
         $promise->onResolve(function ($e, $v) use (&$invoked, $promise) {
             $this->assertNull($e);
             $this->assertTrue($v);
@@ -298,7 +296,7 @@ class PromiseTest extends AsyncTestCase
 
         delay(5); // Tick event loop a few times to invoke onResolve callback.
 
-        $this->assertSame(3, $invoked);
+        self::assertSame(3, $invoked);
     }
 
     public function testThrowingInCallbackOnFailure(): void
@@ -308,7 +306,7 @@ class PromiseTest extends AsyncTestCase
             $invoked++;
         });
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $exception = new \Exception;
         $failer($exception);
         $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
@@ -319,7 +317,7 @@ class PromiseTest extends AsyncTestCase
             throw $e;
         });
 
-        list($promise, , $failer) = $this->promise();
+        [$promise, , $failer] = $this->promise();
         $exception = new \Exception;
         $promise->onResolve(function ($e, $v) use (&$invoked, $exception) {
             $this->assertSame($exception, $e);
@@ -332,13 +330,13 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertSame(4, $invoked);
+        self::assertSame(4, $invoked);
     }
 
     public function testWeakTypes(): void
     {
         $invoked = 0;
-        list($promise, $succeeder) = $this->promise();
+        [$promise, $succeeder] = $this->promise();
 
         $expectedData = "15.24";
 
@@ -354,7 +352,7 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertSame(2, $invoked);
+        self::assertSame(2, $invoked);
     }
 
     public function testResolvedQueueUnrolling(): void
@@ -394,6 +392,6 @@ class PromiseTest extends AsyncTestCase
 
         delay(0); // Tick event loop to invoke onResolve callback.
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
     }
 }

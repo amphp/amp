@@ -9,7 +9,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use function Amp\async;
 use function Amp\await;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 class AsyncGeneratorTest extends AsyncTestCase
 {
@@ -32,8 +32,8 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield $value;
         });
 
-        $this->assertSame($value, $generator->continue());
-        $this->assertNull($generator->continue());
+        self::assertSame($value, $generator->continue());
+        self::assertNull($generator->continue());
     }
 
     public function testSend(): void
@@ -44,9 +44,9 @@ class AsyncGeneratorTest extends AsyncTestCase
             $result = yield $value;
         });
 
-        $this->assertSame($value, $generator->continue());
-        $this->assertNull($generator->send($send));
-        $this->assertSame($result, $send);
+        self::assertSame($value, $generator->continue());
+        self::assertNull($generator->send($send));
+        self::assertSame($result, $send);
     }
 
     public function testSendBeforeYield(): void
@@ -61,9 +61,9 @@ class AsyncGeneratorTest extends AsyncTestCase
         $promise1 = async(fn () => $generator->continue());
         $promise2 = async(fn () => $generator->send($send));
 
-        $this->assertSame($value, await($promise1));
-        $this->assertNull(await($promise2));
-        $this->assertSame($result, $send);
+        self::assertSame($value, await($promise1));
+        self::assertNull(await($promise2));
+        self::assertSame($result, $send);
     }
 
     public function testThrow(): void
@@ -81,9 +81,9 @@ class AsyncGeneratorTest extends AsyncTestCase
         $promise1 = async(fn () => $generator->continue());
         $promise2 = async(fn () => $generator->throw($exception));
 
-        $this->assertSame($value, await($promise1));
-        $this->assertNull(await($promise2));
-        $this->assertSame($result, $exception);
+        self::assertSame($value, await($promise1));
+        self::assertNull(await($promise2));
+        self::assertSame($result, $exception);
     }
 
     public function testThrowBeforeYield(): void
@@ -99,9 +99,9 @@ class AsyncGeneratorTest extends AsyncTestCase
             }
         });
 
-        $this->assertSame($value, $generator->continue());
-        $this->assertNull($generator->throw($exception));
-        $this->assertSame($result, $exception);
+        self::assertSame($value, $generator->continue());
+        self::assertNull($generator->throw($exception));
+        self::assertSame($result, $exception);
     }
 
     public function testInitialSend(): void
@@ -136,9 +136,9 @@ class AsyncGeneratorTest extends AsyncTestCase
             return $value;
         });
 
-        $this->assertSame(0, $generator->continue());
-        $this->assertNull($generator->continue());
-        $this->assertSame($value, $generator->getReturn());
+        self::assertSame(0, $generator->continue());
+        self::assertNull($generator->continue());
+        self::assertSame($value, $generator->getReturn());
     }
 
     /**
@@ -157,9 +157,9 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         try {
             $generator->continue();
-            $this->fail("Awaiting a failed promise should fail the pipeline");
+            self::fail("Awaiting a failed promise should fail the pipeline");
         } catch (TestException $reason) {
-            $this->assertSame($reason, $exception);
+            self::assertSame($reason, $exception);
         }
     }
 
@@ -186,8 +186,8 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         $expected = \implode('', \range(0, $yields - 1));
 
-        $this->assertSame($expected, $output);
-        $this->assertGreaterThan(self::TIMEOUT * ($yields - 1), $time * 1000);
+        self::assertSame($expected, $output);
+        self::assertGreaterThan(self::TIMEOUT * ($yields - 1), $time * 1000);
     }
 
     /**
@@ -203,10 +203,12 @@ class AsyncGeneratorTest extends AsyncTestCase
                 throw $exception;
             });
 
-            while ($generator->continue());
-            $this->fail("The exception thrown from the generator should fail the pipeline");
+            while ($generator->continue()) {
+                ;
+            }
+            self::fail("The exception thrown from the generator should fail the pipeline");
         } catch (TestException $caught) {
-            $this->assertSame($exception, $caught);
+            self::assertSame($exception, $caught);
         }
     }
 
@@ -223,17 +225,17 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         $promise = async(static fn () => $generator->getReturn());
 
-        $this->assertSame(0, $generator->continue());
+        self::assertSame(0, $generator->continue());
 
-        $this->assertFalse($invoked);
+        self::assertFalse($invoked);
 
         $generator->dispose();
 
         try {
-            $this->assertSame(1, await($promise));
-            $this->fail("Pipeline should have been disposed");
+            self::assertSame(1, await($promise));
+            self::fail("Pipeline should have been disposed");
         } catch (DisposedException $exception) {
-            $this->assertTrue($invoked);
+            self::assertTrue($invoked);
         }
     }
 
@@ -267,10 +269,10 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield 0;
         });
 
-        $this->assertTrue($invoked);
+        self::assertTrue($invoked);
 
-        $this->assertSame(0, $generator->continue());
-        $this->assertNull($generator->continue());
+        self::assertSame(0, $generator->continue());
+        self::assertNull($generator->continue());
     }
 
     public function testTraversable(): void
@@ -287,6 +289,6 @@ class AsyncGeneratorTest extends AsyncTestCase
             $values[] = $value;
         }
 
-        $this->assertSame([1, 2, 3], $values);
+        self::assertSame([1, 2, 3], $values);
     }
 }

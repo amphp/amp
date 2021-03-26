@@ -5,7 +5,7 @@ namespace Amp\Test;
 use Amp\Deferred;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 class DeferredTest extends AsyncTestCase
 {
@@ -21,7 +21,7 @@ class DeferredTest extends AsyncTestCase
     public function testGetPromise(): void
     {
         $promise = $this->deferred->promise();
-        $this->assertInstanceOf(Promise::class, $promise);
+        self::assertInstanceOf(Promise::class, $promise);
     }
 
     /**
@@ -32,7 +32,7 @@ class DeferredTest extends AsyncTestCase
         $value = "Resolution value";
         $promise = $this->deferred->promise();
 
-        $this->assertFalse($this->deferred->isResolved());
+        self::assertFalse($this->deferred->isResolved());
 
         $invoked = false;
         $promise->onResolve(function ($exception, $value) use (&$invoked, &$result) {
@@ -42,13 +42,13 @@ class DeferredTest extends AsyncTestCase
 
         $this->deferred->resolve($value);
 
-        $this->assertFalse($invoked); // Resolution should be async.
+        self::assertFalse($invoked); // Resolution should be async.
 
         delay(0); // Force loop to tick once.
 
-        $this->assertTrue($this->deferred->isResolved());
-        $this->assertTrue($invoked);
-        $this->assertSame($value, $result);
+        self::assertTrue($this->deferred->isResolved());
+        self::assertTrue($invoked);
+        self::assertSame($value, $result);
     }
 
     /**
@@ -67,11 +67,11 @@ class DeferredTest extends AsyncTestCase
 
         $this->deferred->fail($exception);
 
-        $this->assertFalse($invoked); // Resolution should be async.
+        self::assertFalse($invoked); // Resolution should be async.
 
         delay(0); // Force loop to tick once.
 
-        $this->assertTrue($invoked);
-        $this->assertSame($exception, $result);
+        self::assertTrue($invoked);
+        self::assertSame($exception, $result);
     }
 }

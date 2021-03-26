@@ -2,12 +2,12 @@
 
 namespace Amp\Test;
 
-use Amp\Delayed;
 use Amp\Failure;
 use Amp\LazyPromise;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\asyncValue;
 use function Amp\await;
 
 class LazyPromiseTest extends AsyncTestCase
@@ -18,7 +18,7 @@ class LazyPromiseTest extends AsyncTestCase
         $lazy = new LazyPromise(function () use (&$invoked) {
             $invoked = true;
         });
-        $this->assertFalse($invoked);
+        self::assertFalse($invoked);
     }
 
     public function testPromisorReturningScalar(): void
@@ -30,8 +30,8 @@ class LazyPromiseTest extends AsyncTestCase
             return $value;
         });
 
-        $this->assertSame($value, await($lazy));
-        $this->assertTrue($invoked);
+        self::assertSame($value, await($lazy));
+        self::assertTrue($invoked);
     }
 
     public function testPromisorReturningSuccessfulPromise(): void
@@ -40,7 +40,7 @@ class LazyPromiseTest extends AsyncTestCase
         $promise = new Success($value);
         $lazy = new LazyPromise(static fn (): Promise => $promise);
 
-        $this->assertSame($value, await($lazy));
+        self::assertSame($value, await($lazy));
     }
 
     public function testPromisorReturningFailedPromise(): void
@@ -52,11 +52,11 @@ class LazyPromiseTest extends AsyncTestCase
         try {
             await($lazy);
         } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
             return;
         }
 
-        $this->fail("Promise was not failed");
+        self::fail("Promise was not failed");
     }
 
     public function testPromisorThrowingException(): void
@@ -69,18 +69,18 @@ class LazyPromiseTest extends AsyncTestCase
         try {
             await($lazy);
         } catch (\Exception $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
             return;
         }
 
-        $this->fail("Promise was not failed");
+        self::fail("Promise was not failed");
     }
 
     public function testPromisorCallingAwait(): void
     {
         $value = 1;
-        $lazy = new LazyPromise(static fn (): int => await(new Delayed(100, $value)));
+        $lazy = new LazyPromise(static fn (): int => await(asyncValue(100, $value)));
 
-        $this->assertSame($value, await($lazy));
+        self::assertSame($value, await($lazy));
     }
 }

@@ -2,12 +2,12 @@
 
 namespace Amp\Test;
 
-use Amp\Delayed;
 use Amp\Failure;
 use Amp\MultiReasonException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\asyncValue;
 use function Amp\await;
 
 class FirstTest extends AsyncTestCase
@@ -24,7 +24,7 @@ class FirstTest extends AsyncTestCase
     {
         $promises = [new Success(1), new Success(2), new Success(3)];
 
-        $this->assertSame(1, await(Promise\first($promises)));
+        self::assertSame(1, await(Promise\first($promises)));
     }
 
     public function testFailedPromisesArray(): void
@@ -35,11 +35,11 @@ class FirstTest extends AsyncTestCase
         try {
             await(Promise\first($promises));
         } catch (MultiReasonException $reason) {
-            $this->assertSame([$exception, $exception, $exception], $reason->getReasons());
+            self::assertSame([$exception, $exception, $exception], $reason->getReasons());
             return;
         }
 
-        $this->fail("Promise was not failed");
+        self::fail("Promise was not failed");
     }
 
     public function testMixedPromisesArray(): void
@@ -47,18 +47,18 @@ class FirstTest extends AsyncTestCase
         $exception = new \Exception;
         $promises = [new Failure($exception), new Failure($exception), new Success(3)];
 
-        $this->assertSame(3, await(Promise\first($promises)));
+        self::assertSame(3, await(Promise\first($promises)));
     }
 
     public function testPendingPromiseArray(): void
     {
         $promises = [
-            new Delayed(20, 1),
-            new Delayed(30, 2),
-            new Delayed(10, 3),
+            asyncValue(20, 1),
+            asyncValue(30, 2),
+            asyncValue(10, 3),
         ];
 
-        $this->assertSame(3, await(Promise\first($promises)));
+        self::assertSame(3, await(Promise\first($promises)));
 
         await(Promise\all($promises)); // Clear event loop.
     }

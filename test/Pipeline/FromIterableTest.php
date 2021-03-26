@@ -2,13 +2,13 @@
 
 namespace Amp\Test\Pipeline;
 
-use Amp\Delayed;
 use Amp\Failure;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\Success;
-use function Amp\delay;
+use function Amp\asyncValue;
+use function Revolt\EventLoop\delay;
 
 class FromIterableTest extends AsyncTestCase
 {
@@ -20,7 +20,7 @@ class FromIterableTest extends AsyncTestCase
         $pipeline = Pipeline\fromIterable([new Success(1), new Success(2), new Success(3)]);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -42,28 +42,28 @@ class FromIterableTest extends AsyncTestCase
 
         try {
             while (null !== $value = $pipeline->continue()) {
-                $this->assertSame(\array_shift($expected), $value);
+                self::assertSame(\array_shift($expected), $value);
             }
-            $this->fail("A failed promise in the iterable should fail the pipeline and be thrown from continue()");
+            self::fail("A failed promise in the iterable should fail the pipeline and be thrown from continue()");
         } catch (TestException $reason) {
-            $this->assertSame($exception, $reason);
+            self::assertSame($exception, $reason);
         }
 
-        $this->assertEmpty($expected);
+        self::assertEmpty($expected);
     }
 
     public function testPendingPromises(): void
     {
         $expected = \range(1, 4);
         $pipeline = Pipeline\fromIterable([
-            new Delayed(30, 1),
-            new Delayed(10, 2),
-            new Delayed(20, 3),
+            asyncValue(30, 1),
+            asyncValue(10, 2),
+            asyncValue(20, 3),
             new Success(4),
         ]);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
     }
 
@@ -79,10 +79,10 @@ class FromIterableTest extends AsyncTestCase
         $pipeline = Pipeline\fromIterable($generator);
 
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(\array_shift($expected), $value);
+            self::assertSame(\array_shift($expected), $value);
         }
 
-        $this->assertEmpty($expected);
+        self::assertEmpty($expected);
     }
 
     /**
@@ -114,10 +114,10 @@ class FromIterableTest extends AsyncTestCase
 
         $i = 0;
         while (null !== $value = $pipeline->continue()) {
-            $this->assertSame(++$i, $value);
+            self::assertSame(++$i, $value);
         }
 
-        $this->assertSame($count, $i);
+        self::assertSame($count, $i);
     }
 
     /**
@@ -132,6 +132,6 @@ class FromIterableTest extends AsyncTestCase
             delay(self::TIMEOUT * 2);
         }
 
-        $this->assertSame($count, $i);
+        self::assertSame($count, $i);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Amp;
 
+use Revolt\EventLoop\Loop;
+
 /**
  * Creates a failed promise using the given exception.
  *
@@ -25,6 +27,6 @@ final class Failure implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(fn() => $onResolved($this->exception, null));
+        Loop::defer(fn () => $onResolved($this->exception, null));
     }
 }
