@@ -35,7 +35,7 @@
     "require": {
         "php": ">=8",
         "ext-fiber": "*",
-        "revolt/event-loop": "^1-dev"
+        "revolt/event-loop": "dev-microtasks as 1-dev"
     },
     "require-dev": {
         "ext-json": "*",

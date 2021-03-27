@@ -27,6 +27,6 @@ final class Failure implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(fn () => $onResolved($this->exception, null));
+        Loop::queue(fn () => $onResolved($this->exception, null));
     }
 }

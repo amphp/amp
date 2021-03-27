@@ -36,7 +36,7 @@ final class Placeholder
                 return;
             }
 
-            Loop::defer(fn () => $onResolved(null, $this->result));
+            Loop::queue(fn () => $onResolved(null, $this->result));
             return;
         }
 
@@ -59,7 +59,7 @@ final class Placeholder
         try {
             $this->result = null;
         } catch (\Throwable $exception) {
-            Loop::defer(static fn () => throw $exception);
+            Loop::queue(static fn () => throw $exception);
         }
     }
 
@@ -118,7 +118,7 @@ final class Placeholder
             return;
         }
 
-        Loop::defer(fn () => $onResolved(null, $this->result));
+        Loop::queue(fn () => $onResolved(null, $this->result));
     }
 
     /**

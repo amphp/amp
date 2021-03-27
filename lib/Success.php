@@ -16,7 +16,7 @@ final class Success implements Promise
     private mixed $value;
 
     /**
-     * @param mixed        $value Anything other than a Promise object.
+     * @param mixed $value Anything other than a Promise object.
      *
      * @psalm-param TValue $value
      *
@@ -39,7 +39,7 @@ final class Success implements Promise
         try {
             $this->value = null;
         } catch (\Throwable $e) {
-            Loop::defer(static function () use ($e): void {
+            Loop::queue(static function () use ($e): void {
                 throw $e;
             });
         }
@@ -50,6 +50,6 @@ final class Success implements Promise
      */
     public function onResolve(callable $onResolved): void
     {
-        Loop::defer(fn () => $onResolved(null, $this->value));
+        Loop::queue(fn () => $onResolved(null, $this->value));
     }
 }
