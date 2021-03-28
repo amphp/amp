@@ -261,7 +261,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $generator->getReturn();
     }
 
-    public function testGeneratorStartsBeforeCallingContinue(): void
+    public function testGeneratorStartsOnlyAfterCallingContinue(): void
     {
         $invoked = false;
         $generator = new AsyncGenerator(function () use (&$invoked) {
@@ -269,9 +269,11 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield 0;
         });
 
-        self::assertTrue($invoked);
+        self::assertFalse($invoked);
 
         self::assertSame(0, $generator->continue());
+        self::assertTrue($invoked);
+
         self::assertNull($generator->continue());
     }
 

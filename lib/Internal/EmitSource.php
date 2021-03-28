@@ -8,7 +8,8 @@ use Amp\Failure;
 use Amp\Pipeline;
 use Amp\Promise;
 use Amp\Success;
-use function Amp\await;
+use Revolt\EventLoop\Loop;
+use Revolt\EventLoop\Suspension;
 use function Revolt\EventLoop\defer;
 
 /**
@@ -35,10 +36,10 @@ final class EmitSource
     /** @var Deferred[] */
     private array $backPressure = [];
 
-    /** @var Placeholder[] */
+    /** @var Suspension[] */
     private array $yielding = [];
 
-    /** @var Placeholder[] */
+    /** @var Suspension[] */
     private array $waiting = [];
 
     private int $consumePosition = 0;
@@ -99,12 +100,12 @@ final class EmitSource
 
         // Relieve backpressure from prior emit.
         if (isset($this->yielding[$position])) {
-            $placeholder = $this->yielding[$position];
+            $suspension = $this->yielding[$position];
             unset($this->yielding[$position]);
             if ($exception) {
-                $placeholder->fail($exception);
+                Loop::queue(static fn() => $suspension->throw($exception));
             } else {
-                $placeholder->resolve($value);
+                Loop::queue(static fn() => $suspension->resume($value));
             }
         } elseif (isset($this->backPressure[$position])) {
             $deferred = $this->backPressure[$position];
@@ -135,8 +136,8 @@ final class EmitSource
         }
 
         // No value has been emitted, suspend fiber to await next value.
-        $this->waiting[$position] = $placeholder = new Placeholder;
-        return await(new PrivatePromise($placeholder));
+        $this->waiting[$position] = $suspension = Loop::createSuspension();
+        return $suspension->suspend();
     }
 
     public function pipe(): Pipeline
@@ -226,9 +227,9 @@ final class EmitSource
         }
 
         if (isset($this->waiting[$position])) {
-            $placeholder = $this->waiting[$position];
+            $suspension = $this->waiting[$position];
             unset($this->waiting[$position]);
-            $placeholder->resolve($value);
+            Loop::queue(static fn() => $suspension->resume($value));
 
             if ($this->disposed && empty($this->waiting)) {
                 \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
@@ -301,8 +302,8 @@ final class EmitSource
         ++$this->emitPosition;
 
         if ($pair === null) {
-            $this->yielding[$position] = $placeholder = new Placeholder;
-            return await(new PrivatePromise($placeholder));
+            $this->yielding[$position] = $suspension = Loop::createSuspension();
+            return $suspension->suspend();
         }
 
         [$exception, $value] = $pair;
@@ -422,19 +423,28 @@ final class EmitSource
 
         $exception = $this->exception ?? null;
 
-        foreach ($backPressure as $deferred) {
+        foreach ($backPressure as $placeholder) {
+            if ($placeholder instanceof Deferred) {
+                if ($exception) {
+                    $placeholder->fail($this->exception);
+                } else {
+                    $placeholder->resolve();
+                }
+                continue;
+            }
+
             if ($exception) {
-                $deferred->fail($exception);
+                Loop::queue(static fn() => $placeholder->throw($exception));
             } else {
-                $deferred->resolve();
+                Loop::queue(static fn() => $placeholder->resume(null));
             }
         }
 
-        foreach ($waiting as $placeholder) {
+        foreach ($waiting as $suspension) {
             if ($exception) {
-                $placeholder->fail($this->exception);
+                Loop::queue(static fn() => $suspension->throw($exception));
             } else {
-                $placeholder->resolve();
+                Loop::queue(static fn() => $suspension->resume(null));
             }
         }
     }
