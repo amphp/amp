@@ -103,9 +103,9 @@ final class EmitSource
             $suspension = $this->yielding[$position];
             unset($this->yielding[$position]);
             if ($exception) {
-                Loop::queue(static fn() => $suspension->throw($exception));
+                $suspension->throw($exception);
             } else {
-                Loop::queue(static fn() => $suspension->resume($value));
+                $suspension->resume($value);
             }
         } elseif (isset($this->backPressure[$position])) {
             $deferred = $this->backPressure[$position];
@@ -229,7 +229,7 @@ final class EmitSource
         if (isset($this->waiting[$position])) {
             $suspension = $this->waiting[$position];
             unset($this->waiting[$position]);
-            Loop::queue(static fn() => $suspension->resume($value));
+            $suspension->resume($value);
 
             if ($this->disposed && empty($this->waiting)) {
                 \assert(empty($this->sendValues)); // If $this->waiting is empty, $this->sendValues must be.
@@ -442,9 +442,9 @@ final class EmitSource
 
         foreach ($waiting as $suspension) {
             if ($exception) {
-                Loop::queue(static fn() => $suspension->throw($exception));
+                $suspension->throw($exception);
             } else {
-                Loop::queue(static fn() => $suspension->resume(null));
+                $suspension->resume(null);
             }
         }
     }
