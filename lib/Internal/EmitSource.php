@@ -434,9 +434,9 @@ final class EmitSource
             }
 
             if ($exception) {
-                Loop::queue(static fn() => $placeholder->throw($exception));
+                $placeholder->throw($exception);
             } else {
-                Loop::queue(static fn() => $placeholder->resume(null));
+                $placeholder->resume(null);
             }
         }
 
