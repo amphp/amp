@@ -16,11 +16,23 @@ class AsyncGeneratorTest extends AsyncTestCase
 
     public function testNonGeneratorCallable(): void
     {
-        $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('The callable did not return a Generator');
+        self::expectException(\TypeError::class);
+        self::expectExceptionMessage('The callable did not return a Generator');
 
-        new AsyncGenerator(function () {
-        });
+        $generator = new AsyncGenerator(static fn () => null);
+
+        $generator->continue();
+    }
+
+    public function testThrowingCallable(): void
+    {
+        $exception = new \Exception;
+
+        self::expectExceptionObject($exception);
+
+        $generator = new AsyncGenerator(static fn () => throw $exception);
+
+        $generator->continue();
     }
 
     public function testYield(): void
@@ -109,8 +121,8 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield 0;
         });
 
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Must initialize async generator by calling continue() first');
+        self::expectException(\Error::class);
+        self::expectExceptionMessage('Must initialize async generator by calling continue() first');
 
         $generator->send(0);
     }
@@ -121,8 +133,8 @@ class AsyncGeneratorTest extends AsyncTestCase
             yield 0;
         });
 
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Must initialize async generator by calling continue() first');
+        self::expectException(\Error::class);
+        self::expectExceptionMessage('Must initialize async generator by calling continue() first');
 
         $generator->throw(new \Exception);
     }
@@ -255,7 +267,7 @@ class AsyncGeneratorTest extends AsyncTestCase
 
         $generator->dispose();
 
-        $this->expectException(DisposedException::class);
+        self::expectException(DisposedException::class);
 
         $generator->getReturn();
     }

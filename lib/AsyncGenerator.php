@@ -35,12 +35,14 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
 
         try {
             $generator = $callable(...$args);
-        } catch (\Throwable $exception) {
-            throw new \Error("The callable threw an exception", 0, $exception);
-        }
 
-        if (!$generator instanceof \Generator) {
-            throw new \TypeError("The callable did not return a Generator");
+            if (!$generator instanceof \Generator) {
+                throw new \TypeError("The callable did not return a Generator");
+            }
+        } catch (\Throwable $exception) {
+            $this->source->fail($exception);
+            $this->future = Future::error($exception);
+            return;
         }
 
         $this->future = $future = spawn(static function () use ($generator, $source): mixed {
