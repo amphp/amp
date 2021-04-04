@@ -2,6 +2,7 @@
 
 namespace Amp;
 
+use Revolt\EventLoop\Loop;
 use function Revolt\EventLoop\defer;
 
 /**
@@ -70,7 +71,7 @@ final class CancellationTokenSource
                     $this->callbacks = [];
 
                     foreach ($callbacks as $callback) {
-                        defer($callback, $this->exception);
+                        Loop::queue($callback, $this->exception);
                     }
                 };
             }
@@ -80,7 +81,7 @@ final class CancellationTokenSource
                 $id = $this->nextId++;
 
                 if ($this->exception) {
-                    defer($callback, $this->exception);
+                    Loop::queue($callback, $this->exception);
                 } else {
                     $this->callbacks[$id] = $callback;
                 }

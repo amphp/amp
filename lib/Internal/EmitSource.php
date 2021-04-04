@@ -2,14 +2,12 @@
 
 namespace Amp\Internal;
 
-use Amp\Deferred;
 use Amp\DisposedException;
-use Amp\Failure;
 use Amp\Pipeline;
-use Amp\Promise;
-use Amp\Success;
 use Revolt\EventLoop\Loop;
 use Revolt\EventLoop\Suspension;
+use Revolt\Future\Deferred;
+use Revolt\Future\Future;
 use function Revolt\EventLoop\defer;
 
 /**
@@ -111,9 +109,9 @@ final class EmitSource
             $deferred = $this->backPressure[$position];
             unset($this->backPressure[$position]);
             if ($exception) {
-                $deferred->fail($exception);
+                $deferred->error($exception);
             } else {
-                $deferred->resolve($value);
+                $deferred->complete($value);
             }
         } elseif ($position >= 0) {
             // Send-values are indexed as $this->consumePosition - 1.
@@ -191,7 +189,7 @@ final class EmitSource
     public function onDisposal(callable $onDisposal): void
     {
         if ($this->disposed) {
-            defer($onDisposal);
+            Loop::queue($onDisposal);
             return;
         }
 
@@ -222,8 +220,8 @@ final class EmitSource
             throw new \TypeError("Pipelines cannot emit NULL");
         }
 
-        if ($value instanceof Promise) {
-            throw new \TypeError("Pipelines cannot emit promises");
+        if ($value instanceof Future) {
+            throw new \TypeError("Pipelines cannot emit futures");
         }
 
         if (isset($this->waiting[$position])) {
@@ -262,10 +260,14 @@ final class EmitSource
      * Emits a value from the pipeline. The returned promise is resolved once the emitted value has been consumed or
      * if the pipeline is completed, failed, or disposed.
      *
+     * @param mixed $value Value to emit from the pipeline.
+     *
+     * @return Future Resolves with the value sent to the pipeline.
+     *
      * @psalm-param TValue $value
-     * @psalm-return Promise<TSend>
+     * @psalm-return Future<TSend>
      */
-    public function emit(mixed $value): Promise
+    public function emit(mixed $value): Future
     {
         $position = $this->emitPosition;
 
@@ -275,20 +277,24 @@ final class EmitSource
 
         if ($pair === null) {
             $this->backPressure[$position] = $deferred = new Deferred;
-            return $deferred->promise();
+            return $deferred->getFuture();
         }
 
         [$exception, $value] = $pair;
 
         if ($exception) {
-            return new Failure($exception);
+            return Future::error($exception);
         }
 
-        return new Success($value);
+        return Future::complete($value);
     }
 
     /**
      * Emits a value from the pipeline, suspending execution until the value is consumed.
+     *
+     * @param mixed $value Value to emit from the pipeline.
+     *
+     * @return mixed Returns the value sent to the pipeline.
      *
      * @psalm-param TValue $value
      * @psalm-return TSend
@@ -426,9 +432,9 @@ final class EmitSource
         foreach ($backPressure as $placeholder) {
             if ($placeholder instanceof Deferred) {
                 if ($exception) {
-                    $placeholder->fail($this->exception);
+                    $placeholder->error($this->exception);
                 } else {
-                    $placeholder->resolve();
+                    $placeholder->complete(null);
                 }
                 continue;
             }
@@ -467,7 +473,7 @@ final class EmitSource
 
         /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
         foreach ($onDisposal as $callback) {
-            defer($callback);
+            Loop::queue($callback);
         }
     }
 }

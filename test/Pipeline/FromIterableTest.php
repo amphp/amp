@@ -2,13 +2,12 @@
 
 namespace Amp\Test\Pipeline;
 
-use Amp\Failure;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
-use Amp\Success;
-use function Amp\asyncValue;
+use Revolt\Future\Future;
 use function Revolt\EventLoop\delay;
+use function Revolt\Future\spawn;
 
 class FromIterableTest extends AsyncTestCase
 {
@@ -17,7 +16,7 @@ class FromIterableTest extends AsyncTestCase
     public function testSuccessfulPromises(): void
     {
         $expected = \range(1, 3);
-        $pipeline = Pipeline\fromIterable([new Success(1), new Success(2), new Success(3)]);
+        $pipeline = Pipeline\fromIterable([Future::complete(1), Future::complete(2), Future::complete(3)]);
 
         while (null !== $value = $pipeline->continue()) {
             self::assertSame(\array_shift($expected), $value);
@@ -27,7 +26,7 @@ class FromIterableTest extends AsyncTestCase
     public function testFailedPromises(): void
     {
         $exception = new \Exception;
-        $iterator = Pipeline\fromIterable([new Failure($exception), new Failure($exception)]);
+        $iterator = Pipeline\fromIterable([Future::error($exception), Future::error($exception)]);
 
         $this->expectExceptionObject($exception);
 
@@ -38,7 +37,7 @@ class FromIterableTest extends AsyncTestCase
     {
         $exception = new TestException;
         $expected = \range(1, 2);
-        $pipeline = Pipeline\fromIterable([new Success(1), new Success(2), new Failure($exception), new Success(4)]);
+        $pipeline = Pipeline\fromIterable([Future::complete(1), Future::complete(2), Future::error($exception), Future::complete(4)]);
 
         try {
             while (null !== $value = $pipeline->continue()) {
@@ -56,10 +55,10 @@ class FromIterableTest extends AsyncTestCase
     {
         $expected = \range(1, 4);
         $pipeline = Pipeline\fromIterable([
-            asyncValue(30, 1),
-            asyncValue(10, 2),
-            asyncValue(20, 3),
-            new Success(4),
+            $this->asyncValue(30, 1),
+            $this->asyncValue(10, 2),
+            $this->asyncValue(20, 3),
+            Future::complete(4),
         ]);
 
         while (null !== $value = $pipeline->continue()) {
@@ -133,5 +132,13 @@ class FromIterableTest extends AsyncTestCase
         }
 
         self::assertSame($count, $i);
+    }
+
+    private function asyncValue(int $delay, mixed $value): Future
+    {
+        return spawn(static function () use ($delay, $value): mixed {
+            delay($delay);
+            return $value;
+        });
     }
 }

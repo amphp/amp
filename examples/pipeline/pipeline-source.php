@@ -3,15 +3,15 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Amp\Loop;
 use Amp\PipelineSource;
-use function Amp\delay;
+use function Revolt\EventLoop\defer;
+use function Revolt\EventLoop\delay;
 
 try {
     /** @psalm-var PipelineSource<int> $source */
     $source = new PipelineSource;
 
-    Loop::defer(function () use ($source): void {
+    defer(function () use ($source): void {
         // Source emits all values at once without awaiting back-pressure.
         $source->emit(1);
         $source->emit(2);

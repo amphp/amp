@@ -7,7 +7,6 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
 use Amp\PipelineSource;
-use function Amp\await;
 
 class FilterTest extends AsyncTestCase
 {
@@ -19,7 +18,7 @@ class FilterTest extends AsyncTestCase
 
         $source->complete();
 
-        await(Pipeline\discard($pipeline));
+        Pipeline\discard($pipeline)->join();
     }
 
     public function testValuesEmitted(): void

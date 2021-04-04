@@ -2,6 +2,10 @@
 
 namespace Amp;
 
+use Revolt\Future\Future;
+use function Revolt\EventLoop\defer;
+use function Revolt\Future\spawn;
+
 /**
  * @template TValue
  * @template TSend
@@ -15,8 +19,8 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
     /** @var Internal\EmitSource<TValue, TSend> */
     private Internal\EmitSource $source;
 
-    /** @var Promise<TReturn> */
-    private Promise $promise;
+    /** @var Future<TReturn> */
+    private Future $future;
 
     /**
      * @param callable(mixed ...$args):\Generator $callable
@@ -39,7 +43,7 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
             throw new \TypeError("The callable did not return a Generator");
         }
 
-        $this->promise = async(static function () use ($generator, $source): mixed {
+        $this->future = $future = spawn(static function () use ($generator, $source): mixed {
             $yielded = $generator->current();
 
             while ($generator->valid()) {
@@ -55,17 +59,15 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
             return $generator->getReturn();
         });
 
-        $this->promise->onResolve(static function (?\Throwable $exception) use ($source): void {
-            if ($source->isDisposed()) {
+        defer(static function () use ($future, $source): void {
+            try {
+                $future->join();
+                $source->complete();
+            } catch (DisposedException $exception) {
                 return; // AsyncGenerator object was destroyed.
-            }
-
-            if ($exception) {
+            } catch (\Throwable $exception) {
                 $source->fail($exception);
-                return;
             }
-
-            $source->complete();
         });
     }
 
@@ -92,9 +94,9 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
      *
      * @psalm-param TSend $value
      *
-     * @return Promise<mixed|null> Resolves with null if the pipeline has completed.
+     * @return mixed Returns null if the pipeline has completed.
      *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      *
      * @throws \Error If the first emitted value has not been retrieved using {@see continue()}.
      */
@@ -109,9 +111,9 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
      *
      * @param \Throwable $exception Exception to throw into the async generator.
      *
-     * @return Promise<mixed|null> Resolves with null if the pipeline has completed.
+     * @return mixed Returns null if the pipeline has completed.
      *
-     * @psalm-return Promise<TValue|null>
+     * @psalm-return TValue
      *
      * @throws \Error If the first emitted value has not been retrieved using {@see continue()}.
      */
@@ -135,7 +137,7 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
      */
     public function getReturn(): mixed
     {
-        return await($this->promise);
+        return $this->future->join();
     }
 
     /**

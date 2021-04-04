@@ -5,12 +5,11 @@ namespace Amp\Test;
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PipelineSource;
-use Amp\Promise;
-use Amp\Success;
-use function Amp\async;
-use function Amp\await;
+use Revolt\Future\Deferred;
+use Revolt\Future\Future;
 use function Revolt\EventLoop\defer;
 use function Revolt\EventLoop\delay;
+use function Revolt\Future\spawn;
 
 class PipelineSourceTest extends AsyncTestCase
 {
@@ -27,16 +26,16 @@ class PipelineSourceTest extends AsyncTestCase
     {
         $value = 'Emited Value';
 
-        $promise = $this->source->emit($value);
+        $future = $this->source->emit($value);
         $pipeline = $this->source->pipe();
 
         self::assertSame($value, $pipeline->continue());
 
-        $continue = async(fn (
+        $continue = spawn(fn (
         ) => $pipeline->continue()); // Promise will not resolve until another value is emitted or pipeline completed.
 
-        self::assertInstanceOf(Promise::class, $promise);
-        self::assertNull(await($promise));
+        self::assertInstanceOf(Future::class, $future);
+        self::assertNull($future->join());
 
         self::assertFalse($this->source->isComplete());
 
@@ -44,7 +43,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         self::assertTrue($this->source->isComplete());
 
-        self::assertNull(await($continue));
+        self::assertNull($continue->join());
     }
 
     public function testFail(): void
@@ -88,12 +87,12 @@ class PipelineSourceTest extends AsyncTestCase
     /**
      * @depends testEmit
      */
-    public function testEmittingPromise(): void
+    public function testEmittingFuture(): void
     {
         $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Pipelines cannot emit promises');
+        $this->expectExceptionMessage('Pipelines cannot emit futures');
 
-        $this->source->emit(new Success);
+        $this->source->emit(Future::complete(null));
     }
 
     public function testDoubleComplete(): void
@@ -130,15 +129,15 @@ class PipelineSourceTest extends AsyncTestCase
 
         $pipeline = $this->source->pipe();
 
-        $promise = async(fn () => $pipeline->continue());
+        $future = spawn(fn () => $pipeline->continue());
 
         $backPressure = $this->source->emit($value);
 
-        self::assertSame($value, await($promise));
+        self::assertSame($value, $future->join());
 
-        $promise = async(fn () => $pipeline->continue());
+        $future = spawn(fn () => $pipeline->continue());
 
-        self::assertNull(await($backPressure));
+        self::assertNull($backPressure->join());
 
         $this->source->complete();
     }
@@ -168,12 +167,12 @@ class PipelineSourceTest extends AsyncTestCase
     {
         $pipeline = $this->source->pipe();
 
-        $promise = async(fn () => $pipeline->continue());
-        self::assertInstanceOf(Promise::class, $promise);
+        $future = spawn(fn () => $pipeline->continue());
+        self::assertInstanceOf(Future::class, $future);
 
         $this->source->complete();
 
-        self::assertNull(await($promise));
+        self::assertNull($future->join());
     }
 
     public function testDestroyingPipelineRelievesBackPressure(): void
@@ -181,20 +180,24 @@ class PipelineSourceTest extends AsyncTestCase
         $pipeline = $this->source->pipe();
 
         $invoked = 0;
-        $onResolved = function () use (&$invoked) {
-            $invoked++;
-        };
-
         foreach (\range(1, 5) as $value) {
-            $promise = $this->source->emit($value);
-            $promise->onResolve($onResolved);
+            $future = $this->source->emit($value);
+            defer(function () use (&$invoked, $future): void {
+                try {
+                    $future->join();
+                } catch (DisposedException $exception) {
+                    // Ignore disposal.
+                } finally {
+                    $invoked++;
+                }
+            });
         }
 
         self::assertSame(0, $invoked);
 
         unset($pipeline); // Should relieve all back-pressure.
 
-        delay(5); // Tick event loop to invoke promise callbacks.
+        delay(5); // Tick event loop to invoke future callbacks.
 
         self::assertSame(5, $invoked);
 
@@ -256,7 +259,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         $this->expectException(DisposedException::class);
 
-        await($this->source->emit(1));
+        $this->source->emit(1)->join();
     }
 
     public function testEmitAfterAutomaticDisposal(): void
@@ -269,7 +272,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         $this->expectException(DisposedException::class);
 
-        await($this->source->emit(1));
+        $this->source->emit(1)->join();
     }
 
     public function testEmitAfterAutomaticDisposalAfterDelay(): void
@@ -284,31 +287,31 @@ class PipelineSourceTest extends AsyncTestCase
 
         $this->expectException(DisposedException::class);
 
-        await($this->source->emit(1));
+        $this->source->emit(1)->join();
     }
 
-    public function testEmitAfterAutomaticDisposalWithPendingContinuePromise(): void
+    public function testEmitAfterAutomaticDisposalWithPendingContinueFuture(): void
     {
         $pipeline = $this->source->pipe();
-        $promise = async(fn () => $pipeline->continue());
+        $future = spawn(fn () => $pipeline->continue());
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline); // Trigger automatic disposal.
         $this->source->onDisposal($this->createCallback(1));
         self::assertFalse($this->source->isDisposed());
         $this->source->emit(1);
-        self::assertSame(1, await($promise));
+        self::assertSame(1, $future->join());
 
         self::assertTrue($this->source->isDisposed());
 
         $this->expectException(DisposedException::class);
 
-        await($this->source->emit(2));
+        $this->source->emit(2)->join();
     }
 
-    public function testEmitAfterExplicitDisposalWithPendingContinuePromise(): void
+    public function testEmitAfterExplicitDisposalWithPendingContinueFuture(): void
     {
         $pipeline = $this->source->pipe();
-        $promise = async(fn () => $pipeline->continue());
+        $future = spawn(fn () => $pipeline->continue());
         $this->source->onDisposal($this->createCallback(1));
         $pipeline->dispose();
         $this->source->onDisposal($this->createCallback(1));
@@ -316,7 +319,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         $this->expectException(DisposedException::class);
 
-        self::assertSame(1, await($promise));
+        self::assertSame(1, $future->join());
     }
 
     public function testEmitAfterDestruct(): void
@@ -324,13 +327,13 @@ class PipelineSourceTest extends AsyncTestCase
         $this->expectException(DisposedException::class);
 
         $pipeline = $this->source->pipe();
-        $promise = $this->source->emit(1);
+        $future = $this->source->emit(1);
         $this->source->onDisposal($this->createCallback(1));
         unset($pipeline);
         $this->source->onDisposal($this->createCallback(1));
         self::assertTrue($this->source->isDisposed());
-        self::assertNull(await($promise));
-        await($this->source->emit(1));
+        self::assertNull($future->join());
+        $this->source->emit(1)->join();
     }
 
     public function testFailWithDisposedException(): void

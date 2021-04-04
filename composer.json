@@ -16,10 +16,6 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Daniel Lowrey",
-            "email": "rdlowrey@php.net"
-        },
-        {
             "name": "Aaron Piotrowski",
             "email": "aaron@trowski.com"
         },
@@ -30,25 +26,34 @@
         {
             "name": "Niklas Keller",
             "email": "me@kelunik.com"
+        },
+        {
+            "name": "Daniel Lowrey",
+            "email": "rdlowrey@php.net"
         }
     ],
     "require": {
         "php": ">=8",
         "ext-fiber": "*",
-        "revolt/event-loop": "dev-microtasks as 1-dev"
+        "revolt/event-loop": "dev-main as 1-dev",
+        "revolt/future": "dev-main as 1-dev"
     },
     "require-dev": {
         "ext-json": "*",
         "amphp/phpunit-util": "dev-v2-revolt",
         "amphp/php-cs-fixer-config": "dev-master",
         "phpunit/phpunit": "^9",
-        "psalm/phar": "^3.11@dev",
+        "psalm/phar": "^4.7",
         "jetbrains/phpstorm-stubs": "^2019.3"
     },
     "repositories": [
         {
             "type": "vcs",
             "url": "git@github.com:revolt-php/event-loop.git"
+        },
+        {
+            "type": "vcs",
+            "url": "git@github.com:revolt-php/future.git"
         }
     ],
     "autoload": {
@@ -56,8 +61,8 @@
             "Amp\\": "lib"
         },
         "files": [
-            "lib/functions.php",
-            "lib/Internal/functions.php"
+            "lib/Internal/functions.php",
+            "lib/Pipeline/functions.php"
         ]
     },
     "autoload-dev": {

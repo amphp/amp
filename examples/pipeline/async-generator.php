@@ -4,23 +4,25 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\AsyncGenerator;
-use Amp\Delayed;
-use function Amp\await;
-use function Amp\delay;
+use function Revolt\EventLoop\delay;
 
 try {
     /** @psalm-var AsyncGenerator<int, int, int> $generator */
     $generator = new AsyncGenerator(function (): \Generator {
         $value = yield 0;
-        $value = yield await(new Delayed(500, $value));
-        $value = yield $value;
-        $value = yield await(new Delayed(300, $value));
+        delay(500);
         $value = yield $value;
         $value = yield $value;
-        $value = yield await(new Delayed(1000, $value));
+        delay(300);
         $value = yield $value;
         $value = yield $value;
-        $value = yield await(new Delayed(600, $value));
+        $value = yield $value;
+        delay(1000);
+        $value = yield $value;
+        $value = yield $value;
+        $value = yield $value;
+        delay(600);
+        $value = yield $value;
         return $value;
     });
 
