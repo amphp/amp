@@ -73,7 +73,7 @@ class MapTest extends AsyncTestCase
 
         $iterator = Pipeline\map($source->pipe(), $this->createCallback(0));
 
-        $source->fail($exception);
+        $source->error($exception);
 
         $this->expectExceptionObject($exception);
 

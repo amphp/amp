@@ -40,7 +40,7 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
                 throw new \TypeError("The callable did not return a Generator");
             }
         } catch (\Throwable $exception) {
-            $this->source->fail($exception);
+            $this->source->error($exception);
             $this->future = Future::error($exception);
             return;
         }
@@ -68,7 +68,7 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
             } catch (DisposedException $exception) {
                 return; // AsyncGenerator object was destroyed.
             } catch (\Throwable $exception) {
-                $source->fail($exception);
+                $source->error($exception);
             }
         });
     }

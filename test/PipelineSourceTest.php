@@ -49,7 +49,7 @@ class PipelineSourceTest extends AsyncTestCase
     public function testFail(): void
     {
         self::assertFalse($this->source->isComplete());
-        $this->source->fail($exception = new \Exception);
+        $this->source->error($exception = new \Exception);
         self::assertTrue($this->source->isComplete());
 
         $pipeline = $this->source->pipe();
@@ -109,8 +109,8 @@ class PipelineSourceTest extends AsyncTestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Pipeline has already been completed');
 
-        $this->source->fail(new \Exception);
-        $this->source->fail(new \Exception);
+        $this->source->error(new \Exception);
+        $this->source->error(new \Exception);
     }
 
     public function testDoubleStart(): void
@@ -155,7 +155,7 @@ class PipelineSourceTest extends AsyncTestCase
     {
         $pipeline = $this->source->pipe();
 
-        $this->source->fail(new \Exception('Pipeline failed'));
+        $this->source->error(new \Exception('Pipeline failed'));
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Pipeline failed');
@@ -339,7 +339,7 @@ class PipelineSourceTest extends AsyncTestCase
     public function testFailWithDisposedException(): void
     {
         // Using DisposedException, but should be treated as fail, not disposal.
-        $this->source->fail(new DisposedException);
+        $this->source->error(new DisposedException);
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Pipeline has already been completed');
@@ -356,7 +356,7 @@ class PipelineSourceTest extends AsyncTestCase
                 $this->source->yield(3);
                 $this->source->complete();
             } catch (\Throwable $exception) {
-                $this->source->fail($exception);
+                $this->source->error($exception);
             }
         });
 

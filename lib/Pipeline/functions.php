@@ -122,7 +122,7 @@ function merge(array $pipelines): Pipeline
             all(...$futures);
             $source->complete();
         } catch (\Throwable $exception) {
-            $source->fail($exception);
+            $source->error($exception);
         } finally {
             $source = null;
         }

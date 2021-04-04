@@ -74,7 +74,7 @@ class FilterTest extends AsyncTestCase
 
         $pipeline = Pipeline\filter($source->pipe(), $this->createCallback(0));
 
-        $source->fail($exception);
+        $source->error($exception);
 
         $this->expectExceptionObject($exception);
 

@@ -110,8 +110,8 @@ final class PipelineSource
      *
      * @return void
      */
-    public function fail(\Throwable $reason): void
+    public function error(\Throwable $reason): void
     {
-        $this->source->fail($reason);
+        $this->source->error($reason);
     }
 }

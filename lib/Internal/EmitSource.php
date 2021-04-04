@@ -356,7 +356,7 @@ final class EmitSource
      *
      * @return void
      */
-    public function fail(\Throwable $exception): void
+    public function error(\Throwable $exception): void
     {
         $this->finalize($exception);
     }
@@ -385,10 +385,10 @@ final class EmitSource
             throw new \Error($message);
         }
 
-        $this->completed = $this->completed ?: !$disposed; // $disposed is false if complete() or fail() invoked
+        $this->completed = $this->completed ?: !$disposed; // $disposed is false if complete() or error() invoked
         $this->disposed = $this->disposed ?: $disposed; // Once disposed, do not change flag
 
-        if ($this->completed) { // Record stack trace when calling complete() or fail()
+        if ($this->completed) { // Record stack trace when calling complete() or error()
             \assert((function () {
                 if (isDebugEnabled()) {
                     $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
