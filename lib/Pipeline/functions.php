@@ -119,7 +119,7 @@ function merge(array $pipelines): Pipeline
 
     defer(static function () use (&$source, $futures): void {
         try {
-            all(...$futures);
+            all($futures);
             $source->complete();
         } catch (\Throwable $exception) {
             $source->error($exception);
