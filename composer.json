@@ -35,8 +35,8 @@
     "require": {
         "php": ">=8",
         "ext-fiber": "*",
-        "revolt/event-loop": "dev-main as 1-dev",
-        "revolt/future": "dev-main as 1-dev"
+        "revolt/event-loop": "^1",
+        "revolt/future": "^1"
     },
     "require-dev": {
         "ext-json": "*",
@@ -46,6 +46,8 @@
         "psalm/phar": "^4.7",
         "jetbrains/phpstorm-stubs": "^2019.3"
     },
+    "prefer-stable": true,
+    "minimum-stability": "dev",
     "repositories": [
         {
             "type": "vcs",
