@@ -8,7 +8,6 @@ use Revolt\EventLoop\Loop;
 use Revolt\EventLoop\Suspension;
 use Revolt\Future\Deferred;
 use Revolt\Future\Future;
-use function Revolt\EventLoop\defer;
 
 /**
  * Class used internally by {@see Pipeline} implementations. Do not use this class in your code, instead compose your
@@ -47,8 +46,6 @@ final class EmitSource
     private ?array $resolutionTrace = null;
 
     private bool $disposed = false;
-
-    private bool $used = false;
 
     /** @var callable[]|null */
     private ?array $onDisposal = [];
@@ -136,17 +133,6 @@ final class EmitSource
         // No value has been emitted, suspend fiber to await next value.
         $this->waiting[$position] = $suspension = Loop::createSuspension();
         return $suspension->suspend();
-    }
-
-    public function pipe(): Pipeline
-    {
-        if ($this->used) {
-            throw new \Error("A pipeline may be started only once");
-        }
-
-        $this->used = true;
-
-        return new AutoDisposingPipeline($this);
     }
 
     /**

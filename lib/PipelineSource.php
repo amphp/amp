@@ -16,6 +16,8 @@ final class PipelineSource
     /** @var Internal\EmitSource<TValue, null> Has public emit, complete, and fail methods. */
     private Internal\EmitSource $source;
 
+    private bool $used = false;
+
     public function __construct()
     {
         $this->source = new Internal\EmitSource;
@@ -32,7 +34,13 @@ final class PipelineSource
      */
     public function pipe(): Pipeline
     {
-        return $this->source->pipe();
+        if ($this->used) {
+            throw new \Error("A pipeline may be started only once");
+        }
+
+        $this->used = true;
+
+        return new Internal\AutoDisposingPipeline($this->source);
     }
 
     /**
