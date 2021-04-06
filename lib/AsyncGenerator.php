@@ -3,7 +3,6 @@
 namespace Amp;
 
 use Revolt\Future\Future;
-use function Revolt\EventLoop\defer;
 use function Revolt\Future\spawn;
 
 /**
@@ -45,31 +44,26 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
             return;
         }
 
-        $this->future = $future = spawn(static function () use ($generator, $source): mixed {
-            $yielded = $generator->current();
-
-            while ($generator->valid()) {
-                try {
-                    $yielded = $generator->send($source->yield($yielded));
-                } catch (DisposedException $exception) {
-                    throw $exception; // Destroys generator and fails pipeline.
-                } catch (\Throwable $exception) {
-                    $yielded = $generator->throw($exception);
-                }
-            }
-
-            return $generator->getReturn();
-        });
-
-        defer(static function () use ($future, $source): void {
+        $this->future = spawn(static function () use ($generator, $source): mixed {
             try {
-                $future->join();
-                $source->complete();
-            } catch (DisposedException $exception) {
-                return; // AsyncGenerator object was destroyed.
+                $yielded = $generator->current();
+
+                while ($generator->valid()) {
+                    try {
+                        $yielded = $generator->send($source->yield($yielded));
+                    } catch (DisposedException $exception) {
+                        throw $exception; // Destroys generator and fails pipeline.
+                    } catch (\Throwable $exception) {
+                        $yielded = $generator->throw($exception);
+                    }
+                }
             } catch (\Throwable $exception) {
                 $source->error($exception);
+                throw $exception;
             }
+
+            $source->complete();
+            return $generator->getReturn();
         });
     }
 
