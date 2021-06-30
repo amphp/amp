@@ -33,13 +33,13 @@ namespace Amp
                 throw new \Error(\sprintf('Cannot call %s() within an event loop callback', __FUNCTION__));
             }
 
-			$hash = spl_object_hash($fiber);
+            $hash = spl_object_hash($fiber);
             $level = ob_get_level();
 
             if ($level)
-			{
-				Loop::setState($hash . '-key', $level);
-			}
+            {
+                Loop::setState($hash . '-key', $level);
+            }
 
             $promise->onResolve(static function (?\Throwable $exception, mixed $value) use (&$resolved, $fiber, $hash): void {
                 $resolved = true;
@@ -53,32 +53,32 @@ namespace Amp
             });
 
             try {
-				if (Loop::getState($hash . '-key'))
-				{
-					$content = ob_get_contents();
+                if (Loop::getState($hash . '-key'))
+                {
+                    $content = ob_get_contents();
 
-					if ($content !== '')
-					{
-						Loop::setState($hash . '-content', $content);
-					}
+                    if ($content !== '')
+                    {
+                        Loop::setState($hash . '-content', $content);
+                    }
 
-					ob_end_clean();
-				}
+                    ob_end_clean();
+                }
 
                 // Suspend the current fiber until the promise is resolved.
                 $value = \Fiber::suspend();
 
-				if (Loop::getState($hash . '-key'))
-				{
-					ob_start();
-					$content = Loop::getState($hash . '-content');
+                if (Loop::getState($hash . '-key'))
+                {
+                    ob_start();
+                    $content = Loop::getState($hash . '-content');
 
-					if (!is_null($content))
-					{
-						echo $content;
-						Loop::setState($hash . '-content', null);
-					}
-				}
+                    if (!is_null($content))
+                    {
+                        echo $content;
+                        Loop::setState($hash . '-content', null);
+                    }
+                }
             } finally {
                 if (!$resolved) {
                     // $resolved should only be false if the fiber was manually resumed outside of the callback above.
