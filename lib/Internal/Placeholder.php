@@ -176,4 +176,12 @@ trait Placeholder
     {
         $this->resolve(new Failure($reason));
     }
+
+    /**
+     * @return bool True if the placeholder has been resolved.
+     */
+    private function isResolved(): bool
+    {
+        return $this->resolved;
+    }
 }
