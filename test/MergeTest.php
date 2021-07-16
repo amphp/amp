@@ -87,7 +87,6 @@ class MergeTest extends BaseTest
 
             try {
                 while (yield $iterator->advance()) {
-                    ;
                 }
                 $this->fail("The exception used to fail the iterator should be thrown from advance()");
             } catch (TestException $reason) {
