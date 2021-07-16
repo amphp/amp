@@ -117,7 +117,6 @@ class ProducerTest extends BaseTest
                 });
 
                 while (yield $producer->advance()) {
-                    ;
                 }
                 $this->fail("The exception thrown from the coroutine should fail the iterator");
             });

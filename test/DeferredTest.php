@@ -35,8 +35,11 @@ class DeferredTest extends BaseTest
             $result = $value;
         });
 
+        $this->assertFalse($this->deferred->isResolved());
+
         $this->deferred->resolve($value);
 
+        $this->assertTrue($this->deferred->isResolved());
         $this->assertTrue($invoked);
         $this->assertSame($value, $result);
     }
@@ -55,8 +58,11 @@ class DeferredTest extends BaseTest
             $result = $exception;
         });
 
+        $this->assertFalse($this->deferred->isResolved());
+
         $this->deferred->fail($exception);
 
+        $this->assertTrue($this->deferred->isResolved());
         $this->assertTrue($invoked);
         $this->assertSame($exception, $result);
     }

@@ -23,6 +23,7 @@ final class Deferred
             use Internal\Placeholder {
                 resolve as public;
                 fail as public;
+                isResolved as public;
             }
         };
 
@@ -63,5 +64,13 @@ final class Deferred
     {
         /** @psalm-suppress UndefinedInterfaceMethod */
         $this->resolver->fail($reason);
+    }
+
+    /**
+     * @return bool True if the promise has been resolved.
+     */
+    public function isResolved(): bool
+    {
+        return $this->resolver->isResolved();
     }
 }
