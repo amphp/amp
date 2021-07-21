@@ -15,6 +15,10 @@ class PsalmTest extends TestCase
             self::markTestSkipped('Skipped on Windows');
         }
 
+        if (!\file_exists('vendor/bin/psalm.phar')) {
+            self::markTestSkipped('Missing psalm.phar');
+        }
+
         $issues = \json_decode(
             \shell_exec('./vendor/bin/psalm.phar --output-format=json --no-progress --config=psalm.examples.xml'),
             true

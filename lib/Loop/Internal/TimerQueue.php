@@ -17,10 +17,8 @@ final class TimerQueue
 
     /**
      * @param int $node Rebuild the data array from the given node upward.
-     *
-     * @return void
      */
-    private function heapifyUp(int $node)
+    private function heapifyUp(int $node): void
     {
         $entry = $this->data[$node];
         while ($node !== 0 && $entry->expiration < $this->data[$parent = ($node - 1) >> 1]->expiration) {
@@ -31,10 +29,8 @@ final class TimerQueue
 
     /**
      * @param int $node Rebuild the data array from the given node downward.
-     *
-     * @return void
      */
-    private function heapifyDown(int $node)
+    private function heapifyDown(int $node): void
     {
         $length = \count($this->data);
         while (($child = ($node << 1) + 1) < $length) {
@@ -55,7 +51,7 @@ final class TimerQueue
         }
     }
 
-    private function swap(int $left, int $right)
+    private function swap(int $left, int $right): void
     {
         $temp = $this->data[$left];
 
@@ -69,13 +65,11 @@ final class TimerQueue
     /**
      * Inserts the watcher into the queue. Time complexity: O(log(n)).
      *
-     * @param Watcher $watcher
+     * @param Watcher            $watcher
      *
      * @psalm-param Watcher<int> $watcher
-     *
-     * @return void
      */
-    public function insert(Watcher $watcher)
+    public function insert(Watcher $watcher): void
     {
         \assert($watcher->expiration !== null);
         \assert(!isset($this->pointers[$watcher->id]));
@@ -90,13 +84,11 @@ final class TimerQueue
     /**
      * Removes the given watcher from the queue. Time complexity: O(log(n)).
      *
-     * @param Watcher $watcher
+     * @param Watcher            $watcher
      *
      * @psalm-param Watcher<int> $watcher
-     *
-     * @return void
      */
-    public function remove(Watcher $watcher)
+    public function remove(Watcher $watcher): void
     {
         $id = $watcher->id;
 
@@ -117,7 +109,7 @@ final class TimerQueue
      *
      * @psalm-return Watcher<int>|null
      */
-    public function extract(int $now)
+    public function extract(int $now): ?Watcher
     {
         if (empty($this->data)) {
             return null;
@@ -139,17 +131,15 @@ final class TimerQueue
      *
      * @return int|null Expiration time of the watcher at the top of the heap or null if the heap is empty.
      */
-    public function peek()
+    public function peek(): ?int
     {
         return isset($this->data[0]) ? $this->data[0]->expiration : null;
     }
 
     /**
      * @param int $node Remove the given node and then rebuild the data array.
-     *
-     * @return void
      */
-    private function removeAndRebuild(int $node)
+    private function removeAndRebuild(int $node): void
     {
         $length = \count($this->data) - 1;
         $id = $this->data[$node]->id;

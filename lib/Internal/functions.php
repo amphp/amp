@@ -73,7 +73,7 @@ function getCurrentTime(): int
         }
 
         if (\PHP_VERSION_ID >= 70300) {
-            list($seconds, $nanoseconds) = \hrtime(false);
+            [$seconds, $nanoseconds] = \hrtime(false);
             $seconds -= $startTime;
 
             if ($seconds >= $nextWarning) {
@@ -109,7 +109,7 @@ function getCurrentTime(): int
     }
 
     if (\PHP_VERSION_ID >= 70300) {
-        list($seconds, $nanoseconds) = \hrtime(false);
+        [$seconds, $nanoseconds] = \hrtime(false);
         return (int) ($seconds * 1000 + $nanoseconds / 1000000);
     }
 
