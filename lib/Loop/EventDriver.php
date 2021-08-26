@@ -168,7 +168,7 @@ class EventDriver extends Driver
         // Related https://github.com/amphp/amp/issues/159.
         $events = $this->events;
         $this->events = [];
-        
+
         foreach ($events as $event) {
             if ($event !== null) { // Events may have been nulled in extension depending on destruct order.
                 $event->free();
