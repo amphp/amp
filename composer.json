@@ -1,6 +1,6 @@
 {
     "name": "amphp/amp",
-    "homepage": "http://amphp.org/amp",
+    "homepage": "https://amphp.org/amp",
     "description": "A non-blocking concurrency framework for PHP applications.",
     "keywords": [
         "async",
@@ -34,9 +34,7 @@
     ],
     "require": {
         "php": ">=8",
-        "ext-fiber": "*",
-        "revolt/event-loop": "^1",
-        "revolt/future": "^1"
+        "revolt/event-loop": "^1"
     },
     "require-dev": {
         "ext-json": "*",
@@ -51,11 +49,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@github.com:revolt-php/event-loop.git"
-        },
-        {
-            "type": "vcs",
-            "url": "git@github.com:revolt-php/future.git"
+            "url": "git@github.com:revoltphp/event-loop.git"
         }
     ],
     "autoload": {
@@ -63,6 +57,7 @@
             "Amp\\": "lib"
         },
         "files": [
+            "lib/Future/functions.php",
             "lib/Internal/functions.php",
             "lib/Pipeline/functions.php"
         ]
@@ -73,8 +68,7 @@
         }
     },
     "support": {
-        "issues": "https://github.com/amphp/amp/issues",
-        "irc": "irc://irc.freenode.org/amphp"
+        "issues": "https://github.com/amphp/amp/issues"
     },
     "extra": {
         "branch-alias": {
