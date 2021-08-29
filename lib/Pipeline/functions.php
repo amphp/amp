@@ -3,15 +3,15 @@
 
 namespace Amp\Pipeline;
 
+use Amp\Future;
 use Amp\AsyncGenerator;
 use Amp\Pipeline;
 use Amp\PipelineSource;
-use Revolt\Future\Future;
+use function Amp\Future\all;
+use function Amp\Future\spawn;
 use function Amp\Internal\createTypeError;
 use function Revolt\EventLoop\defer;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\all;
-use function Revolt\Future\spawn;
 
 /**
  * Creates a pipeline from the given iterable, emitting the each value. The iterable may contain promises. If any
@@ -20,7 +20,7 @@ use function Revolt\Future\spawn;
  * @template TValue
  *
  * @param iterable               $iterable Elements to emit.
- * @param int                    $delay Delay between elements emitted in milliseconds.
+ * @param float                  $delay Delay between elements emitted in seconds.
  *
  * @psalm-param iterable<TValue> $iterable
  *
@@ -30,7 +30,7 @@ use function Revolt\Future\spawn;
  *
  * @throws \TypeError If the argument is not an array or instance of \Traversable.
  */
-function fromIterable(iterable $iterable, int $delay = 0): Pipeline
+function fromIterable(iterable $iterable, float $delay = 0): Pipeline
 {
     return new AsyncGenerator(static function () use ($iterable, $delay): \Generator {
         foreach ($iterable as $value) {

@@ -2,12 +2,12 @@
 
 namespace Amp\Internal;
 
+use Amp\Deferred;
 use Amp\DisposedException;
+use Amp\Future;
 use Amp\Pipeline;
 use Revolt\EventLoop\Loop;
 use Revolt\EventLoop\Suspension;
-use Revolt\Future\Deferred;
-use Revolt\Future\Future;
 
 /**
  * Class used internally by {@see Pipeline} implementations. Do not use this class in your code, instead compose your

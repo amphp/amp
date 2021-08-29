@@ -2,8 +2,8 @@
 
 namespace Amp;
 
-use Revolt\Future\Future;
-use function Revolt\Future\spawn;
+use Amp\Future;
+use function Amp\Future\spawn;
 
 /**
  * @template TValue

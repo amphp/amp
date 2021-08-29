@@ -19,7 +19,7 @@ final class FutureIterator
     private FutureIteratorQueue $queue;
 
     /**
-     * @var null|Future<void>|Future<null>|Future<array{Tk, Future<Tv>}>
+     * @var null|Future<void>|Future<array{Tk, Future<Tv>}>
      */
     private ?Future $complete = null;
 

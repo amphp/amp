@@ -64,7 +64,7 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource->cancel();
 
-        delay(10); // Tick event loop to invoke callbacks.
+        delay(0.01); // Tick event loop to invoke callbacks.
 
         self::assertInstanceOf(TestException::class, $reason);
     }

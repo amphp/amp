@@ -3,12 +3,12 @@
 namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
+use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
-use Revolt\Future\Future;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 class MergeTest extends AsyncTestCase
 {
@@ -30,7 +30,7 @@ class MergeTest extends AsyncTestCase
     public function testMerge(array $array, array $expected): void
     {
         $pipelines = \array_map(static function (array $iterator): Pipeline {
-            return Pipeline\fromIterable($iterator, 10);
+            return Pipeline\fromIterable($iterator, 0.01);
         }, $array);
 
         $pipeline = Pipeline\merge($pipelines);
@@ -46,8 +46,8 @@ class MergeTest extends AsyncTestCase
     public function testMergeWithDelayedYields(): void
     {
         $pipelines = [];
-        $values1 = [$this->asyncValue(10, 1), $this->asyncValue(50, 2), $this->asyncValue(70, 3)];
-        $values2 = [$this->asyncValue(20, 4), $this->asyncValue(40, 5), $this->asyncValue(60, 6)];
+        $values1 = [$this->asyncValue(0.01, 1), $this->asyncValue(0.05, 2), $this->asyncValue(0.07, 3)];
+        $values2 = [$this->asyncValue(0.02, 4), $this->asyncValue(0.04, 5), $this->asyncValue(0.06, 6)];
         $expected = [1, 4, 5, 2, 6, 3];
 
         $pipelines[] = new AsyncGenerator(function () use ($values1) {
@@ -100,7 +100,7 @@ class MergeTest extends AsyncTestCase
         Pipeline\merge([1]);
     }
 
-    private function asyncValue(int $delay, mixed $value): Future
+    private function asyncValue(float $delay, mixed $value): Future
     {
         return spawn(static function () use ($delay, $value): mixed {
             delay($delay);

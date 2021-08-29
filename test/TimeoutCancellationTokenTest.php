@@ -14,10 +14,10 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
     public function testTimeout(): void
     {
         $line = __LINE__ + 1;
-        $token = new TimeoutCancellationToken(10);
+        $token = new TimeoutCancellationToken(0.01);
 
         self::assertFalse($token->isRequested());
-        delay(20);
+        delay(0.02);
         self::assertTrue($token->isRequested());
 
         try {
@@ -33,7 +33,7 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
 
     public function testWatcherCancellation(): void
     {
-        $token = new TimeoutCancellationToken(1);
+        $token = new TimeoutCancellationToken(0.001);
         self::assertSame(1, Loop::getInfo()["delay"]["enabled"]);
         unset($token);
         self::assertSame(0, Loop::getInfo()["delay"]["enabled"]);

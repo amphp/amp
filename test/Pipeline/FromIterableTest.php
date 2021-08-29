@@ -2,16 +2,16 @@
 
 namespace Amp\Test\Pipeline;
 
+use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Amp\Pipeline;
-use Revolt\Future\Future;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 class FromIterableTest extends AsyncTestCase
 {
-    const TIMEOUT = 10;
+    private const TIMEOUT = 0.1;
 
     public function testSuccessfulPromises(): void
     {
@@ -55,9 +55,9 @@ class FromIterableTest extends AsyncTestCase
     {
         $expected = \range(1, 4);
         $pipeline = Pipeline\fromIterable([
-            $this->asyncValue(30, 1),
-            $this->asyncValue(10, 2),
-            $this->asyncValue(20, 3),
+            $this->asyncValue(0.03, 1),
+            $this->asyncValue(0.01, 2),
+            $this->asyncValue(0.02, 3),
             Future::complete(4),
         ]);
 
@@ -134,7 +134,7 @@ class FromIterableTest extends AsyncTestCase
         self::assertSame($count, $i);
     }
 
-    private function asyncValue(int $delay, mixed $value): Future
+    private function asyncValue(float $delay, mixed $value): Future
     {
         return spawn(static function () use ($delay, $value): mixed {
             delay($delay);

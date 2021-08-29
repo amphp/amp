@@ -3,16 +3,16 @@
 namespace Amp\Test;
 
 use Amp\AsyncGenerator;
+use Amp\Deferred;
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
-use Revolt\Future\Deferred;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 class AsyncGeneratorTest extends AsyncTestCase
 {
-    const TIMEOUT = 100;
+    private const TIMEOUT = 0.1;
 
     public function testNonGeneratorCallable(): void
     {
@@ -65,7 +65,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $value = 1;
         $send = 2;
         $generator = new AsyncGenerator(function () use (&$result, $value) {
-            delay(100); // Wait so send() is called before $yield().
+            delay(0.1); // Wait so send() is called before $yield().
             $result = yield $value;
         });
 
@@ -102,7 +102,7 @@ class AsyncGeneratorTest extends AsyncTestCase
         $value = 1;
         $exception = new \Exception;
         $generator = new AsyncGenerator(function () use (&$result, $value) {
-            delay(100); // Wait so throw() is called before $yield().
+            delay(0.1); // Wait so throw() is called before $yield().
             try {
                 $result = yield $value;
             } catch (\Throwable $exception) {

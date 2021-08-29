@@ -14,10 +14,10 @@ final class TimeoutCancellationToken implements CancellationToken
     private CancellationToken $token;
 
     /**
-     * @param int    $timeout Milliseconds until cancellation is requested.
+     * @param float  $timeout Seconds until cancellation is requested.
      * @param string $message Message for TimeoutException. Default is "Operation timed out".
      */
-    public function __construct(int $timeout, string $message = "Operation timed out")
+    public function __construct(float $timeout, string $message = "Operation timed out")
     {
         $source = new CancellationTokenSource;
         $this->token = $source->getToken();

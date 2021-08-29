@@ -9,7 +9,7 @@ class ToArrayTest extends AsyncTestCase
 {
     public function testNonEmpty(): void
     {
-        $pipeline = Pipeline\fromIterable(["abc", "foo", "bar"], 5);
+        $pipeline = Pipeline\fromIterable(["abc", "foo", "bar"], 0.005);
         self::assertSame(["abc", "foo", "bar"], Pipeline\toArray($pipeline));
     }
 

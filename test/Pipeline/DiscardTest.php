@@ -14,6 +14,6 @@ class DiscardTest extends AsyncTestCase
 
     public function testCount(): void
     {
-        self::assertSame(3, Pipeline\discard(Pipeline\fromIterable(['a', 1, false], 1))->join());
+        self::assertSame(3, Pipeline\discard(Pipeline\fromIterable(['a', 1, false], 0.001))->join());
     }
 }

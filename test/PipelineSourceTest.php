@@ -2,14 +2,13 @@
 
 namespace Amp\Test;
 
+use Amp\Future;
 use Amp\DisposedException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PipelineSource;
-use Revolt\Future\Deferred;
-use Revolt\Future\Future;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\defer;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 class PipelineSourceTest extends AsyncTestCase
 {
@@ -197,7 +196,7 @@ class PipelineSourceTest extends AsyncTestCase
 
         unset($pipeline); // Should relieve all back-pressure.
 
-        delay(5); // Tick event loop to invoke future callbacks.
+        delay(0.005); // Tick event loop to invoke future callbacks.
 
         self::assertSame(5, $invoked);
 
@@ -283,7 +282,7 @@ class PipelineSourceTest extends AsyncTestCase
         $this->source->onDisposal($this->createCallback(1));
         self::assertTrue($this->source->isDisposed());
 
-        delay(10);
+        delay(0.01);
 
         $this->expectException(DisposedException::class);
 
