@@ -2,8 +2,10 @@
 
 namespace Amp\Test\Future;
 
+use Amp\CancelledException;
 use Amp\Deferred;
 use Amp\Future;
+use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
 use function Amp\Future\spawn;
@@ -117,6 +119,27 @@ class FutureTest extends TestCase
 
         $deferred->complete(Future::complete(null));
     }
+
+    public function testCancellation(): void
+    {
+        $future = $this->delay(0.02, true);
+
+        $token = new TimeoutCancellationToken(0.01);
+
+        $this->expectException(CancelledException::class);
+
+        $future->join($token);
+    }
+
+    public function testCompleteBeforeCancellation(): void
+    {
+        $future = $this->delay(0.01, true);
+
+        $token = new TimeoutCancellationToken(0.02);
+
+        self::assertTrue($future->join($token));
+    }
+
 
     /**
      * @template T

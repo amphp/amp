@@ -2,6 +2,7 @@
 
 namespace Amp\Future;
 
+use Amp\CancellationToken;
 use Amp\CompositeException;
 use Amp\Future;
 use Amp\Internal;
@@ -34,14 +35,15 @@ function spawn(callable $callback): Future
  * @template T
  *
  * @param iterable<Future<T>> $futures
+ * @param CancellationToken|null $token Optional cancellation token.
  *
  * @return T
  *
  * @throws \Error If $futures is empty.
  */
-function first(iterable $futures): mixed
+function first(iterable $futures, ?CancellationToken $token = null): mixed
 {
-    foreach (Future::iterate($futures) as $first) {
+    foreach (Future::iterate($futures, $token) as $first) {
         return $first->join();
     }
 
@@ -57,15 +59,16 @@ function first(iterable $futures): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
+ * @param CancellationToken|null $token Optional cancellation token.
  *
  * @return Tv
  *
  * @throws CompositeException If all futures errored.
  */
-function any(iterable $futures): mixed
+function any(iterable $futures, ?CancellationToken $token = null): mixed
 {
     $errors = [];
-    foreach (Future::iterate($futures) as $index => $first) {
+    foreach (Future::iterate($futures, $token) as $index => $first) {
         try {
             return $first->join();
         } catch (\Throwable $throwable) {
@@ -86,15 +89,16 @@ function any(iterable $futures): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
+ * @param CancellationToken|null $token Optional cancellation token.
  *
  * @return array<Tk, Tv> Unwrapped values with the order preserved.
  */
-function all(iterable $futures): array
+function all(iterable $futures, CancellationToken $token = null): array
 {
     $futures = \is_array($futures) ? $futures : \iterator_to_array($futures);
 
     // Future::iterate() to throw the first error based on completion order instead of argument order
-    foreach (Future::iterate($futures) as $k => $future) {
+    foreach (Future::iterate($futures, $token) as $k => $future) {
         $futures[$k] = $future->join();
     }
 

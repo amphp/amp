@@ -2,10 +2,13 @@
 
 namespace Amp\Test\Future;
 
+use Amp\CancelledException;
 use Amp\CompositeException;
 use Amp\Deferred;
 use Amp\Future;
+use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
+use Revolt\EventLoop\Loop;
 use function Amp\Future\any;
 
 class AnyTest extends TestCase
@@ -46,5 +49,39 @@ class AnyTest extends TestCase
             yield Future::error(new \Exception('foo'));
             yield Future::complete(2);
         })()));
+    }
+
+    public function testCancellation(): void
+    {
+        $this->expectException(CancelledException::class);
+        $deferreds = \array_map(function (int $value) {
+            $deferred = new Deferred;
+            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            return $deferred;
+        }, \range(1, 3));
+
+        any(\array_map(
+            fn(Deferred $deferred) => $deferred->getFuture(),
+            $deferreds
+        ), new TimeoutCancellationToken(0.05));
+    }
+
+    public function testCompleteBeforeCancellation(): void
+    {
+        $deferreds = \array_map(function (int $value) {
+            $deferred = new Deferred;
+            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            return $deferred;
+        }, \range(1, 3));
+
+        $deferred = new Deferred;
+        $deferred->error(new \Exception('foo'));
+
+        \array_unshift($deferreds, $deferred);
+
+        self::assertSame(1, any(\array_map(
+            fn(Deferred $deferred) => $deferred->getFuture(),
+            $deferreds
+        ), new TimeoutCancellationToken(0.2)));
     }
 }

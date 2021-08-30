@@ -2,6 +2,8 @@
 
 namespace Amp\Internal;
 
+use Amp\CancellationToken;
+use Amp\NullCancellationToken;
 use Revolt\EventLoop\Loop;
 use Amp\Future;
 
@@ -18,14 +20,26 @@ final class FutureIterator
      */
     private FutureIteratorQueue $queue;
 
+    private CancellationToken $token;
+
+    private string $cancellationId;
+
     /**
      * @var null|Future<void>|Future<array{Tk, Future<Tv>}>
      */
     private ?Future $complete = null;
 
-    public function __construct()
+    public function __construct(?CancellationToken $token = null)
     {
-        $this->queue = new FutureIteratorQueue();
+        $this->queue = $queue = new FutureIteratorQueue();
+        $this->token = $token ?? new NullCancellationToken();
+
+        $this->cancellationId = $this->token->subscribe(static function (\Throwable $reason) use ($queue): void {
+            if ($queue->suspension) {
+                $queue->suspension->throw($reason);
+                $queue->suspension = null;
+            }
+        });
     }
 
     /**
@@ -123,6 +137,7 @@ final class FutureIterator
 
     public function __destruct()
     {
+        $this->token->unsubscribe($this->cancellationId);
         foreach ($this->queue->pending as $id => $state) {
             $state->unsubscribe($id);
         }

@@ -2,9 +2,12 @@
 
 namespace Amp\Test\Future;
 
+use Amp\CancelledException;
 use Amp\Deferred;
 use Amp\Future;
+use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
+use Revolt\EventLoop\Loop;
 use function Amp\Future\first;
 
 class FirstTest extends TestCase
@@ -43,5 +46,35 @@ class FirstTest extends TestCase
             yield Future::error(new \Exception('foo'));
             yield Future::complete(2);
         })());
+    }
+
+    public function testCancellation(): void
+    {
+        $this->expectException(CancelledException::class);
+
+        $deferreds = \array_map(function (int $value) {
+            $deferred = new Deferred;
+            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            return $deferred;
+        }, \range(1, 3));
+
+        first(\array_map(
+            fn(Deferred $deferred) => $deferred->getFuture(),
+            $deferreds
+        ), new TimeoutCancellationToken(0.05));
+    }
+
+    public function testCompleteBeforeCancellation(): void
+    {
+        $deferreds = \array_map(function (int $value) {
+            $deferred = new Deferred;
+            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            return $deferred;
+        }, \range(1, 3));
+
+        self::assertSame(1, first(\array_map(
+            fn(Deferred $deferred) => $deferred->getFuture(),
+            $deferreds
+        ), new TimeoutCancellationToken(0.2)));
     }
 }

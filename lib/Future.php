@@ -2,9 +2,9 @@
 
 namespace Amp;
 
-use Revolt\EventLoop\Loop;
 use Amp\Internal\FutureIterator;
 use Amp\Internal\FutureState;
+use Revolt\EventLoop\Loop;
 use function Revolt\EventLoop\defer;
 
 /**
@@ -19,12 +19,13 @@ final class Future
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
+     * @param CancellationToken|null $token Optional cancellation token.
      *
      * @return iterable<Tk, Future<Tv>>
      */
-    public static function iterate(iterable $futures): iterable
+    public static function iterate(iterable $futures, ?CancellationToken $token = null): iterable
     {
-        $iterator = new Internal\FutureIterator;
+        $iterator = new FutureIterator($token);
 
         // Directly iterate in case of an array, because there can't be suspensions during iteration
         if (\is_array($futures)) {
@@ -107,11 +108,20 @@ final class Future
      *
      * @return T
      */
-    public function join(): mixed
+    public function join(?CancellationToken $token = null): mixed
     {
         $suspension = Loop::createSuspension();
 
-        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($suspension): void {
+        $cancellationId = $token?->subscribe(function (\Throwable $reason) use (&$callbackId, $suspension): void {
+            $this->state->unsubscribe($callbackId);
+            $suspension->throw($reason);
+        });
+
+        $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
+            $cancellationId, $token, $suspension
+        ): void {
+            $token?->unsubscribe($cancellationId);
+
             if ($error) {
                 $suspension->throw($error);
             } else {
