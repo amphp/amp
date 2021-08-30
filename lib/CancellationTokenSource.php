@@ -2,9 +2,6 @@
 
 namespace Amp;
 
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\defer;
-
 /**
  * A cancellation token source provides a mechanism to cancel operations.
  *
@@ -40,72 +37,13 @@ use function Revolt\EventLoop\defer;
  */
 final class CancellationTokenSource
 {
+    private Internal\CancellableToken $source;
     private CancellationToken $token;
-
-    /** @var callable|null */
-    private $onCancel;
 
     public function __construct()
     {
-        $onCancel = &$this->onCancel;
-
-        $this->token = new class($onCancel) implements CancellationToken {
-            private string $nextId = "a";
-
-            /** @var callable[] */
-            private array $callbacks = [];
-
-            /** @var \Throwable|null */
-            private ?\Throwable $exception = null;
-
-            /**
-             * @param callable|null $onCancel
-             * @param-out callable $onCancel
-             */
-            public function __construct(?callable &$onCancel)
-            {
-                $onCancel = function (\Throwable $exception): void {
-                    $this->exception = $exception;
-
-                    $callbacks = $this->callbacks;
-                    $this->callbacks = [];
-
-                    foreach ($callbacks as $callback) {
-                        Loop::queue($callback, $this->exception);
-                    }
-                };
-            }
-
-            public function subscribe(callable $callback): string
-            {
-                $id = $this->nextId++;
-
-                if ($this->exception) {
-                    Loop::queue($callback, $this->exception);
-                } else {
-                    $this->callbacks[$id] = $callback;
-                }
-
-                return $id;
-            }
-
-            public function unsubscribe(string $id): void
-            {
-                unset($this->callbacks[$id]);
-            }
-
-            public function isRequested(): bool
-            {
-                return isset($this->exception);
-            }
-
-            public function throwIfRequested(): void
-            {
-                if (isset($this->exception)) {
-                    throw $this->exception;
-                }
-            }
-        };
+        $this->source = new Internal\CancellableToken;
+        $this->token = new Internal\WrappedCancellationToken($this->source);
     }
 
     public function getToken(): CancellationToken
@@ -116,14 +54,8 @@ final class CancellationTokenSource
     /**
      * @param \Throwable|null $previous Exception to be used as the previous exception to CancelledException.
      */
-    public function cancel(\Throwable $previous = null): void
+    public function cancel(?\Throwable $previous = null): void
     {
-        if ($this->onCancel === null) {
-            return;
-        }
-
-        $onCancel = $this->onCancel;
-        $this->onCancel = null;
-        $onCancel(new CancelledException($previous));
+        $this->source->cancel($previous);
     }
 }

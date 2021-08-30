@@ -26,8 +26,11 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
             self::assertInstanceOf(TimeoutException::class, $exception->getPrevious());
 
             $message = $exception->getPrevious()->getMessage();
-            self::assertStringContainsString('TimeoutCancellationToken was created here', $message);
-            self::assertStringContainsString('TimeoutCancellationTokenTest.php:' . $line, $message);
+
+            if ((int)ini_get('zend.assertions') > 0) {
+                self::assertStringContainsString('TimeoutCancellationToken was created here', $message);
+                self::assertStringContainsString('TimeoutCancellationTokenTest.php:' . $line, $message);
+            }
         }
     }
 

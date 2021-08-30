@@ -19,13 +19,19 @@ final class TimeoutCancellationToken implements CancellationToken
      */
     public function __construct(float $timeout, string $message = "Operation timed out")
     {
-        $source = new CancellationTokenSource;
-        $this->token = $source->getToken();
+        $this->token = $source = new Internal\CancellableToken;
 
-        $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
+        $trace = null; // Defined in case assertions are disabled.
+        \assert($trace = \debug_backtrace());
+
         $this->watcher = Loop::delay($timeout, static function () use ($source, $message, $trace): void {
-            $trace = Internal\formatStacktrace($trace);
-            $source->cancel(new TimeoutException("$message\r\nTimeoutCancellationToken was created here:\r\n$trace"));
+            if ($trace) {
+                $message .= \sprintf("\r\n%s was created here: %s", self::class, Internal\formatStacktrace($trace));
+            } else {
+                $message .= \sprintf(" (Enable assertions for a backtrace of the %s creation)", self::class);
+            }
+
+            $source->cancel(new TimeoutException($message));
         });
 
         Loop::unreference($this->watcher);
