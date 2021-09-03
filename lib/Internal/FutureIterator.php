@@ -25,7 +25,7 @@ final class FutureIterator
     private string $cancellationId;
 
     /**
-     * @var null|Future<void>|Future<array{Tk, Future<Tv>}>
+     * @var Future<null>|Future<never-return>|null
      */
     private ?Future $complete = null;
 

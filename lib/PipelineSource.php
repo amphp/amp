@@ -2,8 +2,6 @@
 
 namespace Amp;
 
-use Amp\Future;
-
 /**
  * PipelineSource is a container for a Pipeline that can emit values using the emit() method and completed using the
  * complete() and fail() methods. The contained Pipeline may be accessed using the pipeline() method. This object should
@@ -52,7 +50,7 @@ final class PipelineSource
      *
      * @psalm-param TValue $value
      *
-     * @return Future<void> Resolves with null when the emitted value has been consumed or fails with
+     * @return Future<null> Resolves with null when the emitted value has been consumed or fails with
      *                       {@see DisposedException} if the pipeline has been disposed.
      */
     public function emit(mixed $value): Future

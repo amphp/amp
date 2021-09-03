@@ -62,18 +62,18 @@ final class Future
      */
     public static function complete(mixed $result): self
     {
-        $state = new FutureState;
+        $state = new FutureState();
         $state->complete($result);
 
         return new self($state);
     }
 
     /**
-     * @return Future<void>
+     * @return Future<never-return>
      */
     public static function error(\Throwable $throwable): self
     {
-        /** @var FutureState<void> $state */
+        /** @var FutureState<never-return> $state */
         $state = new FutureState();
         $state->error($throwable);
 
@@ -120,6 +120,7 @@ final class Future
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
             $cancellationId, $token, $suspension
         ): void {
+            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
             $token?->unsubscribe($cancellationId);
 
             if ($error) {

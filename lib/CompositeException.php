@@ -10,7 +10,7 @@ final class CompositeException extends \Exception
     private array $reasons;
 
     /**
-     * @param array<array-key, \Throwable> $reasons Array of exceptions.
+     * @param non-empty-array<array-key, \Throwable> $reasons Array of exceptions.
      * @param string|null  $message Exception message, defaults to message generated from passed exceptions.
      *
      * @psalm-assert non-empty-array<array-key, \Throwable> $reasons

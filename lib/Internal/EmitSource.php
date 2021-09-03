@@ -48,7 +48,7 @@ final class EmitSource
     private ?array $onDisposal = [];
 
     /**
-     * @psalm-return TValue
+     * @return TValue
      */
     public function continue(): mixed
     {
@@ -56,9 +56,9 @@ final class EmitSource
     }
 
     /**
-     * @psalm-param TSend $value
+     * @param TSend $value
      *
-     * @psalm-return TValue
+     * @return TValue
      */
     public function send(mixed $value): mixed
     {
@@ -70,7 +70,7 @@ final class EmitSource
     }
 
     /**
-     * @psalm-return TValue
+     * @return TValue
      */
     public function throw(\Throwable $exception): mixed
     {
@@ -82,9 +82,9 @@ final class EmitSource
     }
 
     /**
-     * @psalm-param TSend|null $value
+     * @param TSend|null $value
      *
-     * @psalm-return TValue
+     * @return TValue
      */
     private function next(?\Throwable $exception, mixed $value): mixed
     {
@@ -159,7 +159,7 @@ final class EmitSource
     }
 
     /**
-     * @param callable():void $onDispose
+     * @param callable():void $onDisposal
      *
      * @return void
      *
@@ -180,10 +180,8 @@ final class EmitSource
     }
 
     /**
-     * @param mixed        $value
+     * @param TValue       $value
      * @param int          $position
-     *
-     * @psalm-param TValue $value
      *
      * @return array|null Returns [?\Throwable, mixed] or null if no send value is available.
      *
@@ -239,12 +237,9 @@ final class EmitSource
      * Emits a value from the pipeline. The returned promise is resolved once the emitted value has been consumed or
      * if the pipeline is completed, failed, or disposed.
      *
-     * @param mixed $value Value to emit from the pipeline.
+     * @param TValue $value Value to emit from the pipeline.
      *
-     * @return Future Resolves with the value sent to the pipeline.
-     *
-     * @psalm-param TValue $value
-     * @psalm-return Future<TSend>
+     * @return Future<TSend> Resolves with the value sent to the pipeline.
      */
     public function emit(mixed $value): Future
     {
@@ -271,12 +266,9 @@ final class EmitSource
     /**
      * Emits a value from the pipeline, suspending execution until the value is consumed.
      *
-     * @param mixed $value Value to emit from the pipeline.
+     * @param TValue $value Value to emit from the pipeline.
      *
-     * @return mixed Returns the value sent to the pipeline.
-     *
-     * @psalm-param TValue $value
-     * @psalm-return TSend
+     * @return TSend Returns the value sent to the pipeline.
      */
     public function yield(mixed $value): mixed
     {
@@ -364,7 +356,7 @@ final class EmitSource
             throw new \Error($message);
         }
 
-        $this->completed = $this->completed ?: !$disposed; // $disposed is false if complete() or error() invoked
+        $this->completed = !$disposed; // $disposed is false if complete() or error() invoked
         $this->disposed = $this->disposed ?: $disposed; // Once disposed, do not change flag
 
         if ($this->completed) { // Record stack trace when calling complete() or error()
@@ -445,7 +437,6 @@ final class EmitSource
 
         $this->resolvePending();
 
-        /** @psalm-suppress PossiblyNullIterator $alreadyDisposed is a guard against $this->onDisposal being null */
         foreach ($onDisposal as $callback) {
             Loop::queue($callback);
         }

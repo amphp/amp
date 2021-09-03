@@ -6,15 +6,15 @@ use function Revolt\EventLoop\defer;
 
 final class CombinedCancellationToken implements CancellationToken
 {
-    /** @var array{0: CancellationToken, 1: string}[] */
+    /** @var array<int, array{CancellationToken, string}> */
     private array $tokens = [];
 
     private string $nextId = "a";
 
-    /** @var callable[] */
+    /** @var callable(CancelledException)[] */
     private array $callbacks = [];
 
-    private CancelledException $exception;
+    private ?CancelledException $exception = null;
 
     public function __construct(CancellationToken ...$tokens)
     {
@@ -26,7 +26,7 @@ final class CombinedCancellationToken implements CancellationToken
                 $this->callbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    defer($callback, $this->exception);
+                    defer(static fn() => $callback($exception));
                 }
             });
 
@@ -47,8 +47,9 @@ final class CombinedCancellationToken implements CancellationToken
     {
         $id = $this->nextId++;
 
-        if (isset($this->exception)) {
-            defer($callback, $this->exception);
+        if ($this->exception) {
+            $exception = $this->exception;
+            defer(static fn() => $callback($exception));
         } else {
             $this->callbacks[$id] = $callback;
         }

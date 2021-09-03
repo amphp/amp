@@ -12,7 +12,7 @@ try {
     $source = new PipelineSource;
     $pipeline = $source->pipe();
 
-    defer(function (PipelineSource $source): void {
+    defer(function () use ($source): void {
         delay(500);
         $source->yield(1);
         delay(1500);
@@ -29,7 +29,7 @@ try {
         $source->yield(9);
         $source->yield(10);
         $source->complete();
-    }, $source);
+    });
 
     foreach ($pipeline as $value) {
         \printf("Pipeline source yielded %d\n", $value);

@@ -2,7 +2,6 @@
 
 namespace Amp;
 
-use Amp\Future;
 use function Amp\Future\spawn;
 
 /**

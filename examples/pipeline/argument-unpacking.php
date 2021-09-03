@@ -5,8 +5,8 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\AsyncGenerator;
 use Revolt\EventLoop\Loop;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 $future = spawn(function (): void {
     try {

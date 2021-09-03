@@ -2,7 +2,7 @@
 <psalm
         totallyTyped="false"
         errorLevel="2"
-        phpVersion="7.0"
+        phpVersion="8.1"
         resolveFromConfigFile="true"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="https://getpsalm.org/schema/config"
@@ -10,22 +10,10 @@
 >
     <projectFiles>
         <directory name="examples"/>
-        <ignoreFiles>
-            <directory name="examples/psalm"/>
-        </ignoreFiles>
         <directory name="lib"/>
-        <ignoreFiles>
-            <directory name="vendor"/>
-        </ignoreFiles>
     </projectFiles>
 
     <issueHandlers>
-        <DuplicateClass>
-            <errorLevel type="suppress">
-                <file name="lib/CallableMaker.php"/>
-            </errorLevel>
-        </DuplicateClass>
-
         <StringIncrement>
             <errorLevel type="suppress">
                 <directory name="examples"/>
@@ -58,26 +46,6 @@
                 <directory name="lib"/>
             </errorLevel>
         </MissingClosureReturnType>
-
-        <!-- Iterator is deprecated -->
-        <DeprecatedClass>
-            <errorLevel type="suppress">
-                <directory name="examples/iterators"/>
-                <file name="lib/Emitter.php"/>
-                <file name="lib/functions.php"/>
-                <file name="lib/Internal/PrivateIterator.php"/>
-            </errorLevel>
-        </DeprecatedClass>
-
-        <!-- Iterator is deprecated -->
-        <DeprecatedInterface>
-            <errorLevel type="suppress">
-                <directory name="examples/iterators"/>
-                <file name="lib/Emitter.php"/>
-                <file name="lib/functions.php"/>
-                <file name="lib/Internal/PrivateIterator.php"/>
-            </errorLevel>
-        </DeprecatedInterface>
     </issueHandlers>
 
     <stubs>

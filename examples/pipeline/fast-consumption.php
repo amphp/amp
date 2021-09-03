@@ -4,8 +4,8 @@
 require __DIR__ . '/../../vendor/autoload.php';
 
 use Amp\AsyncGenerator;
+use function Amp\Future\spawn;
 use function Revolt\EventLoop\delay;
-use function Revolt\Future\spawn;
 
 try {
     /** @psalm-var AsyncGenerator<int, null, null> $pipeline */
