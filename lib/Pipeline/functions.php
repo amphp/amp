@@ -14,19 +14,17 @@ use function Revolt\EventLoop\defer;
 use function Revolt\EventLoop\delay;
 
 /**
- * Creates a pipeline from the given iterable, emitting the each value. The iterable may contain promises. If any
+ * Creates a pipeline from the given iterable, emitting each value. The iterable may contain promises. If any
  * promise fails, the returned pipeline will fail with the same reason.
  *
  * @template TValue
  *
- * @param iterable               $iterable Elements to emit.
- * @param float                  $delay Delay between elements emitted in seconds.
+ * @param iterable $iterable Elements to emit.
+ * @param float    $delay Delay between elements emitted in seconds.
  *
- * @psalm-param iterable<TValue> $iterable
+ * @psalm-param iterable<array-key, TValue> $iterable
  *
- * @return Pipeline
- *
- * @psalm-return Pipeline<TValue>
+ * @return Pipeline<TValue>
  *
  * @throws \TypeError If the argument is not an array or instance of \Traversable.
  */
@@ -51,14 +49,12 @@ function fromIterable(iterable $iterable, float $delay = 0): Pipeline
  * @template TValue
  * @template TReturn
  *
- * @param Pipeline               $pipeline
+ * @param Pipeline<TValue>                $pipeline
  * @param callable(TValue $value):TReturn $onEmit
  *
  * @psalm-param Pipeline<TValue> $pipeline
  *
- * @return Pipeline
- *
- * @psalm-return Pipeline<TReturn>
+ * @return Pipeline<TReturn>
  */
 function map(Pipeline $pipeline, callable $onEmit): Pipeline
 {
@@ -72,14 +68,10 @@ function map(Pipeline $pipeline, callable $onEmit): Pipeline
 /**
  * @template TValue
  *
- * @param Pipeline               $pipeline
+ * @param Pipeline<TValue>             $pipeline
  * @param callable(TValue $value):bool $filter
  *
- * @psalm-param Pipeline<TValue> $pipeline
- *
- * @return Pipeline
- *
- * @psalm-return Pipeline<TValue>
+ * @return Pipeline<TValue>
  */
 function filter(Pipeline $pipeline, callable $filter): Pipeline
 {
@@ -95,14 +87,15 @@ function filter(Pipeline $pipeline, callable $filter): Pipeline
 /**
  * Creates a pipeline that emits values emitted from any pipeline in the array of pipelines.
  *
- * @param Pipeline[] $pipelines
+ * @template TValue
  *
- * @return Pipeline
+ * @param Pipeline<TValue>[] $pipelines
+ *
+ * @return Pipeline<TValue>
  */
 function merge(array $pipelines): Pipeline
 {
     $source = new PipelineSource;
-    $result = $source->pipe();
 
     $futures = [];
     foreach ($pipelines as $pipeline) {
@@ -128,7 +121,7 @@ function merge(array $pipelines): Pipeline
         }
     });
 
-    return $result;
+    return $source->pipe();
 }
 
 /**
@@ -136,9 +129,11 @@ function merge(array $pipelines): Pipeline
  * prior pipeline must complete before values are emitted from any subsequent pipelines. Streams are concatenated
  * in the order given (iteration order of the array).
  *
- * @param Pipeline[] $pipelines
+ * @template TValue
  *
- * @return Pipeline
+ * @param Pipeline<TValue>[] $pipelines
+ *
+ * @return Pipeline<TValue>
  */
 function concat(array $pipelines): Pipeline
 {
@@ -162,9 +157,7 @@ function concat(array $pipelines): Pipeline
  *
  * @template TValue
  *
- * @param Pipeline               $pipeline
- *
- * @psalm-param Pipeline<TValue> $pipeline
+ * @param Pipeline<TValue> $pipeline
  *
  * @return Future<int>
  */
@@ -186,13 +179,9 @@ function discard(Pipeline $pipeline): Future
  *
  * @template TValue
  *
- * @param Pipeline               $pipeline
+ * @param Pipeline<TValue> $pipeline
  *
- * @psalm-param Pipeline<TValue> $pipeline
- *
- * @return array
- *
- * @psalm-return array<int, TValue>
+ * @return array<int, TValue>
  */
 function toArray(Pipeline $pipeline): array
 {

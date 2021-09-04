@@ -3,6 +3,7 @@
 namespace Amp\Test\Pipeline;
 
 use Amp\AsyncGenerator;
+use Amp\DisposedException;
 use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
@@ -66,6 +67,28 @@ class MergeTest extends AsyncTestCase
 
         while (null !== $value = $pipeline->continue()) {
             self::assertSame(\array_shift($expected), $value);
+        }
+    }
+
+    /**
+     * @depends testMerge
+     */
+    public function testDisposedMerge(): void
+    {
+        $pipelines = [];
+
+        $pipelines[] = Pipeline\fromIterable([1, 2, 3, 4, 5], 0.1);
+        $pipelines[] = Pipeline\fromIterable([6, 7, 8, 9, 10], 0.1);
+
+        $pipeline = Pipeline\merge($pipelines);
+
+        $this->expectException(DisposedException::class);
+        $this->setTimeout(0.3);
+
+        while (null !== $value = $pipeline->continue()) {
+            if ($value === 7) {
+                $pipeline->dispose();
+            }
         }
     }
 

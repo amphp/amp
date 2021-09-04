@@ -128,7 +128,7 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
     }
 
     /**
-     * @psalm-return TReturn
+     * @return TReturn
      */
     public function getReturn(): mixed
     {
@@ -137,8 +137,6 @@ final class AsyncGenerator implements Pipeline, \IteratorAggregate
 
     /**
      * @inheritDoc
-     *
-     * @paslm-return \Traversable<int, TValue>
      */
     public function getIterator(): \Traversable
     {

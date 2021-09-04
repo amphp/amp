@@ -120,6 +120,8 @@ final class FutureIterator
                 return $this->complete->join();
             }
 
+            $this->token->throwIfRequested();
+
             $this->queue->suspension = Loop::createSuspension();
 
             /** @var null|array{Tk, Future<Tv>} */

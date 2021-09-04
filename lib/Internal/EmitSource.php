@@ -168,7 +168,7 @@ final class EmitSource
     public function onDisposal(callable $onDisposal): void
     {
         if ($this->disposed) {
-            Loop::queue($onDisposal);
+            Loop::queue($onDisposal, $this->exception);
             return;
         }
 
@@ -438,7 +438,7 @@ final class EmitSource
         $this->resolvePending();
 
         foreach ($onDisposal as $callback) {
-            Loop::queue($callback);
+            Loop::queue($callback, $this->exception);
         }
     }
 }

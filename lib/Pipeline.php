@@ -6,6 +6,7 @@ namespace Amp;
  * A pipeline is an asynchronous set of ordered values.
  *
  * @template-covariant TValue
+ * @template-extends \Traversable<int, TValue>
  */
 interface Pipeline extends \Traversable
 {
