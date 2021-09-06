@@ -39,8 +39,10 @@ class EventDriver extends Driver
 
     public function __construct()
     {
-        /** @psalm-suppress TooFewArguments https://github.com/JetBrains/phpstorm-stubs/pull/763 */
-        $this->handle = new \EventBase;
+        $config = new \EventConfig();
+        $config->requireFeatures(\EventConfig::FEATURE_FDS);
+
+        $this->handle = new \EventBase($config);
         $this->nowOffset = getCurrentTime();
         $this->now = \random_int(0, $this->nowOffset);
         $this->nowOffset -= $this->now;
