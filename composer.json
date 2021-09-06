@@ -58,13 +58,12 @@
         },
         "files": [
             "lib/Future/functions.php",
-            "lib/Internal/functions.php",
-            "lib/Pipeline/functions.php"
+            "lib/Internal/functions.php"
         ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Amp\\Test\\": "test"
+            "Amp\\": "test"
         }
     },
     "support": {

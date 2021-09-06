@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Test;
+namespace Amp\CancellationToken;
 
 use Amp\CancelledException;
 use Amp\PHPUnit\AsyncTestCase;
@@ -36,9 +36,10 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
 
     public function testWatcherCancellation(): void
     {
+        $enabled = Loop::getInfo()["delay"]["enabled"];
         $token = new TimeoutCancellationToken(0.001);
-        self::assertSame(1, Loop::getInfo()["delay"]["enabled"]);
+        self::assertSame($enabled + 1, Loop::getInfo()["delay"]["enabled"]);
         unset($token);
-        self::assertSame(0, Loop::getInfo()["delay"]["enabled"]);
+        self::assertSame($enabled, Loop::getInfo()["delay"]["enabled"]);
     }
 }

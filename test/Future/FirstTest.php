@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Test\Future;
+namespace Amp\Future;
 
 use Amp\CancelledException;
 use Amp\Deferred;
