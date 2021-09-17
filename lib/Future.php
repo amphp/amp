@@ -30,6 +30,9 @@ final class Future
         // Directly iterate in case of an array, because there can't be suspensions during iteration
         if (\is_array($futures)) {
             foreach ($futures as $key => $future) {
+                if (!$future instanceof self) {
+                    throw new \TypeError('Array must only contain instances of ' . self::class);
+                }
                 $iterator->enqueue($future->state, $key, $future);
             }
             $iterator->complete();
@@ -39,6 +42,9 @@ final class Future
             defer(static function () use ($futures, $iterator): void {
                 try {
                     foreach ($futures as $key => $future) {
+                        if (!$future instanceof self) {
+                            throw new \TypeError('Iterable must only provide instances of ' . self::class);
+                        }
                         $iterator->enqueue($future->state, $key, $future);
                     }
                     $iterator->complete();
