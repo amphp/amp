@@ -67,13 +67,42 @@ function first(iterable $futures, ?CancellationToken $token = null): mixed
  */
 function any(iterable $futures, ?CancellationToken $token = null): mixed
 {
+    $result = some($futures, 1, $token);
+    return $result[\array_key_first($result)];
+}
+
+/**
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param CancellationToken|null $token Optional cancellation token.
+ *
+ * @return array<Tk, Tv>
+ *
+ * @throws CompositeException If all futures errored.
+ */
+function some(iterable $futures, int $count, ?CancellationToken $token = null): array
+{
+    if ($count <= 0) {
+        throw new \ValueError('The count must be greater than 0');
+    }
+
+    $values = [];
     $errors = [];
-    foreach (Future::iterate($futures, $token) as $index => $first) {
+    foreach (Future::iterate($futures, $token) as $index => $future) {
         try {
-            return $first->join();
+            $values[$index] = $future->join();
+            if (\count($values) === $count) {
+                return $values;
+            }
         } catch (\Throwable $throwable) {
             $errors[$index] = $throwable;
         }
+    }
+
+    if (empty($errors)) {
+        throw new \Error('Iterable did provide enough futures to satisfy the required count');
     }
 
     /**
