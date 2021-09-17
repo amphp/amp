@@ -146,8 +146,6 @@ function settle(iterable $futures, ?CancellationToken $token = null): array {
  */
 function all(iterable $futures, CancellationToken $token = null): array
 {
-    $futures = \is_array($futures) ? $futures : \iterator_to_array($futures);
-
     // Future::iterate() to throw the first error based on completion order instead of argument order
     foreach (Future::iterate($futures, $token) as $k => $future) {
         $futures[$k] = $future->join();
