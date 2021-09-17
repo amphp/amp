@@ -112,6 +112,28 @@ function some(iterable $futures, int $count, ?CancellationToken $token = null): 
 }
 
 /**
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param CancellationToken|null $token Optional cancellation token.
+ * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
+ */
+function settle(iterable $futures, ?CancellationToken $token = null): array {
+    $values = [];
+    $errors = [];
+    foreach (Future::iterate($futures, $token) as $index => $future) {
+        try {
+            $values[$index] = $future->join();
+        } catch (\Throwable $throwable) {
+            $errors[$index] = $throwable;
+        }
+    }
+
+    return [$errors, $values];
+}
+
+/**
  * Awaits all futures to complete or aborts if any errors.
  *
  * @template Tk of array-key
