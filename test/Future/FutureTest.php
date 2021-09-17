@@ -2,6 +2,7 @@
 
 namespace Amp\Future;
 
+use Amp\CancellationTokenSource;
 use Amp\CancelledException;
 use Amp\Deferred;
 use Amp\Future;
@@ -9,6 +10,7 @@ use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
 use function Amp\Future\spawn;
+use function Revolt\EventLoop\defer;
 use function Revolt\EventLoop\delay;
 
 class FutureTest extends TestCase
@@ -140,6 +142,21 @@ class FutureTest extends TestCase
         self::assertTrue($future->join($token));
     }
 
+    public function testCompleteThenCancelJoin(): void
+    {
+        $deferred = new Deferred;
+        $source = new CancellationTokenSource;
+        $future = $deferred->getFuture();
+
+        defer(function () use ($future, $source): void {
+            self::assertSame(1, $future->join($source->getToken()));
+        });
+
+        $deferred->complete(1);
+        $source->cancel();
+
+        delay(0.01); // Tick the event loop to enter defer callback.
+    }
 
     /**
      * @template T

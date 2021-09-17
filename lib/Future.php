@@ -114,7 +114,9 @@ final class Future
 
         $cancellationId = $token?->subscribe(function (\Throwable $reason) use (&$callbackId, $suspension): void {
             $this->state->unsubscribe($callbackId);
-            $suspension->throw($reason);
+            if (!$this->state->isComplete()) { // Resume has already been scheduled if complete.
+                $suspension->throw($reason);
+            }
         });
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
