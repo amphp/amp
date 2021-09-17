@@ -41,7 +41,7 @@ function spawn(callable $callback): Future
  *
  * @throws \Error If $futures is empty.
  */
-function first(iterable $futures, ?CancellationToken $token = null): mixed
+function race(iterable $futures, ?CancellationToken $token = null): mixed
 {
     foreach (Future::iterate($futures, $token) as $first) {
         return $first->join();
@@ -53,7 +53,7 @@ function first(iterable $futures, ?CancellationToken $token = null): mixed
 /**
  * Unwraps the first successfully completed future.
  *
- * If you want the first future completed, successful or not, use {@see first()} instead.
+ * If you want the first future completed, successful or not, use {@see race()} instead.
  *
  * @template Tk of array-key
  * @template Tv
