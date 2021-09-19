@@ -5,7 +5,7 @@ namespace Amp;
 use Amp\Internal\FutureIterator;
 use Amp\Internal\FutureState;
 use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\defer;
+use function Revolt\EventLoop\queue;
 
 /**
  * @template T
@@ -39,7 +39,7 @@ final class Future
         } else {
             // Use separate fiber for iteration over non-array, because not all items might be immediately available
             // while other futures are already completed.
-            defer(static function () use ($futures, $iterator): void {
+            queue(static function () use ($futures, $iterator): void {
                 try {
                     foreach ($futures as $key => $future) {
                         if (!$future instanceof self) {

@@ -34,24 +34,16 @@
     ],
     "require": {
         "php": ">=8",
-        "revolt/event-loop": "^1"
+        "revolt/event-loop": "dev-main as 0.1"
     },
     "require-dev": {
         "ext-json": "*",
-        "amphp/phpunit-util": "dev-v2-revolt",
+        "amphp/phpunit-util": "dev-v2-revolt as 2.0",
         "amphp/php-cs-fixer-config": "dev-master",
         "phpunit/phpunit": "^9",
         "psalm/phar": "^4.7",
         "jetbrains/phpstorm-stubs": "^2019.3"
     },
-    "prefer-stable": true,
-    "minimum-stability": "dev",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:revoltphp/event-loop.git"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Amp\\": "lib"

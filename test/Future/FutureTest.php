@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
 use function Amp\coroutine;
 use function Amp\delay;
-use function Revolt\EventLoop\defer;
+use function Revolt\EventLoop\queue;
 
 class FutureTest extends TestCase
 {
@@ -148,7 +148,7 @@ class FutureTest extends TestCase
         $source = new CancellationTokenSource;
         $future = $deferred->getFuture();
 
-        defer(function () use ($future, $source): void {
+        queue(function () use ($future, $source): void {
             self::assertSame(1, $future->await($source->getToken()));
         });
 
