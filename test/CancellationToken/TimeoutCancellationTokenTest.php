@@ -7,7 +7,7 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellationToken;
 use Amp\TimeoutException;
 use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\delay;
+use function Amp\delay;
 
 class TimeoutCancellationTokenTest extends AsyncTestCase
 {

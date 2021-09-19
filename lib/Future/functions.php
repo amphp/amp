@@ -5,27 +5,6 @@ namespace Amp\Future;
 use Amp\CancellationToken;
 use Amp\CompositeException;
 use Amp\Future;
-use Amp\Internal;
-use Revolt\EventLoop\Loop;
-
-/**
- * Spawns a new fiber asynchronously using the given callable and argument list.
- *
- * @template T
- *
- * @param callable():T $callback
- *
- * @return Future<T>
- */
-function spawn(callable $callback): Future
-{
-    $state = new Internal\FutureState;
-
-    $fiber = new \Fiber('Amp\\Internal\\run');
-    Loop::queue([$fiber, 'start'], $state, $callback);
-
-    return new Future($state);
-}
 
 /**
  * Unwraps the first completed future.

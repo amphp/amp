@@ -6,7 +6,7 @@ use Amp\CancellationTokenSource;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\delay;
+use function Amp\delay;
 
 class CancellationTest extends AsyncTestCase
 {

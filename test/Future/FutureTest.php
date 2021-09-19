@@ -9,9 +9,9 @@ use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
-use function Amp\Future\spawn;
+use function Amp\coroutine;
+use function Amp\delay;
 use function Revolt\EventLoop\defer;
-use function Revolt\EventLoop\delay;
 
 class FutureTest extends TestCase
 {
@@ -168,13 +168,12 @@ class FutureTest extends TestCase
      */
     private function delay(float $seconds, mixed $value): Future
     {
-        return spawn(
+        return coroutine(
             /**
              * @return T
              */
-            static function () use ($seconds, $value) {
+            static function () use ($seconds, $value): mixed {
                 delay($seconds);
-
                 return $value;
             }
         );

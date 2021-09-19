@@ -57,6 +57,7 @@
             "Amp\\": "lib"
         },
         "files": [
+            "lib/functions.php",
             "lib/Future/functions.php",
             "lib/Internal/functions.php"
         ]
