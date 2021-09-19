@@ -34,7 +34,7 @@
     ],
     "require": {
         "php": ">=8",
-        "revolt/event-loop": "dev-main as 0.1"
+        "revolt/event-loop": "dev-main as 1.0"
     },
     "require-dev": {
         "ext-json": "*",
