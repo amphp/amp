@@ -117,7 +117,7 @@ final class FutureIterator
 
         if (!$this->queue->items) {
             if ($this->complete && !$this->queue->pending) {
-                return $this->complete->join();
+                return $this->complete->await();
             }
 
             $this->token->throwIfRequested();

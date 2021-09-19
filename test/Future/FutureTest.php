@@ -24,7 +24,7 @@ class FutureTest extends TestCase
         $c = $this->delay(0.3, 'c');
 
         foreach (Future::iterate([$b, $a, $c]) as $index => $future) {
-            print $future->join() . '=' . $index . ' ';
+            print $future->await() . '=' . $index . ' ';
         }
     }
 
@@ -40,11 +40,11 @@ class FutureTest extends TestCase
             yield $this->delay(0.1, 'a');
 
             // Never joins
-            (new Deferred)->getFuture()->join();
+            (new Deferred)->getFuture()->await();
         })();
 
         foreach (Future::iterate($iterator) as $index => $future) {
-            print $future->join() . '=' . $index . ' ';
+            print $future->await() . '=' . $index . ' ';
             break;
         }
     }
@@ -56,7 +56,7 @@ class FutureTest extends TestCase
 
         $deferred->complete('result');
 
-        self::assertSame('result', $future->join());
+        self::assertSame('result', $future->await());
     }
 
     public function testCompleteAsync(): void
@@ -66,14 +66,14 @@ class FutureTest extends TestCase
 
         Loop::delay(0.01, fn() => $deferred->complete('result'));
 
-        self::assertSame('result', $future->join());
+        self::assertSame('result', $future->await());
     }
 
     public function testCompleteImmediate(): void
     {
         $future = Future::complete('result');
 
-        self::assertSame('result', $future->join());
+        self::assertSame('result', $future->await());
     }
 
     public function testError(): void
@@ -86,7 +86,7 @@ class FutureTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
 
-        $future->join();
+        $future->await();
     }
 
     public function testErrorAsync(): void
@@ -99,7 +99,7 @@ class FutureTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
 
-        $future->join();
+        $future->await();
     }
 
     public function testErrorImmediate(): void
@@ -109,7 +109,7 @@ class FutureTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
 
-        $future->join();
+        $future->await();
     }
 
     public function testCompleteWithFuture(): void
@@ -130,7 +130,7 @@ class FutureTest extends TestCase
 
         $this->expectException(CancelledException::class);
 
-        $future->join($token);
+        $future->await($token);
     }
 
     public function testCompleteBeforeCancellation(): void
@@ -139,7 +139,7 @@ class FutureTest extends TestCase
 
         $token = new TimeoutCancellationToken(0.02);
 
-        self::assertTrue($future->join($token));
+        self::assertTrue($future->await($token));
     }
 
     public function testCompleteThenCancelJoin(): void
@@ -149,7 +149,7 @@ class FutureTest extends TestCase
         $future = $deferred->getFuture();
 
         defer(function () use ($future, $source): void {
-            self::assertSame(1, $future->join($source->getToken()));
+            self::assertSame(1, $future->await($source->getToken()));
         });
 
         $deferred->complete(1);

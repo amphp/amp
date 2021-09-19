@@ -114,7 +114,7 @@ final class Future
      *
      * @return T
      */
-    public function join(?CancellationToken $token = null): mixed
+    public function await(?CancellationToken $token = null): mixed
     {
         $suspension = Loop::createSuspension();
 

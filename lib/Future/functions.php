@@ -23,7 +23,7 @@ use Amp\Future;
 function race(iterable $futures, ?CancellationToken $token = null): mixed
 {
     foreach (Future::iterate($futures, $token) as $first) {
-        return $first->join();
+        return $first->await();
     }
 
     throw new \Error('No future provided');
@@ -71,7 +71,7 @@ function some(iterable $futures, int $count, ?CancellationToken $token = null): 
     $errors = [];
     foreach (Future::iterate($futures, $token) as $index => $future) {
         try {
-            $values[$index] = $future->join();
+            $values[$index] = $future->await();
             if (\count($values) === $count) {
                 return $values;
             }
@@ -103,7 +103,7 @@ function settle(iterable $futures, ?CancellationToken $token = null): array {
     $errors = [];
     foreach (Future::iterate($futures, $token) as $index => $future) {
         try {
-            $values[$index] = $future->join();
+            $values[$index] = $future->await();
         } catch (\Throwable $throwable) {
             $errors[$index] = $throwable;
         }
@@ -127,7 +127,7 @@ function all(iterable $futures, CancellationToken $token = null): array
 {
     // Future::iterate() to throw the first error based on completion order instead of argument order
     foreach (Future::iterate($futures, $token) as $k => $future) {
-        $futures[$k] = $future->join();
+        $futures[$k] = $future->await();
     }
 
     /** @var array<Tk, Tv> */
