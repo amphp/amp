@@ -118,19 +118,9 @@ final class Future
     {
         $suspension = Loop::createSuspension();
 
-        $cancellationId = $token?->subscribe(function (\Throwable $reason) use (&$callbackId, $suspension): void {
-            $this->state->unsubscribe($callbackId);
-            if (!$this->state->isComplete()) { // Resume has already been scheduled if complete.
-                $suspension->throw($reason);
-            }
-        });
-
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
-            $cancellationId, $token, $suspension
+            $token, $suspension
         ): void {
-            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
-            $token?->unsubscribe($cancellationId);
-
             if ($error) {
                 $suspension->throw($error);
             } else {
@@ -138,6 +128,21 @@ final class Future
             }
         });
 
-        return $suspension->suspend();
+        $state = $this->state;
+        $cancellationId = $token?->subscribe(static function (\Throwable $reason) use (
+            $callbackId, $suspension, $state
+        ): void {
+            $state->unsubscribe($callbackId);
+            if (!$state->isComplete()) { // Resume has already been scheduled if complete.
+                $suspension->throw($reason);
+            }
+        });
+
+        try {
+            return $suspension->suspend();
+        } finally {
+            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
+            $token?->unsubscribe($cancellationId);
+        }
     }
 }
