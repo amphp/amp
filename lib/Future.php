@@ -108,6 +108,14 @@ final class Future
     }
 
     /**
+     * Do not forward unhandled errors to the event loop handler.
+     */
+    public function ignore(): void
+    {
+        $this->state->ignore();
+    }
+
+    /**
      * Awaits the operation to complete.
      *
      * Throws an exception if the operation fails.

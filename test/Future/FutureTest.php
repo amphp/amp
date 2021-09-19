@@ -6,14 +6,16 @@ use Amp\CancellationTokenSource;
 use Amp\CancelledException;
 use Amp\Deferred;
 use Amp\Future;
+use Amp\PHPUnit\AsyncTestCase;
+use Amp\PHPUnit\LoopCaughtException;
+use Amp\PHPUnit\TestException;
 use Amp\TimeoutCancellationToken;
-use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
 use function Amp\coroutine;
 use function Amp\delay;
 use function Revolt\EventLoop\queue;
 
-class FutureTest extends TestCase
+class FutureTest extends AsyncTestCase
 {
     public function testIterate(): void
     {
@@ -154,8 +156,43 @@ class FutureTest extends TestCase
 
         $deferred->complete(1);
         $source->cancel();
+    }
 
-        delay(0.01); // Tick the event loop to enter defer callback.
+
+    public function testUnhandledError(): void
+    {
+        $deferred = new Deferred;
+        $deferred->error(new TestException);
+        unset($deferred);
+
+        $this->expectException(LoopCaughtException::class);
+    }
+
+    public function testUnhandledErrorFromFutureError(): void
+    {
+        $future = Future::error(new TestException);
+        unset($future);
+
+        $this->expectException(LoopCaughtException::class);
+    }
+
+    public function testIgnoringUnhandledErrors(): void
+    {
+        $deferred = new Deferred;
+        $deferred->getFuture()->ignore();
+        $deferred->error(new TestException);
+        unset($deferred);
+
+        Loop::setErrorHandler($this->createCallback(0));
+    }
+
+    public function testIgnoreUnhandledErrorFromFutureError(): void
+    {
+        $future = Future::error(new TestException);
+        $future->ignore();
+        unset($future);
+
+        Loop::setErrorHandler($this->createCallback(0));
     }
 
     /**

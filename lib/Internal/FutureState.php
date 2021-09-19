@@ -2,6 +2,7 @@
 
 namespace Amp\Internal;
 
+use Amp\UnhandledFutureError;
 use Revolt\EventLoop\Loop;
 use Amp\Future;
 
@@ -17,8 +18,10 @@ final class FutureState
 
     private bool $complete = false;
 
+    private bool $handled = false;
+
     /**
-     * @var array<string, (callable(?\Throwable, ?T, string): void)>
+     * @var array<string, callable(?\Throwable, ?T, string): void>
      */
     private array $callbacks = [];
 
@@ -29,18 +32,29 @@ final class FutureState
 
     private ?\Throwable $throwable = null;
 
+    public function __destruct()
+    {
+        if ($this->throwable && !$this->handled) {
+            $throwable = new UnhandledFutureError($this->throwable);
+            Loop::queue(static fn () => throw $throwable);
+        }
+    }
+
     /**
      * Registers a callback to be notified once the operation is complete or errored.
      *
      * The callback is invoked directly from the event loop context, so suspension within the callback is not possible.
      *
-     * @param (callable(?\Throwable, ?T, string): void) $callback Callback invoked on error / successful completion of the future.
+     * @param callable(?\Throwable, ?T, string): void $callback Callback invoked on error / successful completion of
+     * the future.
      *
      * @return string Identifier that can be used to cancel interest for this future.
      */
     public function subscribe(callable $callback): string
     {
         $id = self::$nextId++;
+
+        $this->handled = true; // Even if unsubscribed later, consider the future handled.
 
         if ($this->complete) {
             Loop::queue($callback, $this->throwable, $this->result, $id);
@@ -103,6 +117,14 @@ final class FutureState
     public function isComplete(): bool
     {
         return $this->complete;
+    }
+
+    /**
+     * Suppress the exception thrown to the loop error handler if and operation error is not handled by a callback.
+     */
+    public function ignore(): void
+    {
+        $this->handled = true;
     }
 
     private function invokeCallbacks(): void

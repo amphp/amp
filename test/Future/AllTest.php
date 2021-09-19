@@ -8,6 +8,7 @@ use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
+use function Amp\delay;
 use function Amp\Future\all;
 
 class AllTest extends TestCase
@@ -37,6 +38,17 @@ class AllTest extends TestCase
         $this->expectExceptionMessage('foo');
 
         all([Future::error(new \Exception('foo')), Future::complete(2)]);
+    }
+
+    public function testTwoThrowingWithOneLater(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('foo');
+
+        $deferred = new Deferred;
+        Loop::delay(0.1, static fn () => $deferred->error(new \Exception('bar')));
+
+        all([Future::error(new \Exception('foo')), $deferred->getFuture()]);
     }
 
     public function testTwoGeneratorThrows(): void
