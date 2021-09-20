@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - "master"
+      - "v3"
+      - "v3-revolt"
 
 jobs:
   tests:
