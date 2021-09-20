@@ -8,7 +8,6 @@ use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop\Loop;
-use function Amp\delay;
 use function Amp\Future\all;
 
 class AllTest extends TestCase
@@ -29,7 +28,19 @@ class AllTest extends TestCase
 
         Loop::delay(0.01, fn() => $deferred->complete(1));
 
-        self::assertSame([1, 2], all([$deferred->getFuture(), Future::complete(2)]));
+        self::assertSame([1 => 2, 0 => 1], all([$deferred->getFuture(), Future::complete(2)]));
+    }
+
+    public function testArrayDestructuring(): void
+    {
+        $deferred = new Deferred;
+
+        Loop::delay(0.01, fn() => $deferred->complete(1));
+
+        [$first, $second] = all([$deferred->getFuture(), Future::complete(2)]);
+
+        self::assertSame(1, $first);
+        self::assertSame(2, $second);
     }
 
     public function testTwoFirstThrowing(): void

@@ -113,7 +113,8 @@ function settle(iterable $futures, ?CancellationToken $token = null): array {
 }
 
 /**
- * Awaits all futures to complete or aborts if any errors.
+ * Awaits all futures to complete or aborts if any errors. The returned array keys will be in the order the futures
+ * resolved, not in the order given by the iterable. Sort the array after resolution if necessary.
  *
  * @template Tk of array-key
  * @template Tv
@@ -125,11 +126,12 @@ function settle(iterable $futures, ?CancellationToken $token = null): array {
  */
 function all(iterable $futures, CancellationToken $token = null): array
 {
+    $values = [];
     // Future::iterate() to throw the first error based on completion order instead of argument order
-    foreach (Future::iterate($futures, $token) as $k => $future) {
-        $futures[$k] = $future->await();
+    foreach (Future::iterate($futures, $token) as $index => $future) {
+        $values[$index] = $future->await();
     }
 
     /** @var array<Tk, Tv> */
-    return $futures;
+    return $values;
 }
