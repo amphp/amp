@@ -40,7 +40,9 @@ class EventDriver extends Driver
     public function __construct()
     {
         $config = new \EventConfig();
-        $config->requireFeatures(\EventConfig::FEATURE_FDS);
+        if (\DIRECTORY_SEPARATOR !== '\\') {
+            $config->requireFeatures(\EventConfig::FEATURE_FDS);
+        }
 
         $this->handle = new \EventBase($config);
         $this->nowOffset = getCurrentTime();
