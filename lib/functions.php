@@ -60,7 +60,7 @@ function delay(float $timeout, bool $reference = true, ?CancellationToken $token
  * @return int Caught signal number.
  * @throws UnsupportedFeatureException
  */
-function trap(int|array $signals, bool $reference = true, ?CancellationToken $token = null): int
+function trapSignal(int|array $signals, bool $reference = true, ?CancellationToken $token = null): int
 {
     $suspension = Loop::createSuspension();
     $callback = static fn (string $watcher, int $signo) => $suspension->resume($signo);
