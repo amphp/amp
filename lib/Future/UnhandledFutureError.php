@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp;
+namespace Amp\Future;
 
 /**
  * Will be thrown to the event loop error handler in case a future exception is not handled.

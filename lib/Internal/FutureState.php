@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Amp\UnhandledFutureError;
+use Amp\Future\UnhandledFutureError;
 use Revolt\EventLoop\Loop;
 use Amp\Future;
 
