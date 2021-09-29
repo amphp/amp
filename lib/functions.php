@@ -88,3 +88,73 @@ function trapSignal(int|array $signals, bool $reference = true, ?CancellationTok
         }
     }
 }
+
+/**
+ * Returns a callable that maintains a weak reference to any $this object held by the callable.
+ * This allows a class to hold a self-referencing callback without creating a circular reference that would
+ * prevent or delay automatic garbage collection.
+ * Invoking the returned callback after the object is destroyed will throw an instance of Error.
+ *
+ * @param callable $callable
+ * @return callable
+ */
+function weaken(callable $callable): callable
+{
+    if (!$callable instanceof \Closure) {
+        if (\is_string($callable)) {
+            return $callable;
+        }
+
+        if (\is_object($callable)) {
+            $callable = [$callable, '__invoke'];
+        }
+
+        if (!\is_array($callable)) {
+            throw new \RuntimeException('Unhandled callable type: ' . \gettype($callable));
+        }
+
+        [$that, $method] = $callable;
+        if (!\is_object($that)) {
+            return $callable;
+        }
+
+        $reference = \WeakReference::create($that);
+        return static function (mixed ...$args) use ($reference, $method): mixed {
+            $that = $reference->get();
+            if (!$that) {
+                throw new \Error('Weakened callback invoked after referenced object destroyed');
+            }
+
+            return $that->{$method}(...$args);
+        };
+    }
+
+    try {
+        $reflection = new \ReflectionFunction($callable);
+        $that = $reflection->getClosureThis();
+        if (!$that) {
+            return $callable;
+        }
+
+        $method = $reflection->getShortName();
+        if ($method !== '{closure}') {
+            // Closure from first-class callable or \Closure::fromCallable(), declare an anonymous closure to rebind.
+            $callable = fn (mixed ...$args) => $this->{$method}(...$args);
+        }
+
+        // Rebind to remove reference to $that
+        $callable = $callable->bindTo(new \stdClass(), $that);
+    } catch (\ReflectionException $exception) {
+        throw new \RuntimeException('Could not reflect callable', 0, $exception);
+    }
+
+    $reference = \WeakReference::create($that);
+    return static function (mixed ...$args) use ($reference, $callable): mixed {
+        $that = $reference->get();
+        if (!$that) {
+            throw new \Error('Weakened callback invoked after referenced object destroyed');
+        }
+
+        return $callable->call($that, ...$args);
+    };
+}
