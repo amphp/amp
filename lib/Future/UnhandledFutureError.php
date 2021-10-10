@@ -7,7 +7,7 @@ namespace Amp\Future;
  */
 final class UnhandledFutureError extends \Error
 {
-    public function __construct(?\Throwable $previous = null)
+    public function __construct(\Throwable $previous)
     {
         $message = 'Unhandled future error: "' . $previous->getMessage()
             . '"; Await the Future with Future::await() before the future is destroyed or use '

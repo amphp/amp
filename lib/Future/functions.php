@@ -57,7 +57,7 @@ function any(iterable $futures, ?CancellationToken $token = null): mixed
  * @param iterable<Tk, Future<Tv>> $futures
  * @param CancellationToken|null $token Optional cancellation token.
  *
- * @return array<Tk, Tv>
+ * @return non-empty-array<Tk, Tv>
  *
  * @throws CompositeException If all futures errored.
  */

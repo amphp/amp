@@ -45,6 +45,7 @@ function delay(float $timeout, bool $reference = true, ?CancellationToken $token
     try {
         $suspension->suspend();
     } finally {
+        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
         $token?->unsubscribe($id);
         Loop::cancel($watcher);
     }
@@ -82,6 +83,7 @@ function trapSignal(int|array $signals, bool $reference = true, ?CancellationTok
     try {
         return $suspension->suspend();
     } finally {
+        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
         $token?->unsubscribe($id);
         foreach ($watchers as $watcher) {
             Loop::cancel($watcher);
@@ -109,10 +111,6 @@ function weaken(callable $callable): callable
             $callable = [$callable, '__invoke'];
         }
 
-        if (!\is_array($callable)) {
-            throw new \RuntimeException('Unhandled callable type: ' . \gettype($callable));
-        }
-
         [$that, $method] = $callable;
         if (!\is_object($that)) {
             return $callable;
@@ -129,30 +127,41 @@ function weaken(callable $callable): callable
         };
     }
 
-    try {
-        $reflection = new \ReflectionFunction($callable);
-        $that = $reflection->getClosureThis();
-        if (!$that) {
-            return $callable;
-        }
+    $reflection = new \ReflectionFunction($callable);
 
-        $method = $reflection->getShortName();
-        if ($method !== '{closure}') {
-            // Closure from first-class callable or \Closure::fromCallable(), declare an anonymous closure to rebind.
-            $callable = fn (mixed ...$args) => $this->{$method}(...$args);
-        }
-
-        // Rebind to remove reference to $that
-        $callable = $callable->bindTo(new \stdClass(), $that);
-    } catch (\ReflectionException $exception) {
-        throw new \RuntimeException('Could not reflect callable', 0, $exception);
+    $that = $reflection->getClosureThis();
+    if (!$that) {
+        return $callable;
     }
 
+    $method = $reflection->getShortName();
+    if ($method !== '{closure}') {
+        // Closure from first-class callable or \Closure::fromCallable(), declare an anonymous closure to rebind.
+        /** @psalm-suppress InvalidScope Closure is bound before being invoked. */
+        $callable = fn (mixed ...$args) => $this->{$method}(...$args);
+    } else {
+        // Rebind to remove reference to $that
+        $callable = $callable->bindTo(new \stdClass());
+    }
+
+    // For internal classes use \Closure::bindTo() without scope.
+    $useBindTo = !(new \ReflectionClass($that))->isUserDefined();
+
     $reference = \WeakReference::create($that);
-    return static function (mixed ...$args) use ($reference, $callable): mixed {
+    return static function (mixed ...$args) use ($reference, $callable, $useBindTo): mixed {
         $that = $reference->get();
         if (!$that) {
             throw new \Error('Weakened callback invoked after referenced object destroyed');
+        }
+
+        if ($useBindTo) {
+            $callable = $callable->bindTo($that);
+
+            if (!$callable) {
+                throw new \RuntimeException('Unable to rebind function to object of type ' . \get_class($that));
+            }
+
+            return $callable(...$args);
         }
 
         return $callable->call($that, ...$args);
