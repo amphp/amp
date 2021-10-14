@@ -2,8 +2,8 @@
 
 namespace Amp;
 
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\queue;
+use Revolt\EventLoop;
+use function Revolt\launch;
 
 /**
  * This object invokes the given callback within a new coroutine every $interval seconds until the {@see disable()}
@@ -25,15 +25,15 @@ final class Interval
         callable $callback,
         private bool $reference = true
     ) {
-        $this->watcher = Loop::repeat($interval, weaken(fn () => queue(fn () => $callback($this))));
+        $this->watcher = EventLoop::repeat($interval, weaken(fn () => launch(fn () => $callback($this))));
         if (!$reference) {
-            Loop::unreference($this->watcher);
+            EventLoop::unreference($this->watcher);
         }
     }
 
     public function __destruct()
     {
-        Loop::cancel($this->watcher);
+        EventLoop::cancel($this->watcher);
     }
 
     /**
@@ -43,7 +43,7 @@ final class Interval
      */
     public function reference(): self
     {
-        Loop::reference($this->watcher);
+        EventLoop::reference($this->watcher);
         $this->reference = true;
         return $this;
     }
@@ -55,7 +55,7 @@ final class Interval
      */
     public function unreference(): self
     {
-        Loop::unreference($this->watcher);
+        EventLoop::unreference($this->watcher);
         $this->reference = false;
         return $this;
     }
@@ -81,7 +81,7 @@ final class Interval
      */
     public function enable(): self
     {
-        Loop::enable($this->watcher);
+        EventLoop::enable($this->watcher);
         $this->enabled = true;
         return $this;
     }
@@ -93,7 +93,7 @@ final class Interval
      */
     public function disable(): self
     {
-        Loop::disable($this->watcher);
+        EventLoop::disable($this->watcher);
         $this->enabled = false;
         return $this;
     }

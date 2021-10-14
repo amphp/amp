@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 final class CombinedCancellationToken implements CancellationToken
 {
@@ -26,7 +26,7 @@ final class CombinedCancellationToken implements CancellationToken
                 $this->callbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    Loop::queue($callback, $exception);
+                    EventLoop::queue($callback, $exception);
                 }
             });
 
@@ -48,7 +48,7 @@ final class CombinedCancellationToken implements CancellationToken
         $id = $this->nextId++;
 
         if ($this->exception) {
-            Loop::queue($callback, $this->exception);
+            EventLoop::queue($callback, $this->exception);
         } else {
             $this->callbacks[$id] = $callback;
         }

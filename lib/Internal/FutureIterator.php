@@ -4,7 +4,7 @@ namespace Amp\Internal;
 
 use Amp\CancellationToken;
 use Amp\NullCancellationToken;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use Amp\Future;
 
 /**
@@ -122,7 +122,7 @@ final class FutureIterator
 
             $this->token->throwIfRequested();
 
-            $this->queue->suspension = Loop::createSuspension();
+            $this->queue->suspension = EventLoop::createSuspension();
 
             /** @var null|array{Tk, Future<Tv>} */
             return $this->queue->suspension->suspend();

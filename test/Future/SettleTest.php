@@ -7,7 +7,7 @@ use Amp\Deferred;
 use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\Future\settle;
 
 class SettleTest extends TestCase
@@ -52,7 +52,7 @@ class SettleTest extends TestCase
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -66,7 +66,7 @@ class SettleTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 

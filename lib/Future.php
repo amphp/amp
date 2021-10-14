@@ -4,8 +4,8 @@ namespace Amp;
 
 use Amp\Internal\FutureIterator;
 use Amp\Internal\FutureState;
-use Revolt\EventLoop\Loop;
-use function Revolt\EventLoop\queue;
+use Revolt\EventLoop;
+use function Revolt\launch;
 
 /**
  * @template T
@@ -39,7 +39,7 @@ final class Future
         } else {
             // Use separate fiber for iteration over non-array, because not all items might be immediately available
             // while other futures are already completed.
-            queue(static function () use ($futures, $iterator): void {
+            launch(static function () use ($futures, $iterator): void {
                 try {
                     foreach ($futures as $key => $future) {
                         if (!$future instanceof self) {
@@ -124,7 +124,7 @@ final class Future
      */
     public function await(?CancellationToken $token = null): mixed
     {
-        $suspension = Loop::createSuspension();
+        $suspension = EventLoop::createSuspension();
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
             $token, $suspension

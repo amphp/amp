@@ -6,7 +6,7 @@ use Amp\CancelledException;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\TimeoutCancellationToken;
 use Amp\TimeoutException;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\delay;
 
 class TimeoutCancellationTokenTest extends AsyncTestCase
@@ -36,10 +36,10 @@ class TimeoutCancellationTokenTest extends AsyncTestCase
 
     public function testWatcherCancellation(): void
     {
-        $enabled = Loop::getInfo()["delay"]["enabled"];
+        $enabled = EventLoop::getInfo()["delay"]["enabled"];
         $token = new TimeoutCancellationToken(0.001);
-        self::assertSame($enabled + 1, Loop::getInfo()["delay"]["enabled"]);
+        self::assertSame($enabled + 1, EventLoop::getInfo()["delay"]["enabled"]);
         unset($token);
-        self::assertSame($enabled, Loop::getInfo()["delay"]["enabled"]);
+        self::assertSame($enabled, EventLoop::getInfo()["delay"]["enabled"]);
     }
 }

@@ -10,10 +10,10 @@ use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\LoopCaughtException;
 use Amp\PHPUnit\TestException;
 use Amp\TimeoutCancellationToken;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\coroutine;
 use function Amp\delay;
-use function Revolt\EventLoop\queue;
+use function Revolt\launch;
 
 class FutureTest extends AsyncTestCase
 {
@@ -66,7 +66,7 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        Loop::delay(0.01, fn() => $deferred->complete('result'));
+        EventLoop::delay(0.01, fn() => $deferred->complete('result'));
 
         self::assertSame('result', $future->await());
     }
@@ -96,7 +96,7 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        Loop::delay(0.01, fn() => $deferred->error(new \Exception('foo')));
+        EventLoop::delay(0.01, fn() => $deferred->error(new \Exception('foo')));
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
@@ -150,7 +150,7 @@ class FutureTest extends AsyncTestCase
         $source = new CancellationTokenSource;
         $future = $deferred->getFuture();
 
-        queue(function () use ($future, $source): void {
+        launch(function () use ($future, $source): void {
             self::assertSame(1, $future->await($source->getToken()));
         });
 
@@ -183,7 +183,7 @@ class FutureTest extends AsyncTestCase
         $deferred->error(new TestException);
         unset($deferred);
 
-        Loop::setErrorHandler($this->createCallback(0));
+        EventLoop::setErrorHandler($this->createCallback(0));
     }
 
     public function testIgnoreUnhandledErrorFromFutureError(): void
@@ -192,7 +192,7 @@ class FutureTest extends AsyncTestCase
         $future->ignore();
         unset($future);
 
-        Loop::setErrorHandler($this->createCallback(0));
+        EventLoop::setErrorHandler($this->createCallback(0));
     }
 
     /**

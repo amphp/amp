@@ -2,7 +2,7 @@
 
 namespace Amp;
 
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 
 /**
@@ -20,7 +20,7 @@ function coroutine(callable $callback): Future
     $state = new Internal\FutureState;
 
     $fiber = new \Fiber('Amp\\Internal\\run');
-    Loop::queue([$fiber, 'start'], $state, $callback);
+    EventLoop::queue([$fiber, 'start'], $state, $callback);
 
     return new Future($state);
 }
@@ -34,12 +34,12 @@ function coroutine(callable $callback): Future
  */
 function delay(float $timeout, bool $reference = true, ?CancellationToken $token = null): void
 {
-    $suspension = Loop::createSuspension();
-    $watcher = Loop::delay($timeout, static fn () => $suspension->resume(null));
+    $suspension = EventLoop::createSuspension();
+    $watcher = EventLoop::delay($timeout, static fn () => $suspension->resume(null));
     $id = $token?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
 
     if (!$reference) {
-        Loop::unreference($watcher);
+        EventLoop::unreference($watcher);
     }
 
     try {
@@ -47,7 +47,7 @@ function delay(float $timeout, bool $reference = true, ?CancellationToken $token
     } finally {
         /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
         $token?->unsubscribe($id);
-        Loop::cancel($watcher);
+        EventLoop::cancel($watcher);
     }
 }
 
@@ -63,7 +63,7 @@ function delay(float $timeout, bool $reference = true, ?CancellationToken $token
  */
 function trapSignal(int|array $signals, bool $reference = true, ?CancellationToken $token = null): int
 {
-    $suspension = Loop::createSuspension();
+    $suspension = EventLoop::createSuspension();
     $callback = static fn (string $watcher, int $signo) => $suspension->resume($signo);
     $id = $token?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
 
@@ -74,9 +74,9 @@ function trapSignal(int|array $signals, bool $reference = true, ?CancellationTok
     }
 
     foreach ($signals as $signo) {
-        $watchers[] = $watcher = Loop::onSignal($signo, $callback);
+        $watchers[] = $watcher = EventLoop::onSignal($signo, $callback);
         if (!$reference) {
-            Loop::unreference($watcher);
+            EventLoop::unreference($watcher);
         }
     }
 
@@ -86,7 +86,7 @@ function trapSignal(int|array $signals, bool $reference = true, ?CancellationTok
         /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
         $token?->unsubscribe($id);
         foreach ($watchers as $watcher) {
-            Loop::cancel($watcher);
+            EventLoop::cancel($watcher);
         }
     }
 }

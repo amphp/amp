@@ -5,7 +5,7 @@ namespace Amp\CancellationToken;
 use Amp\CancellationTokenSource;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\delay;
 
 class CancellationTest extends AsyncTestCase
@@ -29,7 +29,7 @@ class CancellationTest extends AsyncTestCase
 
     public function testThrowingCallbacksEndUpInLoop(): void
     {
-        Loop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
+        EventLoop::setErrorHandler(function (\Throwable $exception) use (&$reason): void {
             $reason = $exception;
         });
 

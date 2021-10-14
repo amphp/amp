@@ -3,7 +3,7 @@
 namespace Amp;
 
 use Amp\PHPUnit\AsyncTestCase;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 class WeakenTest extends AsyncTestCase
 {
@@ -15,7 +15,7 @@ class WeakenTest extends AsyncTestCase
 
                 public function __construct(int &$count)
                 {
-                    $this->watcher = Loop::repeat(0.01, weaken(function (string $watcher) use (&$count): void {
+                    $this->watcher = EventLoop::repeat(0.01, weaken(function (string $watcher) use (&$count): void {
                         AsyncTestCase::assertNotNull($this);
                         AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
                         AsyncTestCase::assertSame($watcher, $this->watcher);
@@ -25,7 +25,7 @@ class WeakenTest extends AsyncTestCase
 
                 public function __destruct()
                 {
-                    Loop::cancel($this->watcher);
+                    EventLoop::cancel($this->watcher);
                 }
             }],
             'static' => [fn (&$count) => new class ($count) {
@@ -34,7 +34,7 @@ class WeakenTest extends AsyncTestCase
                 public function __construct(int &$count)
                 {
                     $watcherRef = &$this->watcher;
-                    $this->watcher = Loop::repeat(0.01, weaken(static function (string $watcher) use (
+                    $this->watcher = EventLoop::repeat(0.01, weaken(static function (string $watcher) use (
                         &$count, &$watcherRef
                     ): void {
                         AsyncTestCase::assertSame($watcher, $watcherRef);
@@ -44,7 +44,7 @@ class WeakenTest extends AsyncTestCase
 
                 public function __destruct()
                 {
-                    Loop::cancel($this->watcher);
+                    EventLoop::cancel($this->watcher);
                 }
             }],
             'fromCallable' => [fn (&$count) => new class ($count) {
@@ -54,7 +54,7 @@ class WeakenTest extends AsyncTestCase
                 public function __construct(int &$count)
                 {
                     $this->count = &$count;
-                    $this->watcher = Loop::repeat(0.01, weaken(\Closure::fromCallable([$this, 'callback'])));
+                    $this->watcher = EventLoop::repeat(0.01, weaken(\Closure::fromCallable([$this, 'callback'])));
                 }
 
                 private function callback(string $watcher): void
@@ -67,7 +67,7 @@ class WeakenTest extends AsyncTestCase
 
                 public function __destruct()
                 {
-                    Loop::cancel($this->watcher);
+                    EventLoop::cancel($this->watcher);
                 }
             }],
             '__invoke' => [fn (&$count) => new class ($count) {
@@ -77,7 +77,7 @@ class WeakenTest extends AsyncTestCase
                 public function __construct(int &$count)
                 {
                     $this->count = &$count;
-                    $this->watcher = Loop::repeat(0.01, weaken($this));
+                    $this->watcher = EventLoop::repeat(0.01, weaken($this));
                 }
 
                 public function __invoke(string $watcher): void
@@ -90,7 +90,7 @@ class WeakenTest extends AsyncTestCase
 
                 public function __destruct()
                 {
-                    Loop::cancel($this->watcher);
+                    EventLoop::cancel($this->watcher);
                 }
             }],
         ];

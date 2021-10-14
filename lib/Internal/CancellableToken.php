@@ -4,7 +4,7 @@ namespace Amp\Internal;
 
 use Amp\CancellationToken;
 use Amp\CancelledException;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 
 /**
  * Cancellation Token with public cancellation method.
@@ -33,7 +33,7 @@ final class CancellableToken implements CancellationToken
         $this->callbacks = [];
 
         foreach ($callbacks as $callback) {
-            Loop::queue($callback, $this->exception);
+            EventLoop::queue($callback, $this->exception);
         }
     }
 
@@ -42,7 +42,7 @@ final class CancellableToken implements CancellationToken
         $id = $this->nextId++;
 
         if ($this->exception) {
-            Loop::queue($callback, $this->exception);
+            EventLoop::queue($callback, $this->exception);
         } else {
             $this->callbacks[$id] = $callback;
         }

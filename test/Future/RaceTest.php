@@ -7,7 +7,7 @@ use Amp\Deferred;
 use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\Future\race;
 
 class RaceTest extends TestCase
@@ -54,7 +54,7 @@ class RaceTest extends TestCase
 
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -68,7 +68,7 @@ class RaceTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 

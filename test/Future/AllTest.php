@@ -7,7 +7,7 @@ use Amp\Deferred;
 use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use function Amp\Future\all;
 
 class AllTest extends TestCase
@@ -26,7 +26,7 @@ class AllTest extends TestCase
     {
         $deferred = new Deferred;
 
-        Loop::delay(0.01, fn() => $deferred->complete(1));
+        EventLoop::delay(0.01, fn() => $deferred->complete(1));
 
         self::assertSame([1 => 2, 0 => 1], all([$deferred->getFuture(), Future::complete(2)]));
     }
@@ -35,7 +35,7 @@ class AllTest extends TestCase
     {
         $deferred = new Deferred;
 
-        Loop::delay(0.01, fn() => $deferred->complete(1));
+        EventLoop::delay(0.01, fn() => $deferred->complete(1));
 
         [$first, $second] = all([$deferred->getFuture(), Future::complete(2)]);
 
@@ -57,7 +57,7 @@ class AllTest extends TestCase
         $this->expectExceptionMessage('foo');
 
         $deferred = new Deferred;
-        Loop::delay(0.1, static fn () => $deferred->error(new \Exception('bar')));
+        EventLoop::delay(0.1, static fn () => $deferred->error(new \Exception('bar')));
 
         all([Future::error(new \Exception('foo')), $deferred->getFuture()]);
     }
@@ -78,7 +78,7 @@ class AllTest extends TestCase
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -92,7 +92,7 @@ class AllTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            Loop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 

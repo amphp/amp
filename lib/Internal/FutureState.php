@@ -3,7 +3,7 @@
 namespace Amp\Internal;
 
 use Amp\Future\UnhandledFutureError;
-use Revolt\EventLoop\Loop;
+use Revolt\EventLoop;
 use Amp\Future;
 
 /**
@@ -36,7 +36,7 @@ final class FutureState
     {
         if ($this->throwable && !$this->handled) {
             $throwable = new UnhandledFutureError($this->throwable);
-            Loop::queue(static fn () => throw $throwable);
+            EventLoop::queue(static fn () => throw $throwable);
         }
     }
 
@@ -57,7 +57,7 @@ final class FutureState
         $this->handled = true; // Even if unsubscribed later, consider the future handled.
 
         if ($this->complete) {
-            Loop::queue($callback, $this->throwable, $this->result, $id);
+            EventLoop::queue($callback, $this->throwable, $this->result, $id);
         } else {
             $this->callbacks[$id] = $callback;
         }
@@ -132,7 +132,7 @@ final class FutureState
         $this->complete = true;
 
         foreach ($this->callbacks as $id => $callback) {
-            Loop::queue($callback, $this->throwable, $this->result, $id);
+            EventLoop::queue($callback, $this->throwable, $this->result, $id);
         }
 
         $this->callbacks = [];
