@@ -22,11 +22,11 @@ class IntervalTest extends AsyncTestCase
             }
         };
 
-        delay(0.035);
+        delay(0.039);
         unset($object); // Should destroy PeriodicFunction object and cancel loop watcher.
         self::assertSame(3, $count);
 
-        delay(0.025);
+        delay(0.029);
         self::assertSame(3, $count);
     }
 
@@ -40,11 +40,11 @@ class IntervalTest extends AsyncTestCase
             ++$count;
         });
 
-        delay(0.035);
+        delay(0.039);
         self::assertSame(1, $count);
         self::assertFalse($interval->isEnabled());
 
-        delay(0.025);
+        delay(0.029);
         self::assertSame(1, $count);
     }
 
@@ -57,17 +57,17 @@ class IntervalTest extends AsyncTestCase
             ++$count;
         });
 
-        delay(0.025);
+        delay(0.029);
         self::assertSame(2, $count);
         $interval->disable();
         self::assertFalse($interval->isEnabled());
 
-        delay(0.025);
+        delay(0.029);
         self::assertSame(2, $count);
         $interval->enable();
         self::assertTrue($interval->isEnabled());
 
-        delay(0.025);
+        delay(0.029);
         self::assertSame(4, $count);
     }
 }
