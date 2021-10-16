@@ -27,13 +27,13 @@ final class CancellableToken implements CancellationToken
             return;
         }
 
-        $this->exception = new CancelledException($previous);
+        $this->exception = $exception = new CancelledException($previous);
 
         $callbacks = $this->callbacks;
         $this->callbacks = [];
 
         foreach ($callbacks as $callback) {
-            EventLoop::queue($callback, $this->exception);
+            EventLoop::defer(static fn () => $callback($exception));
         }
     }
 
@@ -42,7 +42,8 @@ final class CancellableToken implements CancellationToken
         $id = $this->nextId++;
 
         if ($this->exception) {
-            EventLoop::queue($callback, $this->exception);
+            $exception = $this->exception;
+            EventLoop::defer(static fn () => $callback($exception));
         } else {
             $this->callbacks[$id] = $callback;
         }
