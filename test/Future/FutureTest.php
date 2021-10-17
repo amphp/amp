@@ -13,7 +13,6 @@ use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
 use function Amp\coroutine;
 use function Amp\delay;
-use function Revolt\launch;
 
 class FutureTest extends AsyncTestCase
 {
@@ -150,7 +149,7 @@ class FutureTest extends AsyncTestCase
         $source = new CancellationTokenSource;
         $future = $deferred->getFuture();
 
-        launch(function () use ($future, $source): void {
+        EventLoop::queue(function () use ($future, $source): void {
             self::assertSame(1, $future->await($source->getToken()));
         });
 

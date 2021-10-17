@@ -18,10 +18,7 @@ use Revolt\EventLoop\UnsupportedFeatureException;
 function coroutine(callable $callback): Future
 {
     $state = new Internal\FutureState;
-
-    $fiber = new \Fiber('Amp\\Internal\\run');
-    EventLoop::queue([$fiber, 'start'], $state, $callback);
-
+    EventLoop::queue('Amp\\Internal\\run', $state, $callback);
     return new Future($state);
 }
 

@@ -3,7 +3,6 @@
 namespace Amp;
 
 use Revolt\EventLoop;
-use function Revolt\launch;
 
 /**
  * This object invokes the given callback within a new coroutine every $interval seconds until the {@see disable()}
@@ -25,7 +24,7 @@ final class Interval
         callable $callback,
         private bool $reference = true
     ) {
-        $this->watcher = EventLoop::repeat($interval, weaken(fn () => launch(fn () => $callback($this))));
+        $this->watcher = EventLoop::repeat($interval, weaken(fn () => $callback($this)));
         if (!$reference) {
             EventLoop::unreference($this->watcher);
         }

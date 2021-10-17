@@ -5,7 +5,6 @@ namespace Amp;
 use Amp\Internal\FutureIterator;
 use Amp\Internal\FutureState;
 use Revolt\EventLoop;
-use function Revolt\launch;
 
 /**
  * @template T
@@ -39,7 +38,7 @@ final class Future
         } else {
             // Use separate fiber for iteration over non-array, because not all items might be immediately available
             // while other futures are already completed.
-            launch(static function () use ($futures, $iterator): void {
+            EventLoop::queue(static function () use ($futures, $iterator): void {
                 try {
                     foreach ($futures as $key => $future) {
                         if (!$future instanceof self) {
