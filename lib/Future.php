@@ -115,6 +115,93 @@ final class Future
     }
 
     /**
+     * Attaches a callback that is invoked if this future completes. The returned future is completed with the return
+     * value of the callback, or errors with an exception thrown from the callback.
+     *
+     * @template Tr
+     *
+     * @param callable(T):Tr $onComplete
+     * @return Future
+     */
+    public function apply(callable $onComplete): self
+    {
+        $state = new FutureState();
+
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onComplete): void {
+            if ($error) {
+                $state->error($error);
+                return;
+            }
+
+            try {
+                $state->complete($onComplete($value));
+            } catch (\Throwable $exception) {
+                $state->error($exception);
+            }
+        });
+
+        return new self($state);
+    }
+
+    /**
+     * Attaches a callback that is invoked if this future errors. The returned future is completed with the return
+     * value of the callback, or errors with an exception thrown from the callback.
+     *
+     * @template Tr
+     *
+     * @param callable(\Throwable):Tr $onError
+     * @return Future
+     */
+    public function catch(callable $onError): self
+    {
+        $state = new FutureState();
+
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onError): void {
+            if (!$error) {
+                $state->complete($value);
+                return;
+            }
+
+            try {
+                $state->complete($onError($error));
+            } catch (\Throwable $exception) {
+                $state->error($exception);
+            }
+        });
+
+        return new self($state);
+    }
+
+    /**
+     * Attaches a callback that is always invoked when the future is settled. The returned future resolves with the
+     * same value as this future once the callback has finished execution. If the callback throws, the returned future
+     * will error with the thrown exception.
+     *
+     * @param callable():void $onSettle
+     * @return Future<T>
+     */
+    public function finally(callable $onSettle): self
+    {
+        $state = new FutureState();
+
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onSettle): void {
+            try {
+                $onSettle();
+
+                if ($error) {
+                    $state->error($error);
+                } else {
+                    $state->complete($value);
+                }
+            } catch (\Throwable $exception) {
+                $state->error($exception);
+            }
+        });
+
+        return new self($state);
+    }
+
+    /**
      * Awaits the operation to complete.
      *
      * Throws an exception if the operation fails.
