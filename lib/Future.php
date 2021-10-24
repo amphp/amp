@@ -120,21 +120,27 @@ final class Future
      *
      * @template Tr
      *
-     * @param callable(T):Tr $onComplete
+     * @param null|callable(T):Tr $onComplete
+     * @param null|callable(\Throwable):Tr $onError
      * @return Future
      */
-    public function apply(callable $onComplete): self
+    public function then(callable $onComplete = null, callable $onError = null): self
     {
         $state = new FutureState();
 
-        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onComplete): void {
-            if ($error) {
-                $state->error($error);
-                return;
-            }
-
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
+            $state,
+            $onComplete,
+            $onError
+        ): void {
             try {
-                $state->complete($onComplete($value));
+                if ($error) {
+                    $value = $onError ? $onError($error) : throw $error;
+                } else {
+                    $value = $onComplete ? $onComplete($value) : $value;
+                }
+
+                $state->complete($value);
             } catch (\Throwable $exception) {
                 $state->error($exception);
             }
