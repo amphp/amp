@@ -103,7 +103,7 @@ class FutureTest extends AsyncTestCase
     public function testFinallyWithSuspendInCallback(): void
     {
         $future = Future::complete(1);
-        $future = $future->finally(static fn () => Future::complete(null)->await());
+        $future = $future->finally(static fn () => Future::complete()->await());
         self::assertSame(1, $future->await());
     }
     public function testFinallyWithPendingFuture(): void

@@ -120,7 +120,7 @@ class FutureTest extends AsyncTestCase
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Cannot complete with an instance of');
 
-        $deferred->complete(Future::complete(null));
+        $deferred->complete(Future::complete());
     }
 
     public function testCancellation(): void
