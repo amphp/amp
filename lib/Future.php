@@ -65,7 +65,7 @@ final class Future
      *
      * @return Future<Tv>
      */
-    public static function complete(mixed $result=null): self
+    public static function complete(mixed $result = null): self
     {
         $state = new FutureState();
         $state->complete($result);

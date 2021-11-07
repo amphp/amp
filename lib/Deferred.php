@@ -24,7 +24,7 @@ final class Deferred
      *
      * @param T $result Result of the operation.
      */
-    public function complete(mixed $result=null): void
+    public function complete(mixed $result = null): void
     {
         $this->state->complete($result);
     }
