@@ -84,7 +84,7 @@ final class FutureIterator
             throw new \Error('Iterator has already been marked as complete');
         }
 
-        $this->complete = Future::complete(null);
+        $this->complete = Future::complete();
 
         if (!$this->queue->pending && $this->queue->suspension) {
             $this->queue->suspension->resume(null);
