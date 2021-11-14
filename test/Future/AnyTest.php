@@ -9,7 +9,6 @@ use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
-use function Amp\Future\any;
 
 class AnyTest extends TestCase
 {
@@ -56,12 +55,12 @@ class AnyTest extends TestCase
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         any(\array_map(
-            fn(Deferred $deferred) => $deferred->getFuture(),
+            fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellationToken(0.05));
     }
@@ -70,7 +69,7 @@ class AnyTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -80,7 +79,7 @@ class AnyTest extends TestCase
         \array_unshift($deferreds, $deferred);
 
         self::assertSame(1, any(\array_map(
-            fn(Deferred $deferred) => $deferred->getFuture(),
+            fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellationToken(0.2)));
     }

@@ -11,7 +11,7 @@ class IntervalTest extends AsyncTestCase
         $this->setTimeout(0.1);
 
         $count = 0;
-        $object = new class ($count) {
+        $object = new class($count) {
             private Interval $interval;
 
             public function __construct(int &$count)

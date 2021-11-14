@@ -65,7 +65,7 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        EventLoop::delay(0.01, fn() => $deferred->complete('result'));
+        EventLoop::delay(0.01, fn () => $deferred->complete('result'));
 
         self::assertSame('result', $future->await());
     }
@@ -95,7 +95,7 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        EventLoop::delay(0.01, fn() => $deferred->error(new \Exception('foo')));
+        EventLoop::delay(0.01, fn () => $deferred->error(new \Exception('foo')));
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');

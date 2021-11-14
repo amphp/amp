@@ -10,7 +10,7 @@ class WeakenTest extends AsyncTestCase
     public function provideObjectFactories(): iterable
     {
         return [
-            'binding' => [fn (&$count) => new class ($count) {
+            'binding' => [fn (&$count) => new class($count) {
                 private string $watcher;
 
                 public function __construct(int &$count)
@@ -28,14 +28,15 @@ class WeakenTest extends AsyncTestCase
                     EventLoop::cancel($this->watcher);
                 }
             }],
-            'static' => [fn (&$count) => new class ($count) {
+            'static' => [fn (&$count) => new class($count) {
                 private string $watcher = '';
 
                 public function __construct(int &$count)
                 {
                     $watcherRef = &$this->watcher;
                     $this->watcher = EventLoop::repeat(0.01, weaken(static function (string $watcher) use (
-                        &$count, &$watcherRef
+                        &$count,
+                        &$watcherRef
                     ): void {
                         AsyncTestCase::assertSame($watcher, $watcherRef);
                         ++$count;
@@ -47,7 +48,7 @@ class WeakenTest extends AsyncTestCase
                     EventLoop::cancel($this->watcher);
                 }
             }],
-            'fromCallable' => [fn (&$count) => new class ($count) {
+            'fromCallable' => [fn (&$count) => new class($count) {
                 private string $watcher = '';
                 private int $count;
 
@@ -70,7 +71,7 @@ class WeakenTest extends AsyncTestCase
                     EventLoop::cancel($this->watcher);
                 }
             }],
-            '__invoke' => [fn (&$count) => new class ($count) {
+            '__invoke' => [fn (&$count) => new class($count) {
                 private string $watcher = '';
                 private int $count;
 

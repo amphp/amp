@@ -3,9 +3,9 @@
 namespace Amp\Internal;
 
 use Amp\CancellationToken;
+use Amp\Future;
 use Amp\NullCancellationToken;
 use Revolt\EventLoop;
-use Amp\Future;
 
 /**
  * @template Tk

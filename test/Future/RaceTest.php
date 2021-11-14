@@ -8,7 +8,6 @@ use Amp\Future;
 use Amp\TimeoutCancellationToken;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
-use function Amp\Future\race;
 
 class RaceTest extends TestCase
 {
@@ -54,12 +53,12 @@ class RaceTest extends TestCase
 
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         race(\array_map(
-            fn(Deferred $deferred) => $deferred->getFuture(),
+            fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellationToken(0.05));
     }
@@ -68,12 +67,12 @@ class RaceTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn() => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         self::assertSame(1, race(\array_map(
-            fn(Deferred $deferred) => $deferred->getFuture(),
+            fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellationToken(0.2)));
     }

@@ -22,7 +22,7 @@ final class TimeoutCancellationToken implements CancellationToken
         $this->token = $source = new Internal\CancellableToken;
 
         $trace = null; // Defined in case assertions are disabled.
-        \assert((bool)($trace = \debug_backtrace(0)));
+        \assert((bool) ($trace = \debug_backtrace(0)));
 
         $this->watcher = EventLoop::delay($timeout, static function () use ($source, $message, $trace): void {
             if ($trace) {

@@ -213,7 +213,8 @@ final class Future
         $suspension = EventLoop::createSuspension();
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
-            $token, $suspension
+            $token,
+            $suspension
         ): void {
             if ($error) {
                 $suspension->throw($error);
@@ -224,7 +225,9 @@ final class Future
 
         $state = $this->state;
         $cancellationId = $token?->subscribe(static function (\Throwable $reason) use (
-            $callbackId, $suspension, $state
+            $callbackId,
+            $suspension,
+            $state
         ): void {
             $state->unsubscribe($callbackId);
             if (!$state->isComplete()) { // Resume has already been scheduled if complete.

@@ -98,7 +98,8 @@ function some(iterable $futures, int $count, ?CancellationToken $token = null): 
  * @param CancellationToken|null $token Optional cancellation token.
  * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
  */
-function settle(iterable $futures, ?CancellationToken $token = null): array {
+function settle(iterable $futures, ?CancellationToken $token = null): array
+{
     $values = [];
     $errors = [];
     foreach (Future::iterate($futures, $token) as $index => $future) {
