@@ -23,10 +23,20 @@ function coroutine(callable $callback): Future
 }
 
 /**
+ * Returns the current time relative to an arbitrary point in time.
+ *
+ * @return float Time in seconds.
+ */
+function now(): float
+{
+    return (float) \hrtime(true) / 1_000_000_000;
+}
+
+/**
  * Non-blocking sleep for the specified number of seconds.
  *
- * @param float $timeout Number of seconds to wait.
- * @param bool $reference If false, unreference the underlying watcher.
+ * @param float                  $timeout Number of seconds to wait.
+ * @param bool                   $reference If false, unreference the underlying watcher.
  * @param CancellationToken|null $token Cancel waiting if cancellation is requested.
  */
 function delay(float $timeout, bool $reference = true, ?CancellationToken $token = null): void
@@ -51,8 +61,8 @@ function delay(float $timeout, bool $reference = true, ?CancellationToken $token
 /**
  * Wait for signal(s) in a non-blocking way.
  *
- * @param int|array $signals Signal number or array of signal numbers.
- * @param bool $reference If false, unreference the underlying watcher.
+ * @param int|array              $signals Signal number or array of signal numbers.
+ * @param bool                   $reference If false, unreference the underlying watcher.
  * @param CancellationToken|null $token Cancel waiting if cancellation is requested.
  *
  * @return int Caught signal number.
@@ -95,6 +105,7 @@ function trapSignal(int|array $signals, bool $reference = true, ?CancellationTok
  * Invoking the returned callback after the object is destroyed will throw an instance of Error.
  *
  * @param callable $callable
+ *
  * @return callable
  */
 function weaken(callable $callable): callable
