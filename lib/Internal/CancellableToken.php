@@ -33,7 +33,7 @@ final class CancellableToken implements CancellationToken
         $this->callbacks = [];
 
         foreach ($callbacks as $callback) {
-            EventLoop::defer(static fn () => $callback($exception));
+            EventLoop::queue(static fn () => $callback($exception));
         }
     }
 
@@ -43,7 +43,7 @@ final class CancellableToken implements CancellationToken
 
         if ($this->exception) {
             $exception = $this->exception;
-            EventLoop::defer(static fn () => $callback($exception));
+            EventLoop::queue(static fn () => $callback($exception));
         } else {
             $this->callbacks[$id] = $callback;
         }
