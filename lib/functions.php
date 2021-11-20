@@ -15,7 +15,7 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  *
  * @return Future<T>
  */
-function coroutine(callable $callback): Future
+function launch(callable $callback): Future
 {
     $state = new Internal\FutureState;
     EventLoop::queue('Amp\\Internal\\run', $state, $callback);

@@ -11,8 +11,8 @@ use Amp\PHPUnit\LoopCaughtException;
 use Amp\PHPUnit\TestException;
 use Amp\TimeoutCancellationToken;
 use Revolt\EventLoop;
-use function Amp\coroutine;
 use function Amp\delay;
+use function Amp\launch;
 
 class FutureTest extends AsyncTestCase
 {
@@ -204,7 +204,7 @@ class FutureTest extends AsyncTestCase
      */
     private function delay(float $seconds, mixed $value): Future
     {
-        return coroutine(
+        return launch(
             /**
              * @return T
              */
