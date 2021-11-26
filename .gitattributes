@@ -1,8 +1,8 @@
+/.* export-ignore # exclude all dotted files as mostly they are configs for other tools
 docs export-ignore
 examples export-ignore
 test export-ignore
 travis export-ignore
-/.* export-ignore
 phpunit.xml.dist export-ignore
 psalm.examples.xml export-ignore
 psalm.xml export-ignore
