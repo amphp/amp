@@ -21,9 +21,9 @@ final class FutureState
     private bool $handled = false;
 
     /**
-     * @var array<string, callable(?\Throwable, ?T, string): void>
+     * @var array<string, callable(?\Throwable, ?T, string): void>|null
      */
-    private array $callbacks = [];
+    private ?array $callbacks = [];
 
     /**
      * @var T|null
@@ -56,7 +56,7 @@ final class FutureState
 
         $this->handled = true; // Even if unsubscribed later, consider the future handled.
 
-        if ($this->complete) {
+        if ($this->callbacks === null) {
             EventLoop::queue($callback, $this->throwable, $this->result, $id);
         } else {
             $this->callbacks[$id] = $callback;
@@ -88,8 +88,19 @@ final class FutureState
             throw new \Error('Operation is no longer pending');
         }
 
+        $this->complete = true;
+
         if ($result instanceof Future) {
-            throw new \Error('Cannot complete with an instance of ' . Future::class);
+            EventLoop::queue(function () use ($result): void {
+                try {
+                    $this->result = $result->await();
+                } catch (\Throwable $throwable) {
+                    $this->throwable = $throwable;
+                }
+
+                $this->invokeCallbacks();
+            });
+            return;
         }
 
         $this->result = $result;
@@ -107,6 +118,7 @@ final class FutureState
             throw new \Error('Operation is no longer pending');
         }
 
+        $this->complete = true;
         $this->throwable = $throwable;
         $this->invokeCallbacks();
     }
@@ -120,6 +132,14 @@ final class FutureState
     }
 
     /**
+     * @return bool
+     */
+    public function isSettled(): bool
+    {
+        return $this->callbacks === null;
+    }
+
+    /**
      * Suppress the exception thrown to the loop error handler if and operation error is not handled by a callback.
      */
     public function ignore(): void
@@ -129,12 +149,10 @@ final class FutureState
 
     private function invokeCallbacks(): void
     {
-        $this->complete = true;
-
         foreach ($this->callbacks as $id => $callback) {
             EventLoop::queue($callback, $this->throwable, $this->result, $id);
         }
 
-        $this->callbacks = [];
+        $this->callbacks = null;
     }
 }

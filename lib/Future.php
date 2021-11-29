@@ -99,11 +99,11 @@ final class Future
     }
 
     /**
-     * @return bool True if the operation has completed.
+     * @return bool True if the operation has settled (completed or errored).
      */
-    public function isComplete(): bool
+    public function isSettled(): bool
     {
-        return $this->state->isComplete();
+        return $this->state->isSettled();
     }
 
     /**

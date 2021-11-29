@@ -113,16 +113,6 @@ class FutureTest extends AsyncTestCase
         $future->await();
     }
 
-    public function testCompleteWithFuture(): void
-    {
-        $deferred = new Deferred;
-
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('Cannot complete with an instance of');
-
-        $deferred->complete(Future::complete());
-    }
-
     public function testCancellation(): void
     {
         $future = $this->delay(0.02, true);
@@ -213,5 +203,47 @@ class FutureTest extends AsyncTestCase
                 return $value;
             }
         );
+    }
+
+    public function testResolveWithCompleteFuture(): void
+    {
+        $deferred = new Deferred();
+        $future = $deferred->getFuture();
+        $deferred->complete(Future::complete(1));
+        self::assertTrue($deferred->isComplete());
+        self::assertFalse($future->isSettled());
+        self::assertSame(1, $future->await());
+    }
+
+    public function testResolveWithErrorFuture(): void
+    {
+        $exception = new TestException();
+        $deferred = new Deferred();
+        $deferred->complete(Future::error($exception));
+        self::assertTrue($deferred->isComplete());
+        $this->expectExceptionObject($exception);
+        $deferred->getFuture()->await();
+    }
+
+    public function testResolveWithPendingFuture(): void
+    {
+        $this->setMinimumRuntime(0.1);
+
+        $deferred1 = new Deferred();
+        $future1 = $deferred1->getFuture();
+        $deferred2 = new Deferred();
+        $future2 = $deferred2->getFuture();
+
+        $deferred1->complete($deferred2->getFuture());
+
+        self::assertTrue($deferred1->isComplete());
+        self::assertFalse($deferred2->isComplete());
+
+        self::assertFalse($future1->isSettled());
+        self::assertFalse($future2->isSettled());
+
+        EventLoop::delay(0.1, static fn () => $deferred2->complete(1));
+
+        self::assertSame(1, $deferred2->getFuture()->await());
     }
 }
