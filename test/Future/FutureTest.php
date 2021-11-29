@@ -55,7 +55,7 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        $deferred->complete('result');
+        $deferred->resolve('result');
 
         self::assertSame('result', $future->await());
     }
@@ -65,14 +65,14 @@ class FutureTest extends AsyncTestCase
         $deferred = new Deferred;
         $future = $deferred->getFuture();
 
-        EventLoop::delay(0.01, fn () => $deferred->complete('result'));
+        EventLoop::delay(0.01, fn () => $deferred->resolve('result'));
 
         self::assertSame('result', $future->await());
     }
 
     public function testCompleteImmediate(): void
     {
-        $future = Future::complete('result');
+        $future = Future::resolve('result');
 
         self::assertSame('result', $future->await());
     }
@@ -143,7 +143,7 @@ class FutureTest extends AsyncTestCase
             self::assertSame(1, $future->await($source->getToken()));
         });
 
-        $deferred->complete(1);
+        $deferred->resolve(1);
         $source->cancel();
     }
 
@@ -209,9 +209,9 @@ class FutureTest extends AsyncTestCase
     {
         $deferred = new Deferred();
         $future = $deferred->getFuture();
-        $deferred->complete(Future::complete(1));
-        self::assertTrue($deferred->isComplete());
-        self::assertFalse($future->isSettled());
+        $deferred->resolve(Future::resolve(1));
+        self::assertTrue($deferred->isResolved());
+        self::assertFalse($future->isPending());
         self::assertSame(1, $future->await());
     }
 
@@ -219,8 +219,8 @@ class FutureTest extends AsyncTestCase
     {
         $exception = new TestException();
         $deferred = new Deferred();
-        $deferred->complete(Future::error($exception));
-        self::assertTrue($deferred->isComplete());
+        $deferred->resolve(Future::error($exception));
+        self::assertTrue($deferred->isResolved());
         $this->expectExceptionObject($exception);
         $deferred->getFuture()->await();
     }
@@ -234,15 +234,15 @@ class FutureTest extends AsyncTestCase
         $deferred2 = new Deferred();
         $future2 = $deferred2->getFuture();
 
-        $deferred1->complete($deferred2->getFuture());
+        $deferred1->resolve($deferred2->getFuture());
 
-        self::assertTrue($deferred1->isComplete());
-        self::assertFalse($deferred2->isComplete());
+        self::assertTrue($deferred1->isResolved());
+        self::assertFalse($deferred2->isResolved());
 
-        self::assertFalse($future1->isSettled());
-        self::assertFalse($future2->isSettled());
+        self::assertFalse($future1->isPending());
+        self::assertFalse($future2->isPending());
 
-        EventLoop::delay(0.1, static fn () => $deferred2->complete(1));
+        EventLoop::delay(0.1, static fn () => $deferred2->resolve(1));
 
         self::assertSame(1, $deferred2->getFuture()->await());
     }

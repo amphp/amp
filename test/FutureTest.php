@@ -10,15 +10,15 @@ class FutureTest extends AsyncTestCase
 {
     public function testApplyWithCompleteFuture(): void
     {
-        $future = Future::complete(1);
+        $future = Future::resolve(1);
         $future = $future->apply(static fn (int $value) => $value + 1);
         self::assertSame(2, $future->await());
     }
 
     public function testApplyWithSuspendInCallback(): void
     {
-        $future = Future::complete(1);
-        $future = $future->apply(static fn (int $value) => $value + Future::complete(1)->await());
+        $future = Future::resolve(1);
+        $future = $future->apply(static fn (int $value) => $value + Future::resolve(1)->await());
         self::assertSame(2, $future->await());
     }
     public function testApplyWithPendingFuture(): void
@@ -28,7 +28,7 @@ class FutureTest extends AsyncTestCase
         $future = $deferred->getFuture();
         $future = $future->apply(static fn (int $value) => $value + 1);
 
-        EventLoop::delay(0.1, static fn () => $deferred->complete(1));
+        EventLoop::delay(0.1, static fn () => $deferred->resolve(1));
 
         self::assertSame(2, $future->await());
     }
@@ -44,7 +44,7 @@ class FutureTest extends AsyncTestCase
     public function testApplyWithThrowingCallback(): void
     {
         $exception = new TestException();
-        $future = Future::complete(1);
+        $future = Future::resolve(1);
         $future = $future->apply(static fn () => throw $exception);
         $this->expectExceptionObject($exception);
         $future->await();
@@ -52,7 +52,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCatchWithCompleteFuture(): void
     {
-        $future = Future::complete(1);
+        $future = Future::resolve(1);
         $future = $future->catch($this->createCallback(0));
         self::assertSame(1, $future->await());
     }
@@ -60,7 +60,7 @@ class FutureTest extends AsyncTestCase
     public function testCatchWithSuspendInCallback(): void
     {
         $future = Future::error(new TestException());
-        $future = $future->catch(static fn (\Throwable $exception) => Future::complete(1)->await());
+        $future = $future->catch(static fn (\Throwable $exception) => Future::resolve(1)->await());
         self::assertSame(1, $future->await());
     }
     public function testCatchWithPendingFuture(): void
@@ -86,7 +86,7 @@ class FutureTest extends AsyncTestCase
 
     public function testFinallyWithCompleteFuture(): void
     {
-        $future = Future::complete(1);
+        $future = Future::resolve(1);
         $future = $future->finally($this->createCallback(1));
         self::assertSame(1, $future->await());
     }
@@ -102,8 +102,8 @@ class FutureTest extends AsyncTestCase
 
     public function testFinallyWithSuspendInCallback(): void
     {
-        $future = Future::complete(1);
-        $future = $future->finally(static fn () => Future::complete()->await());
+        $future = Future::resolve(1);
+        $future = $future->finally(static fn () => Future::resolve()->await());
         self::assertSame(1, $future->await());
     }
     public function testFinallyWithPendingFuture(): void
@@ -113,7 +113,7 @@ class FutureTest extends AsyncTestCase
         $future = $deferred->getFuture();
         $future = $future->finally($this->createCallback(1));
 
-        EventLoop::delay(0.1, static fn () => $deferred->complete(1));
+        EventLoop::delay(0.1, static fn () => $deferred->resolve(1));
 
         self::assertSame(1, $future->await());
     }
@@ -121,7 +121,7 @@ class FutureTest extends AsyncTestCase
     public function testFinallyWithThrowingCallback(): void
     {
         $exception = new TestException();
-        $future = Future::complete(1);
+        $future = Future::resolve(1);
         $future = $future->finally(static fn () => throw $exception);
         $this->expectExceptionObject($exception);
         $future->await();

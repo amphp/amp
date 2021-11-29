@@ -11,7 +11,7 @@ namespace Amp\Internal;
 function run(FutureState $state, callable $callback): void
 {
     try {
-        $state->complete($callback());
+        $state->resolve($callback());
     } catch (\Throwable $exception) {
         $state->error($exception);
     }

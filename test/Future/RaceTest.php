@@ -13,19 +13,19 @@ class RaceTest extends TestCase
 {
     public function testSingleComplete(): void
     {
-        self::assertSame(42, race([Future::complete(42)]));
+        self::assertSame(42, race([Future::resolve(42)]));
     }
 
     public function testTwoComplete(): void
     {
-        self::assertSame(1, Future\race([Future::complete(1), Future::complete(2)]));
+        self::assertSame(1, Future\race([Future::resolve(1), Future::resolve(2)]));
     }
 
     public function testTwoFirstPending(): void
     {
         $deferred = new Deferred;
 
-        self::assertSame(2, Future\race([$deferred->getFuture(), Future::complete(2)]));
+        self::assertSame(2, Future\race([$deferred->getFuture(), Future::resolve(2)]));
     }
 
     public function testTwoFirstThrowing(): void
@@ -33,7 +33,7 @@ class RaceTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
 
-        race([Future::error(new \Exception('foo')), Future::complete(2)]);
+        race([Future::error(new \Exception('foo')), Future::resolve(2)]);
     }
 
     public function testTwoGeneratorThrows(): void
@@ -43,7 +43,7 @@ class RaceTest extends TestCase
 
         race((static function () {
             yield Future::error(new \Exception('foo'));
-            yield Future::complete(2);
+            yield Future::resolve(2);
         })());
     }
 
@@ -53,7 +53,7 @@ class RaceTest extends TestCase
 
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -67,7 +67,7 @@ class RaceTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 

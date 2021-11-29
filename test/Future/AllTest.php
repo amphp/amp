@@ -13,30 +13,30 @@ class AllTest extends TestCase
 {
     public function testSingleComplete(): void
     {
-        self::assertSame([42], all([Future::complete(42)]));
+        self::assertSame([42], all([Future::resolve(42)]));
     }
 
     public function testTwoComplete(): void
     {
-        self::assertSame([1, 2], all([Future::complete(1), Future::complete(2)]));
+        self::assertSame([1, 2], all([Future::resolve(1), Future::resolve(2)]));
     }
 
     public function testTwoFirstPending(): void
     {
         $deferred = new Deferred;
 
-        EventLoop::delay(0.01, fn () => $deferred->complete(1));
+        EventLoop::delay(0.01, fn () => $deferred->resolve(1));
 
-        self::assertSame([1 => 2, 0 => 1], all([$deferred->getFuture(), Future::complete(2)]));
+        self::assertSame([1 => 2, 0 => 1], all([$deferred->getFuture(), Future::resolve(2)]));
     }
 
     public function testArrayDestructuring(): void
     {
         $deferred = new Deferred;
 
-        EventLoop::delay(0.01, fn () => $deferred->complete(1));
+        EventLoop::delay(0.01, fn () => $deferred->resolve(1));
 
-        [$first, $second] = all([$deferred->getFuture(), Future::complete(2)]);
+        [$first, $second] = all([$deferred->getFuture(), Future::resolve(2)]);
 
         self::assertSame(1, $first);
         self::assertSame(2, $second);
@@ -47,7 +47,7 @@ class AllTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('foo');
 
-        all([Future::error(new \Exception('foo')), Future::complete(2)]);
+        all([Future::error(new \Exception('foo')), Future::resolve(2)]);
     }
 
     public function testTwoThrowingWithOneLater(): void
@@ -68,7 +68,7 @@ class AllTest extends TestCase
 
         all((static function () {
             yield Future::error(new \Exception('foo'));
-            yield Future::complete(2);
+            yield Future::resolve(2);
         })());
     }
 
@@ -77,7 +77,7 @@ class AllTest extends TestCase
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -91,7 +91,7 @@ class AllTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 

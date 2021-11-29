@@ -78,11 +78,11 @@ final class FutureState
     }
 
     /**
-     * Completes the operation with a result value.
+     * Resolves the operation with a result value or another Future.
      *
      * @param T $result Result of the operation.
      */
-    public function complete(mixed $result): void
+    public function resolve(mixed $result): void
     {
         if ($this->complete) {
             throw new \Error('Operation is no longer pending');
@@ -126,7 +126,7 @@ final class FutureState
     /**
      * @return bool True if the operation has completed.
      */
-    public function isComplete(): bool
+    public function isResolved(): bool
     {
         return $this->complete;
     }
@@ -134,9 +134,9 @@ final class FutureState
     /**
      * @return bool
      */
-    public function isSettled(): bool
+    public function isPending(): bool
     {
-        return $this->callbacks === null;
+        return $this->callbacks !== null;
     }
 
     /**

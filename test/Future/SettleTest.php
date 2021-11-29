@@ -13,12 +13,12 @@ class SettleTest extends TestCase
 {
     public function testSingleComplete(): void
     {
-        self::assertSame([[], [42]], settle([Future::complete(42)]));
+        self::assertSame([[], [42]], settle([Future::resolve(42)]));
     }
 
     public function testTwoComplete(): void
     {
-        self::assertSame([[], [1, 2]], settle([Future::complete(1), Future::complete(2)]));
+        self::assertSame([[], [1, 2]], settle([Future::resolve(1), Future::resolve(2)]));
     }
 
     public function testTwoFirstThrowing(): void
@@ -26,7 +26,7 @@ class SettleTest extends TestCase
         $exception = new \Exception('foo');
         self::assertSame(
             [['one' => $exception], ['two' => 2]],
-            settle(['one' => Future::error($exception), 'two' => Future::complete(2)])
+            settle(['one' => Future::error($exception), 'two' => Future::resolve(2)])
         );
     }
 
@@ -42,7 +42,7 @@ class SettleTest extends TestCase
         $exception = new \Exception('foo');
         self::assertSame([[0 => $exception], [1 => 2]], settle((static function () use ($exception) {
             yield Future::error($exception);
-            yield Future::complete(2);
+            yield Future::resolve(2);
         })()));
     }
 
@@ -51,7 +51,7 @@ class SettleTest extends TestCase
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 
@@ -65,7 +65,7 @@ class SettleTest extends TestCase
     {
         $deferreds = \array_map(function (int $value) {
             $deferred = new Deferred;
-            EventLoop::delay($value / 10, fn () => $deferred->complete($value));
+            EventLoop::delay($value / 10, fn () => $deferred->resolve($value));
             return $deferred;
         }, \range(1, 3));
 

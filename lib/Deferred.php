@@ -20,13 +20,13 @@ final class Deferred
     }
 
     /**
-     * Completes the operation with a result value.
+     * Resolves the operation with a result value or another Future.
      *
-     * @param T $result Result of the operation.
+     * @param T|Future<T> $result Result of the operation.
      */
-    public function complete(mixed $result = null): void
+    public function resolve(mixed $result = null): void
     {
-        $this->state->complete($result);
+        $this->state->resolve($result);
     }
 
     /**
@@ -42,9 +42,9 @@ final class Deferred
     /**
      * @return bool True if the operation has completed.
      */
-    public function isComplete(): bool
+    public function isResolved(): bool
     {
-        return $this->state->isComplete();
+        return $this->state->isResolved();
     }
 
     /**

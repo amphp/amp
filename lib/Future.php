@@ -61,14 +61,14 @@ final class Future
     /**
      * @template Tv
      *
-     * @param Tv $result
+     * @param Tv|Future<Tv> $result
      *
      * @return Future<Tv>
      */
-    public static function complete(mixed $result = null): self
+    public static function resolve(mixed $result = null): self
     {
         $state = new FutureState();
-        $state->complete($result);
+        $state->resolve($result);
 
         return new self($state);
     }
@@ -99,11 +99,11 @@ final class Future
     }
 
     /**
-     * @return bool True if the operation has settled (completed or errored).
+     * @return bool True if the operation is still pending.
      */
-    public function isSettled(): bool
+    public function isPending(): bool
     {
-        return $this->state->isSettled();
+        return $this->state->isPending();
     }
 
     /**
@@ -134,7 +134,7 @@ final class Future
             }
 
             try {
-                $state->complete($onComplete($value));
+                $state->resolve($onComplete($value));
             } catch (\Throwable $exception) {
                 $state->error($exception);
             }
@@ -158,12 +158,12 @@ final class Future
 
         $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onError): void {
             if (!$error) {
-                $state->complete($value);
+                $state->resolve($value);
                 return;
             }
 
             try {
-                $state->complete($onError($error));
+                $state->resolve($onError($error));
             } catch (\Throwable $exception) {
                 $state->error($exception);
             }
@@ -191,7 +191,7 @@ final class Future
                 if ($error) {
                     $state->error($error);
                 } else {
-                    $state->complete($value);
+                    $state->resolve($value);
                 }
             } catch (\Throwable $exception) {
                 $state->error($exception);
@@ -230,7 +230,7 @@ final class Future
             $state
         ): void {
             $state->unsubscribe($callbackId);
-            if (!$state->isComplete()) { // Resume has already been scheduled if complete.
+            if (!$state->isResolved()) { // Resume has already been scheduled if complete.
                 $suspension->throw($reason);
             }
         });
