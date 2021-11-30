@@ -91,7 +91,7 @@ final class Future
     /**
      * @param FutureState<T> $state
      *
-     * @internal Use {@see Deferred} to create and resolve a Future.
+     * @internal Use {@see Deferred} or {@see launch()} to create and resolve a Future.
      */
     public function __construct(FutureState $state)
     {
@@ -123,7 +123,7 @@ final class Future
      * @param callable(T):Tr $onComplete
      * @return Future
      */
-    public function apply(callable $onComplete): self
+    public function map(callable $onComplete): self
     {
         $state = new FutureState();
 
