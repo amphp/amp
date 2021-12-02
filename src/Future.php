@@ -18,13 +18,13 @@ final class Future
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
-     * @param CancellationToken|null   $token Optional cancellation token.
+     * @param Cancellation|null        $cancellation Optional cancellation token.
      *
      * @return iterable<Tk, Future<Tv>>
      */
-    public static function iterate(iterable $futures, ?CancellationToken $token = null): iterable
+    public static function iterate(iterable $futures, ?Cancellation $cancellation = null): iterable
     {
-        $iterator = new FutureIterator($token);
+        $iterator = new FutureIterator($cancellation);
 
         // Directly iterate in case of an array, because there can't be suspensions during iteration
         if (\is_array($futures)) {
@@ -61,24 +61,24 @@ final class Future
     /**
      * @template Tv
      *
-     * @param Tv $result
+     * @param Tv $value
      *
      * @return Future<Tv>
      */
-    public static function complete(mixed $result = null): self
+    public static function complete(mixed $value = null): self
     {
         $state = new FutureState();
-        $state->complete($result);
+        $state->complete($value);
 
         return new self($state);
     }
 
     /**
-     * @return Future<never-return>
+     * @return Future<never>
      */
     public static function error(\Throwable $throwable): self
     {
-        /** @var FutureState<never-return> $state */
+        /** @var FutureState<never> $state */
         $state = new FutureState();
         $state->error($throwable);
 
@@ -211,7 +211,7 @@ final class Future
      *
      * @return T
      */
-    public function await(?CancellationToken $cancellation = null): mixed
+    public function await(?Cancellation $cancellation = null): mixed
     {
         $suspension = EventLoop::createSuspension();
 

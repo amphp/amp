@@ -7,11 +7,11 @@ use Revolt\EventLoop;
 /**
  * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
  */
-final class TimeoutCancellationToken implements CancellationToken
+final class TimeoutCancellation implements Cancellation
 {
     private string $watcher;
 
-    private CancellationToken $token;
+    private Cancellation $token;
 
     /**
      * @param float  $timeout Seconds until cancellation is requested.
@@ -19,7 +19,7 @@ final class TimeoutCancellationToken implements CancellationToken
      */
     public function __construct(float $timeout, string $message = "Operation timed out")
     {
-        $this->token = $source = new Internal\CancellableToken;
+        $this->token = $source = new Internal\Cancellable;
 
         $trace = null; // Defined in case assertions are disabled.
         \assert((bool) ($trace = \debug_backtrace(0)));

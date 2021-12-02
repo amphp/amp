@@ -2,7 +2,7 @@
 
 namespace Amp\Internal;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\CancelledException;
 use Revolt\EventLoop;
 
@@ -11,7 +11,7 @@ use Revolt\EventLoop;
  *
  * @internal
  */
-final class CancellableToken implements CancellationToken
+final class Cancellable implements Cancellation
 {
     private string $nextId = "a";
 

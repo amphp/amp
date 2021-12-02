@@ -2,14 +2,14 @@
 
 namespace Amp\Future;
 
-use Amp\CancellationTokenSource;
 use Amp\CancelledException;
 use Amp\Deferred;
+use Amp\DeferredCancellation;
 use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\LoopCaughtException;
 use Amp\PHPUnit\TestException;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 use function Amp\async;
 use function Amp\delay;
@@ -127,7 +127,7 @@ class FutureTest extends AsyncTestCase
     {
         $future = $this->delay(0.02, true);
 
-        $token = new TimeoutCancellationToken(0.01);
+        $token = new TimeoutCancellation(0.01);
 
         $this->expectException(CancelledException::class);
 
@@ -138,7 +138,7 @@ class FutureTest extends AsyncTestCase
     {
         $future = $this->delay(0.01, true);
 
-        $token = new TimeoutCancellationToken(0.02);
+        $token = new TimeoutCancellation(0.02);
 
         self::assertTrue($future->await($token));
     }
@@ -146,11 +146,11 @@ class FutureTest extends AsyncTestCase
     public function testCompleteThenCancelJoin(): void
     {
         $deferred = new Deferred;
-        $source = new CancellationTokenSource;
+        $source = new DeferredCancellation;
         $future = $deferred->getFuture();
 
         EventLoop::queue(function () use ($future, $source): void {
-            self::assertSame(1, $future->await($source->getToken()));
+            self::assertSame(1, $future->await($source->getCancellation()));
         });
 
         $deferred->complete(1);
@@ -319,7 +319,7 @@ class FutureTest extends AsyncTestCase
      * @template T
      *
      * @param float $seconds
-     * @param T $value
+     * @param T     $value
      *
      * @return Future<T>
      */

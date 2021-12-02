@@ -6,7 +6,7 @@ use Amp\CancelledException;
 use Amp\CompositeException;
 use Amp\Deferred;
 use Amp\Future;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
 
@@ -62,7 +62,7 @@ class AnyTest extends TestCase
         any(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), new TimeoutCancellationToken(0.05));
+        ), new TimeoutCancellation(0.05));
     }
 
     public function testCompleteBeforeCancellation(): void
@@ -81,6 +81,6 @@ class AnyTest extends TestCase
         self::assertSame(1, any(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), new TimeoutCancellationToken(0.2)));
+        ), new TimeoutCancellation(0.2)));
     }
 }

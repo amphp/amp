@@ -1,8 +1,8 @@
 <?php
 
-namespace Amp\CancellationToken;
+namespace Amp\Cancellation;
 
-use Amp\CancellationTokenSource;
+use Amp\DeferredCancellation;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\TestException;
 use Revolt\EventLoop;
@@ -12,19 +12,19 @@ class CancellationTest extends AsyncTestCase
 {
     public function testUnsubscribeWorks(): void
     {
-        $cancellationSource = new CancellationTokenSource;
+        $deferredCancellation = new DeferredCancellation;
 
-        $id = $cancellationSource->getToken()->subscribe(function () {
+        $id = $deferredCancellation->getCancellation()->subscribe(function () {
             $this->fail("Callback has been called");
         });
 
-        $cancellationSource->getToken()->subscribe(function () {
+        $deferredCancellation->getCancellation()->subscribe(function () {
             $this->assertTrue(true);
         });
 
-        $cancellationSource->getToken()->unsubscribe($id);
+        $deferredCancellation->getCancellation()->unsubscribe($id);
 
-        $cancellationSource->cancel();
+        $deferredCancellation->cancel();
     }
 
     public function testThrowingCallbacksEndUpInLoop(): void
@@ -33,8 +33,8 @@ class CancellationTest extends AsyncTestCase
             $reason = $exception;
         });
 
-        $cancellationSource = new CancellationTokenSource;
-        $cancellationSource->getToken()->subscribe(function () {
+        $cancellationSource = new DeferredCancellation;
+        $cancellationSource->getCancellation()->subscribe(function () {
             throw new TestException;
         });
 
@@ -47,8 +47,8 @@ class CancellationTest extends AsyncTestCase
 
     public function testDoubleCancelOnlyInvokesOnce(): void
     {
-        $cancellationSource = new CancellationTokenSource;
-        $cancellationSource->getToken()->subscribe(\Closure::fromCallable($this->createCallback(1)));
+        $cancellationSource = new DeferredCancellation;
+        $cancellationSource->getCancellation()->subscribe(\Closure::fromCallable($this->createCallback(1)));
 
         $cancellationSource->cancel();
         $cancellationSource->cancel();
@@ -56,8 +56,8 @@ class CancellationTest extends AsyncTestCase
 
     public function testCalledIfSubscribingAfterCancel(): void
     {
-        $cancellationSource = new CancellationTokenSource;
+        $cancellationSource = new DeferredCancellation;
         $cancellationSource->cancel();
-        $cancellationSource->getToken()->subscribe(\Closure::fromCallable($this->createCallback(1)));
+        $cancellationSource->getCancellation()->subscribe(\Closure::fromCallable($this->createCallback(1)));
     }
 }

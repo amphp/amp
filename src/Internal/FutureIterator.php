@@ -2,9 +2,9 @@
 
 namespace Amp\Internal;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\Future;
-use Amp\NullCancellationToken;
+use Amp\NullCancellation;
 use Revolt\EventLoop;
 
 /**
@@ -20,7 +20,7 @@ final class FutureIterator
      */
     private FutureIteratorQueue $queue;
 
-    private CancellationToken $token;
+    private Cancellation $token;
 
     private string $cancellationId;
 
@@ -29,10 +29,10 @@ final class FutureIterator
      */
     private ?Future $complete = null;
 
-    public function __construct(?CancellationToken $token = null)
+    public function __construct(?Cancellation $token = null)
     {
         $this->queue = $queue = new FutureIteratorQueue();
-        $this->token = $token ?? new NullCancellationToken();
+        $this->token = $token ?? new NullCancellation();
 
         $this->cancellationId = $this->token->subscribe(static function (\Throwable $reason) use ($queue): void {
             if ($queue->suspension) {

@@ -2,15 +2,15 @@
 
 namespace Amp\Internal;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 
 /**
  * @internal
  */
-final class WrappedCancellationToken implements CancellationToken
+final class WrappedCancellation implements Cancellation
 {
     public function __construct(
-        private CancellationToken $token
+        private Cancellation $token
     ) {
     }
 

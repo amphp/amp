@@ -6,7 +6,7 @@ use Amp\CancelledException;
 use Amp\CompositeException;
 use Amp\Deferred;
 use Amp\Future;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
 
@@ -31,7 +31,8 @@ class SomeTest extends TestCase
 
     public function testTwoFirstThrowing(): void
     {
-        self::assertSame(['two' => 2], some(['one' => Future::error(new \Exception('foo')), 'two' => Future::complete(2)], 1));
+        self::assertSame(['two' => 2],
+            some(['one' => Future::error(new \Exception('foo')), 'two' => Future::complete(2)], 1));
     }
 
     public function testTwoBothThrowing(): void
@@ -62,7 +63,7 @@ class SomeTest extends TestCase
         some(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), 3, new TimeoutCancellationToken(0.05));
+        ), 3, new TimeoutCancellation(0.05));
     }
 
     public function testCompleteBeforeCancellation(): void
@@ -76,7 +77,7 @@ class SomeTest extends TestCase
         self::assertSame(\range(1, 3), some(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), 3, new TimeoutCancellationToken(0.5)));
+        ), 3, new TimeoutCancellation(0.5)));
     }
 
     public function testZero(): void

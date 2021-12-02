@@ -5,7 +5,7 @@ namespace Amp\Future;
 use Amp\CancelledException;
 use Amp\Deferred;
 use Amp\Future;
-use Amp\TimeoutCancellationToken;
+use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
 
@@ -58,7 +58,7 @@ class SettleTest extends TestCase
         settle(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), new TimeoutCancellationToken(0.05));
+        ), new TimeoutCancellation(0.05));
     }
 
     public function testCompleteBeforeCancellation(): void
@@ -72,6 +72,6 @@ class SettleTest extends TestCase
         self::assertSame([[], \range(1, 3)], settle(\array_map(
             fn (Deferred $deferred) => $deferred->getFuture(),
             $deferreds
-        ), new TimeoutCancellationToken(0.5)));
+        ), new TimeoutCancellation(0.5)));
     }
 }

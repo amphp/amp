@@ -25,7 +25,7 @@ namespace Amp;
  *
  * instead.
  */
-final class NullCancellationToken implements CancellationToken
+final class NullCancellation implements Cancellation
 {
     public function subscribe(\Closure $callback): string
     {

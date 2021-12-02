@@ -3,10 +3,10 @@
 namespace Amp;
 
 /**
- * A cancellation token source provides a mechanism to cancel operations.
+ * A deferred cancellation provides a mechanism to cancel operations dynamically.
  *
- * Cancellation of operation works by creating a cancellation token source and passing the corresponding token when
- * starting the operation. To cancel the operation, invoke `CancellationTokenSource::cancel()`.
+ * Cancellation of operation works by creating a deferred cancellation and passing the corresponding cancellation when
+ * starting the operation. To cancel the operation, invoke `DeferredCancellation::cancel()`.
  *
  * Any operation can decide what to do on a cancellation request, it has "don't care" semantics. An operation SHOULD be
  * aborted, but MAY continue. Example: A DNS client might continue to receive and cache the response, as the query has
@@ -16,37 +16,37 @@ namespace Amp;
  * **Example**
  *
  * ```php
- * $cancellationTokenSource = new CancellationTokenSource;
- * $cancellationToken = $cancellationTokenSource->getToken();
+ * $deferredCancellation = new DeferredCancellation;
+ * $cancellation = $deferredCancellation->getCancellation();
  *
- * $response = $httpClient->request("https://example.com/pipeline", $cancellationToken);
+ * $response = $httpClient->request("https://example.com/pipeline", $cancellation);
  * $responseBody = $response->getBody();
  *
  * while (null !== $chunk = $response->read()) {
  *     // consume $chunk
  *
  *     if ($noLongerInterested) {
- *         $cancellationTokenSource->cancel();
+ *         $deferredCancellation->cancel();
  *         break;
  *     }
  * }
  * ```
  *
- * @see CancellationToken
+ * @see Cancellation
  * @see CancelledException
  */
-final class CancellationTokenSource
+final class DeferredCancellation
 {
-    private Internal\CancellableToken $source;
-    private CancellationToken $token;
+    private Internal\Cancellable $source;
+    private Cancellation $token;
 
     public function __construct()
     {
-        $this->source = new Internal\CancellableToken;
-        $this->token = new Internal\WrappedCancellationToken($this->source);
+        $this->source = new Internal\Cancellable;
+        $this->token = new Internal\WrappedCancellation($this->source);
     }
 
-    public function getToken(): CancellationToken
+    public function getCancellation(): Cancellation
     {
         return $this->token;
     }

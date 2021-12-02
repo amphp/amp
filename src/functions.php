@@ -48,66 +48,70 @@ function now(): float
 /**
  * Non-blocking sleep for the specified number of seconds.
  *
- * @param float                  $timeout Number of seconds to wait.
- * @param bool                   $reference If false, unreference the underlying watcher.
- * @param CancellationToken|null $token Cancel waiting if cancellation is requested.
+ * @param float             $timeout Number of seconds to wait.
+ * @param bool              $reference If false, unreference the underlying watcher.
+ * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  */
-function delay(float $timeout, bool $reference = true, ?CancellationToken $token = null): void
+function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
 {
     $suspension = EventLoop::createSuspension();
-    $watcher = EventLoop::delay($timeout, static fn () => $suspension->resume(null));
-    $id = $token?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
+    $callbackId = EventLoop::delay($timeout, static fn () => $suspension->resume());
+    $cancellationId = $cancellation?->subscribe(
+        static fn (CancelledException $exception) => $suspension->throw($exception)
+    );
 
     if (!$reference) {
-        EventLoop::unreference($watcher);
+        EventLoop::unreference($callbackId);
     }
 
     try {
         $suspension->suspend();
     } finally {
-        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
-        $token?->unsubscribe($id);
-        EventLoop::cancel($watcher);
+        EventLoop::cancel($callbackId);
+
+        /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
+        $cancellation?->unsubscribe($cancellationId);
     }
 }
 
 /**
  * Wait for signal(s) in a non-blocking way.
  *
- * @param int|array              $signals Signal number or array of signal numbers.
- * @param bool                   $reference If false, unreference the underlying watcher.
- * @param CancellationToken|null $token Cancel waiting if cancellation is requested.
+ * @param int|array         $signals Signal number or array of signal numbers.
+ * @param bool              $reference If false, unreference the underlying watcher.
+ * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  *
  * @return int Caught signal number.
  * @throws UnsupportedFeatureException
  */
-function trapSignal(int|array $signals, bool $reference = true, ?CancellationToken $token = null): int
+function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $cancellation = null): int
 {
     $suspension = EventLoop::createSuspension();
-    $callback = static fn (string $watcher, int $signo) => $suspension->resume($signo);
-    $id = $token?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
+    $callback = static fn (string $watcher, int $signal) => $suspension->resume($signal);
+    $id = $cancellation?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
 
-    $watchers = [];
+    $callbackIds = [];
 
     if (\is_int($signals)) {
         $signals = [$signals];
     }
 
     foreach ($signals as $signo) {
-        $watchers[] = $watcher = EventLoop::onSignal($signo, $callback);
+        $callbackIds[] = $callbackId = EventLoop::onSignal($signo, $callback);
         if (!$reference) {
-            EventLoop::unreference($watcher);
+            EventLoop::unreference($callbackId);
         }
     }
 
     try {
         return $suspension->suspend();
     } finally {
-        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
-        $token?->unsubscribe($id);
-        foreach ($watchers as $watcher) {
-            EventLoop::cancel($watcher);
+        foreach ($callbackIds as $callbackId) {
+            EventLoop::cancel($callbackId);
         }
+
+        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
+        $cancellation?->unsubscribe($id);
     }
 }
 

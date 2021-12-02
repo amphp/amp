@@ -4,40 +4,39 @@ namespace Amp;
 
 use Revolt\EventLoop;
 
-final class CombinedCancellationToken implements CancellationToken
+final class CompositeCancellation implements Cancellation
 {
-    /** @var array<int, array{CancellationToken, string}> */
-    private array $tokens = [];
+    /** @var array<int, array{Cancellation, string}> */
+    private array $cancellations = [];
 
     private string $nextId = "a";
 
-    /** @var callable(CancelledException)[] */
+    /** @var \Closure(CancelledException)[] */
     private array $callbacks = [];
 
     private ?CancelledException $exception = null;
 
-    public function __construct(CancellationToken ...$tokens)
+    public function __construct(Cancellation ...$cancellations)
     {
-        foreach ($tokens as $token) {
-            $id = $token->subscribe(function (CancelledException $exception): void {
+        foreach ($cancellations as $cancellation) {
+            $id = $cancellation->subscribe(function (CancelledException $exception): void {
                 $this->exception = $exception;
 
-                $callbacks = $this->callbacks;
-                $this->callbacks = [];
-
-                foreach ($callbacks as $callback) {
+                foreach ($this->callbacks as $callback) {
                     EventLoop::queue($callback, $exception);
                 }
+
+                $this->callbacks = [];
             });
 
-            $this->tokens[] = [$token, $id];
+            $this->cancellations[] = [$cancellation, $id];
         }
     }
 
     public function __destruct()
     {
-        foreach ($this->tokens as [$token, $id]) {
-            /** @var CancellationToken $token */
+        foreach ($this->cancellations as [$token, $id]) {
+            /** @var Cancellation $token */
             $token->unsubscribe($id);
         }
     }
@@ -64,7 +63,7 @@ final class CombinedCancellationToken implements CancellationToken
     /** @inheritdoc */
     public function isRequested(): bool
     {
-        foreach ($this->tokens as [$token]) {
+        foreach ($this->cancellations as [$token]) {
             if ($token->isRequested()) {
                 return true;
             }
@@ -76,7 +75,7 @@ final class CombinedCancellationToken implements CancellationToken
     /** @inheritdoc */
     public function throwIfRequested(): void
     {
-        foreach ($this->tokens as [$token]) {
+        foreach ($this->cancellations as [$token]) {
             $token->throwIfRequested();
         }
     }

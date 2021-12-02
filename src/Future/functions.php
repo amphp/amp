@@ -2,7 +2,7 @@
 
 namespace Amp\Future;
 
-use Amp\CancellationToken;
+use Amp\Cancellation;
 use Amp\CompositeException;
 use Amp\Future;
 
@@ -13,14 +13,14 @@ use Amp\Future;
  *
  * @template T
  *
- * @param iterable<Future<T>>    $futures
- * @param CancellationToken|null $cancellation Optional cancellation token.
+ * @param iterable<Future<T>> $futures
+ * @param Cancellation|null   $cancellation Optional cancellation token.
  *
  * @return T
  *
  * @throws \Error If $futures is empty.
  */
-function race(iterable $futures, ?CancellationToken $cancellation = null): mixed
+function race(iterable $futures, ?Cancellation $cancellation = null): mixed
 {
     foreach (Future::iterate($futures, $cancellation) as $first) {
         return $first->await();
@@ -38,13 +38,13 @@ function race(iterable $futures, ?CancellationToken $cancellation = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null   $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation token.
  *
  * @return Tv
  *
  * @throws CompositeException If all futures errored.
  */
-function any(iterable $futures, ?CancellationToken $cancellation = null): mixed
+function any(iterable $futures, ?Cancellation $cancellation = null): mixed
 {
     $result = some($futures, 1, $cancellation);
     return $result[\array_key_first($result)];
@@ -55,13 +55,13 @@ function any(iterable $futures, ?CancellationToken $cancellation = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null   $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation token.
  *
  * @return non-empty-array<Tk, Tv>
  *
  * @throws CompositeException If all futures errored.
  */
-function some(iterable $futures, int $count, ?CancellationToken $cancellation = null): array
+function some(iterable $futures, int $count, ?Cancellation $cancellation = null): array
 {
     if ($count <= 0) {
         throw new \ValueError('The count must be greater than 0, got ' . $count);
@@ -96,11 +96,11 @@ function some(iterable $futures, int $count, ?CancellationToken $cancellation = 
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null   $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation token.
  *
  * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
  */
-function settle(iterable $futures, ?CancellationToken $cancellation = null): array
+function settle(iterable $futures, ?Cancellation $cancellation = null): array
 {
     $values = [];
     $errors = [];
@@ -124,11 +124,11 @@ function settle(iterable $futures, ?CancellationToken $cancellation = null): arr
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null   $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation token.
  *
  * @return array<Tk, Tv> Unwrapped values with the order preserved.
  */
-function all(iterable $futures, CancellationToken $cancellation = null): array
+function all(iterable $futures, Cancellation $cancellation = null): array
 {
     $values = [];
 

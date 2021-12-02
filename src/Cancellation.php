@@ -3,15 +3,15 @@
 namespace Amp;
 
 /**
- * Cancellation tokens are simple objects that allow registering handlers to subscribe to cancellation requests.
+ * Cancellations are simple objects that allow registering handlers to subscribe to cancellation requests.
  */
-interface CancellationToken
+interface Cancellation
 {
     /**
      * Subscribes a new handler to be invoked on a cancellation request.
      *
-     * This handler might be invoked immediately in case the token has already been cancelled. Any unhandled exceptions
-     * will be thrown into the event loop.
+     * This handler might be invoked immediately in case the cancellation has already been requested. Any unhandled
+     * exceptions will be thrown into the event loop.
      *
      * @param \Closure(CancelledException) $callback Callback to be invoked on a cancellation request. Will receive a
      * `CancelledException` as first argument that may be used to fail the operation.
