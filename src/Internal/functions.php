@@ -5,8 +5,8 @@ namespace Amp\Internal;
 /**
  * Formats a stacktrace obtained via `debug_backtrace()`.
  *
- * @param array<array{file?: string, line: int, type?: string, class: string, function: string}> $trace Output of
- *     `debug_backtrace()`.
+ * @param list<array{args?:list<mixed>, class?: class-string, file: string, function: string, line: int, object?: object, type?: string}> $trace
+ * Output of `debug_backtrace()`.
  *
  * @return string Formatted stacktrace.
  *
@@ -22,7 +22,7 @@ function formatStacktrace(array $trace): string
             $line .= "{$e['file']}:{$e['line']} ";
         }
 
-        if (isset($e["type"])) {
+        if (isset($e["class"], $e["type"])) {
             $line .= $e["class"] . $e["type"];
         }
 

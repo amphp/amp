@@ -135,6 +135,7 @@ final class Future
             }
 
             try {
+                /** @var T $value */
                 $state->complete($onComplete($value));
             } catch (\Throwable $exception) {
                 $state->error($exception);

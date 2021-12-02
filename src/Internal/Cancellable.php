@@ -18,8 +18,7 @@ final class Cancellable implements Cancellation
     /** @var callable[] */
     private array $callbacks = [];
 
-    /** @var \Throwable|null */
-    private ?\Throwable $exception = null;
+    private ?CancelledException $exception = null;
 
     public function cancel(?\Throwable $previous = null): void
     {

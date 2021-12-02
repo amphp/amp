@@ -21,7 +21,7 @@ final class FutureState
     private bool $handled = false;
 
     /**
-     * @var array<string, callable(?\Throwable, ?T, string): void>
+     * @var array<string, \Closure(?\Throwable, ?T, string): void>
      */
     private array $callbacks = [];
 
@@ -45,12 +45,12 @@ final class FutureState
      *
      * The callback is invoked directly from the event loop context, so suspension within the callback is not possible.
      *
-     * @param callable(?\Throwable, ?T, string): void $callback Callback invoked on error / successful completion of
+     * @param \Closure(?\Throwable, ?T, string): void $callback Callback invoked on error / successful completion of
      * the future.
      *
      * @return string Identifier that can be used to cancel interest for this future.
      */
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         $id = self::$nextId++;
 
