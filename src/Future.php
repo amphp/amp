@@ -120,15 +120,15 @@ final class Future
      *
      * @template Tr
      *
-     * @param callable(T):Tr $onComplete
+     * @param \Closure(T):Tr $map
      *
      * @return Future
      */
-    public function map(callable $onComplete): self
+    public function map(\Closure $map): self
     {
         $state = new FutureState();
 
-        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onComplete): void {
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $map): void {
             if ($error) {
                 $state->error($error);
                 return;
@@ -136,7 +136,7 @@ final class Future
 
             try {
                 /** @var T $value */
-                $state->complete($onComplete($value));
+                $state->complete($map($value));
             } catch (\Throwable $exception) {
                 $state->error($exception);
             }
@@ -151,22 +151,22 @@ final class Future
      *
      * @template Tr
      *
-     * @param callable(\Throwable):Tr $onError
+     * @param \Closure(\Throwable):Tr $catch
      *
      * @return Future
      */
-    public function catch(callable $onError): self
+    public function catch(\Closure $catch): self
     {
         $state = new FutureState();
 
-        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onError): void {
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $catch): void {
             if (!$error) {
                 $state->complete($value);
                 return;
             }
 
             try {
-                $state->complete($onError($error));
+                $state->complete($catch($error));
             } catch (\Throwable $exception) {
                 $state->error($exception);
             }
@@ -176,21 +176,21 @@ final class Future
     }
 
     /**
-     * Attaches a callback that is always invoked when the future is settled. The returned future resolves with the
+     * Attaches a callback that is always invoked when the future is completed. The returned future resolves with the
      * same value as this future once the callback has finished execution. If the callback throws, the returned future
      * will error with the thrown exception.
      *
-     * @param callable():void $onSettle
+     * @param \Closure():void $finally
      *
      * @return Future<T>
      */
-    public function finally(callable $onSettle): self
+    public function finally(\Closure $finally): self
     {
         $state = new FutureState();
 
-        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $onSettle): void {
+        $this->state->subscribe(static function (?\Throwable $error, mixed $value) use ($state, $finally): void {
             try {
-                $onSettle();
+                $finally();
 
                 if ($error) {
                     $state->error($error);
