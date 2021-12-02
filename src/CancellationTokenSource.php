@@ -16,13 +16,13 @@ namespace Amp;
  * **Example**
  *
  * ```php
- * $tokenSource = new CancellationTokenSource;
- * $token = $tokenSource->getToken();
+ * $cancellationTokenSource = new CancellationTokenSource;
+ * $cancellationToken = $cancellationTokenSource->getToken();
  *
- * $response = yield $httpClient->request("https://example.com/pipeline", $token);
+ * $response = $httpClient->request("https://example.com/pipeline", $cancellationToken);
  * $responseBody = $response->getBody();
  *
- * while (($chunk = yield $response->read()) !== null) {
+ * while (null !== $chunk = $response->read()) {
  *     // consume $chunk
  *
  *     if ($noLongerInterested) {
