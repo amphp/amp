@@ -1,5 +1,7 @@
 ---
-layout: docs title: Promises permalink: /promises/
+layout: "docs"
+title: "Futures"
+permalink: "/promises/"
 ---
 A `Promise` is an object representing the eventual result of an asynchronous operation. There are three states:
 

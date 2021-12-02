@@ -1,5 +1,7 @@
 ---
-layout: docs title: Cancellation permalink: /cancellation/
+layout: "docs"
+title: "Cancellation"
+permalink: "/cancellation/"
 ---
 Amp provides a `Cancellation` primitive to allow the cancellation of operations.
 
