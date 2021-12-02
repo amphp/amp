@@ -10,12 +10,12 @@ class WeakenTest extends AsyncTestCase
     public function provideObjectFactories(): iterable
     {
         yield 'binding' => [
-            fn (&$count) => new class($count) {
+            fn (&$count, &$id) => new class($count, $id) {
                 private string $callbackId;
 
-                public function __construct(int &$count)
+                public function __construct(int &$count, &$id)
                 {
-                    $this->callbackId = EventLoop::repeat(
+                    $this->callbackId = $id = EventLoop::repeat(
                         0.001,
                         weaken(function (string $callbackId) use (&$count): void {
                             AsyncTestCase::assertNotNull($this);
@@ -34,13 +34,13 @@ class WeakenTest extends AsyncTestCase
         ];
 
         yield 'static' => [
-            fn (&$count) => new class($count) {
+            fn (&$count, &$id) => new class($count, $id) {
                 private string $callbackId = '';
 
-                public function __construct(int &$count)
+                public function __construct(int &$count, &$id)
                 {
                     $callbackIdRef = &$this->callbackId;
-                    $this->callbackId = EventLoop::repeat(0.001, weaken(static function (string $callbackId) use (
+                    $this->callbackId = $id = EventLoop::repeat(0.001, weaken(static function (string $callbackId) use (
                         &$count,
                         &$callbackIdRef
                     ): void {
@@ -57,14 +57,17 @@ class WeakenTest extends AsyncTestCase
         ];
 
         yield 'fromCallable' => [
-            fn (&$count) => new class($count) {
+            fn (&$count, &$id) => new class($count, $id) {
                 private string $callbackId = '';
                 private int $count;
 
-                public function __construct(int &$count)
+                public function __construct(int &$count, &$id)
                 {
                     $this->count = &$count;
-                    $this->callbackId = EventLoop::repeat(0.001, weaken(\Closure::fromCallable([$this, 'callback'])));
+                    $this->callbackId = $id = EventLoop::repeat(
+                        0.001,
+                        weaken(\Closure::fromCallable([$this, 'callback']))
+                    );
                 }
 
                 private function callback(string $callbackId): void
@@ -83,14 +86,14 @@ class WeakenTest extends AsyncTestCase
         ];
 
         yield '__invoke' => [
-            fn (&$count) => new class($count) {
+            fn (&$count, &$id) => new class($count, $id) {
                 private string $callbackId = '';
                 private int $count;
 
-                public function __construct(int &$count)
+                public function __construct(int &$count, &$id)
                 {
                     $this->count = &$count;
-                    $this->callbackId = EventLoop::repeat(0.001, weaken($this));
+                    $this->callbackId = $id = EventLoop::repeat(0.001, weaken($this));
                 }
 
                 public function __invoke(string $callbackId): void
@@ -116,16 +119,22 @@ class WeakenTest extends AsyncTestCase
     {
         $this->setTimeout(0.2);
         $count = 0;
+        $id = null;
 
-        $object = $factory($count);
+        $object = $factory($count, $id);
 
         delay(0.05);
-        unset($object); // Should destroy object and cancel loop watcher.
         self::assertGreaterThan(1, $count);
 
-        $countBackup = $count;
+        // Ensure the callback isn't cancelled, yet
+        EventLoop::enable($id);
 
-        delay(0.05);
-        self::assertSame($countBackup, $count);
+        unset($object); // Should destroy object and cancel loop watcher.
+
+        // Ensure the callback is already cancelled
+        $this->expectException(EventLoop\InvalidCallbackError::class);
+        $this->expectExceptionCode(EventLoop\InvalidCallbackError::E_INVALID_IDENTIFIER);
+
+        EventLoop::enable($id);
     }
 }
