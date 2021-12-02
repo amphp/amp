@@ -4,7 +4,7 @@ namespace Amp\Future;
 
 use Amp\CancelledException;
 use Amp\CompositeException;
-use Amp\Deferred;
+use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
@@ -24,7 +24,7 @@ class AnyTest extends TestCase
 
     public function testTwoFirstPending(): void
     {
-        $deferred = new Deferred();
+        $deferred = new DeferredFuture();
 
         self::assertSame(2, any([$deferred->getFuture(), Future::complete(2)]));
     }
@@ -54,13 +54,13 @@ class AnyTest extends TestCase
     {
         $this->expectException(CancelledException::class);
         $deferreds = \array_map(function (int $value) {
-            $deferred = new Deferred;
+            $deferred = new DeferredFuture;
             EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         any(\array_map(
-            fn (Deferred $deferred) => $deferred->getFuture(),
+            fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellation(0.05));
     }
@@ -68,18 +68,18 @@ class AnyTest extends TestCase
     public function testCompleteBeforeCancellation(): void
     {
         $deferreds = \array_map(function (int $value) {
-            $deferred = new Deferred;
+            $deferred = new DeferredFuture;
             EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $deferred->error(new \Exception('foo'));
 
         \array_unshift($deferreds, $deferred);
 
         self::assertSame(1, any(\array_map(
-            fn (Deferred $deferred) => $deferred->getFuture(),
+            fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellation(0.2)));
     }

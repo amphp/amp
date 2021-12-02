@@ -3,7 +3,7 @@
 namespace Amp\Future;
 
 use Amp\CancelledException;
-use Amp\Deferred;
+use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
@@ -23,7 +23,7 @@ class RaceTest extends TestCase
 
     public function testTwoFirstPending(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
 
         self::assertSame(2, Future\race([$deferred->getFuture(), Future::complete(2)]));
     }
@@ -52,13 +52,13 @@ class RaceTest extends TestCase
         $this->expectException(CancelledException::class);
 
         $deferreds = \array_map(function (int $value) {
-            $deferred = new Deferred;
+            $deferred = new DeferredFuture;
             EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         race(\array_map(
-            fn (Deferred $deferred) => $deferred->getFuture(),
+            fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellation(0.05));
     }
@@ -66,13 +66,13 @@ class RaceTest extends TestCase
     public function testCompleteBeforeCancellation(): void
     {
         $deferreds = \array_map(function (int $value) {
-            $deferred = new Deferred;
+            $deferred = new DeferredFuture;
             EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
         self::assertSame(1, race(\array_map(
-            fn (Deferred $deferred) => $deferred->getFuture(),
+            fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellation(0.2)));
     }

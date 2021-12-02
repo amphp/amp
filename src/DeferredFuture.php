@@ -5,7 +5,7 @@ namespace Amp;
 /**
  * @template T
  */
-final class Deferred
+final class DeferredFuture
 {
     /** @var Internal\FutureState<T> */
     private Internal\FutureState $state;

@@ -3,8 +3,8 @@
 namespace Amp\Future;
 
 use Amp\CancelledException;
-use Amp\Deferred;
 use Amp\DeferredCancellation;
+use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
 use Amp\PHPUnit\LoopCaughtException;
@@ -37,11 +37,11 @@ class FutureTest extends AsyncTestCase
          * @var \Generator<int, Future<string>, void, void>
          */
         $iterator = (function () {
-            yield (new Deferred)->getFuture();
+            yield (new DeferredFuture)->getFuture();
             yield $this->delay(0.1, 'a');
 
             // Never joins
-            (new Deferred)->getFuture()->await();
+            (new DeferredFuture)->getFuture()->await();
         })();
 
         foreach (Future::iterate($iterator) as $index => $future) {
@@ -52,7 +52,7 @@ class FutureTest extends AsyncTestCase
 
     public function testComplete(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         $deferred->complete('result');
@@ -62,7 +62,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCompleteAsync(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         EventLoop::delay(0.01, fn () => $deferred->complete('result'));
@@ -79,7 +79,7 @@ class FutureTest extends AsyncTestCase
 
     public function testError(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         $deferred->error(new \Exception('foo'));
@@ -92,7 +92,7 @@ class FutureTest extends AsyncTestCase
 
     public function testErrorAsync(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $future = $deferred->getFuture();
 
         EventLoop::delay(0.01, fn () => $deferred->error(new \Exception('foo')));
@@ -115,7 +115,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCompleteWithFuture(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('Cannot complete with an instance of');
@@ -145,7 +145,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCompleteThenCancelJoin(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $source = new DeferredCancellation;
         $future = $deferred->getFuture();
 
@@ -159,7 +159,7 @@ class FutureTest extends AsyncTestCase
 
     public function testUnhandledError(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $deferred->error(new TestException);
         unset($deferred);
 
@@ -176,7 +176,7 @@ class FutureTest extends AsyncTestCase
 
     public function testIgnoringUnhandledErrors(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
         $deferred->getFuture()->ignore();
         $deferred->error(new TestException);
         unset($deferred);
@@ -209,7 +209,7 @@ class FutureTest extends AsyncTestCase
 
     public function testMapWithPendingFuture(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
 
         $future = $deferred->getFuture();
         $future = $future->map(static fn (int $value) => $value + 1);
@@ -252,7 +252,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCatchWithPendingFuture(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
 
         $future = $deferred->getFuture();
         $future = $future->catch(static fn (\Throwable $exception) => 1);
@@ -296,7 +296,7 @@ class FutureTest extends AsyncTestCase
 
     public function testFinallyWithPendingFuture(): void
     {
-        $deferred = new Deferred;
+        $deferred = new DeferredFuture;
 
         $future = $deferred->getFuture();
         $future = $future->finally($this->createCallback(1));
