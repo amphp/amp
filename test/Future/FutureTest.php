@@ -210,7 +210,7 @@ class FutureTest extends AsyncTestCase
         $deferred->error(new TestException);
         unset($deferred);
 
-        EventLoop::setErrorHandler(\Closure::fromCallable($this->createCallback(0)));
+        EventLoop::setErrorHandler($this->createCallback(0));
     }
 
     public function testIgnoreUnhandledErrorFromFutureError(): void
@@ -219,7 +219,7 @@ class FutureTest extends AsyncTestCase
         $future->ignore();
         unset($future);
 
-        EventLoop::setErrorHandler(\Closure::fromCallable($this->createCallback(0)));
+        EventLoop::setErrorHandler($this->createCallback(0));
     }
 
     public function testMapWithCompleteFuture(): void
