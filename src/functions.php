@@ -16,7 +16,7 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  *
  * @return Future<T>
  */
-function launch(\Closure $closure): Future
+function async(\Closure $closure): Future
 {
     static $run = null;
 

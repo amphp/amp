@@ -91,7 +91,7 @@ final class Future
     /**
      * @param FutureState<T> $state
      *
-     * @internal Use {@see Deferred} or {@see launch()} to create and resolve a Future.
+     * @internal Use {@see Deferred} or {@see async()} to create and resolve a Future.
      */
     public function __construct(FutureState $state)
     {
