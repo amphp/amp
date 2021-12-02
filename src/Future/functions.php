@@ -13,16 +13,16 @@ use Amp\Future;
  *
  * @template T
  *
- * @param iterable<Future<T>> $futures
- * @param CancellationToken|null $token Optional cancellation token.
+ * @param iterable<Future<T>>    $futures
+ * @param CancellationToken|null $cancellation Optional cancellation token.
  *
  * @return T
  *
  * @throws \Error If $futures is empty.
  */
-function race(iterable $futures, ?CancellationToken $token = null): mixed
+function race(iterable $futures, ?CancellationToken $cancellation = null): mixed
 {
-    foreach (Future::iterate($futures, $token) as $first) {
+    foreach (Future::iterate($futures, $cancellation) as $first) {
         return $first->await();
     }
 
@@ -38,15 +38,15 @@ function race(iterable $futures, ?CancellationToken $token = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null $token Optional cancellation token.
+ * @param CancellationToken|null   $cancellation Optional cancellation token.
  *
  * @return Tv
  *
  * @throws CompositeException If all futures errored.
  */
-function any(iterable $futures, ?CancellationToken $token = null): mixed
+function any(iterable $futures, ?CancellationToken $cancellation = null): mixed
 {
-    $result = some($futures, 1, $token);
+    $result = some($futures, 1, $cancellation);
     return $result[\array_key_first($result)];
 }
 
@@ -55,21 +55,22 @@ function any(iterable $futures, ?CancellationToken $token = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null $token Optional cancellation token.
+ * @param CancellationToken|null   $cancellation Optional cancellation token.
  *
  * @return non-empty-array<Tk, Tv>
  *
  * @throws CompositeException If all futures errored.
  */
-function some(iterable $futures, int $count, ?CancellationToken $token = null): array
+function some(iterable $futures, int $count, ?CancellationToken $cancellation = null): array
 {
     if ($count <= 0) {
-        throw new \ValueError('The count must be greater than 0');
+        throw new \ValueError('The count must be greater than 0, got ' . $count);
     }
 
     $values = [];
     $errors = [];
-    foreach (Future::iterate($futures, $token) as $index => $future) {
+
+    foreach (Future::iterate($futures, $cancellation) as $index => $future) {
         try {
             $values[$index] = $future->await();
             if (\count($values) === $count) {
@@ -81,7 +82,7 @@ function some(iterable $futures, int $count, ?CancellationToken $token = null): 
     }
 
     if (empty($errors)) {
-        throw new \Error('Iterable did provide enough futures to satisfy the required count');
+        throw new \Error('Iterable did provide enough futures to satisfy the required count of ' . $count);
     }
 
     /**
@@ -95,14 +96,16 @@ function some(iterable $futures, int $count, ?CancellationToken $token = null): 
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null $token Optional cancellation token.
+ * @param CancellationToken|null   $cancellation Optional cancellation token.
+ *
  * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
  */
-function settle(iterable $futures, ?CancellationToken $token = null): array
+function settle(iterable $futures, ?CancellationToken $cancellation = null): array
 {
     $values = [];
     $errors = [];
-    foreach (Future::iterate($futures, $token) as $index => $future) {
+
+    foreach (Future::iterate($futures, $cancellation) as $index => $future) {
         try {
             $values[$index] = $future->await();
         } catch (\Throwable $throwable) {
@@ -121,15 +124,16 @@ function settle(iterable $futures, ?CancellationToken $token = null): array
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param CancellationToken|null $token Optional cancellation token.
+ * @param CancellationToken|null   $cancellation Optional cancellation token.
  *
  * @return array<Tk, Tv> Unwrapped values with the order preserved.
  */
-function all(iterable $futures, CancellationToken $token = null): array
+function all(iterable $futures, CancellationToken $cancellation = null): array
 {
     $values = [];
+
     // Future::iterate() to throw the first error based on completion order instead of argument order
-    foreach (Future::iterate($futures, $token) as $index => $future) {
+    foreach (Future::iterate($futures, $cancellation) as $index => $future) {
         $values[$index] = $future->await();
     }
 

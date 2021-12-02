@@ -25,7 +25,7 @@ final class FutureIterator
     private string $cancellationId;
 
     /**
-     * @var Future<null>|Future<never-return>|null
+     * @var Future<null>|Future<never>|null
      */
     private ?Future $complete = null;
 
@@ -55,9 +55,9 @@ final class FutureIterator
 
         $queue = $this->queue; // Using separate object to avoid a circular reference.
         $id = $state->subscribe(
-            /**
-             * @param Tv|null $result
-             */
+        /**
+         * @param Tv|null $result
+         */
             static function (?\Throwable $error, mixed $result, string $id) use (
                 $key,
                 $future,

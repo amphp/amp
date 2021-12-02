@@ -18,7 +18,7 @@ final class Future
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
-     * @param CancellationToken|null $token Optional cancellation token.
+     * @param CancellationToken|null   $token Optional cancellation token.
      *
      * @return iterable<Tk, Future<Tv>>
      */
@@ -121,6 +121,7 @@ final class Future
      * @template Tr
      *
      * @param callable(T):Tr $onComplete
+     *
      * @return Future
      */
     public function map(callable $onComplete): self
@@ -150,6 +151,7 @@ final class Future
      * @template Tr
      *
      * @param callable(\Throwable):Tr $onError
+     *
      * @return Future
      */
     public function catch(callable $onError): self
@@ -178,6 +180,7 @@ final class Future
      * will error with the thrown exception.
      *
      * @param callable():void $onSettle
+     *
      * @return Future<T>
      */
     public function finally(callable $onSettle): self
@@ -208,12 +211,11 @@ final class Future
      *
      * @return T
      */
-    public function await(?CancellationToken $token = null): mixed
+    public function await(?CancellationToken $cancellation = null): mixed
     {
         $suspension = EventLoop::createSuspension();
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
-            $token,
             $suspension
         ): void {
             if ($error) {
@@ -224,7 +226,7 @@ final class Future
         });
 
         $state = $this->state;
-        $cancellationId = $token?->subscribe(static function (\Throwable $reason) use (
+        $cancellationId = $cancellation?->subscribe(static function (\Throwable $reason) use (
             $callbackId,
             $suspension,
             $state
@@ -239,7 +241,7 @@ final class Future
             return $suspension->suspend();
         } finally {
             /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
-            $token?->unsubscribe($cancellationId);
+            $cancellation?->unsubscribe($cancellationId);
         }
     }
 }
