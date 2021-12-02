@@ -2,6 +2,7 @@
 
 namespace Amp;
 
+use Amp\Internal\FutureState;
 use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 
@@ -17,15 +18,19 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  */
 function launch(callable $callback): Future
 {
-    $state = new Internal\FutureState;
+    static $run = null;
 
-    EventLoop::queue(static function () use ($state, $callback) {
+    $run ??= static function (FutureState $state, callable $callback) {
         try {
             $state->complete($callback());
         } catch (\Throwable $exception) {
             $state->error($exception);
         }
-    });
+    };
+
+    $state = new Internal\FutureState;
+
+    EventLoop::queue($run, $state, $callback);
 
     return new Future($state);
 }
