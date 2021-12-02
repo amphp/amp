@@ -20,7 +20,7 @@ final class FutureIterator
      */
     private FutureIteratorQueue $queue;
 
-    private Cancellation $token;
+    private Cancellation $cancellation;
 
     private string $cancellationId;
 
@@ -29,12 +29,11 @@ final class FutureIterator
      */
     private ?Future $complete = null;
 
-    public function __construct(?Cancellation $token = null)
+    public function __construct(?Cancellation $cancellation = null)
     {
         $this->queue = $queue = new FutureIteratorQueue();
-        $this->token = $token ?? new NullCancellation();
-
-        $this->cancellationId = $this->token->subscribe(static function (\Throwable $reason) use ($queue): void {
+        $this->cancellation = $cancellation ?? new NullCancellation();
+        $this->cancellationId = $this->cancellation->subscribe(static function (\Throwable $reason) use ($queue): void {
             if ($queue->suspension) {
                 $queue->suspension->throw($reason);
                 $queue->suspension = null;
@@ -54,26 +53,27 @@ final class FutureIterator
         }
 
         $queue = $this->queue; // Using separate object to avoid a circular reference.
-        $id = $state->subscribe(
+
         /**
          * @param Tv|null $result
          */
-            static function (?\Throwable $error, mixed $result, string $id) use (
-                $key,
-                $future,
-                $queue
-            ): void {
-                unset($queue->pending[$id]);
+        $handler = static function (?\Throwable $error, mixed $result, string $id) use (
+            $key,
+            $future,
+            $queue
+        ): void {
+            unset($queue->pending[$id]);
 
-                if ($queue->suspension) {
-                    $queue->suspension->resume([$key, $future]);
-                    $queue->suspension = null;
-                    return;
-                }
-
-                $queue->items[] = [$key, $future];
+            if ($queue->suspension) {
+                $queue->suspension->resume([$key, $future]);
+                $queue->suspension = null;
+                return;
             }
-        );
+
+            $queue->items[] = [$key, $future];
+        };
+
+        $id = $state->subscribe($handler);
 
         $queue->pending[$id] = $state;
     }
@@ -87,7 +87,7 @@ final class FutureIterator
         $this->complete = Future::complete();
 
         if (!$this->queue->pending && $this->queue->suspension) {
-            $this->queue->suspension->resume(null);
+            $this->queue->suspension->resume();
             $this->queue->suspension = null;
         }
     }
@@ -120,7 +120,7 @@ final class FutureIterator
                 return $this->complete->await();
             }
 
-            $this->token->throwIfRequested();
+            $this->cancellation->throwIfRequested();
 
             $this->queue->suspension = EventLoop::createSuspension();
 
@@ -139,7 +139,7 @@ final class FutureIterator
 
     public function __destruct()
     {
-        $this->token->unsubscribe($this->cancellationId);
+        $this->cancellation->unsubscribe($this->cancellationId);
         foreach ($this->queue->pending as $id => $state) {
             $state->unsubscribe($id);
         }

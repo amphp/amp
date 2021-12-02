@@ -35,9 +35,9 @@ final class CompositeCancellation implements Cancellation
 
     public function __destruct()
     {
-        foreach ($this->cancellations as [$token, $id]) {
-            /** @var Cancellation $token */
-            $token->unsubscribe($id);
+        foreach ($this->cancellations as [$cancellation, $id]) {
+            /** @var Cancellation $cancellation */
+            $cancellation->unsubscribe($id);
         }
     }
 
@@ -63,8 +63,8 @@ final class CompositeCancellation implements Cancellation
     /** @inheritdoc */
     public function isRequested(): bool
     {
-        foreach ($this->cancellations as [$token]) {
-            if ($token->isRequested()) {
+        foreach ($this->cancellations as [$cancellation]) {
+            if ($cancellation->isRequested()) {
                 return true;
             }
         }
@@ -75,8 +75,8 @@ final class CompositeCancellation implements Cancellation
     /** @inheritdoc */
     public function throwIfRequested(): void
     {
-        foreach ($this->cancellations as [$token]) {
-            $token->throwIfRequested();
+        foreach ($this->cancellations as [$cancellation]) {
+            $cancellation->throwIfRequested();
         }
     }
 }

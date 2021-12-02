@@ -14,7 +14,7 @@ use Amp\Future;
  * @template T
  *
  * @param iterable<Future<T>> $futures
- * @param Cancellation|null   $cancellation Optional cancellation token.
+ * @param Cancellation|null   $cancellation Optional cancellation.
  *
  * @return T
  *
@@ -38,7 +38,7 @@ function race(iterable $futures, ?Cancellation $cancellation = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation.
  *
  * @return Tv
  *
@@ -55,7 +55,7 @@ function any(iterable $futures, ?Cancellation $cancellation = null): mixed
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation.
  *
  * @return non-empty-array<Tk, Tv>
  *
@@ -96,7 +96,7 @@ function some(iterable $futures, int $count, ?Cancellation $cancellation = null)
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation.
  *
  * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
  */
@@ -124,7 +124,7 @@ function settle(iterable $futures, ?Cancellation $cancellation = null): array
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation token.
+ * @param Cancellation|null        $cancellation Optional cancellation.
  *
  * @return array<Tk, Tv> Unwrapped values with the order preserved.
  */

@@ -18,7 +18,7 @@ final class Future
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
-     * @param Cancellation|null        $cancellation Optional cancellation token.
+     * @param Cancellation|null        $cancellation Optional cancellation.
      *
      * @return iterable<Tk, Future<Tv>>
      */
@@ -240,7 +240,7 @@ final class Future
         try {
             return $suspension->suspend();
         } finally {
-            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
+            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $cancellation is not null. */
             $cancellation?->unsubscribe($cancellationId);
         }
     }

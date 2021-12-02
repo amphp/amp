@@ -69,7 +69,7 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
     } finally {
         EventLoop::cancel($callbackId);
 
-        /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $token is not null. */
+        /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $cancellation is not null. */
         $cancellation?->unsubscribe($cancellationId);
     }
 }
@@ -110,7 +110,7 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
             EventLoop::cancel($callbackId);
         }
 
-        /** @psalm-suppress PossiblyNullArgument $id will not be null if $token is not null. */
+        /** @psalm-suppress PossiblyNullArgument $id will not be null if $cancellation is not null. */
         $cancellation?->unsubscribe($id);
     }
 }

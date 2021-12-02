@@ -10,27 +10,27 @@ use Amp\Cancellation;
 final class WrappedCancellation implements Cancellation
 {
     public function __construct(
-        private Cancellation $token
+        private Cancellation $cancellation
     ) {
     }
 
     public function subscribe(\Closure $callback): string
     {
-        return $this->token->subscribe($callback);
+        return $this->cancellation->subscribe($callback);
     }
 
     public function unsubscribe(string $id): void
     {
-        $this->token->unsubscribe($id);
+        $this->cancellation->unsubscribe($id);
     }
 
     public function isRequested(): bool
     {
-        return $this->token->isRequested();
+        return $this->cancellation->isRequested();
     }
 
     public function throwIfRequested(): void
     {
-        $this->token->throwIfRequested();
+        $this->cancellation->throwIfRequested();
     }
 }

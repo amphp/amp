@@ -38,17 +38,17 @@ namespace Amp;
 final class DeferredCancellation
 {
     private Internal\Cancellable $source;
-    private Cancellation $token;
+    private Cancellation $cancellation;
 
     public function __construct()
     {
         $this->source = new Internal\Cancellable;
-        $this->token = new Internal\WrappedCancellation($this->source);
+        $this->cancellation = new Internal\WrappedCancellation($this->source);
     }
 
     public function getCancellation(): Cancellation
     {
-        return $this->token;
+        return $this->cancellation;
     }
 
     /**

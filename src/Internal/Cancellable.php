@@ -7,7 +7,7 @@ use Amp\CancelledException;
 use Revolt\EventLoop;
 
 /**
- * Cancellation Token with public cancellation method.
+ * Cancellation with public cancellation method.
  *
  * @internal
  */

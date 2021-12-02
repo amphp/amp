@@ -5,13 +5,13 @@ namespace Amp;
 use Revolt\EventLoop;
 
 /**
- * A TimeoutCancellationToken automatically requests cancellation after the timeout has elapsed.
+ * A TimeoutCancellation automatically requests cancellation after the timeout has elapsed.
  */
 final class TimeoutCancellation implements Cancellation
 {
     private string $watcher;
 
-    private Cancellation $token;
+    private Cancellation $cancellation;
 
     /**
      * @param float  $timeout Seconds until cancellation is requested.
@@ -19,7 +19,7 @@ final class TimeoutCancellation implements Cancellation
      */
     public function __construct(float $timeout, string $message = "Operation timed out")
     {
-        $this->token = $source = new Internal\Cancellable;
+        $this->cancellation = $source = new Internal\Cancellable;
 
         $trace = null; // Defined in case assertions are disabled.
         \assert((bool) ($trace = \debug_backtrace(0)));
@@ -47,7 +47,7 @@ final class TimeoutCancellation implements Cancellation
 
     public function subscribe(\Closure $callback): string
     {
-        return $this->token->subscribe($callback);
+        return $this->cancellation->subscribe($callback);
     }
 
     /**
@@ -55,7 +55,7 @@ final class TimeoutCancellation implements Cancellation
      */
     public function unsubscribe(string $id): void
     {
-        $this->token->unsubscribe($id);
+        $this->cancellation->unsubscribe($id);
     }
 
     /**
@@ -63,7 +63,7 @@ final class TimeoutCancellation implements Cancellation
      */
     public function isRequested(): bool
     {
-        return $this->token->isRequested();
+        return $this->cancellation->isRequested();
     }
 
     /**
@@ -71,6 +71,6 @@ final class TimeoutCancellation implements Cancellation
      */
     public function throwIfRequested(): void
     {
-        $this->token->throwIfRequested();
+        $this->cancellation->throwIfRequested();
     }
 }

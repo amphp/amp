@@ -3,24 +3,24 @@
 namespace Amp;
 
 /**
- * A NullCancellationToken can be used to avoid conditionals to check whether a token has been provided.
+ * A NullCancellation can be used to avoid conditionals to check whether a cancellation has been provided.
  *
  * Instead of writing
  *
  * ```php
- * if ($token) {
- *     $token->throwIfRequested();
+ * if ($cancellation) {
+ *     $cancellation->throwIfRequested();
  * }
  * ```
  *
  * potentially multiple times, it allows writing
  *
  * ```php
- * $token = $token ?? new NullCancellationToken;
+ * $cancellation = $cancellation ?? new NullCancellation;
  *
  * // ...
  *
- * $token->throwIfRequested();
+ * $cancellation->throwIfRequested();
  * ```
  *
  * instead.
@@ -29,7 +29,7 @@ final class NullCancellation implements Cancellation
 {
     public function subscribe(\Closure $callback): string
     {
-        return "null-token";
+        return "null-cancellation";
     }
 
     /** @inheritdoc */
