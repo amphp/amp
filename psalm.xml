@@ -9,49 +9,49 @@
         xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
 >
     <projectFiles>
-        <directory name="examples"/>
-        <directory name="lib"/>
+        <directory name="examples" />
+        <directory name="src" />
     </projectFiles>
 
     <issueHandlers>
         <StringIncrement>
             <errorLevel type="suppress">
-                <directory name="examples"/>
-                <directory name="lib"/>
+                <directory name="examples" />
+                <directory name="src" />
             </errorLevel>
         </StringIncrement>
 
         <RedundantConditionGivenDocblockType>
             <errorLevel type="suppress">
-                <directory name="lib"/>
+                <directory name="src" />
             </errorLevel>
         </RedundantConditionGivenDocblockType>
 
         <DocblockTypeContradiction>
             <errorLevel type="suppress">
-                <directory name="lib"/>
+                <directory name="src" />
             </errorLevel>
         </DocblockTypeContradiction>
 
         <MissingClosureParamType>
             <errorLevel type="suppress">
-                <directory name="examples"/>
-                <directory name="lib"/>
+                <directory name="examples" />
+                <directory name="src" />
             </errorLevel>
         </MissingClosureParamType>
 
         <MissingClosureReturnType>
             <errorLevel type="suppress">
-                <directory name="examples"/>
-                <directory name="lib"/>
+                <directory name="examples" />
+                <directory name="src" />
             </errorLevel>
         </MissingClosureReturnType>
     </issueHandlers>
 
     <stubs>
-        <file name="vendor/jetbrains/phpstorm-stubs/Ev/Ev.php"/>
-        <file name="vendor/jetbrains/phpstorm-stubs/event/event.php"/>
-        <file name="vendor/jetbrains/phpstorm-stubs/uv/UV.php"/>
-        <file name="vendor/jetbrains/phpstorm-stubs/uv/uv_functions.php"/>
+        <file name="vendor/jetbrains/phpstorm-stubs/Ev/Ev.php" />
+        <file name="vendor/jetbrains/phpstorm-stubs/event/event.php" />
+        <file name="vendor/jetbrains/phpstorm-stubs/uv/UV.php" />
+        <file name="vendor/jetbrains/phpstorm-stubs/uv/uv_functions.php" />
     </stubs>
 </psalm>
