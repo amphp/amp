@@ -3,73 +3,65 @@ layout: "docs"
 title: "Future Combinators"
 permalink: "/futures/combinators"
 ---
-Multiple futures can be combined into a single future using different functions.
+Amp provides a set of helper functions to deal with multiple futures and combining them.
 
 ## `all()`
 
-`Amp\Promise\all()` combines an array of promise objects into a single promise that will resolve when all promises in
-the group resolve. If any one of the `Amp\Promise` instances fails the combinator's `Promise` will fail. Otherwise the
-resulting `Promise` succeeds with an array matching keys from the input array to their resolved values.
+`Amp\Future\all()` awaits all `Future` objects of an `iterable`. If one of the `Future` instances errors, the operation
+will be aborted with that exception. Otherwise, the result is an array matching keys from the input `iterable` to their
+resolved values.
 
 The `all()` combinator is extremely powerful because it allows us to concurrently execute many asynchronous operations
-at the same time. Let's look at a simple example using the Amp HTTP client
-([Artax](https://github.com/amphp/artax)) to retrieve multiple HTTP resources concurrently:
+at the same time. Let's look at a simple example using [`amphp/http-client`](https://github.com/amphp/http-client) to
+retrieve multiple HTTP resources concurrently:
 
 ```php
 <?php
 
-use Amp\Loop;
-use Amp\Promise;
+use Amp\Future;
 
-Loop::run(function () {
-    $httpClient = new Amp\Artax\DefaultClient;
-    $uris = [
-        "google" => "http://www.google.com",
-        "news"   => "http://news.google.com",
-        "bing"   => "http://www.bing.com",
-        "yahoo"  => "https://www.yahoo.com",
-    ];
+$httpClient = HttpClientBuilder::buildDefault();
+$uris = [
+    "google" => "https://www.google.com",
+    "news"   => "https://news.google.com",
+    "bing"   => "https://www.bing.com",
+    "yahoo"  => "https://www.yahoo.com",
+];
 
-    try {
-        // magic combinator sauce to flatten the promise
-        // array into a single promise.
-        // yielding an array is an implicit "yield Amp\Promise\all($array)".
-        $responses = yield array_map(function ($uri) use ($httpClient) {
-            return $httpClient->request($uri);
-        }, $uris);
+try {
+    $responses = Future\all(array_map(function ($uri) use ($httpClient) {
+        return $httpClient->request(new Request($uri, 'HEAD'));
+    }, $uris));
 
-        foreach ($responses as $key => $response) {
-            printf(
-                "%s | HTTP/%s %d %s\n",
-                $key,
-                $response->getProtocolVersion(),
-                $response->getStatus(),
-                $response->getReason()
-            );
-        }
-    } catch (Amp\MultiReasonException $e) {
-        // If any one of the requests fails the combo will fail and
-        // be thrown back into our generator.
-        echo $e->getMessage(), "\n";
+    foreach ($responses as $key => $response) {
+        printf(
+            "%s | HTTP/%s %d %s\n",
+            $key,
+            $response->getProtocolVersion(),
+            $response->getStatus(),
+            $response->getReason()
+        );
     }
-
-    Loop::stop();
-});
+} catch (Amp\CompositeException $e) {
+    // If any one of the requests fails the combo will fail
+    echo $e->getMessage(), "\n";
+}
 ```
 
 ## `some()`
 
-`Amp\Promise\some()` is the same as `all()` except that it tolerates individual failures. As long as at least one
-promise in the passed succeeds, the combined promise will succeed. The successful resolution value is an array of the
-form `[$arrayOfErrors, $arrayOfValues]`. The individual keys in the component arrays are preserved from the promise
-array passed to the functor for evaluation.
+`Amp\Future\some()` is the same as `all()` except that it tolerates individual failures. A result is returned once
+exactly `$count` instances in the `iterable` complete successfully. The return value is an array of values. The
+individual keys in the component array are preserved from the `iterable` passed to the function for evaluation.
+
+## `settle()`
+
+`Amp\Promise\settle()` awaits all futures and returns their results as `[$errors, $values]` array.
+
+## `race()`
+
+`Amp\Promise\race()` unwraps the first completed `Future`, whether successfully completed or errored.
 
 ## `any()`
 
-`Amp\Promise\any()` is the same as `some()` except that it tolerates all failures. It will succeed even if all promises
-failed.
-
-## `first()`
-
-`Amp\Promise\first()` resolves with the first successful result. The resulting promise will only fail if all promises in
-the group fail or if the promise array is empty.
+`Amp\Promise\any()` unwraps the first successfully completed `Future`.
