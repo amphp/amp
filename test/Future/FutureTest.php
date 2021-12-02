@@ -29,6 +29,35 @@ class FutureTest extends AsyncTestCase
         }
     }
 
+    public function testIterateCancelPending(): void
+    {
+        $this->expectOutputString('');
+
+        $a = $this->delay(0.1, 'a');
+
+        $this->expectException(CancelledException::class);
+
+        foreach (Future::iterate([$a], new TimeoutCancellation(0.01)) as $index => $future) {
+            print $future->await() . '=' . $index . ' ';
+        }
+    }
+
+    public function testIterateCancelNonPending(): void
+    {
+        $this->expectOutputString('a=0 ');
+
+        $a = $this->delay(0.1, 'a');
+        $b = $this->delay(0.2, 'b');
+
+        $this->expectException(CancelledException::class);
+
+        $deferredCancellation = new DeferredCancellation;
+        foreach (Future::iterate([$a, $b], $deferredCancellation->getCancellation()) as $index => $future) {
+            $deferredCancellation->cancel();
+            print $future->await() . '=' . $index . ' ';
+        }
+    }
+
     public function testIterateGenerator(): void
     {
         $this->expectOutputString('a=1 ');
