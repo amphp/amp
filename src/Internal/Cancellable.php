@@ -15,7 +15,7 @@ final class Cancellable implements Cancellation
 {
     private string $nextId = "a";
 
-    /** @var callable[] */
+    /** @var \Closure[] */
     private array $callbacks = [];
 
     private ?CancelledException $exception = null;

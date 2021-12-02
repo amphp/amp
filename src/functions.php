@@ -20,9 +20,9 @@ function async(\Closure $closure): Future
 {
     static $run = null;
 
-    $run ??= static function (FutureState $state, callable $callback) {
+    $run ??= static function (FutureState $state, \Closure $closure): void {
         try {
-            $state->complete($callback());
+            $state->complete($closure());
         } catch (\Throwable $exception) {
             $state->error($exception);
         }
