@@ -22,11 +22,11 @@ final class DeferredFuture
     /**
      * Completes the operation with a result value.
      *
-     * @param T $result Result of the operation.
+     * @param T $value Result of the operation.
      */
-    public function complete(mixed $result = null): void
+    public function complete(mixed $value = null): void
     {
-        $this->state->complete($result);
+        $this->state->complete($value);
     }
 
     /**

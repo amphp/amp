@@ -1,9 +1,9 @@
 ---
 layout: "docs"
-title: "Promise Combinators"
-permalink: "/promises/combinators"
+title: "Future Combinators"
+permalink: "/futures/combinators"
 ---
-Multiple promises can be combined into a single promise using different functions.
+Multiple futures can be combined into a single future using different functions.
 
 ## `all()`
 
