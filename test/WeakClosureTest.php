@@ -5,7 +5,7 @@ namespace Amp;
 use Amp\PHPUnit\AsyncTestCase;
 use Revolt\EventLoop;
 
-class WeakenTest extends AsyncTestCase
+class WeakClosureTest extends AsyncTestCase
 {
     public function provideObjectFactories(): iterable
     {
@@ -17,7 +17,7 @@ class WeakenTest extends AsyncTestCase
                 {
                     $this->callbackId = $id = EventLoop::repeat(
                         0.001,
-                        weaken(function (string $callbackId) use (&$count): void {
+                        weakClosure(function (string $callbackId) use (&$count): void {
                             AsyncTestCase::assertNotNull($this);
                             AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
                             AsyncTestCase::assertSame($callbackId, $this->callbackId);
@@ -40,7 +40,7 @@ class WeakenTest extends AsyncTestCase
                 public function __construct(int &$count, &$id)
                 {
                     $callbackIdRef = &$this->callbackId;
-                    $this->callbackId = $id = EventLoop::repeat(0.001, weaken(static function (string $callbackId) use (
+                    $this->callbackId = $id = EventLoop::repeat(0.001, weakClosure(static function (string $callbackId) use (
                         &$count,
                         &$callbackIdRef
                     ): void {
@@ -66,7 +66,7 @@ class WeakenTest extends AsyncTestCase
                     $this->count = &$count;
                     $this->callbackId = $id = EventLoop::repeat(
                         0.001,
-                        weaken(\Closure::fromCallable([$this, 'callback']))
+                        weakClosure(\Closure::fromCallable([$this, 'callback']))
                     );
                 }
 
@@ -93,7 +93,7 @@ class WeakenTest extends AsyncTestCase
                 public function __construct(int &$count, &$id)
                 {
                     $this->count = &$count;
-                    $this->callbackId = $id = EventLoop::repeat(0.001, weaken($this));
+                    $this->callbackId = $id = EventLoop::repeat(0.001, weakClosure(\Closure::fromCallable($this)));
                 }
 
                 public function __invoke(string $callbackId): void

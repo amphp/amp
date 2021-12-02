@@ -77,7 +77,7 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
 /**
  * Wait for signal(s) in a non-blocking way.
  *
- * @param int|array         $signals Signal number or array of signal numbers.
+ * @param int|int[]         $signals Signal number or array of signal numbers.
  * @param bool              $reference If false, unreference the underlying watcher.
  * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  *
@@ -116,79 +116,55 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
 }
 
 /**
- * Returns a callable that maintains a weak reference to any $this object held by the callable.
- * This allows a class to hold a self-referencing callback without creating a circular reference that would
+ * Returns a Closure that maintains a weak reference to any $this object held by the Closure (a weak-Closure).
+ * This allows a class to hold a self-referencing Closure without creating a circular reference that would
  * prevent or delay automatic garbage collection.
- * Invoking the returned callback after the object is destroyed will throw an instance of Error.
+ * Invoking the returned Closure after the object is destroyed will throw an instance of Error.
  *
- * @param callable $callable
+ * @param \Closure $closure
  *
- * @return callable
+ * @return \Closure
  */
-function weaken(callable $callable): callable
+function weakClosure(\Closure $closure): \Closure
 {
-    if (!$callable instanceof \Closure) {
-        if (\is_string($callable)) {
-            return $callable;
-        }
-
-        if (\is_object($callable)) {
-            $callable = [$callable, '__invoke'];
-        }
-
-        [$that, $method] = $callable;
-        if (!\is_object($that)) {
-            return $callable;
-        }
-
-        $reference = \WeakReference::create($that);
-        return static function (mixed ...$args) use ($reference, $method): mixed {
-            $that = $reference->get();
-            if (!$that) {
-                throw new \Error('Weakened callback invoked after referenced object destroyed');
-            }
-
-            return $that->{$method}(...$args);
-        };
-    }
-
-    $reflection = new \ReflectionFunction($callable);
+    $reflection = new \ReflectionFunction($closure);
 
     $that = $reflection->getClosureThis();
     if (!$that) {
-        return $callable;
+        return $closure;
     }
 
     $method = $reflection->getShortName();
     if ($method !== '{closure}') {
         // Closure from first-class callable or \Closure::fromCallable(), declare an anonymous closure to rebind.
         /** @psalm-suppress InvalidScope Closure is bound before being invoked. */
-        $callable = fn (mixed ...$args) => $this->{$method}(...$args);
+        $closure = fn (mixed ...$args) => $this->{$method}(...$args);
     } else {
         // Rebind to remove reference to $that
-        $callable = $callable->bindTo(new \stdClass());
+        $closure = $closure->bindTo(new \stdClass());
     }
 
     // For internal classes use \Closure::bindTo() without scope.
     $useBindTo = !(new \ReflectionClass($that))->isUserDefined();
 
     $reference = \WeakReference::create($that);
-    return static function (mixed ...$args) use ($reference, $callable, $useBindTo): mixed {
+
+    return static function (mixed ...$args) use ($reference, $closure, $useBindTo): mixed {
         $that = $reference->get();
         if (!$that) {
-            throw new \Error('Weakened callback invoked after referenced object destroyed');
+            throw new \Error('Weakened closure invoked after referenced object destroyed');
         }
 
         if ($useBindTo) {
-            $callable = $callable->bindTo($that);
+            $closure = $closure->bindTo($that);
 
-            if (!$callable) {
+            if (!$closure) {
                 throw new \RuntimeException('Unable to rebind function to object of type ' . \get_class($that));
             }
 
-            return $callable(...$args);
+            return $closure(...$args);
         }
 
-        return $callable->call($that, ...$args);
+        return $closure->call($that, ...$args);
     };
 }
