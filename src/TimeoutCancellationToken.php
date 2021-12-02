@@ -45,10 +45,7 @@ final class TimeoutCancellationToken implements CancellationToken
         EventLoop::cancel($this->watcher);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         return $this->token->subscribe($callback);
     }

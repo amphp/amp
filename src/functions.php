@@ -18,7 +18,15 @@ use Revolt\EventLoop\UnsupportedFeatureException;
 function launch(callable $callback): Future
 {
     $state = new Internal\FutureState;
-    EventLoop::queue('Amp\\Internal\\run', $state, $callback);
+
+    EventLoop::queue(static function () use ($state, $callback) {
+        try {
+            $state->complete($callback());
+        } catch (\Throwable $exception) {
+            $state->error($exception);
+        }
+    });
+
     return new Future($state);
 }
 

@@ -42,8 +42,7 @@ final class CombinedCancellationToken implements CancellationToken
         }
     }
 
-    /** @inheritdoc */
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId++;
 

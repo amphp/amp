@@ -3,21 +3,6 @@
 namespace Amp\Internal;
 
 /**
- * @param FutureState $state
- * @param callable    $callback
- *
- * @internal
- */
-function run(FutureState $state, callable $callback): void
-{
-    try {
-        $state->complete($callback());
-    } catch (\Throwable $exception) {
-        $state->error($exception);
-    }
-}
-
-/**
  * Formats a stacktrace obtained via `debug_backtrace()`.
  *
  * @param array<array{file?: string, line: int, type?: string, class: string, function: string}> $trace Output of

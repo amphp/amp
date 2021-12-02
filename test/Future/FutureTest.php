@@ -157,7 +157,6 @@ class FutureTest extends AsyncTestCase
         $source->cancel();
     }
 
-
     public function testUnhandledError(): void
     {
         $deferred = new Deferred;
@@ -182,7 +181,7 @@ class FutureTest extends AsyncTestCase
         $deferred->error(new TestException);
         unset($deferred);
 
-        EventLoop::setErrorHandler($this->createCallback(0));
+        EventLoop::setErrorHandler(\Closure::fromCallable($this->createCallback(0)));
     }
 
     public function testIgnoreUnhandledErrorFromFutureError(): void
@@ -191,7 +190,7 @@ class FutureTest extends AsyncTestCase
         $future->ignore();
         unset($future);
 
-        EventLoop::setErrorHandler($this->createCallback(0));
+        EventLoop::setErrorHandler(\Closure::fromCallable($this->createCallback(0)));
     }
 
     public function testMapWithCompleteFuture(): void
@@ -294,6 +293,7 @@ class FutureTest extends AsyncTestCase
         $future = $future->finally(static fn () => Future::complete()->await());
         self::assertSame(1, $future->await());
     }
+
     public function testFinallyWithPendingFuture(): void
     {
         $deferred = new Deferred;
@@ -319,16 +319,16 @@ class FutureTest extends AsyncTestCase
      * @template T
      *
      * @param float $seconds
-     * @param T $value
+     * @param T     $value
      *
      * @return Future<T>
      */
     private function delay(float $seconds, mixed $value): Future
     {
         return launch(
-            /**
-             * @return T
-             */
+        /**
+         * @return T
+         */
             static function () use ($seconds, $value): mixed {
                 delay($seconds);
                 return $value;

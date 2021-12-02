@@ -48,7 +48,7 @@ class CancellationTest extends AsyncTestCase
     public function testDoubleCancelOnlyInvokesOnce(): void
     {
         $cancellationSource = new CancellationTokenSource;
-        $cancellationSource->getToken()->subscribe($this->createCallback(1));
+        $cancellationSource->getToken()->subscribe(\Closure::fromCallable($this->createCallback(1)));
 
         $cancellationSource->cancel();
         $cancellationSource->cancel();
@@ -58,6 +58,6 @@ class CancellationTest extends AsyncTestCase
     {
         $cancellationSource = new CancellationTokenSource;
         $cancellationSource->cancel();
-        $cancellationSource->getToken()->subscribe($this->createCallback(1));
+        $cancellationSource->getToken()->subscribe(\Closure::fromCallable($this->createCallback(1)));
     }
 }

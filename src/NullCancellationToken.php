@@ -27,8 +27,7 @@ namespace Amp;
  */
 final class NullCancellationToken implements CancellationToken
 {
-    /** @inheritdoc */
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         return "null-token";
     }

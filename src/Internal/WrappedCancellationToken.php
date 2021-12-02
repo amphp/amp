@@ -14,7 +14,7 @@ final class WrappedCancellationToken implements CancellationToken
     ) {
     }
 
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         return $this->token->subscribe($callback);
     }

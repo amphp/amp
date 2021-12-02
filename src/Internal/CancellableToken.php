@@ -37,7 +37,7 @@ final class CancellableToken implements CancellationToken
         }
     }
 
-    public function subscribe(callable $callback): string
+    public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId++;
 
