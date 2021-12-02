@@ -46,12 +46,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Amp\\": "lib"
+            "Amp\\": "src"
         },
         "files": [
-            "lib/functions.php",
-            "lib/Future/functions.php",
-            "lib/Internal/functions.php"
+            "src/functions.php",
+            "src/Future/functions.php",
+            "src/Internal/functions.php"
         ]
     },
     "autoload-dev": {
