@@ -7,16 +7,16 @@ use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 
 /**
- * Creates a new fiber asynchronously using the given callable, returning a Future that is completed with the
- * eventual return value of the passed function or will fail if the callback throws an exception.
+ * Creates a new fiber asynchronously using the given closure, returning a Future that is completed with the
+ * eventual return value of the passed function or will fail if the closure throws an exception.
  *
  * @template T
  *
- * @param callable():T $callback
+ * @param \Closure():T $closure
  *
  * @return Future<T>
  */
-function launch(callable $callback): Future
+function launch(\Closure $closure): Future
 {
     static $run = null;
 
@@ -30,7 +30,7 @@ function launch(callable $callback): Future
 
     $state = new Internal\FutureState;
 
-    EventLoop::queue($run, $state, $callback);
+    EventLoop::queue($run, $state, $closure);
 
     return new Future($state);
 }
