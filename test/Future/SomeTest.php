@@ -31,8 +31,10 @@ class SomeTest extends TestCase
 
     public function testTwoFirstThrowing(): void
     {
-        self::assertSame(['two' => 2],
-            some(['one' => Future::error(new \Exception('foo')), 'two' => Future::complete(2)], 1));
+        self::assertSame(
+            ['two' => 2],
+            some(['one' => Future::error(new \Exception('foo')), 'two' => Future::complete(2)], 1)
+        );
     }
 
     public function testTwoBothThrowing(): void
