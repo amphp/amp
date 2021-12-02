@@ -68,9 +68,10 @@ jobs:
             composer info -D
 
       - name: Run tests
-        env:
-          PHP_CS_FIXER_IGNORE_ENV: 1
         run: vendor/bin/phpunit ${{ matrix.phpunit-flags }}
+
+      - name: Run static analysis
+        run: vendor/bin/psalm.phar
 
       - name: Run style fixer
         env:
