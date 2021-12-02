@@ -9,91 +9,103 @@ class WeakenTest extends AsyncTestCase
 {
     public function provideObjectFactories(): iterable
     {
-        return [
-            'binding' => [fn (&$count) => new class($count) {
-                private string $watcher;
+        yield 'binding' => [
+            fn (&$count) => new class($count) {
+                private string $callbackId;
 
                 public function __construct(int &$count)
                 {
-                    $this->watcher = EventLoop::repeat(0.01, weaken(function (string $watcher) use (&$count): void {
-                        AsyncTestCase::assertNotNull($this);
-                        AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
-                        AsyncTestCase::assertSame($watcher, $this->watcher);
-                        ++$count;
-                    }));
+                    $this->callbackId = EventLoop::repeat(
+                        0.001,
+                        weaken(function (string $callbackId) use (&$count): void {
+                            AsyncTestCase::assertNotNull($this);
+                            AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
+                            AsyncTestCase::assertSame($callbackId, $this->callbackId);
+                            ++$count;
+                        })
+                    );
                 }
 
                 public function __destruct()
                 {
-                    EventLoop::cancel($this->watcher);
+                    EventLoop::cancel($this->callbackId);
                 }
-            }],
-            'static' => [fn (&$count) => new class($count) {
-                private string $watcher = '';
+            },
+        ];
+
+        yield 'static' => [
+            fn (&$count) => new class($count) {
+                private string $callbackId = '';
 
                 public function __construct(int &$count)
                 {
-                    $watcherRef = &$this->watcher;
-                    $this->watcher = EventLoop::repeat(0.01, weaken(static function (string $watcher) use (
+                    $callbackIdRef = &$this->callbackId;
+                    $this->callbackId = EventLoop::repeat(0.001, weaken(static function (string $callbackId) use (
                         &$count,
-                        &$watcherRef
+                        &$callbackIdRef
                     ): void {
-                        AsyncTestCase::assertSame($watcher, $watcherRef);
+                        AsyncTestCase::assertSame($callbackId, $callbackIdRef);
                         ++$count;
                     }));
                 }
 
                 public function __destruct()
                 {
-                    EventLoop::cancel($this->watcher);
+                    EventLoop::cancel($this->callbackId);
                 }
-            }],
-            'fromCallable' => [fn (&$count) => new class($count) {
-                private string $watcher = '';
+            },
+        ];
+
+        yield 'fromCallable' => [
+            fn (&$count) => new class($count) {
+                private string $callbackId = '';
                 private int $count;
 
                 public function __construct(int &$count)
                 {
                     $this->count = &$count;
-                    $this->watcher = EventLoop::repeat(0.01, weaken(\Closure::fromCallable([$this, 'callback'])));
+                    $this->callbackId = EventLoop::repeat(0.001, weaken(\Closure::fromCallable([$this, 'callback'])));
                 }
 
-                private function callback(string $watcher): void
+                private function callback(string $callbackId): void
                 {
                     AsyncTestCase::assertNotNull($this);
                     AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
-                    AsyncTestCase::assertSame($watcher, $this->watcher);
+                    AsyncTestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
 
                 public function __destruct()
                 {
-                    EventLoop::cancel($this->watcher);
+                    EventLoop::cancel($this->callbackId);
                 }
-            }],
-            '__invoke' => [fn (&$count) => new class($count) {
-                private string $watcher = '';
+            },
+        ];
+
+        yield '__invoke' => [
+            fn (&$count) => new class($count) {
+                private string $callbackId = '';
                 private int $count;
 
                 public function __construct(int &$count)
                 {
                     $this->count = &$count;
-                    $this->watcher = EventLoop::repeat(0.01, weaken($this));
+                    $this->callbackId = EventLoop::repeat(0.001, weaken($this));
                 }
 
-                public function __invoke(string $watcher): void
+                public function __invoke(string $callbackId): void
                 {
                     AsyncTestCase::assertNotNull($this);
                     AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
-                    AsyncTestCase::assertSame($watcher, $this->watcher);
+                    AsyncTestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
 
                 public function __destruct()
                 {
-                    EventLoop::cancel($this->watcher);
+                    EventLoop::cancel($this->callbackId);
                 }
-            }],
+            },
         ];
     }
 
@@ -102,16 +114,18 @@ class WeakenTest extends AsyncTestCase
      */
     public function test(callable $factory): void
     {
-        $this->setTimeout(0.1);
+        $this->setTimeout(0.2);
         $count = 0;
 
         $object = $factory($count);
 
-        delay(0.035);
+        delay(0.05);
         unset($object); // Should destroy object and cancel loop watcher.
-        self::assertSame(3, $count);
+        self::assertGreaterThan(1, $count);
 
-        delay(0.025);
-        self::assertSame(3, $count);
+        $countBackup = $count;
+
+        delay(0.05);
+        self::assertSame($countBackup, $count);
     }
 }
