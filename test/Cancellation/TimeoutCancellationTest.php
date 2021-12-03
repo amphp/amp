@@ -14,14 +14,14 @@ class TimeoutCancellationTest extends AsyncTestCase
     public function testTimeout(): void
     {
         $line = __LINE__ + 1;
-        $token = new TimeoutCancellation(0.01);
+        $cancellation = new TimeoutCancellation(0.01);
 
-        self::assertFalse($token->isRequested());
+        self::assertFalse($cancellation->isRequested());
         delay(0.02);
-        self::assertTrue($token->isRequested());
+        self::assertTrue($cancellation->isRequested());
 
         try {
-            $token->throwIfRequested();
+            $cancellation->throwIfRequested();
         } catch (CancelledException $exception) {
             self::assertInstanceOf(TimeoutException::class, $exception->getPrevious());
 
@@ -37,9 +37,9 @@ class TimeoutCancellationTest extends AsyncTestCase
     public function testWatcherCancellation(): void
     {
         $enabled = EventLoop::getInfo()["delay"]["enabled"];
-        $token = new TimeoutCancellation(0.001);
+        $cancellation = new TimeoutCancellation(0.001);
         self::assertSame($enabled + 1, EventLoop::getInfo()["delay"]["enabled"]);
-        unset($token);
+        unset($cancellation);
         self::assertSame($enabled, EventLoop::getInfo()["delay"]["enabled"]);
     }
 }

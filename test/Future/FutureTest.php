@@ -156,20 +156,20 @@ class FutureTest extends AsyncTestCase
     {
         $future = $this->delay(0.02, true);
 
-        $token = new TimeoutCancellation(0.01);
+        $cancellation = new TimeoutCancellation(0.01);
 
         $this->expectException(CancelledException::class);
 
-        $future->await($token);
+        $future->await($cancellation);
     }
 
     public function testCompleteBeforeCancellation(): void
     {
         $future = $this->delay(0.01, true);
 
-        $token = new TimeoutCancellation(0.02);
+        $cancellation = new TimeoutCancellation(0.02);
 
-        self::assertTrue($future->await($token));
+        self::assertTrue($future->await($cancellation));
     }
 
     public function testCompleteThenCancelJoin(): void
