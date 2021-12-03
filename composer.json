@@ -1,6 +1,6 @@
 {
     "name": "amphp/amp",
-    "homepage": "http://amphp.org/amp",
+    "homepage": "https://amphp.org/amp",
     "description": "A non-blocking concurrency framework for PHP applications.",
     "keywords": [
         "async",
