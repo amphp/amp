@@ -13,16 +13,17 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  * @template T
  *
  * @param \Closure():T $closure
+ * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
  *
  * @return Future<T>
  */
-function async(\Closure $closure): Future
+function async(\Closure $closure, mixed ...$args): Future
 {
     static $run = null;
 
-    $run ??= static function (FutureState $state, \Closure $closure): void {
+    $run ??= static function (FutureState $state, \Closure $closure, array $args): void {
         try {
-            $state->complete($closure());
+            $state->complete($closure(...$args));
         } catch (\Throwable $exception) {
             $state->error($exception);
         }
@@ -30,7 +31,7 @@ function async(\Closure $closure): Future
 
     $state = new Internal\FutureState;
 
-    EventLoop::queue($run, $state, $closure);
+    EventLoop::queue($run, $state, $closure, $args);
 
     return new Future($state);
 }
