@@ -7,8 +7,8 @@ use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\LoopCaughtException;
 use Amp\PHPUnit\TestException;
+use Amp\PHPUnit\UnhandledException;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 use function Amp\async;
@@ -192,7 +192,7 @@ class FutureTest extends AsyncTestCase
         $deferred->error(new TestException);
         unset($deferred);
 
-        $this->expectException(LoopCaughtException::class);
+        $this->expectException(UnhandledException::class);
     }
 
     public function testUnhandledErrorFromFutureError(): void
@@ -200,7 +200,7 @@ class FutureTest extends AsyncTestCase
         $future = Future::error(new TestException);
         unset($future);
 
-        $this->expectException(LoopCaughtException::class);
+        $this->expectException(UnhandledException::class);
     }
 
     public function testIgnoringUnhandledErrors(): void
