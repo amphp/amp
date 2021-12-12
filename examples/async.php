@@ -2,25 +2,30 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Amp\Future;
 use function Amp\async;
 use function Amp\delay;
 
 $future1 = async(function () {
     delay(1);
 
-    print 'b';
+    print 'c';
 });
 
 $future2 = async(function () {
     delay(2);
 
-    print 'c';
+    print 'd';
 });
 
 $future3 = async(function () {
-    delay(0.5);
-
     print 'a';
+});
+
+$future4 = async(function () {
+    Future::complete()->await();
+
+    print 'b';
 });
 
 $future1->await();
@@ -29,8 +34,8 @@ $future3->await();
 
 delay(1);
 
-print 'd';
+print 'e';
 
 delay(1);
 
-print 'e';
+print 'f';
