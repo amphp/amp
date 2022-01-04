@@ -19,29 +19,44 @@ final class Cancellable implements Cancellation
     private array $callbacks = [];
 
     private ?CancelledException $exception = null;
+    private ?\Throwable $previous = null;
+
+    private bool $requested = false;
 
     public function cancel(?\Throwable $previous = null): void
     {
-        if (isset($this->exception)) {
+        if ($this->requested) {
             return;
         }
 
-        $this->exception = $exception = new CancelledException($previous);
+        $this->requested = true;
+        $this->previous = $previous;
 
         $callbacks = $this->callbacks;
         $this->callbacks = [];
+
+        if (empty($callbacks)) {
+            return;
+        }
+
+        $exception = $this->getException();
 
         foreach ($callbacks as $callback) {
             EventLoop::queue(static fn () => $callback($exception));
         }
     }
 
+    private function getException(): CancelledException
+    {
+        return $this->exception ??= new CancelledException($this->previous);
+    }
+
     public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId++;
 
-        if ($this->exception) {
-            $exception = $this->exception;
+        if ($this->requested) {
+            $exception = $this->getException();
             EventLoop::queue(static fn () => $callback($exception));
         } else {
             $this->callbacks[$id] = $callback;
@@ -57,13 +72,13 @@ final class Cancellable implements Cancellation
 
     public function isRequested(): bool
     {
-        return isset($this->exception);
+        return $this->requested;
     }
 
     public function throwIfRequested(): void
     {
-        if (isset($this->exception)) {
-            throw $this->exception;
+        if ($this->requested) {
+            throw $this->getException();
         }
     }
 }
