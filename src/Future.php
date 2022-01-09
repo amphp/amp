@@ -7,7 +7,7 @@ use Amp\Internal\FutureState;
 use Revolt\EventLoop;
 
 /**
- * @template T
+ * @template-covariant T
  */
 final class Future
 {
@@ -117,6 +117,8 @@ final class Future
     /**
      * Attaches a callback that is invoked if this future completes. The returned future is completed with the return
      * value of the callback, or errors with an exception thrown from the callback.
+     *
+     * @psalm-suppress InvalidTemplateParam
      *
      * @template Tr
      *
