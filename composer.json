@@ -36,7 +36,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8",
-        "revolt/event-loop": "^0.1"
+        "revolt/event-loop": "^0.2 || ^0.1"
     },
     "require-dev": {
         "ext-json": "*",
