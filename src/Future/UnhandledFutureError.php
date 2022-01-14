@@ -9,7 +9,7 @@ final class UnhandledFutureError extends \Error
 {
     public function __construct(\Throwable $previous)
     {
-        $message = 'Unhandled future error: "' . $previous->getMessage()
+        $message = 'Unhandled future: ' . $previous::class . ': "' . $previous->getMessage()
             . '"; Await the Future with Future::await() before the future is destroyed or use '
             . 'Future::ignore() to suppress this exception';
 
