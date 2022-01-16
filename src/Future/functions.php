@@ -146,6 +146,7 @@ function awaitAnyN(int $count, iterable $futures, ?Cancellation $cancellation = 
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
+ * @param positive-int $count
  * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return non-empty-array<Tk, Tv>
@@ -157,7 +158,7 @@ function awaitAnyN(int $count, iterable $futures, ?Cancellation $cancellation = 
  */
 function some(iterable $futures, int $count, ?Cancellation $cancellation = null): array
 {
-    return awaitAnyN($futures, $count, $cancellation);
+    return awaitAnyN($count, $futures, $cancellation);
 }
 
 /**
