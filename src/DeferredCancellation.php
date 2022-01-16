@@ -46,9 +46,19 @@ final class DeferredCancellation
         $this->cancellation = new Internal\WrappedCancellation($this->source);
     }
 
+    public function __destruct()
+    {
+        $this->source->cancel();
+    }
+
     public function getCancellation(): Cancellation
     {
         return $this->cancellation;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->source->isRequested();
     }
 
     /**

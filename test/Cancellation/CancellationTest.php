@@ -24,7 +24,11 @@ class CancellationTest extends AsyncTestCase
 
         $deferredCancellation->getCancellation()->unsubscribe($id);
 
+        self::assertFalse($deferredCancellation->isCancelled());
+
         $deferredCancellation->cancel();
+
+        self::assertTrue($deferredCancellation->isCancelled());
     }
 
     public function testThrowingCallbacksEndUpInLoop(): void
@@ -59,5 +63,12 @@ class CancellationTest extends AsyncTestCase
         $cancellationSource = new DeferredCancellation;
         $cancellationSource->cancel();
         $cancellationSource->getCancellation()->subscribe($this->createCallback(1));
+    }
+
+    public function testCancelOnDestruct(): void
+    {
+        $cancellationSource = new DeferredCancellation;
+        $cancellationSource->getCancellation()->subscribe($this->createCallback(1));
+        unset($cancellationSource);
     }
 }
