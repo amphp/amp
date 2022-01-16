@@ -9,55 +9,53 @@ use Amp\TimeoutCancellation;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
 
-class RaceTest extends TestCase
+class AwaitAllTest extends TestCase
 {
     public function testSingleComplete(): void
     {
-        self::assertSame(42, race([Future::complete(42)]));
+        self::assertSame([[], [42]], awaitAll([Future::complete(42)]));
     }
 
     public function testTwoComplete(): void
     {
-        self::assertSame(1, Future\race([Future::complete(1), Future::complete(2)]));
-    }
-
-    public function testTwoFirstPending(): void
-    {
-        $deferred = new DeferredFuture;
-
-        self::assertSame(2, Future\race([$deferred->getFuture(), Future::complete(2)]));
+        self::assertSame([[], [1, 2]], awaitAll([Future::complete(1), Future::complete(2)]));
     }
 
     public function testTwoFirstThrowing(): void
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('foo');
+        $exception = new \Exception('foo');
+        self::assertSame(
+            [['one' => $exception], ['two' => 2]],
+            awaitAll(['one' => Future::error($exception), 'two' => Future::complete(2)])
+        );
+    }
 
-        race([Future::error(new \Exception('foo')), Future::complete(2)]);
+    public function testTwoBothThrowing(): void
+    {
+        $one = new \Exception('foo');
+        $two = new \RuntimeException('bar');
+        self::assertSame([[$one, $two], []], Future\awaitAll([Future::error($one), Future::error($two)]));
     }
 
     public function testTwoGeneratorThrows(): void
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('foo');
-
-        race((static function () {
-            yield Future::error(new \Exception('foo'));
+        $exception = new \Exception('foo');
+        self::assertSame([[0 => $exception], [1 => 2]], awaitAll((static function () use ($exception) {
+            yield Future::error($exception);
             yield Future::complete(2);
-        })());
+        })()));
     }
 
     public function testCancellation(): void
     {
         $this->expectException(CancelledException::class);
-
         $deferreds = \array_map(function (int $value) {
             $deferred = new DeferredFuture;
             EventLoop::delay($value / 10, fn () => $deferred->complete($value));
             return $deferred;
         }, \range(1, 3));
 
-        race(\array_map(
+        awaitAll(\array_map(
             fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
         ), new TimeoutCancellation(0.05));
@@ -71,9 +69,9 @@ class RaceTest extends TestCase
             return $deferred;
         }, \range(1, 3));
 
-        self::assertSame(1, race(\array_map(
+        self::assertSame([[], \range(1, 3)], awaitAll(\array_map(
             fn (DeferredFuture $deferred) => $deferred->getFuture(),
             $deferreds
-        ), new TimeoutCancellation(0.2)));
+        ), new TimeoutCancellation(0.5)));
     }
 }

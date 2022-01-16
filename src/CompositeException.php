@@ -11,7 +11,7 @@ final class CompositeException extends \Exception
 
     /**
      * @param non-empty-array<array-key, \Throwable> $reasons Array of exceptions.
-     * @param string|null  $message Exception message, defaults to message generated from passed exceptions.
+     * @param string|null $message Exception message, defaults to message generated from passed exceptions.
      *
      * @psalm-assert non-empty-array<array-key, \Throwable> $reasons
      */
@@ -36,7 +36,7 @@ final class CompositeException extends \Exception
     private function generateMessage(array $reasons): string
     {
         $message = \sprintf(
-            'Multiple errors encountered (%d); use "%s::getReasons()" to retrieve the array of exceptions thrown:',
+            'Multiple exceptions encountered (%d); use "%s::getReasons()" to retrieve the array of exceptions thrown:',
             \count($reasons),
             self::class
         );
