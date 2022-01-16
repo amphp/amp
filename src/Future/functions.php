@@ -4,6 +4,7 @@ namespace Amp\Future;
 
 use Amp\Cancellation;
 use Amp\CompositeException;
+use Amp\CompositeLengthException;
 use Amp\Future;
 
 /**
@@ -14,57 +15,106 @@ use Amp\Future;
  * @template T
  *
  * @param iterable<Future<T>> $futures
- * @param Cancellation|null   $cancellation Optional cancellation.
+ * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return T
  *
- * @throws \Error If $futures is empty.
+ * @throws CompositeLengthException If {@code $futures} is empty.
  */
-function race(iterable $futures, ?Cancellation $cancellation = null): mixed
+function awaitFirst(iterable $futures, ?Cancellation $cancellation = null): mixed
 {
     foreach (Future::iterate($futures, $cancellation) as $first) {
         return $first->await();
     }
 
-    throw new \Error('No future provided');
+    throw new CompositeLengthException('Argument #1 ($futures) is empty');
 }
 
 /**
- * Unwraps the first successfully completed future.
+ * Unwraps the first completed future.
  *
- * If you want the first future completed, successful or not, use {@see race()} instead.
+ * If you want the first future completed without an error, use {@see any()} instead.
+ *
+ * @template T
+ *
+ * @param iterable<Future<T>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return T
+ *
+ * @throws CompositeLengthException If $futures is empty.
+ *
+ * @deprecated Use {@see awaitFirst()} instead.
+ */
+function race(iterable $futures, ?Cancellation $cancellation = null): mixed
+{
+    return awaitFirst($futures, $cancellation);
+}
+
+/**
+ * Awaits the first successfully completed future, ignoring errors.
+ *
+ * If you want the first future completed, successful or not, use {@see awaitFirst()} instead.
  *
  * @template Tk of array-key
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation.
+ * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return Tv
  *
  * @throws CompositeException If all futures errored.
+ * @throws CompositeLengthException If {@code $futures} is empty.
  */
-function any(iterable $futures, ?Cancellation $cancellation = null): mixed
+function awaitAny(iterable $futures, ?Cancellation $cancellation = null): mixed
 {
-    $result = some($futures, 1, $cancellation);
+    $result = awaitAnyN(1, $futures, $cancellation);
     return $result[\array_key_first($result)];
 }
 
 /**
+ * Awaits the first successfully completed future, ignoring errors.
+ *
+ * If you want the first future completed, successful or not, use {@see awaitFirst()} instead.
+ *
  * @template Tk of array-key
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation.
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return Tv
+ *
+ * @throws CompositeException If all futures errored.
+ * @throws CompositeLengthException If {@code $futures} is empty.
+ *
+ * @deprecated Use {@see awaitFirst()} instead.
+ */
+function any(iterable $futures, ?Cancellation $cancellation = null): mixed
+{
+    return awaitAny($futures, $cancellation);
+}
+
+/**
+ * Awaits the first N successfully completed futures, ignoring errors.
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param positive-int $count
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return non-empty-array<Tk, Tv>
  *
- * @throws CompositeException If all futures errored.
+ * @throws CompositeException If too many futures errored.
+ * @throws CompositeLengthException If {@code $futures} is empty.
  */
-function some(iterable $futures, int $count, ?Cancellation $cancellation = null): array
+function awaitAnyN(int $count, iterable $futures, ?Cancellation $cancellation = null): array
 {
     if ($count <= 0) {
-        throw new \ValueError('The count must be greater than 0, got ' . $count);
+        throw new \ValueError('Argument #1 ($count) must be greater than 0, got ' . $count);
     }
 
     $values = [];
@@ -81,8 +131,8 @@ function some(iterable $futures, int $count, ?Cancellation $cancellation = null)
         }
     }
 
-    if (empty($errors)) {
-        throw new \Error('Iterable did provide enough futures to satisfy the required count of ' . $count);
+    if (\count($values) + \count($errors) < $count) {
+        throw new CompositeLengthException('Argument #2 ($futures) contains too few futures to satisfy the required count of ' . $count);
     }
 
     /**
@@ -96,11 +146,35 @@ function some(iterable $futures, int $count, ?Cancellation $cancellation = null)
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation.
+ * @param positive-int $count
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return non-empty-array<Tk, Tv>
+ *
+ * @throws CompositeException If all futures errored.
+ * @throws CompositeLengthException If {@code $futures} is empty.
+ *
+ * @deprecated Use {@see awaitAnyN()} instead.
+ */
+function some(iterable $futures, int $count, ?Cancellation $cancellation = null): array
+{
+    return awaitAnyN($count, $futures, $cancellation);
+}
+
+/**
+ * Awaits all futures to complete or error.
+ *
+ * This awaits all futures without aborting on first error (unlike {@see await()}).
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
  */
-function settle(iterable $futures, ?Cancellation $cancellation = null): array
+function awaitAll(iterable $futures, ?Cancellation $cancellation = null): array
 {
     $values = [];
     $errors = [];
@@ -117,18 +191,39 @@ function settle(iterable $futures, ?Cancellation $cancellation = null): array
 }
 
 /**
- * Awaits all futures to complete or aborts if any errors. The returned array keys will be in the order the futures
- * resolved, not in the order given by the iterable. Sort the array after resolution if necessary.
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return array{array<Tk, \Throwable>, array<Tk, Tv>}
+ *
+ * @deprecated Use {@see awaitAll()} instead.
+ */
+function settle(iterable $futures, ?Cancellation $cancellation = null): array
+{
+    return awaitAll($futures, $cancellation);
+}
+
+/**
+ * Awaits all futures to complete or aborts if any errors.
+ *
+ * The returned array keys will be in the order the futures resolved, not in the order given by the iterable.
+ * Sort the array after completion if necessary.
+ *
+ * This is equivalent to awaiting all futures in a loop, except that it aborts as soon as one of the futures errors
+ * instead of relying on the order in the iterable and awaiting the futures sequentially.
  *
  * @template Tk of array-key
  * @template Tv
  *
  * @param iterable<Tk, Future<Tv>> $futures
- * @param Cancellation|null        $cancellation Optional cancellation.
+ * @param Cancellation|null $cancellation Optional cancellation.
  *
  * @return array<Tk, Tv> Unwrapped values with the order preserved.
  */
-function all(iterable $futures, Cancellation $cancellation = null): array
+function await(iterable $futures, ?Cancellation $cancellation = null): array
 {
     $values = [];
 
@@ -139,4 +234,23 @@ function all(iterable $futures, Cancellation $cancellation = null): array
 
     /** @var array<Tk, Tv> */
     return $values;
+}
+
+/**
+ * Awaits all futures to complete or aborts if any errors. The returned array keys will be in the order the futures
+ * resolved, not in the order given by the iterable. Sort the array after resolution if necessary.
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return array<Tk, Tv> Unwrapped values with the order preserved.
+ *
+ * @deprecated Use {@see await()} instead.
+ */
+function all(iterable $futures, ?Cancellation $cancellation = null): array
+{
+    return await($futures, $cancellation);
 }
