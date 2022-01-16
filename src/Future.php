@@ -18,7 +18,7 @@ final class Future
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
-     * @param Cancellation|null $cancellation Optional cancellation.
+     * @param Cancellation|null        $cancellation Optional cancellation.
      *
      * @return iterable<Tk, Future<Tv>>
      */
@@ -213,8 +213,6 @@ final class Future
      * Throws an exception if the operation fails.
      *
      * @return T
-     *
-     * @throws CancelledException
      */
     public function await(?Cancellation $cancellation = null): mixed
     {
