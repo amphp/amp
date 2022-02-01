@@ -19,7 +19,7 @@ class WeakClosureTest extends AsyncTestCase
                         0.001,
                         weakClosure(function (string $callbackId) use (&$count): void {
                             AsyncTestCase::assertNotNull($this);
-                            AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
+                            AsyncTestCase::assertStringContainsString('anonymous', static::class);
                             AsyncTestCase::assertSame($callbackId, $this->callbackId);
                             ++$count;
                         })
@@ -73,7 +73,7 @@ class WeakClosureTest extends AsyncTestCase
                 private function callback(string $callbackId): void
                 {
                     AsyncTestCase::assertNotNull($this);
-                    AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
+                    AsyncTestCase::assertStringContainsString('anonymous', static::class);
                     AsyncTestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
@@ -99,7 +99,7 @@ class WeakClosureTest extends AsyncTestCase
                 public function __invoke(string $callbackId): void
                 {
                     AsyncTestCase::assertNotNull($this);
-                    AsyncTestCase::assertStringContainsString('anonymous', \get_class($this));
+                    AsyncTestCase::assertStringContainsString('anonymous', static::class);
                     AsyncTestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
