@@ -18,15 +18,18 @@ final class CombinedCancellationToken implements CancellationToken
 
     public function __construct(CancellationToken ...$tokens)
     {
-        foreach ($tokens as $token) {
-            $id = $token->subscribe(function (CancelledException $exception) {
-                $this->exception = $exception;
+        $thatException = &$this->exception;
+        $thatCallbacks = &$this->callbacks;
 
-                $callbacks = $this->callbacks;
-                $this->callbacks = [];
+        foreach ($tokens as $token) {
+            $id = $token->subscribe(static function (CancelledException $exception) use (&$thatException, &$thatCallbacks) {
+                $thatException = $exception;
+
+                $callbacks = $thatCallbacks;
+                $thatCallbacks = [];
 
                 foreach ($callbacks as $callback) {
-                    asyncCall($callback, $this->exception);
+                    asyncCall($callback, $thatException);
                 }
             });
 
