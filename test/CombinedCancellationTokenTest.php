@@ -33,7 +33,7 @@ class CombinedCancellationTokenTest extends BaseTest
             if ($firstMemoryMeasure > 0) {
                 self::assertEquals($firstMemoryMeasure, memory_get_usage(true));
             }
-            print "Memory: " . (memory_get_usage(true) / 1000) . PHP_EOL;
+            // print "Memory: " . (memory_get_usage(true) / 1000) . PHP_EOL;
         }
     }
 }
