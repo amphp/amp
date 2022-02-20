@@ -24,16 +24,15 @@ class CombinedCancellationTokenTest extends BaseTest
 
             if (!$firstMemoryMeasure && $i > self::LOOP_COUNT / 2) {
                 // Warmup and store first memory usage after 50% of iterations
-                $firstMemoryMeasure = memory_get_usage(true);
+                $firstMemoryMeasure = \memory_get_usage(true);
             }
             // Remove tokens from memory
             unset($combinedToken);
 
             // Asserts
             if ($firstMemoryMeasure > 0) {
-                self::assertEquals($firstMemoryMeasure, memory_get_usage(true));
+                self::assertEquals($firstMemoryMeasure, \memory_get_usage(true));
             }
-            // print "Memory: " . (memory_get_usage(true) / 1000) . PHP_EOL;
         }
     }
 }
