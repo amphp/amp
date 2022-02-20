@@ -11,22 +11,28 @@ final class CompositeCancellation implements Cancellation
 
     private string $nextId = "a";
 
-    /** @var \Closure(CancelledException)[] */
+    /** @var array<string, \Closure(CancelledException): void> */
     private array $callbacks = [];
 
     private ?CancelledException $exception = null;
 
     public function __construct(Cancellation ...$cancellations)
     {
-        foreach ($cancellations as $cancellation) {
-            $id = $cancellation->subscribe(function (CancelledException $exception): void {
-                $this->exception = $exception;
+        $thatException = &$this->exception;
+        $thatCallbacks = &$this->callbacks;
 
-                foreach ($this->callbacks as $callback) {
+        foreach ($cancellations as $cancellation) {
+            $id = $cancellation->subscribe(static function (CancelledException $exception) use (
+                &$thatException,
+                &$thatCallbacks
+            ): void {
+                $thatException = $exception;
+
+                foreach ($thatCallbacks as $callback) {
                     EventLoop::queue($callback, $exception);
                 }
 
-                $this->callbacks = [];
+                $thatCallbacks = [];
             });
 
             $this->cancellations[] = [$cancellation, $id];
