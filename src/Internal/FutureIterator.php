@@ -122,7 +122,7 @@ final class FutureIterator
 
             $this->cancellation->throwIfRequested();
 
-            $this->queue->suspension = EventLoop::createSuspension();
+            $this->queue->suspension = EventLoop::getSuspension();
 
             /** @var null|array{Tk, Future<Tv>} */
             return $this->queue->suspension->suspend();

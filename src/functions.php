@@ -55,7 +55,7 @@ function now(): float
  */
 function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
 {
-    $suspension = EventLoop::createSuspension();
+    $suspension = EventLoop::getSuspension();
     $callbackId = EventLoop::delay($timeout, static fn () => $suspension->resume());
     $cancellationId = $cancellation?->subscribe(
         static fn (CancelledException $exception) => $suspension->throw($exception)
@@ -87,7 +87,7 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
  */
 function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $cancellation = null): int
 {
-    $suspension = EventLoop::createSuspension();
+    $suspension = EventLoop::getSuspension();
     $callback = static fn (string $watcher, int $signal) => $suspension->resume($signal);
     $id = $cancellation?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
 

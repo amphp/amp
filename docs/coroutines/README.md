@@ -19,7 +19,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Revolt\EventLoop;
 
-$suspension = EventLoop::createSuspension();
+$suspension = EventLoop::getSuspension();
 
 EventLoop::delay(5, function () use ($suspension): void {
     print '++ Executing callback created by EventLoop::delay()' . PHP_EOL;

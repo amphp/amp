@@ -216,7 +216,7 @@ final class Future
      */
     public function await(?Cancellation $cancellation = null): mixed
     {
-        $suspension = EventLoop::createSuspension();
+        $suspension = EventLoop::getSuspension();
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
             $suspension
