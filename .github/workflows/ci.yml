@@ -10,9 +10,6 @@ jobs:
       matrix:
         include:
           - operating-system: 'ubuntu-latest'
-            php-version: '8.0'
-
-          - operating-system: 'ubuntu-latest'
             php-version: '8.1'
 
           - operating-system: 'windows-latest'
