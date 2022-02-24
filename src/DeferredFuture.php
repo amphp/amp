@@ -8,10 +8,10 @@ namespace Amp;
 final class DeferredFuture
 {
     /** @var Internal\FutureState<T> */
-    private Internal\FutureState $state;
+    private readonly Internal\FutureState $state;
 
     /** @var Future<T> */
-    private Future $future;
+    private readonly Future $future;
 
     public function __construct()
     {

@@ -10,7 +10,7 @@ use Amp\Cancellation;
 final class WrappedCancellation implements Cancellation
 {
     public function __construct(
-        private Cancellation $cancellation
+        private readonly Cancellation $cancellation
     ) {
     }
 

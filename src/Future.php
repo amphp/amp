@@ -86,7 +86,7 @@ final class Future
     }
 
     /** @var FutureState<T> */
-    private FutureState $state;
+    private readonly FutureState $state;
 
     /**
      * @param FutureState<T> $state

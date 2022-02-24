@@ -37,8 +37,8 @@ namespace Amp;
  */
 final class DeferredCancellation
 {
-    private Internal\Cancellable $source;
-    private Cancellation $cancellation;
+    private readonly Internal\Cancellable $source;
+    private readonly Cancellation $cancellation;
 
     public function __construct()
     {

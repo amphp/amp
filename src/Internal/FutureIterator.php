@@ -18,11 +18,11 @@ final class FutureIterator
     /**
      * @var FutureIteratorQueue<Tk, Tv>
      */
-    private FutureIteratorQueue $queue;
+    private readonly FutureIteratorQueue $queue;
 
-    private Cancellation $cancellation;
+    private readonly Cancellation $cancellation;
 
-    private string $cancellationId;
+    private readonly string $cancellationId;
 
     /**
      * @var Future<null>|Future<never>|null

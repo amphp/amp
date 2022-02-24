@@ -9,9 +9,9 @@ use Revolt\EventLoop;
  */
 final class TimeoutCancellation implements Cancellation
 {
-    private string $watcher;
+    private readonly string $watcher;
 
-    private Cancellation $cancellation;
+    private readonly Cancellation $cancellation;
 
     /**
      * @param float  $timeout Seconds until cancellation is requested.
