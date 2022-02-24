@@ -24,24 +24,16 @@ interface Cancellation
      * Unsubscribes a previously registered handler.
      *
      * The handler will no longer be called as long as this method isn't invoked from a subscribed callback.
-     *
-     * @param string $id
-     *
-     * @return void
      */
     public function unsubscribe(string $id): void;
 
     /**
      * Returns whether cancellation has been requested yet.
-     *
-     * @return bool
      */
     public function isRequested(): bool;
 
     /**
      * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
-     *
-     * @return void
      *
      * @throws CancelledException
      */

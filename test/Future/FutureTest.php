@@ -347,7 +347,6 @@ class FutureTest extends AsyncTestCase
     /**
      * @template T
      *
-     * @param float $seconds
      * @param T     $value
      *
      * @return Future<T>

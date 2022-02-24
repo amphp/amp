@@ -121,10 +121,6 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
  * This allows a class to hold a self-referencing Closure without creating a circular reference that would
  * prevent or delay automatic garbage collection.
  * Invoking the returned Closure after the object is destroyed will throw an instance of Error.
- *
- * @param \Closure $closure
- *
- * @return \Closure
  */
 function weakClosure(\Closure $closure): \Closure
 {
