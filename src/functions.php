@@ -12,7 +12,7 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  *
  * @template T
  *
- * @param \Closure():T $closure
+ * @param \Closure(...):T $closure
  * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
  *
  * @return Future<T>
