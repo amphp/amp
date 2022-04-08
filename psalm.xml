@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <psalm
-        totallyTyped="false"
         errorLevel="2"
         phpVersion="8.1"
         resolveFromConfigFile="true"
