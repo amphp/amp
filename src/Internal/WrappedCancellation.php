@@ -3,12 +3,17 @@
 namespace Amp\Internal;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 
 /**
  * @internal
  */
 final class WrappedCancellation implements Cancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     public function __construct(
         private readonly Cancellation $cancellation
     ) {

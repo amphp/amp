@@ -9,6 +9,9 @@ use Revolt\EventLoop;
  */
 final class TimeoutCancellation implements Cancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly string $watcher;
 
     private readonly Cancellation $cancellation;

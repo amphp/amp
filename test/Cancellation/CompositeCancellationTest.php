@@ -34,7 +34,7 @@ class CompositeCancellationTest extends AsyncTestCase
 
             // Asserts
             if ($firstMemoryMeasure > 0) {
-                self::assertEquals($firstMemoryMeasure, \memory_get_usage(true));
+                self::assertLessThanOrEqual($firstMemoryMeasure, \memory_get_usage(true));
             }
         }
     }

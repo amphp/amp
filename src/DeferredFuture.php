@@ -7,6 +7,9 @@ namespace Amp;
  */
 final class DeferredFuture
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var Internal\FutureState<T> */
     private readonly Internal\FutureState $state;
 
