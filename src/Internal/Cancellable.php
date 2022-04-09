@@ -4,6 +4,8 @@ namespace Amp\Internal;
 
 use Amp\Cancellation;
 use Amp\CancelledException;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Revolt\EventLoop;
 
 /**
@@ -13,6 +15,9 @@ use Revolt\EventLoop;
  */
 final class Cancellable implements Cancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private string $nextId = "a";
 
     /** @var \Closure[] */

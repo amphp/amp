@@ -6,6 +6,9 @@ use Revolt\EventLoop;
 
 final class CompositeCancellation implements Cancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var array<int, array{Cancellation, string}> */
     private array $cancellations = [];
 

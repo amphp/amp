@@ -3,6 +3,8 @@
 namespace Amp\Internal;
 
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\NullCancellation;
 use Revolt\EventLoop;
@@ -15,6 +17,9 @@ use Revolt\EventLoop;
  */
 final class FutureIterator
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * @var FutureIteratorQueue<Tk, Tv>
      */

@@ -11,6 +11,9 @@ use Revolt\EventLoop;
  */
 final class Future
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /**
      * Iterate over the given futures in completion order.
      *

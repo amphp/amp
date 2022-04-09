@@ -37,6 +37,9 @@ namespace Amp;
  */
 final class DeferredCancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly Internal\Cancellable $source;
     private readonly Cancellation $cancellation;
 
