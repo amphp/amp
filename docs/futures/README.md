@@ -45,7 +45,7 @@ try {
 }
 ```
 
-We can now write helper functions like [`Amp\Promise\all()`](https://amphp.org/amp/promises/combinators#all) which
+We can now write helper functions like `Amp\Future\await()` which
 subscribe to several of those placeholders and combine them. We don't have to write any complicated code to combine the
 results of several operations.
 

@@ -5,13 +5,13 @@ permalink: "/futures/combinators"
 ---
 Amp provides a set of helper functions to deal with multiple futures and combining them.
 
-## `all()`
+## `await()`
 
-`Amp\Future\all()` awaits all `Future` objects of an `iterable`. If one of the `Future` instances errors, the operation
+`Amp\Future\await()` awaits all `Future` objects of an `iterable`. If one of the `Future` instances errors, the operation
 will be aborted with that exception. Otherwise, the result is an array matching keys from the input `iterable` to their
 resolved values.
 
-The `all()` combinator is extremely powerful because it allows us to concurrently execute many asynchronous operations
+The `await()` combinator is extremely powerful because it allows us to concurrently execute many asynchronous operations
 at the same time. Let's look at a simple example using [`amphp/http-client`](https://github.com/amphp/http-client) to
 retrieve multiple HTTP resources concurrently:
 
@@ -29,7 +29,7 @@ $uris = [
 ];
 
 try {
-    $responses = Future\all(array_map(function ($uri) use ($httpClient) {
+    $responses = Future\await(array_map(function ($uri) use ($httpClient) {
         return $httpClient->request(new Request($uri, 'HEAD'));
     }, $uris));
 
@@ -48,20 +48,20 @@ try {
 }
 ```
 
-## `some()`
+## `awaitAnyN()`
 
-`Amp\Future\some()` is the same as `all()` except that it tolerates individual failures. A result is returned once
+`Amp\Future\awaitAnyN()` is the same as `await()` except that it tolerates individual failures. A result is returned once
 exactly `$count` instances in the `iterable` complete successfully. The return value is an array of values. The
 individual keys in the component array are preserved from the `iterable` passed to the function for evaluation.
 
-## `settle()`
+## `awaitAll()`
 
-`Amp\Promise\settle()` awaits all futures and returns their results as `[$errors, $values]` array.
+`Amp\Promise\awaitAll()` awaits all futures and returns their results as `[$errors, $values]` array.
 
-## `race()`
+## `awaitFirst()`
 
-`Amp\Promise\race()` unwraps the first completed `Future`, whether successfully completed or errored.
+`Amp\Promise\awaitFirst()` unwraps the first completed `Future`, whether successfully completed or errored.
 
-## `any()`
+## `awaitAny()`
 
-`Amp\Promise\any()` unwraps the first successfully completed `Future`.
+`Amp\Promise\awaitAny()` unwraps the first successfully completed `Future`.
