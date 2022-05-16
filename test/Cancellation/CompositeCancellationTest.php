@@ -1,10 +1,12 @@
 <?php
 
-namespace Cancellation;
+namespace Amp\Cancellation;
 
+use Amp\CancelledException;
 use Amp\CompositeCancellation;
 use Amp\DeferredCancellation;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\PHPUnit\TestException;
 use function Amp\delay;
 
 class CompositeCancellationTest extends AsyncTestCase
@@ -37,5 +39,30 @@ class CompositeCancellationTest extends AsyncTestCase
                 self::assertLessThanOrEqual($firstMemoryMeasure, \memory_get_usage(true));
             }
         }
+    }
+
+    public function testCombinedWithDoubleCancellation(): void
+    {
+        $deferredCancellation1 = new DeferredCancellation();
+        $deferredCancellation2 = new DeferredCancellation();
+
+        $compositeCancellation = new CompositeCancellation(
+            $deferredCancellation1->getCancellation(),
+            $deferredCancellation2->getCancellation(),
+        );
+
+        $compositeCancellation->subscribe(
+            $this->createCallback(1, expectArgs: [self::isInstanceOf(CancelledException::class)])
+        );
+
+        $deferredCancellation1->cancel($exception = new TestException());
+        $deferredCancellation2->cancel(new TestException());
+
+        delay(0.1); // Ensure cancellation callbacks are invoked.
+
+        // Add another cancellation subscriber to ensure exception did not change.
+        $compositeCancellation->subscribe(function (CancelledException $cancelled) use ($exception) {
+            self::assertSame($exception, $cancelled->getPrevious());
+        });
     }
 }

@@ -23,21 +23,34 @@ final class CompositeCancellation implements Cancellation
     {
         $thatException = &$this->exception;
         $thatCallbacks = &$this->callbacks;
+        $thatCancellations = &$this->cancellations;
+        $onCancel = static function (CancelledException $exception) use (
+            &$thatException,
+            &$thatCallbacks,
+            &$thatCancellations,
+        ): void {
+            if ($thatException) {
+                return;
+            }
+
+            $thatException = $exception;
+
+            foreach ($thatCancellations as [$cancellation, $id]) {
+                /** @var Cancellation $cancellation */
+                $cancellation->unsubscribe($id);
+            }
+
+            $thatCancellations = [];
+
+            foreach ($thatCallbacks as $callback) {
+                EventLoop::queue($callback, $exception);
+            }
+
+            $thatCallbacks = [];
+        };
 
         foreach ($cancellations as $cancellation) {
-            $id = $cancellation->subscribe(static function (CancelledException $exception) use (
-                &$thatException,
-                &$thatCallbacks
-            ): void {
-                $thatException = $exception;
-
-                foreach ($thatCallbacks as $callback) {
-                    EventLoop::queue($callback, $exception);
-                }
-
-                $thatCallbacks = [];
-            });
-
+            $id = $cancellation->subscribe($onCancel);
             $this->cancellations[] = [$cancellation, $id];
         }
     }
@@ -48,6 +61,10 @@ final class CompositeCancellation implements Cancellation
             /** @var Cancellation $cancellation */
             $cancellation->unsubscribe($id);
         }
+
+        // The reference created in the constructor causes this property to persist beyond the life of this object,
+        // so explicitly removing references will speed up garbage collection.
+        $this->cancellations = [];
     }
 
     public function subscribe(\Closure $callback): string
