@@ -32,7 +32,13 @@ final class SignalCancellation implements Cancellation
         $trace = null; // Defined in case assertions are disabled.
         \assert((bool) ($trace = \debug_backtrace(0)));
 
-        $callback = static function () use ($source, $message, $trace): void {
+        $watchers = [];
+
+        $callback = static function () use (&$watchers, $source, $message, $trace): void {
+            foreach ($watchers as $watcher) {
+                EventLoop::cancel($watcher);
+            }
+
             if ($trace) {
                 $message .= \sprintf("\r\n%s was created here: %s", self::class, Internal\formatStacktrace($trace));
             } else {
@@ -42,7 +48,6 @@ final class SignalCancellation implements Cancellation
             $source->cancel(new SignalException($message));
         };
 
-        $watchers = [];
         foreach ($signals as $signal) {
             $watchers[] = EventLoop::unreference(EventLoop::onSignal($signal, $callback));
         }
