@@ -80,13 +80,11 @@ final class CompositeCancellation implements Cancellation
         return $id;
     }
 
-    /** @inheritdoc */
     public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
 
-    /** @inheritdoc */
     public function isRequested(): bool
     {
         foreach ($this->cancellations as [$cancellation]) {
@@ -98,7 +96,6 @@ final class CompositeCancellation implements Cancellation
         return false;
     }
 
-    /** @inheritdoc */
     public function throwIfRequested(): void
     {
         foreach ($this->cancellations as [$cancellation]) {
