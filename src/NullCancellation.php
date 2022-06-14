@@ -32,19 +32,16 @@ final class NullCancellation implements Cancellation
         return "null-cancellation";
     }
 
-    /** @inheritdoc */
     public function unsubscribe(string $id): void
     {
         // nothing to do
     }
 
-    /** @inheritdoc */
     public function isRequested(): bool
     {
         return false;
     }
 
-    /** @inheritdoc */
     public function throwIfRequested(): void
     {
         // nothing to do

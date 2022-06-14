@@ -3,7 +3,7 @@
 namespace Amp;
 
 /**
- * Thrown if a promise doesn't resolve within a specified timeout.
+ * Used as the previous exception to {@see CancelledException} when a {@see TimeoutCancellation} expires.
  *
  * @see TimeoutCancellation
  */
