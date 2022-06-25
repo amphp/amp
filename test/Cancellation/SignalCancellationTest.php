@@ -10,8 +10,8 @@ use Revolt\EventLoop;
 use function Amp\delay;
 
 /**
- * @requires ext-pcntl
- * @requires ext-posix
+ * @requires extension pcntl
+ * @requires extension posix
  */
 class SignalCancellationTest extends AsyncTestCase
 {
