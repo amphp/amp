@@ -73,3 +73,4 @@ jobs:
         env:
           PHP_CS_FIXER_IGNORE_ENV: 1
         run: vendor/bin/php-cs-fixer --diff --dry-run -v fix
+        if: runner.os != 'Windows'
