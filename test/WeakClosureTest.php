@@ -137,4 +137,37 @@ class WeakClosureTest extends AsyncTestCase
 
         EventLoop::enable($id);
     }
+
+    public function testInheritance(): void
+    {
+        $object = new WeakClosureTestChild();
+        $this->assertSame(WeakClosureTestParent::class, weakClosure($object->getClosure())());
+        $this->assertSame(WeakClosureTestParent::class, weakClosure($object->getFirstClassClosure())());
+    }
+}
+
+class WeakClosureTestParent
+{
+    private function privateScoped(): string
+    {
+        return __CLASS__;
+    }
+
+    public function getFirstClassClosure(): \Closure
+    {
+        return $this->privateScoped(...);
+    }
+
+    public function getClosure(): \Closure
+    {
+        return fn () => $this->privateScoped();
+    }
+}
+
+class WeakClosureTestChild extends WeakClosureTestParent
+{
+    private function privateScoped(): string
+    {
+        return __CLASS__;
+    }
 }

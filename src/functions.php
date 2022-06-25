@@ -136,18 +136,26 @@ function weakClosure(\Closure $closure): \Closure
         return $closure;
     }
 
+    // For internal classes use \Closure::bindTo() without scope.
+    $scope = $reflection->getClosureScopeClass();
+    $useBindTo = !$scope || $that::class !== $scope->name || $scope->isInternal();
+
     $method = $reflection->getShortName();
     if ($method !== '{closure}') {
         // Closure from first-class callable or \Closure::fromCallable(), declare an anonymous closure to rebind.
         /** @psalm-suppress InvalidScope Closure is bound before being invoked. */
-        $closure = fn (mixed ...$args) => $this->{$method}(...$args);
+        $closure = fn (mixed ...$args): mixed => $this->{$method}(...$args);
+        if ($useBindTo && $scope) {
+            $closure = $closure->bindTo(null, $scope->name);
+
+            if (!$closure) {
+                throw new \RuntimeException('Unable to rebind function to type ' . $scope->name);
+            }
+        }
     } else {
         // Rebind to remove reference to $that
         $closure = $closure->bindTo(new \stdClass());
     }
-
-    // For internal classes use \Closure::bindTo() without scope.
-    $useBindTo = !(new \ReflectionClass($that))->isUserDefined();
 
     $reference = \WeakReference::create($that);
 
