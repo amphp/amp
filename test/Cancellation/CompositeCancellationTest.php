@@ -64,5 +64,13 @@ class CompositeCancellationTest extends AsyncTestCase
         $compositeCancellation->subscribe(function (CancelledException $cancelled) use ($exception) {
             self::assertSame($exception, $cancelled->getPrevious());
         });
+
+        delay(0.1); // Ensure cancellation callbacks are invoked.
+
+        self::assertTrue($compositeCancellation->isRequested());
+
+        $this->expectException(CancelledException::class);
+
+        $compositeCancellation->throwIfRequested();
     }
 }

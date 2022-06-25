@@ -87,19 +87,13 @@ final class CompositeCancellation implements Cancellation
 
     public function isRequested(): bool
     {
-        foreach ($this->cancellations as [$cancellation]) {
-            if ($cancellation->isRequested()) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->exception !== null;
     }
 
     public function throwIfRequested(): void
     {
-        foreach ($this->cancellations as [$cancellation]) {
-            $cancellation->throwIfRequested();
+        if ($this->exception) {
+            throw $this->exception;
         }
     }
 }
