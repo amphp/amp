@@ -354,9 +354,9 @@ class FutureTest extends AsyncTestCase
     private function delay(float $seconds, mixed $value): Future
     {
         return async(
-        /**
-         * @return T
-         */
+            /**
+             * @return T
+             */
             static function () use ($seconds, $value): mixed {
                 delay($seconds);
                 return $value;
