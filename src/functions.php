@@ -22,10 +22,19 @@ function async(\Closure $closure, mixed ...$args): Future
     static $run = null;
 
     $run ??= static function (FutureState $state, \Closure $closure, array $args): void {
+        $s = $state;
+        $state = null;
+
+        $c = $closure;
+        $closure = null;
+
+        $a = $args;
+        $args = null;
+
         try {
-            $state->complete($closure(...$args));
+            $s->complete($c(...$a));
         } catch (\Throwable $exception) {
-            $state->error($exception);
+            $s->error($exception);
         }
     };
 
