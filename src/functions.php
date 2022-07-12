@@ -23,13 +23,12 @@ function async(\Closure $closure, mixed ...$args): Future
 
     $run ??= static function (FutureState $state, \Closure $closure, array $args): void {
         $s = $state;
-        $state = null;
-
         $c = $closure;
-        $closure = null;
-
         $a = $args;
-        $args = null;
+
+        /* Null function arguments so an exception thrown from the closure does not contain the FutureState object
+         * in the stack trace, which would create a circular reference, preventing immediate garbage collection */
+        $state = $closure = $args = null;
 
         try {
             $s->complete($c(...$a));
@@ -58,8 +57,8 @@ function now(): float
 /**
  * Non-blocking sleep for the specified number of seconds.
  *
- * @param float             $timeout Number of seconds to wait.
- * @param bool              $reference If false, unreference the underlying watcher.
+ * @param float $timeout Number of seconds to wait.
+ * @param bool $reference If false, unreference the underlying watcher.
  * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  */
 function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
@@ -87,8 +86,8 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
 /**
  * Wait for signal(s) in a non-blocking way.
  *
- * @param int|int[]         $signals Signal number or array of signal numbers.
- * @param bool              $reference If false, unreference the underlying watcher.
+ * @param int|int[] $signals Signal number or array of signal numbers.
+ * @param bool $reference If false, unreference the underlying watcher.
  * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  *
  * @return int Caught signal number.
@@ -133,7 +132,9 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
  *
  * @template TReturn
  * @template TWeakClosure as \Closure(...):TReturn
+ *
  * @param TWeakClosure $closure
+ *
  * @return TWeakClosure
  */
 function weakClosure(\Closure $closure): \Closure
