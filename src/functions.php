@@ -31,7 +31,8 @@ function async(\Closure $closure, mixed ...$args): Future
         $state = $closure = $args = null;
 
         try {
-            $s->complete($c(...$a));
+            // Clear $a to allow garbage collection
+            $s->complete($c(...$a, ...($a = [])));
         } catch (\Throwable $exception) {
             $s->error($exception);
         }
