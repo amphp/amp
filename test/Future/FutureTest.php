@@ -344,6 +344,22 @@ class FutureTest extends AsyncTestCase
         $future->await();
     }
 
+    public function testAsyncExecutionDoesNotKeepReferenceToArgs(): void
+    {
+        $this->expectOutputString('123');
+
+        async(static function (object $object): void {
+            print 1;
+            unset($object);
+            print 3;
+        }, new class () {
+            public function __destruct()
+            {
+                print 2;
+            }
+        })->await();
+    }
+
     /**
      * @template T
      *
