@@ -24,15 +24,14 @@ function async(\Closure $closure, mixed ...$args): Future
     $run ??= static function (FutureState $state, \Closure $closure, array $args): void {
         $s = $state;
         $c = $closure;
-        $a = $args;
 
         /* Null function arguments so an exception thrown from the closure does not contain the FutureState object
          * in the stack trace, which would create a circular reference, preventing immediate garbage collection */
-        $state = $closure = $args = null;
+        $state = $closure = null;
 
         try {
-            // Clear $a to allow garbage collection
-            $s->complete($c(...$a, ...($a = [])));
+            // Clear $args to allow garbage collection of arguments during fiber execution
+            $s->complete($c(...$args, ...($args = [])));
         } catch (\Throwable $exception) {
             $s->error($exception);
         }
