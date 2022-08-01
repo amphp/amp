@@ -344,6 +344,29 @@ class FutureTest extends AsyncTestCase
         $future->await();
     }
 
+    public function testIssue394(): void
+    {
+        $this->expectOutputString("destruct\ncaught\ndone\n");
+
+        try {
+            async((new class() {
+                public function __destruct()
+                {
+                    echo "destruct\n";
+                }
+
+                public function baz(): never
+                {
+                    throw new \Exception();
+                }
+            })->baz(...))->await();
+        } catch (\Exception) {
+            echo "caught\n";
+        }
+
+        echo "done\n";
+    }
+
     public function testAsyncExecutionDoesNotKeepReferenceToArgs(): void
     {
         $this->expectOutputString('123');
@@ -352,7 +375,7 @@ class FutureTest extends AsyncTestCase
             print 1;
             unset($object);
             print 3;
-        }, new class () {
+        }, new class() {
             public function __destruct()
             {
                 print 2;
@@ -363,7 +386,7 @@ class FutureTest extends AsyncTestCase
     /**
      * @template T
      *
-     * @param T     $value
+     * @param T $value
      *
      * @return Future<T>
      */
