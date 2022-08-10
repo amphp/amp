@@ -131,11 +131,10 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
  * Invoking the returned Closure after the object is destroyed will throw an instance of Error.
  *
  * @template TReturn
- * @template TWeakClosure as \Closure(...):TReturn
  *
- * @param TWeakClosure $closure
+ * @param \Closure(mixed...):TReturn $closure
  *
- * @return TWeakClosure
+ * @return \Closure(mixed...):TReturn
  */
 function weakClosure(\Closure $closure): \Closure
 {
@@ -169,7 +168,7 @@ function weakClosure(\Closure $closure): \Closure
 
     $reference = \WeakReference::create($that);
 
-    /** @var TWeakClosure */
+    /** @var \Closure(mixed...):TReturn */
     return static function (mixed ...$args) use ($reference, $closure, $useBindTo): mixed {
         $that = $reference->get();
         if (!$that) {
@@ -180,7 +179,7 @@ function weakClosure(\Closure $closure): \Closure
             $closure = $closure->bindTo($that);
 
             if (!$closure) {
-                throw new \RuntimeException('Unable to rebind function to object of type ' . \get_class($that));
+                throw new \RuntimeException('Unable to rebind function to object of type ' . $that::class);
             }
 
             return $closure(...$args);
