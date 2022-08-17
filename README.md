@@ -105,7 +105,8 @@ using `Cancellation::subscribe()` to subscribe any cancellation requests that mi
 
 The caller creates a `Cancellation` by using one of the implementations below.
 
-> **Note:** Cancellations are advisory only. A DNS resolver might ignore cancellation requests after the query has been sent as the response has to be processed anyway and can still be cached. An HTTP client might continue a nearly finished HTTP request to reuse the connection, but might abort a chunked encoding response as it cannot know whether continuing is actually cheaper than aborting.
+> **Note**
+> Cancellations are advisory only. A DNS resolver might ignore cancellation requests after the query has been sent as the response has to be processed anyway and can still be cached. An HTTP client might continue a nearly finished HTTP request to reuse the connection, but might abort a chunked encoding response as it cannot know whether continuing is actually cheaper than aborting.
 
 #### TimeoutCancellation
 
