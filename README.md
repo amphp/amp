@@ -1,11 +1,12 @@
 <a href="https://amphp.org/">
-  <img src="https://github.com/amphp/logo/blob/master/repos/amp-logo-with-margin.png?raw=true" width="250" align="right" alt="Amp Logo">
+  <img src="https://github.com/amphp/logo/blob/master/repos/amp-v3-logo-with-margin.png?raw=true" width="250" align="right" alt="Amp Logo">
 </a>
 
 <a href="https://amphp.org/"><img alt="Amp" src="https://github.com/amphp/logo/blob/master/repos/amp-text.png?raw=true" width="100" valign="middle"></a>
 
-Amp is a set of seamlessly integrated concurrency libraries for PHP based on [Revolt](https://revolt.run/). This package
-provides futures and cancellations as a base for asynchronous programming.
+AMPHP is a collection of event-driven libraries for PHP designed with fibers and concurrency in mind.
+`amphp/amp` specifically provides futures and cancellations as fundamental primitives for asynchronous programming.
+We're now using [Revolt](https://revolt.run/) instead of shipping an event loop implementation with `amphp/amp`.
 
 Amp makes heavy use of fibers shipped with PHP 8.1 to write asynchronous code just like synchronous, blocking code. In
 contrast to earlier versions, there's no need for generator based coroutines or callbacks. Similar to threads, each
@@ -16,22 +17,38 @@ concurrently.
 
 ## Motivation
 
-Traditionally, PHP has a synchronous execution flow, doing one thing at a time. If you query a database, you send the
-query and wait for the response from the database server in a blocking manner. Once you have the response, you can start
-doing the next thing.
+Traditionally, PHP follows a sequential execution model.
+The PHP engine executes one line after the other in sequential order.
+Often, however, programs consist of multiple independent sub-programs with can be executed concurrently.
 
-Instead of sitting there and doing nothing while waiting, we could already send the next database query, or do an HTTP
-call to an API.
-
-Making use of the time we usually spend on waiting for I/O can speed up the total execution time. The following diagram
-shows the execution flow with dependencies between the different tasks, once executed sequentially and once
-concurrently.
+If you query a database, you send the query and wait for the response from the database server in a blocking manner.
+Once you have the response, you can start doing the next thing.
+Instead of sitting there and doing nothing while waiting, we could already send the next database query, or do an HTTP call to an API.
+Let's make use of the time we usually spend on waiting for I/O!
 
 ![](docs/images/sequential-vs-concurrent.png)
 
-Amp allows such concurrent I/O operations while keeping the cognitive load low by avoiding callbacks. Instead, the
-results of asynchronous operations can be awaited using `Future::await()` resulting in code which is structured like
-traditional blocking I/O code.
+[Revolt](https://revolt.run/) allows such concurrent I/O operations. We keep the cognitive load low by avoiding callbacks.
+Our APIs can be used like any other library, except that things _also_ work concurrently, because we use non-blocking I/O under the hood.
+Run things concurrently using `Amp\async()` and await the result using `Future::await()` where and when you need it!
+
+There have been various techniques for implementing concurrency in PHP over the years, e.g. callbacks and generators shipped in PHP 5.
+These approaches suffered from the ["What color is your function"](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/) problem, which we solved by shipping Fibers with PHP 8.1.
+They allow for concurrency with multiple independent call stacks.
+
+Fibers are cooperatively scheduled by the [event-loop](https://revolt.run), which is why they're also called coroutines.
+It's important to understand that only one coroutine is running at any given time, all other coroutines are suspended in the meantime.
+
+You can compare coroutines to a computer running multiple programs using a single CPU core.
+Each program gets a timeslot to execute.
+Coroutines, however, are not preemptive.
+They don't get their fixed timeslot.
+They have to voluntarily give up control to the event loop.
+
+Any blocking I/O function blocks the entire process while waiting for I/O.
+You'll want to avoid them.
+If you haven't read the installation guide, have a look at the [Hello World example](https://v3.amphp.org/installation#hello-world) that demonstrates the effect of blocking functions.
+The libraries provided by AMPHP avoid blocking for I/O.
 
 ## Installation
 
@@ -41,15 +58,15 @@ This package can be installed as a [Composer](https://getcomposer.org/) dependen
 composer require amphp/amp
 ```
 
-If you use this library, it's very likely you want to schedule events using [Revolt's event loop](https://revolt.run),
+If you use this library, it's very likely you want to schedule events using [Revolt](https://revolt.run),
 which you should require separately, even if it's automatically installed as a dependency.
 
 ```bash
 composer require revolt/event-loop
 ```
 
-These packages provide the basic building blocks for asynchronous applications in PHP. We offer a lot of repositories
-building on top of these repositories, e.g.
+These packages provide the basic building blocks for asynchronous / concurrent applications in PHP. We offer a lot of packages
+building on top of these, e.g.
 
 - [`amphp/byte-stream`](https://github.com/amphp/byte-stream) providing a stream abstraction
 - [`amphp/socket`](https://github.com/amphp/socket) providing a socket layer for UDP and TCP including TLS
@@ -61,20 +78,16 @@ building on top of these repositories, e.g.
   non-blocking database access
 - and [many more packages](https://github.com/amphp?type=source)
 
-## Documentation
-
-Documentation can be found on [amphp.org](https://amphp.org/) as well as in the [`./docs`](./docs) directory. Each
-packages has it's own `./docs` directory.
-
 ## Requirements
 
-This package requires PHP 8.0 (with [`ext-fiber`](https://github.com/amphp/ext-fiber)), or PHP 8.1 or later. No
-extensions required!
+This package requires PHP 8.1+, no extensions required!
 
-##### Optional Extensions
+<small>
 
 [Extensions](https://revolt.run/extensions) are only needed if your app necessitates a high numbers of concurrent socket
 connections, usually this limit is configured up to 1024 file descriptors.
+
+</small>
 
 ## Versioning
 
