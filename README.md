@@ -91,7 +91,226 @@ connections, usually this limit is configured up to 1024 file descriptors.
 
 ## Usage
 
+### Coroutines
+
+Coroutines are interruptible functions. In PHP, they can be implemented using [fibers](https://wiki.php.net/rfc/fibers).
+
+> **Note**
+> Previous versions of Amp used generators for a similar purpose, but fibers can be interrupted anywhere in the call stack making previous boilerplate like `Amp\call()` unnecessary.
+
+At any given time, only one fiber is running. When a coroutine suspends, execution of the coroutine is temporarily
+interrupted, allowing other tasks to be run. Execution is resumed once a timer expires, stream operations are possible,
+or any awaited `Future` completes.
+
+Low-level suspension and resumption of coroutines is handled by Revolt's [`Suspension`](https://revolt.run/fibers) API.
+
+```php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+use Revolt\EventLoop;
+
+$suspension = EventLoop::getSuspension();
+
+EventLoop::delay(5, function () use ($suspension): void {
+    print '++ Executing callback created by EventLoop::delay()' . PHP_EOL;
+
+    $suspension->resume(null);
+});
+
+print '++ Suspending to event loop...' . PHP_EOL;
+
+$suspension->suspend();
+
+print '++ Script end' . PHP_EOL;
+```
+
+Callbacks registered on the Revolt event-loop are automatically run as coroutines and it's safe to suspend them. Apart from the event-loop API, `Amp\async()` can be used to start an independent call stack.
+
+```php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+Amp\async(function () {
+    print '++ Executing callback passed to async()' . PHP_EOL;
+
+    delay(3);
+
+    print '++ Finished callback passed to async()' . PHP_EOL;
+});
+
+print '++ Suspending to event loop...' . PHP_EOL;
+delay(5);
+
+print '++ Script end' . PHP_EOL;
+```
+
 ### Future
+
+A `Future` is an object representing the eventual result of an asynchronous operation. There are three states:
+
+- **Completed successfully**: The future has been completed successfully.
+- **Errored**: The future failed with an exception.
+- **Pending**: The future is still pending.
+
+A successfully completed future is analog to a return value, while an errored future is analog to throwing an exception.
+
+One way to approach asynchronous APIs is using callbacks that are passed when the operation is started and called once it completes:
+
+```php
+doSomething(function ($error, $value) {
+    if ($error) {
+        /* ... */
+    } else {
+        /* ... */
+    }
+});
+```
+
+The callback approach has several drawbacks.
+
+- Passing callbacks and doing further actions in them that depend on the result of the first action gets messy really
+  quickly.
+- An explicit callback is required as input parameter to the function, and the return value is simply unused. There's no
+  way to use this API without involving a callback.
+
+That's where futures come into play.
+They're placeholders for the result that are returned like any other return value.
+The caller has the choice of awaiting the result using `Future::await()` or registering one or several callbacks.
+
+```php
+try {
+    $value = doSomething()->await();
+} catch (...) {
+    /* ... */
+}
+```
+
+#### Combinators
+
+In concurrent applications, there will be multiple futures, where you might want to await them all or just the first one.
+
+##### await
+
+`Amp\Future\await($iterable, $cancellation)` awaits all `Future` objects of an `iterable`. If one of the `Future` instances errors, the operation
+will be aborted with that exception. Otherwise, the result is an array matching keys from the input `iterable` to their
+completion values.
+
+The `await()` combinator is extremely powerful because it allows you to concurrently execute many asynchronous operations
+at the same time. Let's look at an example using [`amphp/http-client`](https://github.com/amphp/http-client) to
+retrieve multiple HTTP resources concurrently:
+
+```php
+<?php
+
+use Amp\Future;
+
+$httpClient = HttpClientBuilder::buildDefault();
+$uris = [
+    "google" => "https://www.google.com",
+    "news"   => "https://news.google.com",
+    "bing"   => "https://www.bing.com",
+    "yahoo"  => "https://www.yahoo.com",
+];
+
+try {
+    $responses = Future\await(array_map(function ($uri) use ($httpClient) {
+        return $httpClient->request(new Request($uri, 'HEAD'));
+    }, $uris));
+
+    foreach ($responses as $key => $response) {
+        printf(
+            "%s | HTTP/%s %d %s\n",
+            $key,
+            $response->getProtocolVersion(),
+            $response->getStatus(),
+            $response->getReason()
+        );
+    }
+} catch (Exception $e) {
+    // If any one of the requests fails the combo will fail
+    echo $e->getMessage(), "\n";
+}
+```
+
+##### awaitAnyN
+
+`Amp\Future\awaitAnyN($count, $iterable, $cancellation)` is the same as `await()` except that it tolerates individual errors. A result is returned once
+exactly `$count` instances in the `iterable` complete successfully. The return value is an array of values. The
+individual keys in the component array are preserved from the `iterable` passed to the function for evaluation.
+
+##### awaitAll
+
+`Amp\Promise\awaitAll($iterable, $cancellation)` awaits all futures and returns their results as `[$errors, $values]` array.
+
+##### awaitFirst
+
+`Amp\Promise\awaitFirst($iterable, $cancellation)` unwraps the first completed `Future`, whether successfully completed or errored.
+
+##### awaitAny
+
+`Amp\Promise\awaitAny($iterable, $cancellation)` unwraps the first successfully completed `Future`.
+
+#### Future Creation
+
+Futures can be created in several ways. Most code will use [`Amp\async()`](#Coroutines) which takes a function and runs it as coroutine in another Fiber.
+
+Sometimes an interface mandates a `Future` to be returned, but results are immediately available, e.g. because they're cached.
+In these cases `Future::complete(mixed)` and `Future::error(Throwable)` can be used to construct an immediately completed `Future`.
+
+##### DeferredFuture
+
+> **Note**
+> The `DeferredFuture` API described below is an advanced API that many applications probably don't need.
+> Use [`Amp\async()`](#Coroutines) or [combinators](#Combinators) instead where possible.
+
+`Amp\DeferredFuture` is responsible for completing a pending `Future`.
+You create a `Amp\DeferredFuture` and uses its `getFuture` method to return an `Amp\Future` to the caller.
+Once result is ready, you complete the `Future` held by the caller using `complete` or `error` on the linked `DeferredFuture`.
+
+```php
+final class DeferredFuture
+{
+    public function getFuture(): Future;
+    public function complete(mixed $value = null);
+    public function error(Throwable $throwable);
+}
+```
+
+> **Warning**
+> If you're passing `DeferredFuture` objects around, you're probably doing something wrong.
+> They're supposed to be internal state of your operation.
+
+> **Warning**
+> You can't complete a future with another future; Use `Future::await()` before calling `DeferredFuture::complete()` in such cases.
+
+Here's a simple example of an asynchronous value producer `asyncMultiply()` creating a `DeferredFuture` and returning the
+associated `Future` to its caller.
+
+```php
+<?php // Example async producer using DeferredFuture
+
+use Revolt\EventLoop;
+
+function asyncMultiply(int $x, int $y): Future
+{
+    $deferred = new Amp\DeferredFuture;
+
+    // Complete the async result one second from now
+    EventLoop::delay(1, function () use ($deferred, $x, $y) {
+        $deferred->complete($x * $y);
+    });
+
+    return $deferred->getFuture();
+}
+
+$future = asyncMultiply(6, 7);
+$result = $future->await();
+
+var_dump($result); // int(42)
+```
 
 ### Cancellation
 

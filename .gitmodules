@@ -1,3 +1,0 @@
-[submodule "docs/shared"]
-	path = docs/.shared
-	url = https://github.com/amphp/amphp.github.io
