@@ -89,6 +89,69 @@ connections, usually this limit is configured up to 1024 file descriptors.
 
 </small>
 
+## Usage
+
+### Future
+
+### Cancellation
+
+Every operation that supports cancellation accepts an instance of `Cancellation` as argument.
+Cancellations are objects that allow registering handlers to subscribe to cancellation requests.
+These objects are passed down to sub-operations or have to be handled by the operation itself.
+
+`$cancellation->throwIfRequested()` can be used to fail the current operation with a `CancelledException` once cancellation has been requested.
+While `throwIfRequested()` works well, some operations might want to subscribe with a callback instead. They can do so
+using `Cancellation::subscribe()` to subscribe any cancellation requests that might happen.
+
+The caller creates a `Cancellation` by using one of the implementations below.
+
+> **Note:** Cancellations are advisory only. A DNS resolver might ignore cancellation requests after the query has been sent as the response has to be processed anyway and can still be cached. An HTTP client might continue a nearly finished HTTP request to reuse the connection, but might abort a chunked encoding response as it cannot know whether continuing is actually cheaper than aborting.
+
+#### TimeoutCancellation
+
+A `TimeoutCancellations` automatically cancels itself after the specified number of seconds.
+
+```php
+request("...", new Amp\TimeoutCancellation(30));
+```
+
+#### SignalCancellation
+
+A `SignalCancellation` automatically cancels itself after a specified signal has been received by the current process.
+
+```php
+request("...", new Amp\SignalCancellation(SIGINT));
+```
+
+#### DeferredCancellation
+
+A `DeferredCancellation` allows manual cancellation with the call of a method.
+This is the preferred way if you need to register some custom callback somewhere instead of shipping your own implementation.
+Only the caller has access to the `DeferredCancellation` and can cancel the operation using `DeferredCancellation::cancel()`.
+
+```php
+$deferredCancellation = new Amp\DeferredCancellation();
+
+// Register some custom callback somewhere
+onSomeEvent(fn () => $deferredCancellation->cancel());
+
+request("...", $deferredCancellation->getCancellation());
+```
+
+#### NullCancellation
+
+A `NullCancellation` will never be cancelled.
+Cancellation is often optional, which is usually implemented by making the parameter nullable.
+To avoid guards like `if ($cancellation)`, a `NullCancellation` can be used instead.
+
+```php
+$cancellation ??= new NullCancellationToken();
+```
+
+#### CompositeCancellation
+
+A `CompositeCancellation` combines multiple independent cancellation objects. If any of these cancellations is cancelled, the `CompositeCancellation` itself will be cancelled.
+
 ## Versioning
 
 `amphp/amp` follows the [semver](http://semver.org/) semantic versioning specification like all other `amphp` packages.

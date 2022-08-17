@@ -37,6 +37,6 @@ concurrent processing in our code we have a couple of options:
 
 ## Contents
 
-Amp provides [futures](./futures/README.md) and [cancellations](./cancellation/README.md) as building blocks for
+Amp provides [futures](./futures/README.md) and cancellations as building blocks for
 (partially and fully) asynchronous libraries and applications. [Coroutines](./coroutines/README.md) make asynchronous
 code feel as synchronous code.
