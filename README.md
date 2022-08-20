@@ -48,7 +48,7 @@ We offer a lot of repositories building on top of this repository, e.g.
 ## Documentation
 
 Documentation can be found on [amphp.org](https://amphp.org/) as well as in the [`./docs`](./docs) directory.
-Each packages has it's own `./docs` directory.
+Each package has its own `./docs` directory.
 
 ## Requirements
 
@@ -58,7 +58,7 @@ No extensions required!
 
 ##### Optional Extensions
 
-Extensions are only needed if your app necessitates a high numbers of concurrent socket connections, usually this limit is configured up to 1024 file descriptors.
+Extensions are only needed if your app necessitates a high number of concurrent socket connections, usually this limit is configured up to 1024 file descriptors.
 
 - [`ev`](https://pecl.php.net/package/ev)
 - [`event`](https://pecl.php.net/package/event)
