@@ -72,7 +72,7 @@ building on top of these, e.g.
 
 ## Requirements
 
-This package requires PHP 8.1+, no extensions required!
+This package requires PHP 8.1 or later. No extensions required!
 
 <small>
 
