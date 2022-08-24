@@ -1,8 +1,4 @@
-<a href="https://amphp.org/">
-  <img src="https://github.com/amphp/logo/blob/master/repos/amp-v3-logo-with-margin.png?raw=true" width="250" align="right" alt="Amp Logo">
-</a>
-
-<a href="https://amphp.org/"><img alt="Amp" src="https://github.com/amphp/logo/blob/master/repos/amp-text.png?raw=true" width="100" valign="middle"></a>
+# amphp/amp
 
 AMPHP is a collection of event-driven libraries for PHP designed with fibers and concurrency in mind.
 `amphp/amp` specifically provides futures and cancellations as fundamental primitives for asynchronous programming.
@@ -12,8 +8,6 @@ Amp makes heavy use of fibers shipped with PHP 8.1 to write asynchronous code ju
 contrast to earlier versions, there's no need for generator based coroutines or callbacks. Similar to threads, each
 fiber has its own call stack, but fibers are scheduled cooperatively by the event loop. Use `Amp\async()` to run things
 concurrently.
-
-<a href="blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" valign="middle"></a>
 
 ## Motivation
 
@@ -25,8 +19,6 @@ If you query a database, you send the query and wait for the response from the d
 Once you have the response, you can start doing the next thing.
 Instead of sitting there and doing nothing while waiting, we could already send the next database query, or do an HTTP call to an API.
 Let's make use of the time we usually spend on waiting for I/O!
-
-![](docs/images/sequential-vs-concurrent.png)
 
 [Revolt](https://revolt.run/) allows such concurrent I/O operations. We keep the cognitive load low by avoiding callbacks.
 Our APIs can be used like any other library, except that things _also_ work concurrently, because we use non-blocking I/O under the hood.
