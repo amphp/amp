@@ -74,12 +74,8 @@ building on top of these, e.g.
 
 This package requires PHP 8.1 or later. No extensions required!
 
-<small>
-
 [Extensions](https://revolt.run/extensions) are only needed if your app necessitates a high numbers of concurrent socket
 connections, usually this limit is configured up to 1024 file descriptors.
-
-</small>
 
 ## Usage
 
