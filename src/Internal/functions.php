@@ -31,27 +31,6 @@ function formatStacktrace(array $trace): string
 }
 
 /**
- * Creates a `TypeError` with a standardized error message.
- *
- * @param string[] $expected Expected types.
- * @param mixed    $given Given value.
- *
- * @internal
- */
-function createTypeError(array $expected, mixed $given): \TypeError
-{
-    $givenType = \is_object($given) ? \sprintf("instance of %s", \get_class($given)) : \gettype($given);
-
-    if (\count($expected) === 1) {
-        $expectedType = "Expected the following type: " . \array_pop($expected);
-    } else {
-        $expectedType = "Expected one of the following types: " . \implode(", ", $expected);
-    }
-
-    return new \TypeError("{$expectedType}; {$givenType} given");
-}
-
-/**
  * @return bool True if AMP_DEBUG is set to a truthy value.
  */
 function isDebugEnabled(): bool
