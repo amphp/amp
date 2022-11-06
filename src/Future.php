@@ -111,6 +111,8 @@ final class Future
 
     /**
      * Do not forward unhandled errors to the event loop handler.
+     *
+     * @return Future<T>
      */
     public function ignore(): self
     {
@@ -129,7 +131,7 @@ final class Future
      *
      * @param \Closure(T):Tr $map
      *
-     * @return Future
+     * @return Future<Tr>
      */
     public function map(\Closure $map): self
     {
@@ -160,7 +162,7 @@ final class Future
      *
      * @param \Closure(\Throwable):Tr $catch
      *
-     * @return Future
+     * @return Future<Tr>
      */
     public function catch(\Closure $catch): self
     {
