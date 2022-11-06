@@ -112,9 +112,11 @@ final class Future
     /**
      * Do not forward unhandled errors to the event loop handler.
      */
-    public function ignore(): void
+    public function ignore(): self
     {
         $this->state->ignore();
+
+        return $this;
     }
 
     /**
