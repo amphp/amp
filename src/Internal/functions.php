@@ -32,6 +32,7 @@ function formatStacktrace(array $trace): string
 
 /**
  * @return bool True if AMP_DEBUG is set to a truthy value.
+ * @internal
  */
 function isDebugEnabled(): bool
 {
