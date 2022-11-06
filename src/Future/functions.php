@@ -146,10 +146,18 @@ function awaitAll(iterable $futures, ?Cancellation $cancellation = null): array
 function await(iterable $futures, ?Cancellation $cancellation = null): array
 {
     $values = [];
+    $errors = [];
 
     // Future::iterate() to throw the first error based on completion order instead of argument order
     foreach (Future::iterate($futures, $cancellation) as $index => $future) {
-        $values[$index] = $future->await();
+        try {
+            $values[$index] = $future->await();
+        } catch (\Throwable $throwable) {
+            $errors[$index] = $throwable;
+        }
+    }
+    foreach ($errors as $error) {
+        throw $error;
     }
 
     /** @var array<Tk, Tv> */
