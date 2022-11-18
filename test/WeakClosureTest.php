@@ -2,10 +2,9 @@
 
 namespace Amp;
 
-use Amp\PHPUnit\AsyncTestCase;
 use Revolt\EventLoop;
 
-class WeakClosureTest extends AsyncTestCase
+class WeakClosureTest extends TestCase
 {
     public function provideObjectFactories(): iterable
     {
@@ -18,9 +17,9 @@ class WeakClosureTest extends AsyncTestCase
                     $this->callbackId = $id = EventLoop::repeat(
                         0.001,
                         weakClosure(function (string $callbackId) use (&$count): void {
-                            AsyncTestCase::assertNotNull($this);
-                            AsyncTestCase::assertStringContainsString('anonymous', static::class);
-                            AsyncTestCase::assertSame($callbackId, $this->callbackId);
+                            TestCase::assertNotNull($this);
+                            TestCase::assertStringContainsString('anonymous', static::class);
+                            TestCase::assertSame($callbackId, $this->callbackId);
                             ++$count;
                         })
                     );
@@ -44,7 +43,7 @@ class WeakClosureTest extends AsyncTestCase
                         &$count,
                         &$callbackIdRef
                     ): void {
-                        AsyncTestCase::assertSame($callbackId, $callbackIdRef);
+                        TestCase::assertSame($callbackId, $callbackIdRef);
                         ++$count;
                     }));
                 }
@@ -72,9 +71,9 @@ class WeakClosureTest extends AsyncTestCase
 
                 private function callback(string $callbackId): void
                 {
-                    AsyncTestCase::assertNotNull($this);
-                    AsyncTestCase::assertStringContainsString('anonymous', static::class);
-                    AsyncTestCase::assertSame($callbackId, $this->callbackId);
+                    TestCase::assertNotNull($this);
+                    TestCase::assertStringContainsString('anonymous', static::class);
+                    TestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
 
@@ -98,9 +97,9 @@ class WeakClosureTest extends AsyncTestCase
 
                 public function __invoke(string $callbackId): void
                 {
-                    AsyncTestCase::assertNotNull($this);
-                    AsyncTestCase::assertStringContainsString('anonymous', static::class);
-                    AsyncTestCase::assertSame($callbackId, $this->callbackId);
+                    TestCase::assertNotNull($this);
+                    TestCase::assertStringContainsString('anonymous', static::class);
+                    TestCase::assertSame($callbackId, $this->callbackId);
                     ++$this->count;
                 }
 
@@ -117,7 +116,6 @@ class WeakClosureTest extends AsyncTestCase
      */
     public function test(callable $factory): void
     {
-        $this->setTimeout(0.2);
         $count = 0;
         $id = null;
 

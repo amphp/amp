@@ -6,15 +6,13 @@ use Amp\CancelledException;
 use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
 use Amp\Future;
-use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\TestException;
-use Amp\PHPUnit\UnhandledException;
+use Amp\TestCase;
 use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 use function Amp\async;
 use function Amp\delay;
 
-class FutureTest extends AsyncTestCase
+class FutureTest extends TestCase
 {
     public function testIterate(): void
     {
@@ -27,6 +25,26 @@ class FutureTest extends AsyncTestCase
         foreach (Future::iterate([$b, $a, $c]) as $index => $future) {
             print $future->await() . '=' . $index . ' ';
         }
+    }
+
+    /**
+     * @template T
+     *
+     * @param T $value
+     *
+     * @return Future<T>
+     */
+    private function delay(float $seconds, mixed $value): Future
+    {
+        return async(
+            /**
+             * @return T
+             */
+            static function () use ($seconds, $value): mixed {
+                delay($seconds);
+                return $value;
+            }
+        );
     }
 
     public function testIterateCancelPending(): void
@@ -178,48 +196,58 @@ class FutureTest extends AsyncTestCase
         $source = new DeferredCancellation;
         $future = $deferred->getFuture();
 
-        EventLoop::queue(function () use ($future, $source): void {
+        $async = async(function () use ($future, $source): void {
             self::assertSame(1, $future->await($source->getCancellation()));
         });
 
         $deferred->complete(1);
         $source->cancel();
+
+        $async->await();
     }
 
     public function testUnhandledError(): void
     {
         $deferred = new DeferredFuture;
-        $deferred->error(new TestException);
+        $deferred->error(new \Exception());
         unset($deferred);
 
-        $this->expectException(UnhandledException::class);
+        $this->expectException(EventLoop\UncaughtThrowable::class);
+
+        delay(0); // tick event loop
     }
 
     public function testUnhandledErrorFromFutureError(): void
     {
-        $future = Future::error(new TestException);
+        $future = Future::error(new \Exception());
         unset($future);
 
-        $this->expectException(UnhandledException::class);
+        $this->expectException(EventLoop\UncaughtThrowable::class);
+
+        delay(0); // tick event loop
     }
 
     public function testIgnoringUnhandledErrors(): void
     {
         $deferred = new DeferredFuture;
         $deferred->getFuture()->ignore();
-        $deferred->error(new TestException);
+        $deferred->error(new \Exception());
         unset($deferred);
 
         EventLoop::setErrorHandler($this->createCallback(0));
+
+        delay(0); // tick event loop
     }
 
     public function testIgnoreUnhandledErrorFromFutureError(): void
     {
-        $future = Future::error(new TestException);
+        $future = Future::error(new \Exception());
         $future->ignore();
         unset($future);
 
         EventLoop::setErrorHandler($this->createCallback(0));
+
+        delay(0); // tick event loop
     }
 
     public function testMapWithCompleteFuture(): void
@@ -250,7 +278,7 @@ class FutureTest extends AsyncTestCase
 
     public function testMapWithErrorFuture(): void
     {
-        $future = Future::error($exception = new TestException());
+        $future = Future::error($exception = new \Exception());
         $future = $future->map($this->createCallback(0));
         $this->expectExceptionObject($exception);
         $future->await();
@@ -258,7 +286,7 @@ class FutureTest extends AsyncTestCase
 
     public function testMapWithThrowingCallback(): void
     {
-        $exception = new TestException();
+        $exception = new \Exception();
         $future = Future::complete(1);
         $future = $future->map(static fn () => throw $exception);
         $this->expectExceptionObject($exception);
@@ -274,7 +302,7 @@ class FutureTest extends AsyncTestCase
 
     public function testCatchWithSuspendInCallback(): void
     {
-        $future = Future::error(new TestException());
+        $future = Future::error(new \Exception());
         $future = $future->catch(static fn (\Throwable $exception) => Future::complete(1)->await());
         self::assertSame(1, $future->await());
     }
@@ -286,14 +314,14 @@ class FutureTest extends AsyncTestCase
         $future = $deferred->getFuture();
         $future = $future->catch(static fn (\Throwable $exception) => 1);
 
-        EventLoop::delay(0.1, static fn () => $deferred->error(new TestException));
+        EventLoop::delay(0.1, static fn () => $deferred->error(new \Exception()));
 
         self::assertSame(1, $future->await());
     }
 
     public function testCatchWithThrowingCallback(): void
     {
-        $exception = new TestException();
+        $exception = new \Exception();
         $future = Future::error(new \Error());
         $future = $future->catch(static fn () => throw $exception);
         $this->expectExceptionObject($exception);
@@ -309,7 +337,7 @@ class FutureTest extends AsyncTestCase
 
     public function testFinallyWithErrorFuture(): void
     {
-        $exception = new TestException();
+        $exception = new \Exception();
         $future = Future::error($exception);
         $future = $future->finally($this->createCallback(1));
         $this->expectExceptionObject($exception);
@@ -337,7 +365,7 @@ class FutureTest extends AsyncTestCase
 
     public function testFinallyWithThrowingCallback(): void
     {
-        $exception = new TestException();
+        $exception = new \Exception();
         $future = Future::complete(1);
         $future = $future->finally(static fn () => throw $exception);
         $this->expectExceptionObject($exception);
@@ -383,23 +411,13 @@ class FutureTest extends AsyncTestCase
         })->await();
     }
 
-    /**
-     * @template T
-     *
-     * @param T $value
-     *
-     * @return Future<T>
-     */
-    private function delay(float $seconds, mixed $value): Future
+    protected function setUp(): void
     {
-        return async(
-            /**
-             * @return T
-             */
-            static function () use ($seconds, $value): mixed {
-                delay($seconds);
-                return $value;
-            }
-        );
+        EventLoop::setErrorHandler(null);
+    }
+
+    protected function tearDown(): void
+    {
+        EventLoop::setErrorHandler(null);
     }
 }

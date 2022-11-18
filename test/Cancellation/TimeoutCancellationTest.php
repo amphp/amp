@@ -3,13 +3,13 @@
 namespace Amp\Cancellation;
 
 use Amp\CancelledException;
-use Amp\PHPUnit\AsyncTestCase;
+use Amp\TestCase;
 use Amp\TimeoutCancellation;
 use Amp\TimeoutException;
 use Revolt\EventLoop;
 use function Amp\delay;
 
-class TimeoutCancellationTest extends AsyncTestCase
+class TimeoutCancellationTest extends TestCase
 {
     public function testTimeout(): void
     {
@@ -36,10 +36,10 @@ class TimeoutCancellationTest extends AsyncTestCase
 
     public function testWatcherCancellation(): void
     {
-        $enabled = EventLoop::getInfo()["delay"]["enabled"];
+        $identifiers = EventLoop::getIdentifiers();
         $cancellation = new TimeoutCancellation(0.001);
-        self::assertSame($enabled + 1, EventLoop::getInfo()["delay"]["enabled"]);
+        self::assertSame(\count($identifiers) + 1, \count(EventLoop::getIdentifiers()));
         unset($cancellation);
-        self::assertSame($enabled, EventLoop::getInfo()["delay"]["enabled"]);
+        self::assertSame($identifiers, EventLoop::getIdentifiers());
     }
 }

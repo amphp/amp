@@ -40,7 +40,6 @@
     },
     "require-dev": {
         "ext-json": "*",
-        "amphp/phpunit-util": "^3",
         "amphp/php-cs-fixer-config": "^2-dev",
         "phpunit/phpunit": "^9",
         "psalm/phar": "^4.13"

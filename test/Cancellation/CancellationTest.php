@@ -3,12 +3,11 @@
 namespace Amp\Cancellation;
 
 use Amp\DeferredCancellation;
-use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\TestException;
+use Amp\TestCase;
 use Revolt\EventLoop;
 use function Amp\delay;
 
-class CancellationTest extends AsyncTestCase
+class CancellationTest extends TestCase
 {
     public function testUnsubscribeWorks(): void
     {
@@ -39,14 +38,15 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource = new DeferredCancellation;
         $cancellationSource->getCancellation()->subscribe(function () {
-            throw new TestException;
+            throw new \Exception('testThrowingCallbacksEndUpInLoop message');
         });
 
         $cancellationSource->cancel();
 
         delay(0.01); // Tick event loop to invoke callbacks.
 
-        self::assertInstanceOf(TestException::class, $reason);
+        self::assertInstanceOf(\Exception::class, $reason);
+        self::assertSame('testThrowingCallbacksEndUpInLoop message', $reason->getMessage());
     }
 
     public function testDoubleCancelOnlyInvokesOnce(): void
@@ -56,6 +56,8 @@ class CancellationTest extends AsyncTestCase
 
         $cancellationSource->cancel();
         $cancellationSource->cancel();
+
+        delay(0); // tick event loop
     }
 
     public function testCalledIfSubscribingAfterCancel(): void
@@ -63,6 +65,8 @@ class CancellationTest extends AsyncTestCase
         $cancellationSource = new DeferredCancellation;
         $cancellationSource->cancel();
         $cancellationSource->getCancellation()->subscribe($this->createCallback(1));
+
+        delay(0); // tick event loop
     }
 
     public function testCancelOnDestruct(): void
@@ -70,5 +74,7 @@ class CancellationTest extends AsyncTestCase
         $cancellationSource = new DeferredCancellation;
         $cancellationSource->getCancellation()->subscribe($this->createCallback(1));
         unset($cancellationSource);
+
+        delay(0); // tick event loop
     }
 }

@@ -5,11 +5,10 @@ namespace Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\CompositeCancellation;
 use Amp\DeferredCancellation;
-use Amp\PHPUnit\AsyncTestCase;
-use Amp\PHPUnit\TestException;
+use Amp\TestCase;
 use function Amp\delay;
 
-class CompositeCancellationTest extends AsyncTestCase
+class CompositeCancellationTest extends TestCase
 {
     private const LOOP_COUNT = 20;
     private const TOKENS_COUNT = 1000;
@@ -55,8 +54,8 @@ class CompositeCancellationTest extends AsyncTestCase
             $this->createCallback(1, expectArgs: [self::isInstanceOf(CancelledException::class)])
         );
 
-        $deferredCancellation1->cancel($exception = new TestException());
-        $deferredCancellation2->cancel(new TestException());
+        $deferredCancellation1->cancel($exception = new \Exception());
+        $deferredCancellation2->cancel(new \Exception());
 
         delay(0.1); // Ensure cancellation callbacks are invoked.
 
