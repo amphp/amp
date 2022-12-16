@@ -3,9 +3,9 @@
 namespace Amp\Cancellation;
 
 use Amp\CancelledException;
-use Amp\PHPUnit\AsyncTestCase;
 use Amp\SignalCancellation;
 use Amp\SignalException;
+use Amp\TestCase;
 use Revolt\EventLoop;
 use function Amp\delay;
 
@@ -13,7 +13,7 @@ use function Amp\delay;
  * @requires extension pcntl
  * @requires extension posix
  */
-class SignalCancellationTest extends AsyncTestCase
+class SignalCancellationTest extends TestCase
 {
     public function testSignal(): void
     {
@@ -46,10 +46,10 @@ class SignalCancellationTest extends AsyncTestCase
 
     public function testWatcherCancellation(): void
     {
-        $enabled = EventLoop::getInfo()["on_signal"]["enabled"];
+        $identifiers = EventLoop::getIdentifiers();
         $cancellation = new SignalCancellation([\SIGUSR1, \SIGUSR2]);
-        self::assertSame($enabled + 2, EventLoop::getInfo()["on_signal"]["enabled"]);
+        self::assertSame(\count($identifiers) + 2, \count(EventLoop::getIdentifiers()));
         unset($cancellation);
-        self::assertSame($enabled, EventLoop::getInfo()["on_signal"]["enabled"]);
+        self::assertSame($identifiers, EventLoop::getIdentifiers());
     }
 }
