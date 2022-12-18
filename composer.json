@@ -62,11 +62,6 @@
     "support": {
         "issues": "https://github.com/amphp/amp/issues"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.x-dev"
-        }
-    },
     "scripts": {
         "test": "@php -dzend.assertions=1 -dassert.exception=1 ./vendor/bin/phpunit",
         "code-style": "@php ./vendor/bin/php-cs-fixer fix"
