@@ -14,7 +14,9 @@ final class UnhandledFutureError extends \Error
             . 'Future::ignore() to suppress this exception.';
 
         if ($origin) {
-            $message .= 'The future has been created at ' . $origin;
+            $message .= ' The future has been created at ' . $origin;
+        } else {
+            $message .= ' Enable assertions and set AMP_DEBUG=true in the process environment to track its origin.';
         }
 
         parent::__construct($message, 0, $previous);

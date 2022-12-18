@@ -32,7 +32,7 @@ final class FutureState
 
     private ?\Throwable $throwable = null;
 
-    private ?string $creationTrace = null;
+    private ?string $origin = null;
 
     public function __construct()
     {
@@ -40,7 +40,7 @@ final class FutureState
             if (isDebugEnabled()) {
                 $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
                 \array_shift($trace); // remove current closure
-                $this->creationTrace = formatStacktrace($trace);
+                $this->origin = formatStacktrace($trace);
             }
 
             return true;
@@ -50,7 +50,7 @@ final class FutureState
     public function __destruct()
     {
         if ($this->throwable && !$this->handled) {
-            $throwable = new UnhandledFutureError($this->throwable, $this->creationTrace);
+            $throwable = new UnhandledFutureError($this->throwable, $this->origin);
             EventLoop::queue(static fn () => throw $throwable);
         }
     }
