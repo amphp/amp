@@ -37,5 +37,8 @@ function formatStacktrace(array $trace): string
 function isDebugEnabled(): bool
 {
     $env = \getenv("AMP_DEBUG") ?: "0";
-    return ($env !== "0" && $env !== "false") || (\defined("AMP_DEBUG") && \AMP_DEBUG);
+    return match ($env) {
+        "0", "false", "off" => false,
+        default => $env || \defined("AMP_DEBUG") && \AMP_DEBUG,
+    };
 }
