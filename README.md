@@ -13,7 +13,7 @@ concurrently.
 
 Traditionally, PHP follows a sequential execution model.
 The PHP engine executes one line after the other in sequential order.
-Often, however, programs consist of multiple independent sub-programs with can be executed concurrently.
+Often, however, programs consist of multiple independent sub-programs which can be executed concurrently.
 
 If you query a database, you send the query and wait for the response from the database server in a blocking manner.
 Once you have the response, you can start doing the next thing.
