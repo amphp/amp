@@ -205,7 +205,7 @@ $uris = [
 
 try {
     $responses = Future\await(array_map(function ($uri) use ($httpClient) {
-        return $httpClient->request(new Request($uri, 'HEAD'));
+        return Amp\async(fn () => $httpClient->request(new Request($uri, 'HEAD')));
     }, $uris));
 
     foreach ($responses as $key => $response) {
