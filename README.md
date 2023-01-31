@@ -119,6 +119,8 @@ Callbacks registered on the Revolt event-loop are automatically run as coroutine
 ```php
 <?php
 
+use function Amp\delay;
+
 require __DIR__ . '/vendor/autoload.php';
 
 Amp\async(function () {
