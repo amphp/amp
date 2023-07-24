@@ -45,6 +45,23 @@ function async(\Closure $closure, mixed ...$args): Future
 }
 
 /**
+ * Spawns a new fiber asynchronously using the given closure.
+ *
+ * Works pretty much like the `go` keyword on golang.
+ *
+ * This function is a lighter version of the `async` function, that doesn't return a Future.
+ *
+ * If you want to get the result of the spawned fiber, use `async`, instead.
+ *
+ * @param \Closure(...):mixed $closure
+ * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
+ */
+function spawn(\Closure $closure, mixed ...$args): void
+{
+    EventLoop::queue($closure, ...$args);
+}
+
+/**
  * Returns the current time relative to an arbitrary point in time.
  *
  * @return float Time in seconds.
