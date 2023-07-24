@@ -11,6 +11,7 @@ use Amp\TimeoutCancellation;
 use Revolt\EventLoop;
 use function Amp\async;
 use function Amp\delay;
+use function Amp\spawn;
 
 class FutureTest extends TestCase
 {
@@ -409,6 +410,25 @@ class FutureTest extends TestCase
                 print 2;
             }
         })->await();
+    }
+
+    public function testAsyncExecutionSpawnDoesNotKeepReferenceToArgs(): void
+    {
+        $this->expectOutputString('123');
+
+        $f = new DeferredFuture;
+        spawn(static function (object $object) use ($f): void {
+            print 1;
+            unset($object);
+            print 3;
+            $f->complete();
+        }, new class() {
+            public function __destruct()
+            {
+                print 2;
+            }
+        });
+        $f->getFuture()->await();
     }
 
     protected function setUp(): void
