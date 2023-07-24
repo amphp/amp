@@ -181,6 +181,10 @@ function weakClosure(\Closure $closure): \Closure
     } else {
         // Rebind to remove reference to $that
         $closure = $closure->bindTo(new \stdClass());
+
+        if (!$closure) {
+            throw new \RuntimeException('Unable to rebind function to stdClass');
+        }
     }
 
     $reference = \WeakReference::create($that);

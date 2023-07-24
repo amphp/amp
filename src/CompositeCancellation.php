@@ -19,6 +19,7 @@ final class CompositeCancellation implements Cancellation
 
     private ?CancelledException $exception = null;
 
+    /** @psalm-suppress UnsupportedPropertyReferenceUsage */
     public function __construct(Cancellation ...$cancellations)
     {
         $thatException = &$this->exception;
