@@ -3,6 +3,7 @@
 namespace Amp\Cancellation;
 
 use Amp\CancelledException;
+use Amp\DeferredFuture;
 use Amp\TestCase;
 use Amp\TimeoutCancellation;
 use Amp\TimeoutException;
@@ -41,5 +42,21 @@ class TimeoutCancellationTest extends TestCase
         self::assertSame(\count($identifiers) + 1, \count(EventLoop::getIdentifiers()));
         unset($cancellation);
         self::assertSame($identifiers, EventLoop::getIdentifiers());
+    }
+
+    public function testWatcherUnreference(): void
+    {
+        $this->expectExceptionMessageMatches("/Event loop terminated without resuming the current suspension/");
+        $deferred = new DeferredFuture;
+        $cancellation = new TimeoutCancellation(0.001);
+        $deferred->getFuture()->await($cancellation);
+    }
+
+    public function testWatcherNoUnreference(): void
+    {
+        $this->expectException(CancelledException::class);
+        $cancellation = new TimeoutCancellation(0.001, unreference: false);
+        $deferred = new DeferredFuture;
+        $deferred->getFuture()->await($cancellation);
     }
 }
