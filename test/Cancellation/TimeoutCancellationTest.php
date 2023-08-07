@@ -55,7 +55,7 @@ class TimeoutCancellationTest extends TestCase
     public function testWatcherNoUnreference(): void
     {
         $this->expectException(CancelledException::class);
-        $cancellation = new TimeoutCancellation(0.001, unreference: false);
+        $cancellation = new TimeoutCancellation(0.001, reference: true);
         $deferred = new DeferredFuture;
         $deferred->getFuture()->await($cancellation);
     }
