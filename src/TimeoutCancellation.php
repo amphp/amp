@@ -19,9 +19,9 @@ final class TimeoutCancellation implements Cancellation
     /**
      * @param float  $timeout     Seconds until cancellation is requested.
      * @param string $message     Message for TimeoutException. Default is "Operation timed out".
-     * @param bool   $unreference Whether to unreference the timer.
+     * @param bool   $reference   Whether to reference the timer.
      */
-    public function __construct(float $timeout, string $message = "Operation timed out", bool $unreference = true)
+    public function __construct(float $timeout, string $message = "Operation timed out", bool $reference = false)
     {
         $this->cancellation = $source = new Internal\Cancellable;
 
@@ -38,7 +38,7 @@ final class TimeoutCancellation implements Cancellation
             $source->cancel(new TimeoutException($message));
         });
 
-        if ($unreference) {
+        if (!$reference) {
             EventLoop::unreference($this->watcher);
         }
     }
