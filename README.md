@@ -196,6 +196,8 @@ retrieve multiple HTTP resources concurrently:
 <?php
 
 use Amp\Future;
+use Amp\Http\Client\HttpClientBuilder;
+use Amp\Http\Client\Request;
 
 $httpClient = HttpClientBuilder::buildDefault();
 $uris = [
