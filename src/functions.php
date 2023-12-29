@@ -144,6 +144,8 @@ function weakClosure(\Closure $closure): \Closure
         return $closure;
     }
 
+    $reference = \WeakReference::create($that);
+
     // For internal classes use \Closure::bindTo() without scope.
     $scope = $reflection->getClosureScopeClass();
     $useBindTo = !$scope || $that::class !== $scope->name || $scope->isInternal();
@@ -158,14 +160,12 @@ function weakClosure(\Closure $closure): \Closure
         }
     } else {
         // Rebind to remove reference to $that
-        $closure = $closure->bindTo(new \stdClass());
+        $closure = $closure->bindTo($reference);
     }
 
     if (!$closure) {
-        throw new \RuntimeException('Unable to rebind function to type ' . ($scope?->name ?? $that::class));
+        throw new \RuntimeException('Unable to rebind closure scoped to ' . ($scope?->name ?? $that::class));
     }
-
-    $reference = \WeakReference::create($that);
 
     /** @var \Closure(mixed...):TReturn */
     return static function (mixed ...$args) use ($reference, $closure, $useBindTo): mixed {
