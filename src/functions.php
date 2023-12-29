@@ -2,17 +2,16 @@
 
 namespace Amp;
 
-use Amp\Internal\FutureState;
 use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 
 /**
- * Creates a new fiber asynchronously using the given closure, returning a Future that is completed with the
- * eventual return value of the passed function or will fail if the closure throws an exception.
+ * Creates a new fiber to execute the given closure asynchronously. A Future is returned which is completed with the
+ * return value of the passed closure or will fail if the closure throws an exception.
  *
  * @template T
  *
- * @param \Closure(...):T $closure
+ * @param \Closure(mixed...):T $closure
  * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
  *
  * @return Future<T>
@@ -21,7 +20,7 @@ function async(\Closure $closure, mixed ...$args): Future
 {
     static $run = null;
 
-    $run ??= static function (FutureState $state, \Closure $closure, array $args): void {
+    $run ??= static function (Internal\FutureState $state, \Closure $closure, array $args): void {
         $s = $state;
         $c = $closure;
 
@@ -37,7 +36,7 @@ function async(\Closure $closure, mixed ...$args): Future
         }
     };
 
-    $state = new Internal\FutureState;
+    $state = new Internal\FutureState();
 
     EventLoop::queue($run, $state, $closure, $args);
 
@@ -156,14 +155,14 @@ function weakClosure(\Closure $closure): \Closure
         $closure = fn (mixed ...$args): mixed => $this->{$method}(...$args);
         if ($useBindTo && $scope) {
             $closure = $closure->bindTo(null, $scope->name);
-
-            if (!$closure) {
-                throw new \RuntimeException('Unable to rebind function to type ' . $scope->name);
-            }
         }
     } else {
         // Rebind to remove reference to $that
         $closure = $closure->bindTo(new \stdClass());
+    }
+
+    if (!$closure) {
+        throw new \RuntimeException('Unable to rebind function to type ' . ($scope?->name ?? $that::class));
     }
 
     $reference = \WeakReference::create($that);

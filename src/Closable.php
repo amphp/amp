@@ -13,7 +13,7 @@ interface Closable
     /**
      * Returns whether this resource has been closed.
      *
-     * @return bool {@code true} if closed, otherwise {@code false}
+     * @return bool `true` if closed, otherwise `false`.
      */
     public function isClosed(): bool;
 

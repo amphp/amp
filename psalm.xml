@@ -41,5 +41,11 @@
                 <directory name="src" />
             </errorLevel>
         </MissingClosureReturnType>
+
+        <UnsupportedPropertyReferenceUsage>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </UnsupportedPropertyReferenceUsage>
     </issueHandlers>
 </psalm>

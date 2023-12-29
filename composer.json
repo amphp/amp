@@ -39,7 +39,7 @@
     "require-dev": {
         "amphp/php-cs-fixer-config": "^2",
         "phpunit/phpunit": "^9",
-        "psalm/phar": "^5.4"
+        "psalm/phar": "^5.18"
     },
     "autoload": {
         "psr-4": {
