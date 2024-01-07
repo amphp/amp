@@ -101,7 +101,7 @@ final class PriorityQueue
      */
     public function peekData(): int|string|null
     {
-        return ($this->data[0] ?? null)?->key ?? null;
+        return ($this->data[0] ?? null)?->key;
     }
 
     /**
@@ -109,7 +109,7 @@ final class PriorityQueue
      */
     public function peekPriority(): ?int
     {
-        return ($this->data[0] ?? null)?->priority ?? null;
+        return ($this->data[0] ?? null)?->priority;
     }
 
     public function isEmpty(): bool
