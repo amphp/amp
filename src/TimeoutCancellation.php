@@ -17,10 +17,11 @@ final class TimeoutCancellation implements Cancellation
     private readonly Cancellation $cancellation;
 
     /**
-     * @param float  $timeout Seconds until cancellation is requested.
-     * @param string $message Message for TimeoutException. Default is "Operation timed out".
+     * @param float  $timeout     Seconds until cancellation is requested.
+     * @param string $message     Message for TimeoutException. Default is "Operation timed out".
+     * @param bool   $reference   Whether to reference the timer.
      */
-    public function __construct(float $timeout, string $message = "Operation timed out")
+    public function __construct(float $timeout, string $message = "Operation timed out", bool $reference = false)
     {
         $this->cancellation = $source = new Internal\Cancellable;
 
@@ -37,7 +38,9 @@ final class TimeoutCancellation implements Cancellation
             $source->cancel(new TimeoutException($message));
         });
 
-        EventLoop::unreference($this->watcher);
+        if (!$reference) {
+            EventLoop::unreference($this->watcher);
+        }
     }
 
     /**
