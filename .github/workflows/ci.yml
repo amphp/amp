@@ -28,6 +28,7 @@ jobs:
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.4'
+            psalm: none
 
     name: PHP ${{ matrix.php-version }} ${{ matrix.job-description }}
 
@@ -77,6 +78,7 @@ jobs:
 
       - name: Run static analysis
         run: vendor/bin/psalm.phar
+        if: matrix.psalm != 'none'
 
       - name: Run style fixer
         env:
