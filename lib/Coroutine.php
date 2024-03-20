@@ -88,7 +88,7 @@ final class Coroutine implements Promise
          * @psalm-suppress MissingClosureParamType
          * @psalm-suppress MissingClosureReturnType
          */
-        $onResolve = function (\Throwable $e = null, $v) use ($generator, &$onResolve) {
+        $onResolve = function (?\Throwable $e = null, $v) use ($generator, &$onResolve) {
             /** @var bool $immediate Used to control iterative coroutine continuation. */
             static $immediate = true;
 

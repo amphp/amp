@@ -147,7 +147,7 @@ final class TracingDriver extends Driver
         $this->unreferencedWatchers[$watcherId] = true;
     }
 
-    public function setErrorHandler(callable $callback = null)
+    public function setErrorHandler(?callable $callback = null)
     {
         return $this->driver->setErrorHandler($callback);
     }

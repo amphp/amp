@@ -86,7 +86,7 @@ final class Loop
      *
      * @return void
      */
-    public static function run(callable $callback = null)
+    public static function run(?callable $callback = null)
     {
         if ($callback) {
             self::$driver->defer($callback);
@@ -406,7 +406,7 @@ final class Loop
      *
      * @return callable(\Throwable $error)|null The previous handler, `null` if there was none.
      */
-    public static function setErrorHandler(callable $callback = null)
+    public static function setErrorHandler(?callable $callback = null)
     {
         return self::$driver->setErrorHandler($callback);
     }

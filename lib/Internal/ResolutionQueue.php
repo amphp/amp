@@ -27,7 +27,7 @@ class ResolutionQueue
      *     Promise|\React\Promise\PromiseInterface|array<array-key, Promise|\React\Promise\PromiseInterface>, mixed,
      *     mixed>|null) | callable(\Throwable|null, mixed): void $callback
      */
-    public function __construct(callable $callback = null)
+    public function __construct(?callable $callback = null)
     {
         if ($callback !== null) {
             $this->push($callback);
