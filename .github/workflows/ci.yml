@@ -23,14 +23,25 @@ jobs:
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.0'
-            composer-flags: '--ignore-platform-req=php'
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.1'
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.2'
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.3'
+
+          - operating-system: 'ubuntu-latest'
+            php-version: '8.4'
 
           - operating-system: 'windows-latest'
-            php-version: '7.4'
+            php-version: '8.3'
             job-description: 'on Windows'
 
           - operating-system: 'macos-latest'
-            php-version: '7.4'
+            php-version: '8.3'
             job-description: 'on macOS'
 
     name: PHP ${{ matrix.php-version }} ${{ matrix.job-description }}
