@@ -570,7 +570,7 @@ namespace Amp\Promise
 
         $deferred = new Deferred();
 
-        $promise->onResolve(static function (?\Throwable $exception = null, $result) use ($deferred, $callback) {
+        $promise->onResolve(static function (?\Throwable $exception, $result) use ($deferred, $callback) {
             try {
                 $result = $callback($exception, $result);
             } catch (\Throwable $exception) {
