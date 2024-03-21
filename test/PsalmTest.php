@@ -11,12 +11,12 @@ class PsalmTest extends TestCase
      */
     public function test()
     {
-        if (\DIRECTORY_SEPARATOR === '\\') {
+        if (\DIRECTORY_SEPARATOR === '\\' || \PHP_VERSION_ID >= 80100) {
             self::markTestSkipped('Skipped on Windows');
         }
 
         $issues = \json_decode(
-            \shell_exec('./vendor/bin/psalm.phar --output-format=json --no-progress --config=psalm.examples.xml'),
+            \shell_exec('./vendor/bin/psalm --output-format=json --no-progress --config=psalm.examples.xml'),
             true
         );
 
