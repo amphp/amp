@@ -11,7 +11,7 @@ class PsalmTest extends TestCase
      */
     public function test()
     {
-        if (\DIRECTORY_SEPARATOR === '\\' || \PHP_VERSION_ID >= 80100) {
+        if (\DIRECTORY_SEPARATOR === '\\' || \PHP_VERSION_ID < 80000 || \PHP_VERSION_ID >= 80100) {
             self::markTestSkipped('Skipped on Windows');
         }
 
