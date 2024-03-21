@@ -593,7 +593,7 @@ abstract class Driver
      *
      * @return callable(\Throwable $error):void|null The previous handler, `null` if there was none.
      */
-    public function setErrorHandler(callable $callback = null)
+    public function setErrorHandler(?callable $callback = null)
     {
         $previous = $this->errorHandler;
         $this->errorHandler = $callback;

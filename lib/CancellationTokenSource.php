@@ -150,7 +150,7 @@ final class CancellationTokenSource
      *
      * @return void
      */
-    public function cancel(\Throwable $previous = null)
+    public function cancel(?\Throwable $previous = null)
     {
         if ($this->onCancel === null) {
             return;
