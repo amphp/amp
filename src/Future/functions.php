@@ -10,7 +10,7 @@ use Amp\Future;
 /**
  * Unwraps the first completed future.
  *
- * If you want the first future completed without an error, use {@see any()} instead.
+ * If you want the first future completed without an error, use {@see awaitAny()} instead.
  *
  * @template T
  *
