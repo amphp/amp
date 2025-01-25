@@ -137,9 +137,14 @@ print '++ Script end' . PHP_EOL;
 
 ### Future
 
-A `Future` is an object representing the eventual result of an asynchronous operation. There are three states:
+A `Future` is an object representing the eventual result of an asynchronous operation. Such placeholders are also
+called "promises" in other frameworks or languages such as JavaScript. We chose to not use the "promises" name as a
+`Future` does not have a `then` method, which is typical of most promise implementations. Futures are primarily designed
+to be awaited in coroutines, though `Future` also has methods which act upon the result, returning another future.
 
-- **Completed successfully**: The future has been completed successfully.
+A future may be in one of three states:
+
+- **Completed**: The future has been completed successfully.
 - **Errored**: The future failed with an exception.
 - **Pending**: The future is still pending.
 
@@ -175,6 +180,40 @@ try {
     /* ... */
 }
 ```
+
+```php
+public function await(): mixed
+```
+
+Suspends the current coroutine until the future is completed or errors. The future result is returned or an exception
+thrown if the future errored.
+
+```php
+/** @param Closure(mixed $value): mixed $map */
+public function map(Closure $map): Future
+```
+
+Attaches a callback which is invoked if the future completes successfully, passing the future result as an argument.
+Another future is returned, which either completes with the return value of the callback, or errors if the callback
+throws an exception.
+
+```php
+/** @param Closure(Throwable $exception): mixed $catch */
+public function catch(Closure $catch): Future
+```
+
+Attaches a callback which is invoked if the future errors, passing the exception as the callback parameter.
+Another future is returned, which either completes with the return value of the callback, or errors if the callback
+throws an exception.
+
+```php
+/** @param Closure(): void $finally */
+public function finally(Closure $finally): Future
+```
+
+Attaches a callback which is always invoked, whether the future completes or errors.
+Another future is returned, which either completes with same value as the future, or errors if the callback
+throws an exception.
 
 #### Combinators
 
