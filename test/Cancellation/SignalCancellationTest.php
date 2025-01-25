@@ -3,6 +3,7 @@
 namespace Amp\Cancellation;
 
 use Amp\CancelledException;
+use Amp\DeferredFuture;
 use Amp\SignalCancellation;
 use Amp\SignalException;
 use Amp\TestCase;
@@ -51,5 +52,21 @@ class SignalCancellationTest extends TestCase
         self::assertSame(\count($identifiers) + 2, \count(EventLoop::getIdentifiers()));
         unset($cancellation);
         self::assertSame($identifiers, EventLoop::getIdentifiers());
+    }
+
+    public function testWatcherUnreference(): void
+    {
+        $this->expectException(CancelledException::class);
+
+        $cancellation = new SignalCancellation(\SIGUSR1, reference: true);
+
+        self::assertTrue($cancellation->isReferenced());
+
+        EventLoop::defer(function (): void {
+            \posix_kill(\getmypid(), \SIGUSR1);
+        });
+
+        $deferred = new DeferredFuture();
+        $deferred->getFuture()->await($cancellation);
     }
 }

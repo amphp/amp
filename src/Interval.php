@@ -16,7 +16,7 @@ final class Interval
      * @param float $interval Invoke the function every $interval seconds.
      * @param \Closure():void $closure Use {@see weakClosure()} to avoid a circular reference if storing this object
      *      as a property of another object.
-     * @param bool $reference If false, unreference the underlying watcher.
+     * @param bool $reference If false, unreference the underlying event-loop callback.
      */
     public function __construct(float $interval, \Closure $closure, bool $reference = true)
     {
@@ -33,7 +33,7 @@ final class Interval
     }
 
     /**
-     * @return bool True if the internal watcher is referenced.
+     * @return bool True if the internal event-loop callback is referenced.
      */
     public function isReferenced(): bool
     {
@@ -41,7 +41,7 @@ final class Interval
     }
 
     /**
-     * References the internal watcher in the event loop, keeping the loop running while the repeat loop is enabled.
+     * References the internal event-loop callback, keeping the loop running while the repeat loop is enabled.
      *
      * @return $this
      */
@@ -53,7 +53,7 @@ final class Interval
     }
 
     /**
-     * Unreferences the internal watcher in the event loop, allowing the loop to stop while the repeat loop is enabled.
+     * Unreferences the internal event-loop callback, allowing the loop to stop while the repeat loop is enabled.
      *
      * @return $this
      */
