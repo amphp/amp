@@ -119,9 +119,9 @@ Callbacks registered on the Revolt event-loop are automatically run as coroutine
 ```php
 <?php
 
-use function Amp\delay;
-
 require __DIR__ . '/vendor/autoload.php';
+
+use function Amp\delay;
 
 Amp\async(function () {
     print '++ Executing callback passed to async()' . PHP_EOL;
@@ -194,6 +194,8 @@ retrieve multiple HTTP resources concurrently:
 
 ```php
 <?php
+
+require __DIR__ . '/vendor/autoload.php';
 
 use Amp\Future;
 use Amp\Http\Client\HttpClientBuilder;
@@ -284,6 +286,9 @@ associated `Future` to its caller.
 ```php
 <?php // Example async producer using DeferredFuture
 
+require __DIR__ . '/vendor/autoload.php';
+
+use Amp\Future;
 use Revolt\EventLoop;
 
 function asyncMultiply(int $x, int $y): Future
