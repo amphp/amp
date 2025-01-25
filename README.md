@@ -95,9 +95,9 @@ Low-level suspension and resumption of coroutines is handled by Revolt's [`Suspe
 ```php
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
-
 use Revolt\EventLoop;
+
+require __DIR__ . '/vendor/autoload.php';
 
 $suspension = EventLoop::getSuspension();
 
@@ -121,18 +121,16 @@ Callbacks registered on the Revolt event-loop are automatically run as coroutine
 
 require __DIR__ . '/vendor/autoload.php';
 
-use function Amp\delay;
-
 Amp\async(function () {
     print '++ Executing callback passed to async()' . PHP_EOL;
 
-    delay(3);
+    Amp\delay(3);
 
     print '++ Finished callback passed to async()' . PHP_EOL;
 });
 
 print '++ Suspending to event loop...' . PHP_EOL;
-delay(5);
+Amp\delay(5);
 
 print '++ Script end' . PHP_EOL;
 ```
@@ -195,11 +193,11 @@ retrieve multiple HTTP resources concurrently:
 ```php
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
-
 use Amp\Future;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
+
+require __DIR__ . '/vendor/autoload.php';
 
 $httpClient = HttpClientBuilder::buildDefault();
 $uris = [
@@ -286,10 +284,10 @@ associated `Future` to its caller.
 ```php
 <?php // Example async producer using DeferredFuture
 
-require __DIR__ . '/vendor/autoload.php';
-
 use Amp\Future;
 use Revolt\EventLoop;
+
+require __DIR__ . '/vendor/autoload.php';
 
 function asyncMultiply(int $x, int $y): Future
 {

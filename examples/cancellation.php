@@ -1,11 +1,11 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
-
 use Amp\CancelledException;
 use Amp\TimeoutCancellation;
 use function Amp\async;
 use function Amp\delay;
+
+require __DIR__ . '/../vendor/autoload.php';
 
 $future = async(function () {
     delay(1);
