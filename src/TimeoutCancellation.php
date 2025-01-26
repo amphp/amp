@@ -19,13 +19,9 @@ final class TimeoutCancellation implements Cancellation
     /**
      * @param float  $timeout Seconds until cancellation is requested.
      * @param string $message Message for TimeoutException. Default is "Operation timed out".
-     * @param bool $reference If false, unreference the underlying event-loop callback.
      */
-    public function __construct(
-        float $timeout,
-        string $message = "Operation timed out",
-        bool $reference = false,
-    ) {
+    public function __construct(float $timeout, string $message = "Operation timed out")
+    {
         $this->cancellation = $source = new Internal\Cancellable;
 
         $trace = null; // Defined in case assertions are disabled.
@@ -41,9 +37,7 @@ final class TimeoutCancellation implements Cancellation
             $source->cancel(new TimeoutException($message));
         });
 
-        if (!$reference) {
-            EventLoop::unreference($this->callbackId);
-        }
+        EventLoop::unreference($this->callbackId);
     }
 
     /**
@@ -72,45 +66,5 @@ final class TimeoutCancellation implements Cancellation
     public function throwIfRequested(): void
     {
         $this->cancellation->throwIfRequested();
-    }
-
-    /**
-     * @return bool True if the internal event-loop callback is referenced, false if not or if the cancellation has
-     *      occurred.
-     */
-    public function isReferenced(): bool
-    {
-        if ($this->cancellation->isRequested()) {
-            return false;
-        }
-
-        return EventLoop::isReferenced($this->callbackId);
-    }
-
-    /**
-     * References the internal event-loop callback, keeping the loop running while the timeout is applicable.
-     * If the timeout has expired (cancellation has been requested), this method is a no-op.
-     *
-     * @return $this
-     */
-    public function reference(): self
-    {
-        if (!$this->cancellation->isRequested()) {
-            EventLoop::reference($this->callbackId);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Unreferences the internal event-loop callback, allowing the loop to stop while the repeat loop is enabled.
-     *
-     * @return $this
-     */
-    public function unreference(): self
-    {
-        EventLoop::unreference($this->callbackId);
-
-        return $this;
     }
 }
