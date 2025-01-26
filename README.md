@@ -114,7 +114,9 @@ $suspension->suspend();
 print '++ Script end' . PHP_EOL;
 ```
 
-Callbacks registered on the Revolt event-loop are automatically run as coroutines and it's safe to suspend them. Apart from the event-loop API, `Amp\async()` can be used to start an independent call stack.
+Callbacks registered on the Revolt event-loop are automatically run as coroutines. It is safe to suspend within those
+callbacks. Apart from the event-loop API, `Amp\async()` can be used to start a coroutine (that is, a new fiber or an
+independent call stack).
 
 ```php
 <?php
@@ -138,7 +140,7 @@ print '++ Script end' . PHP_EOL;
 ### Future
 
 A `Future` is an object representing the eventual result of an asynchronous operation. Such placeholders are also
-called "promises" in other frameworks or languages such as JavaScript. We chose to not use the "promises" name as a
+called a "promise" in other frameworks or languages such as JavaScript. We chose to not use the "promise" name since a
 `Future` does not have a `then` method, which is typical of most promise implementations. Futures are primarily designed
 to be awaited in coroutines, though `Future` also has methods which act upon the result, returning another future.
 
@@ -166,8 +168,8 @@ The callback approach has several drawbacks.
 
 - Passing callbacks and doing further actions in them that depend on the result of the first action gets messy really
   quickly.
-- An explicit callback is required as input parameter to the function, and the return value is simply unused. There's no
-  way to use this API without involving a callback.
+- An explicit callback is required as input parameter to the function, and the return value is simply unused. There's
+  no way to use this API without involving a callback.
 
 That's where futures come into play.
 They're placeholders for the result that are returned like any other return value.
@@ -304,9 +306,9 @@ Once result is ready, you complete the `Future` held by the caller using `comple
 ```php
 final class DeferredFuture
 {
-    public function getFuture(): Future;
-    public function complete(mixed $value = null);
-    public function error(Throwable $throwable);
+    public function getFuture(): Future
+    public function complete(mixed $value = null): void
+    public function error(Throwable $throwable): void
 }
 ```
 
@@ -405,6 +407,75 @@ $cancellation ??= new NullCancellationToken();
 #### CompositeCancellation
 
 A `CompositeCancellation` combines multiple independent cancellation objects. If any of these cancellations is cancelled, the `CompositeCancellation` itself will be cancelled.
+
+### Utilities
+
+Several utility functions and classes are also included in this library.
+
+```php
+function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
+```
+
+`delay` suspends the current coroutine (fiber) until the given timeout has elapsed or, if provided, the cancellation
+is cancelled. Optionally, the underlying event-loop callback may be unreferenced, allowing the event-loop to exit
+if no other referenced events are active.
+
+```php
+/** @param int|array<int> $signals */
+function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $cancellation = null): int
+```
+
+`trapSignal` suspends the current coroutine (fiber) until one of the given signals is received by the process or, if
+provided, the cancellation is cancelled. Optionally, the underlying event-loop callback may be unreferenced, allowing
+the event-loop to exit if no other referenced events are active. The signal number of the received signal is returned.
+
+```php
+now(): float
+```
+
+`now` returns a high-resolution time relative to an arbitrary point in time. This function may be used to calculate
+time differences independent of wall-time.
+
+```php
+/**
+ * @template TReturn
+ * @param Closure(...):TReturn $closure
+ * @return Closure(...):TReturn
+ */
+function weakClosure(\Closure $closure): \Closure
+```
+
+`weakClosure` wraps a given closure, returning a new `Closure` instance which maintains a weak-reference to any
+`$this` object held by the closure (a weak-closure). This allows a class instance to hold a self-referencing closure
+without creating a circular-reference that would prevent or delay automatic garbage collection. Invoking the returned
+`Closure` after the object is destroyed will throw an instance of `Error`.
+
+#### Interval
+
+An `Interval` registers a callback in the event-loop which is invoked within a new coroutine every given number of
+seconds until either the `Interval::disable()` method is called or the object is destroyed. If an `Interval` is
+disabled, it can be re-enabled using `Interval::enable()`.
+
+Holding an instance of `Interval` within an instance of another class is a convenient way to run a repeating timer
+during the existence of that object. When the holding object is destroyed, the instance of `Interval` will also be
+destroyed, cancelling the repeating timer in the event-loop. Use `weakClosure()` to avoid having a circular reference
+to the holding object, which will delay garbage collection of the holding object.
+
+```php
+// Creates a callback which is invoked every 0.5s
+// unless disabled or the object is destroyed.
+$interval = new Interval(0.5, function (): void {
+    // ...
+});
+
+// Disable the repeating timer, stopping future
+// invocations until enabled again.
+$interval->disable();
+
+// Enable the repeating timer. The callback will
+// not be invoked until the given timeout has elapsed.
+$interval->enable();
+```
 
 ## Versioning
 
