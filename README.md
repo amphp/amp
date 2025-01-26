@@ -413,7 +413,11 @@ A `CompositeCancellation` combines multiple independent cancellation objects. If
 Several utility functions and classes are also included in this library.
 
 ```php
-function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
+function delay(
+    float $timeout,
+    bool $reference = true,
+    ?Cancellation $cancellation = null,
+): void
 ```
 
 `delay` suspends the current coroutine (fiber) until the given timeout has elapsed or, if provided, the cancellation
@@ -422,7 +426,11 @@ if no other referenced events are active.
 
 ```php
 /** @param int|array<int> $signals */
-function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $cancellation = null): int
+function trapSignal(
+    int|array $signals,
+    bool $reference = true,
+    ?Cancellation $cancellation = null,
+): int
 ```
 
 `trapSignal` suspends the current coroutine (fiber) until one of the given signals is received by the process or, if
@@ -430,7 +438,7 @@ provided, the cancellation is cancelled. Optionally, the underlying event-loop c
 the event-loop to exit if no other referenced events are active. The signal number of the received signal is returned.
 
 ```php
-now(): float
+function now(): float
 ```
 
 `now` returns a high-resolution time relative to an arbitrary point in time. This function may be used to calculate
@@ -442,7 +450,7 @@ time differences independent of wall-time.
  * @param Closure(...):TReturn $closure
  * @return Closure(...):TReturn
  */
-function weakClosure(\Closure $closure): \Closure
+function weakClosure(Closure $closure): Closure
 ```
 
 `weakClosure` wraps a given closure, returning a new `Closure` instance which maintains a weak-reference to any
