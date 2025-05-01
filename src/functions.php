@@ -11,7 +11,7 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  *
  * @template T
  *
- * @param \Closure(...):T $closure
+ * @param \Closure(mixed...):T $closure
  * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
  *
  * @return Future<T>
@@ -131,9 +131,9 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
  *
  * @template TReturn
  *
- * @param \Closure(...):TReturn $closure
+ * @param \Closure(mixed...):TReturn $closure
  *
- * @return \Closure(...):TReturn
+ * @return \Closure(mixed...):TReturn
  */
 function weakClosure(\Closure $closure): \Closure
 {
@@ -167,7 +167,7 @@ function weakClosure(\Closure $closure): \Closure
         throw new \RuntimeException('Unable to rebind closure scoped to ' . ($scope?->name ?? $that::class));
     }
 
-    /** @var \Closure(...):TReturn */
+    /** @var \Closure(mixed...):TReturn */
     return static function (mixed ...$args) use ($reference, $closure, $useBindTo): mixed {
         $that = $reference->get();
         if (!$that) {
