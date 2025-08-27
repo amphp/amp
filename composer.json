@@ -62,11 +62,6 @@
         "issues": "https://github.com/amphp/amp/issues",
         "irc": "irc://irc.freenode.org/amphp"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.x-dev"
-        }
-    },
     "scripts": {
         "test": "@php -dzend.assertions=1 -dassert.exception=1 ./vendor/bin/phpunit",
         "code-style": "@php ./vendor/bin/php-cs-fixer fix"

@@ -33,6 +33,6 @@ class InvalidYieldErrorTest extends BaseTest
         })();
 
         $error = new InvalidYieldError($gen, "prefix");
-        $this->assertSame("prefix; integer yielded at key 'foo' on line " . (__LINE__ - 8) . " in " . __FILE__, $error->getMessage());
+        $this->assertSame("prefix; integer yielded at key 'foo' on line " . (__LINE__ - 8 - (int) (\PHP_VERSION_ID >= 80400)) . " in " . __FILE__, $error->getMessage());
     }
 }
