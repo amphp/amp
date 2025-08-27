@@ -18,6 +18,12 @@
             </errorLevel>
         </StringIncrement>
 
+        <UndefinedFunction>
+            <errorLevel type="suppress">
+                <referencedFunction name="str_increment"/>
+            </errorLevel>
+        </UndefinedFunction>
+
         <RedundantConditionGivenDocblockType>
             <errorLevel type="suppress">
                 <directory name="src" />

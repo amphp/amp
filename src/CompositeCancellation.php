@@ -69,7 +69,8 @@ final class CompositeCancellation implements Cancellation
 
     public function subscribe(\Closure $callback): string
     {
-        $id = $this->nextId++;
+        $id = $this->nextId;
+        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         if ($this->exception) {
             EventLoop::queue($callback, $this->exception);
