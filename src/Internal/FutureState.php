@@ -68,7 +68,7 @@ final class FutureState
     public function subscribe(\Closure $callback): string
     {
         $id = self::$nextId;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
+        \PHP_VERSION_ID >= 80300 ? self::$nextId = \str_increment(self::$nextId) : ++self::$nextId;
 
         $this->handled = true; // Even if unsubscribed later, consider the future handled.
 
