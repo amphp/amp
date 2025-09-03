@@ -189,10 +189,9 @@ abstract class Driver
         /** @psalm-var Watcher<null> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::DEFER;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->nextTickQueue[$watcher->id] = $watcher;
@@ -225,12 +224,11 @@ abstract class Driver
         /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::DELAY;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->value = $delay;
         $watcher->expiration = $this->now() + $delay;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->enableQueue[$watcher->id] = $watcher;
@@ -263,12 +261,11 @@ abstract class Driver
         /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::REPEAT;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->value = $interval;
         $watcher->expiration = $this->now() + $interval;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->enableQueue[$watcher->id] = $watcher;
@@ -300,11 +297,10 @@ abstract class Driver
         /** @psalm-var Watcher<resource> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::READABLE;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->value = $stream;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->enableQueue[$watcher->id] = $watcher;
@@ -336,11 +332,10 @@ abstract class Driver
         /** @psalm-var Watcher<resource> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::WRITABLE;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->value = $stream;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->enableQueue[$watcher->id] = $watcher;
@@ -373,11 +368,10 @@ abstract class Driver
         /** @psalm-var Watcher<int> $watcher */
         $watcher = new Watcher;
         $watcher->type = Watcher::SIGNAL;
-        $watcher->id = $this->nextId;
+        $watcher->id = $this->nextId();
         $watcher->callback = $callback;
         $watcher->value = $signo;
         $watcher->data = $data;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
         $this->watchers[$watcher->id] = $watcher;
         $this->enableQueue[$watcher->id] = $watcher;
@@ -744,5 +738,18 @@ abstract class Driver
             "on_signal" => $onSignal,
             "running" => (bool) $this->running,
         ];
+    }
+
+    private function nextId(): string
+    {
+        $nextId = $this->nextId;
+
+        if (\PHP_VERSION_ID >= 80300) {
+            $this->nextId = \str_increment($this->nextId);
+        } else {
+            $this->nextId++;
+        }
+
+        return $nextId;
     }
 }
