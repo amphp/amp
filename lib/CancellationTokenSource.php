@@ -108,7 +108,8 @@ final class CancellationTokenSource
 
             public function subscribe(callable $callback): string
             {
-                $id = $this->nextId++;
+                $id = $this->nextId;
+                \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
 
                 if ($this->exception) {
                     $this->invokeCallback($callback);
