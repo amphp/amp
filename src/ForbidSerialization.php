@@ -9,6 +9,9 @@ trait ForbidSerialization
         throw new \Error(__CLASS__ . ' does not support serialization');
     }
 
+    /**
+     * @psalm-suppress UnusedParam $data required for __unserialize() prototype.
+     */
     final public function __unserialize(array $data): never
     {
         throw new \Error(__CLASS__ . ' does not support deserialization');

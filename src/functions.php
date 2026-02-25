@@ -50,6 +50,7 @@ function async(\Closure $closure, mixed ...$args): Future
  */
 function now(): float
 {
+    /** @psalm-suppress InvalidOperand */
     return (float) \hrtime(true) / 1_000_000_000;
 }
 

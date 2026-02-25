@@ -29,17 +29,16 @@ final class SignalCancellation implements Cancellation
 
         $this->cancellation = $source = new Internal\Cancellable;
 
-        $trace = null; // Defined in case assertions are disabled.
         \assert((bool) ($trace = \debug_backtrace(0)));
 
         $callbackIds = [];
 
-        $callback = static function () use (&$callbackIds, $source, $message, $trace): void {
+        $callback = static function () use (&$callbackIds, &$trace, $source, $message): void {
             foreach ($callbackIds as $callbackId) {
                 EventLoop::cancel($callbackId);
             }
 
-            if ($trace) {
+            if ($trace ?? false) {
                 $message .= \sprintf("\r\n%s was created here: %s", self::class, Internal\formatStacktrace($trace));
             } else {
                 $message .= \sprintf(" (Enable assertions for a backtrace of the %s creation)", self::class);

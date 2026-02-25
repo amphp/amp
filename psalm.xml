@@ -12,23 +12,13 @@
     </projectFiles>
 
     <issueHandlers>
-        <StringIncrement>
+        <ClassMustBeFinal>
             <errorLevel type="suppress">
-                <directory name="src" />
+                <file name="src/CancelledException.php"/>
+                <file name="src/SignalException.php"/>
+                <file name="src/TimeoutException.php"/>
             </errorLevel>
-        </StringIncrement>
-
-        <UndefinedFunction>
-            <errorLevel type="suppress">
-                <referencedFunction name="str_increment"/>
-            </errorLevel>
-        </UndefinedFunction>
-
-        <RedundantConditionGivenDocblockType>
-            <errorLevel type="suppress">
-                <directory name="src" />
-            </errorLevel>
-        </RedundantConditionGivenDocblockType>
+        </ClassMustBeFinal>
 
         <DocblockTypeContradiction>
             <errorLevel type="suppress">
@@ -36,17 +26,41 @@
             </errorLevel>
         </DocblockTypeContradiction>
 
-        <MissingClosureParamType>
-            <errorLevel type="suppress">
-                <directory name="src" />
-            </errorLevel>
-        </MissingClosureParamType>
-
         <MissingClosureReturnType>
             <errorLevel type="suppress">
                 <directory name="src" />
             </errorLevel>
         </MissingClosureReturnType>
+
+        <PossiblyUnusedMethod>
+            <errorLevel type="suppress">
+                <directory name="src"/>
+            </errorLevel>
+        </PossiblyUnusedMethod>
+
+        <RedundantConditionGivenDocblockType>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </RedundantConditionGivenDocblockType>
+
+        <StringIncrement>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </StringIncrement>
+
+        <UnusedClass>
+            <errorLevel type="suppress">
+                <directory name="src"/>
+            </errorLevel>
+        </UnusedClass>
+
+        <UnusedVariable>
+            <errorLevel type="suppress">
+                <file name="src/functions.php"/>
+            </errorLevel>
+        </UnusedVariable>
 
         <UnsupportedPropertyReferenceUsage>
             <errorLevel type="suppress">

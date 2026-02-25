@@ -24,11 +24,10 @@ final class TimeoutCancellation implements Cancellation
     {
         $this->cancellation = $source = new Internal\Cancellable;
 
-        $trace = null; // Defined in case assertions are disabled.
         \assert((bool) ($trace = \debug_backtrace(0)));
 
-        $this->callbackId = EventLoop::delay($timeout, static function () use ($source, $message, $trace): void {
-            if ($trace) {
+        $this->callbackId = EventLoop::delay($timeout, static function () use (&$trace, $source, $message): void {
+            if ($trace ?? false) {
                 $message .= \sprintf("\r\n%s was created here: %s", self::class, Internal\formatStacktrace($trace));
             } else {
                 $message .= \sprintf(" (Enable assertions for a backtrace of the %s creation)", self::class);

@@ -36,7 +36,6 @@ final class CompositeCancellation implements Cancellation
             $thatException = $exception;
 
             foreach ($thatCancellations as [$cancellation, $id]) {
-                /** @var Cancellation $cancellation */
                 $cancellation->unsubscribe($id);
             }
 
@@ -58,7 +57,6 @@ final class CompositeCancellation implements Cancellation
     public function __destruct()
     {
         foreach ($this->cancellations as [$cancellation, $id]) {
-            /** @var Cancellation $cancellation */
             $cancellation->unsubscribe($id);
         }
 
