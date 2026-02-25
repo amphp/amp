@@ -48,21 +48,25 @@ final class TimeoutCancellation implements Cancellation
         EventLoop::cancel($this->callbackId);
     }
 
+    #[\Override]
     public function subscribe(\Closure $callback): string
     {
         return $this->cancellation->subscribe($callback);
     }
 
+    #[\Override]
     public function unsubscribe(string $id): void
     {
         $this->cancellation->unsubscribe($id);
     }
 
+    #[\Override]
     public function isRequested(): bool
     {
         return $this->cancellation->isRequested();
     }
 
+    #[\Override]
     public function throwIfRequested(): void
     {
         $this->cancellation->throwIfRequested();

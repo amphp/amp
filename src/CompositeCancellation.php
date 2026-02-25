@@ -67,6 +67,7 @@ final class CompositeCancellation implements Cancellation
         $this->cancellations = [];
     }
 
+    #[\Override]
     public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId;
@@ -81,16 +82,19 @@ final class CompositeCancellation implements Cancellation
         return $id;
     }
 
+    #[\Override]
     public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
 
+    #[\Override]
     public function isRequested(): bool
     {
         return $this->exception !== null;
     }
 
+    #[\Override]
     public function throwIfRequested(): void
     {
         if ($this->exception) {

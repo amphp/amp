@@ -27,21 +27,25 @@ namespace Amp;
  */
 final class NullCancellation implements Cancellation
 {
+    #[\Override]
     public function subscribe(\Closure $callback): string
     {
         return "null-cancellation";
     }
 
+    #[\Override]
     public function unsubscribe(string $id): void
     {
         // nothing to do
     }
 
+    #[\Override]
     public function isRequested(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function throwIfRequested(): void
     {
         // nothing to do

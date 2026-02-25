@@ -56,6 +56,7 @@ final class Cancellable implements Cancellation
         return $this->exception ??= new CancelledException($this->previous);
     }
 
+    #[\Override]
     public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId;
@@ -71,16 +72,19 @@ final class Cancellable implements Cancellation
         return $id;
     }
 
+    #[\Override]
     public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
 
+    #[\Override]
     public function isRequested(): bool
     {
         return $this->requested;
     }
 
+    #[\Override]
     public function throwIfRequested(): void
     {
         if ($this->requested) {
