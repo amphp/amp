@@ -15,6 +15,7 @@ jobs:
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.2'
+            psalm: 'skip'
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
