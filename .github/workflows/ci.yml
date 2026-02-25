@@ -11,6 +11,7 @@ jobs:
         include:
           - operating-system: 'ubuntu-latest'
             php-version: '8.1'
+            psalm: 'skip'
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.2'
@@ -18,21 +19,19 @@ jobs:
           - operating-system: 'ubuntu-latest'
             php-version: '8.3'
 
-          - operating-system: 'windows-latest'
-            php-version: '8.3'
-            job-description: 'on Windows'
-
-          - operating-system: 'macos-latest'
-            php-version: '8.3'
-            job-description: 'on macOS'
-
           - operating-system: 'ubuntu-latest'
             php-version: '8.4'
-            psalm: none
 
           - operating-system: 'ubuntu-latest'
             php-version: '8.5'
-            psalm: none
+
+          - operating-system: 'windows-latest'
+            php-version: '8.5'
+            job-description: 'on Windows'
+
+          - operating-system: 'macos-latest'
+            php-version: '8.5'
+            job-description: 'on macOS'
 
     name: PHP ${{ matrix.php-version }} ${{ matrix.job-description }}
 
@@ -67,6 +66,10 @@ jobs:
             composer-${{ runner.os }}-
             composer-
 
+      - name: Remove psalm/phar
+        run: composer remove --no-update --dev psalm/phar
+        if: matrix.psalm == 'skip'
+
       - name: Install dependencies
         uses: nick-invision/retry@v2
         with:
@@ -82,7 +85,7 @@ jobs:
 
       - name: Run static analysis
         run: vendor/bin/psalm.phar
-        if: matrix.psalm != 'none'
+        if: matrix.psalm != 'skip'
 
       - name: Run style fixer
         env:
