@@ -5,6 +5,8 @@ namespace Amp;
 use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 
+use function Amp\Future\awaitAll;
+
 /**
  * Creates a new fiber to execute the given closure asynchronously. A Future is returned which is completed with the
  * return value of the passed closure or will fail if the closure throws an exception.
@@ -41,6 +43,36 @@ function async(\Closure $closure, mixed ...$args): Future
     EventLoop::queue($run, $state, $closure, $args);
 
     return new Future($state);
+}
+
+/**
+ * Executes the given closures concurrently and returns their results as soon as all closures complete successfully.
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param array<Tk, \Closure():Tv> $closures
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return array<Tk, Tv> Results in input order of Closures.
+ */
+function disperse(array $closures, ?Cancellation $cancellation = null): array
+{
+    if ([] === $closures) {
+        return [];
+    }
+
+    $futures = \array_map(static fn (\Closure $closure): Future => async($closure), $closures);
+
+    [$errors, $values] = awaitAll($futures, $cancellation);
+
+    if ($errors) {
+        /** @var non-empty-array<array-key, \Throwable> $errors */
+        throw new CompositeException($errors);
+    }
+
+    /** @var non-empty-array<Tk, Tv> */
+    return \array_replace($closures, $values);
 }
 
 /**

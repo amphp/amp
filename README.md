@@ -278,6 +278,17 @@ individual keys in the component array are preserved from the `iterable` passed 
 
 `Amp\Future\awaitAll($iterable, $cancellation)` awaits all futures and returns their results as `[$errors, $values]` array.
 
+##### disperse
+
+`Amp\disperse($closures, $cancellation)` executes all given closures asynchronously and returns their results on completion.
+
+```php
+$results = \Amp\disperse([
+    fn () => $httpClient->request(new Request('https://www.google.com', 'HEAD')),
+    fn () => $httpClient->request(new Request('https://www.bing.com', 'HEAD')),
+]);
+```
+
 ##### awaitFirst
 
 `Amp\Future\awaitFirst($iterable, $cancellation)` unwraps the first completed `Future`, whether successfully completed or errored.
