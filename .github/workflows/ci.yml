@@ -72,7 +72,7 @@ jobs:
         if: matrix.psalm == 'skip'
 
       - name: Install dependencies
-        uses: nick-invision/retry@v2
+        uses: nick-invision/retry@v4
         with:
           timeout_minutes: 5
           max_attempts: 5
