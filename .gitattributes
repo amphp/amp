@@ -7,3 +7,4 @@ phpunit.xml.dist export-ignore
 README.md export-ignore
 CONTRIBUTING.md export-ignore
 CHANGELOG.md export-ignore
+psalm.xml export-ignore
