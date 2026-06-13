@@ -13,8 +13,7 @@ namespace Amp\Internal;
  *     line?: int,
  *     object?: object,
  *     type?: string,
- * }> $trace
- * Output of `debug_backtrace()`.
+ * }> $trace Output of `debug_backtrace()`.
  *
  * @return string Formatted stacktrace.
  *
@@ -39,15 +38,14 @@ function formatStacktrace(array $trace): string
 }
 
 /**
- * @return bool True if AMP_DEBUG is set to a truthy value.
+ * @return bool True if the environment variable AMP_DEBUG is set to a value other than "0", "false", or "off" or
+ *      if the constant AMP_DEBUG is defined and set to a truthy value.
  * @internal
  */
 function isDebugEnabled(): bool
 {
-    /** @psalm-suppress RiskyTruthyFalsyComparison */
-    $env = \getenv("AMP_DEBUG") ?: "0";
-    return match ($env) {
+    return match (\getenv("AMP_DEBUG") ?: "0") {
         "0", "false", "off" => false,
-        default => $env || \defined("AMP_DEBUG") && \AMP_DEBUG,
-    };
+        default => true,
+    } || (\defined("AMP_DEBUG") && \AMP_DEBUG);
 }
