@@ -27,7 +27,7 @@ final class SignalCancellation implements Cancellation
             $signals = [$signals];
         }
 
-        $this->cancellation = $source = new Internal\Cancellable;
+        $this->cancellation = $source = new Internal\Cancellable();
 
         \assert((bool) ($trace = \debug_backtrace(0)));
 

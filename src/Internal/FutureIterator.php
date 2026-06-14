@@ -10,7 +10,7 @@ use Amp\NullCancellation;
 use Revolt\EventLoop;
 
 /**
- * @template Tk
+ * @template Tk of array-key
  * @template Tv
  *
  * @internal
@@ -48,10 +48,10 @@ final class FutureIterator
 
     /**
      * @param FutureState<Tv> $state
-     * @param Tk              $key
-     * @param Future<Tv>      $future
+     * @param Tk $key
+     * @param Future<Tv> $future
      */
-    public function enqueue(FutureState $state, mixed $key, Future $future): void
+    public function enqueue(FutureState $state, int|string $key, Future $future): void
     {
         if ($this->complete) {
             throw new \Error('Iterator has already been marked as complete');
@@ -112,7 +112,7 @@ final class FutureIterator
     }
 
     /**
-     * @return null|array{Tk, Future<Tv>}
+     * @return array{Tk, Future<Tv>}|null
      */
     public function consume(): ?array
     {
@@ -129,7 +129,7 @@ final class FutureIterator
 
             $this->queue->suspension = EventLoop::getSuspension();
 
-            /** @var null|array{Tk, Future<Tv>} */
+            /** @var array{Tk, Future<Tv>}|null */
             return $this->queue->suspension->suspend();
         }
 
@@ -138,7 +138,6 @@ final class FutureIterator
 
         unset($this->queue->items[$key]);
 
-        /** @var null|array{Tk, Future<Tv>} */
         return $item;
     }
 

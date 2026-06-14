@@ -17,11 +17,11 @@ final class Future
     /**
      * Iterate over the given futures in completion order.
      *
-     * @template Tk
+     * @template Tk of array-key
      * @template Tv
      *
      * @param iterable<Tk, Future<Tv>> $futures
-     * @param Cancellation|null        $cancellation Optional cancellation.
+     * @param Cancellation|null $cancellation Optional cancellation.
      *
      * @return iterable<Tk, Future<Tv>>
      */
@@ -57,7 +57,8 @@ final class Future
         }
 
         while ($item = $iterator->consume()) {
-            yield $item[0] => $item[1];
+            [$key, $future] = $item;
+            yield $key => $future;
         }
     }
 
@@ -226,7 +227,7 @@ final class Future
         $suspension = EventLoop::getSuspension();
 
         $callbackId = $this->state->subscribe(static function (?\Throwable $error, mixed $value) use (
-            $suspension
+            $suspension,
         ): void {
             if ($error) {
                 $suspension->throw($error);
@@ -239,7 +240,7 @@ final class Future
         $cancellationId = $cancellation?->subscribe(static function (\Throwable $reason) use (
             $callbackId,
             $suspension,
-            $state
+            $state,
         ): void {
             $state->unsubscribe($callbackId);
             if (!$state->isComplete()) { // Resume has already been scheduled if complete.

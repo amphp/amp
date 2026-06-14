@@ -24,6 +24,7 @@ final class Cancellable implements Cancellation
     private array $callbacks = [];
 
     private ?CancelledException $exception = null;
+
     private ?\Throwable $previous = null;
 
     private bool $requested = false;

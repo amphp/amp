@@ -17,12 +17,12 @@ final class TimeoutCancellation implements Cancellation
     private readonly Cancellation $cancellation;
 
     /**
-     * @param float  $timeout Seconds until cancellation is requested.
+     * @param float $timeout Seconds until cancellation is requested.
      * @param string $message Message for TimeoutException. Default is "Operation timed out".
      */
     public function __construct(float $timeout, string $message = "Operation timed out")
     {
-        $this->cancellation = $source = new Internal\Cancellable;
+        $this->cancellation = $source = new Internal\Cancellable();
 
         \assert((bool) ($trace = \debug_backtrace(0)));
 
