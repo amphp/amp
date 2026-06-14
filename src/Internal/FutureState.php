@@ -2,6 +2,8 @@
 
 namespace Amp\Internal;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Future;
 use Amp\Future\UnhandledFutureError;
 use Revolt\EventLoop;
@@ -13,6 +15,9 @@ use Revolt\EventLoop;
  */
 final class FutureState
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     // Static so they can be used as array keys
     private static string $nextId = 'a';
 

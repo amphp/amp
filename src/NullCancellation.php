@@ -27,6 +27,9 @@ namespace Amp;
  */
 final class NullCancellation implements Cancellation
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     #[\Override]
     public function subscribe(\Closure $callback): string
     {

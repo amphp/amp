@@ -10,6 +10,9 @@ use Revolt\EventLoop;
  */
 final class Interval
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly string $callbackId;
 
     /**
