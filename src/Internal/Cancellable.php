@@ -48,7 +48,7 @@ final class Cancellable implements Cancellation
         $exception = $this->getException();
 
         foreach ($callbacks as $callback) {
-            EventLoop::queue(static fn () => $callback($exception));
+            EventLoop::queue($callback, $exception);
         }
     }
 
@@ -65,7 +65,7 @@ final class Cancellable implements Cancellation
 
         if ($this->requested) {
             $exception = $this->getException();
-            EventLoop::queue(static fn () => $callback($exception));
+            EventLoop::queue($callback, $exception);
         } else {
             $this->callbacks[$id] = $callback;
         }
