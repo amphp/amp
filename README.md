@@ -219,7 +219,20 @@ throws an exception.
 
 #### Combinators
 
-In concurrent applications, there will be multiple futures, where you might want to await them all or just the first one.
+In concurrent applications, there will be multiple futures, where you might want to await them all or just the first
+one.
+
+You can create a bunch of futures by applying `Amp\concurrent()` to an array of closures:
+it returns a `Future` for each, preserving the keys.
+
+```php
+$firstReachedApi = [
+    fn () => $httpClient->request(new Request('https://a.api.com', 'HEAD')),
+    fn () => $httpClient->request(new Request('https://b.api.com', 'HEAD')),
+] |> \Amp\concurrent(...) |> \Amp\Future\awaitAny(...);
+```
+
+The combinators below await such futures in different ways.
 
 ##### await
 
@@ -241,17 +254,16 @@ use Amp\Http\Client\Request;
 require __DIR__ . '/vendor/autoload.php';
 
 $httpClient = HttpClientBuilder::buildDefault();
-$uris = [
-    "google" => "https://www.google.com",
-    "news"   => "https://news.google.com",
-    "bing"   => "https://www.bing.com",
-    "yahoo"  => "https://www.yahoo.com",
-];
+
+$futures = Amp\concurrent([
+    "google" => fn () => $httpClient->request(new Request("https://www.google.com", 'HEAD')),
+    "news"   => fn () => $httpClient->request(new Request("https://news.google.com", 'HEAD')),
+    "bing"   => fn () => $httpClient->request(new Request("https://www.bing.com", 'HEAD')),
+    "yahoo"  => fn () => $httpClient->request(new Request("https://www.yahoo.com", 'HEAD')),
+]);
 
 try {
-    $responses = Future\await(array_map(function ($uri) use ($httpClient) {
-        return Amp\async(fn () => $httpClient->request(new Request($uri, 'HEAD')));
-    }, $uris));
+    $responses = Future\await($futures);
 
     foreach ($responses as $key => $response) {
         printf(
@@ -270,9 +282,38 @@ try {
 
 ##### awaitAnyN
 
-`Amp\Future\awaitAnyN($count, $iterable, $cancellation)` is the same as `await()` except that it tolerates individual errors. A result is returned once
-exactly `$count` instances in the `iterable` complete successfully. The return value is an array of values. The
-individual keys in the component array are preserved from the `iterable` passed to the function for evaluation.
+`Amp\Future\awaitAnyN($count, $iterable, $cancellation)` is the same as `await()` except that it tolerates individual errors.
+A result is returned once exactly `$count` instances in the `iterable` complete successfully, or `CompositeException` is thrown otherwise.
+The return value is an array of values with the individual keys preserved from the `iterable` passed to the function for evaluation.
+
+##### settle
+
+`Amp\Future\settle($iterable, $cancellation)` is the same as `await()` except that it waits for all the futures to finish (either successfully complete or error),
+not failing right off with the first error.
+
+A result is returned only if all the futures complete successfully.
+If at least one of them errors, a `CompositeException` comprised of all the errors is thrown.
+
+```php
+use Amp\CompositeException;
+use function Amp\concurrent;
+use function Amp\Future\settle;
+
+try {
+    $services = [
+        'db' => fn () => $pool->connect(),
+        'redis' => fn () => $cache->connect(),
+        'broker' => fn () => $amqp->connect(),
+        'secrets' => fn () => $vault->connect(),
+    ] |> concurrent(...) |> settle(...);
+} catch (CompositeException $e) {
+    $failedServices = array_keys($e->getReasons());
+    $message = sprintf('Services connection failed: %s.', implode(', ', $failedServices));
+
+    // Services connection failed: redis, broker.
+    throw new ServicesConnectionFailedException($message, $e->getReasons());
+}
+```
 
 ##### awaitAll
 

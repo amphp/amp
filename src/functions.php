@@ -44,6 +44,23 @@ function async(\Closure $closure, mixed ...$args): Future
 }
 
 /**
+ * Concurrently evaluates the given closures, returning a {@see Future} for each.
+ *
+ * Pass or pipe the result into a combinator such as {@see Future\await()} or {@see Future\settle()} to await the values.
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param array<Tk, \Closure():Tv> $closures
+ *
+ * @return array<Tk, Future<Tv>> A Future for each closure, with keys preserved.
+ */
+function concurrent(array $closures): array
+{
+    return \array_map(async(...), $closures);
+}
+
+/**
  * Returns the current time relative to an arbitrary point in time.
  *
  * @return float Time in seconds.
