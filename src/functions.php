@@ -44,6 +44,26 @@ function async(\Closure $closure, mixed ...$args): Future
 }
 
 /**
+ * Concurrently evaluates the given closures, returning a {@see Future} for each.
+ * Each closure is started as the iterable is consumed, so producers of unknown (even unbounded) length are supported.
+ *
+ * Pass or pipe the result into a combinator such as {@see Future\await()} to await the values.
+ *
+ * @template Tk
+ * @template Tv
+ *
+ * @param iterable<Tk, \Closure():Tv> $closures
+ *
+ * @return iterable<Tk, Future<Tv>> A Future for each closure, with keys preserved.
+ */
+function concurrent(iterable $closures): iterable
+{
+    foreach ($closures as $key => $closure) {
+        yield $key => async($closure);
+    }
+}
+
+/**
  * Returns the current time relative to an arbitrary point in time.
  *
  * @return float Time in seconds.

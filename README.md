@@ -219,7 +219,22 @@ throws an exception.
 
 #### Combinators
 
-In concurrent applications, there will be multiple futures, where you might want to await them all or just the first one.
+In concurrent applications, there will be multiple futures, where you might want to await them all or just the first
+one.
+
+You can create a bunch of futures by applying `Amp\concurrent()` to an iterable of closures:
+it returns a `Future` for each, preserving the keys.
+
+```php
+$firstReachableApiResponse = \Amp\Future\awaitAny([
+    fn () => $httpClient->request(new Request('https://a.api.com', 'HEAD')),
+    fn () => $httpClient->request(new Request('https://b.api.com', 'HEAD')),
+] |> \Amp\concurrent(...));
+```
+
+`Amp\concurrent()` returns `\Generator`, so producers of unbounded length are supported.
+
+The combinators below await such futures in different ways.
 
 ##### await
 
@@ -241,17 +256,16 @@ use Amp\Http\Client\Request;
 require __DIR__ . '/vendor/autoload.php';
 
 $httpClient = HttpClientBuilder::buildDefault();
-$uris = [
-    "google" => "https://www.google.com",
-    "news"   => "https://news.google.com",
-    "bing"   => "https://www.bing.com",
-    "yahoo"  => "https://www.yahoo.com",
-];
+
+$futures = Amp\concurrent([
+    "google" => fn () => $httpClient->request(new Request("https://www.google.com", 'HEAD')),
+    "news"   => fn () => $httpClient->request(new Request("https://news.google.com", 'HEAD')),
+    "bing"   => fn () => $httpClient->request(new Request("https://www.bing.com", 'HEAD')),
+    "yahoo"  => fn () => $httpClient->request(new Request("https://www.yahoo.com", 'HEAD')),
+]);
 
 try {
-    $responses = Future\await(array_map(function ($uri) use ($httpClient) {
-        return Amp\async(fn () => $httpClient->request(new Request($uri, 'HEAD')));
-    }, $uris));
+    $responses = Future\await($futures);
 
     foreach ($responses as $key => $response) {
         printf(
