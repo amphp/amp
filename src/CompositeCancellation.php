@@ -89,7 +89,18 @@ final class CompositeCancellation implements Cancellation
     #[\Override]
     public function isRequested(): bool
     {
-        return $this->exception !== null;
+        if ($this->exception) {
+            return true;
+        }
+
+        // Check each cancellation directly, as the callback setting $this->exception is invoked asynchronously.
+        foreach ($this->cancellations as [$cancellation]) {
+            if ($cancellation->isRequested()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     #[\Override]
@@ -97,6 +108,11 @@ final class CompositeCancellation implements Cancellation
     {
         if ($this->exception) {
             throw $this->exception;
+        }
+
+        // Check each cancellation directly, as the callback setting $this->exception is invoked asynchronously.
+        foreach ($this->cancellations as [$cancellation]) {
+            $cancellation->throwIfRequested();
         }
     }
 }

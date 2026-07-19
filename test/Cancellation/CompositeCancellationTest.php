@@ -40,6 +40,32 @@ class CompositeCancellationTest extends TestCase
         }
     }
 
+    public function testIsRequestedImmediatelyAfterCancellation(): void
+    {
+        $deferredCancellation = new DeferredCancellation();
+        $compositeCancellation = new CompositeCancellation($deferredCancellation->getCancellation());
+
+        $deferredCancellation->cancel();
+
+        self::assertTrue($deferredCancellation->getCancellation()->isRequested());
+        self::assertTrue($compositeCancellation->isRequested());
+    }
+
+    public function testThrowIfRequestedImmediatelyAfterCancellation(): void
+    {
+        $deferredCancellation = new DeferredCancellation();
+        $compositeCancellation = new CompositeCancellation($deferredCancellation->getCancellation());
+
+        $deferredCancellation->cancel($previous = new \Exception());
+
+        try {
+            $compositeCancellation->throwIfRequested();
+            self::fail('Expected ' . CancelledException::class . ' to be thrown');
+        } catch (CancelledException $exception) {
+            self::assertSame($previous, $exception->getPrevious());
+        }
+    }
+
     public function testCombinedWithDoubleCancellation(): void
     {
         $deferredCancellation1 = new DeferredCancellation();
