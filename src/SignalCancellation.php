@@ -29,7 +29,7 @@ final class SignalCancellation implements Cancellation
 
         $this->cancellation = $source = new Internal\Cancellable();
 
-        \assert((bool) ($trace = \debug_backtrace(0)));
+        \assert((bool) ($trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS)));
 
         $callbackIds = [];
 
