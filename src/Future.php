@@ -39,19 +39,34 @@ final class Future
             }
             $iterator->complete();
         } else {
+            // Hold the iterator through a weak reference so the coroutine below stops consuming the iterable once the
+            // consumer of the returned generator no longer references it.
+            $ref = \WeakReference::create($iterator);
+
             // Use separate fiber for iteration over non-array, because not all items might be immediately available
             // while other futures are already completed.
-            EventLoop::queue(static function () use ($futures, $iterator): void {
+            EventLoop::queue(static function () use ($futures, $ref): void {
+                $enqueue = static function (Future $future, int|string $key) use ($ref): bool {
+                    $iterator = $ref->get();
+                    $iterator?->enqueue($future->state, $key, $future);
+
+                    return $iterator !== null;
+                };
+
                 try {
                     foreach ($futures as $key => $future) {
                         if (!$future instanceof self) {
                             throw new \TypeError('Iterable must only provide instances of ' . self::class);
                         }
-                        $iterator->enqueue($future->state, $key, $future);
+
+                        if (!$enqueue($future, $key)) {
+                            return;
+                        }
                     }
-                    $iterator->complete();
+
+                    $ref->get()?->complete();
                 } catch (\Throwable $exception) {
-                    $iterator->error($exception);
+                    $ref->get()?->error($exception);
                 }
             });
         }

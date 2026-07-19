@@ -97,6 +97,31 @@ class FutureTest extends TestCase
         }
     }
 
+    public function testIterateGeneratorAbandoned(): void
+    {
+        $count = 0;
+
+        /**
+         * @var \Generator<int, Future<int>, void, void>
+         */
+        $generator = (static function () use (&$count): \Generator {
+            while (true) {
+                yield Future::complete(++$count);
+                delay(0.01);
+            }
+        })();
+
+        foreach (Future::iterate($generator) as $future) {
+            break; // Abandon the iterator after the first item.
+        }
+
+        // Wait several generator periods; the generator must not be consumed further
+        // once the abandonment is discovered.
+        delay(0.1);
+
+        self::assertSame(2, $count);
+    }
+
     public function testComplete(): void
     {
         $deferred = new DeferredFuture;
