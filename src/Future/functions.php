@@ -155,3 +155,32 @@ function await(iterable $futures, ?Cancellation $cancellation = null): array
     /** @var array<Tk, Tv> */
     return $values;
 }
+
+/**
+ * Waits for all futures to finish (either complete or error), unlike {@see await()}, which aborts on the first error.
+ *
+ * If any errored, a {@see CompositeException} holding all errors (keyed as given) is thrown.
+ * Otherwise, the unwrapped values are returned.
+ *
+ * The returned values are ordered by completion, not by the input iterable, just as with {@see await()}.
+ *
+ * @template Tk of array-key
+ * @template Tv
+ *
+ * @param iterable<Tk, Future<Tv>> $futures
+ * @param Cancellation|null $cancellation Optional cancellation.
+ *
+ * @return array<Tk, Tv> Unwrapped values, keyed as given.
+ *
+ * @throws CompositeException If one or more futures errored.
+ */
+function settle(iterable $futures, ?Cancellation $cancellation = null): array
+{
+    [$errors, $values] = awaitAll($futures, $cancellation);
+
+    if ($errors) {
+        throw new CompositeException($errors);
+    }
+
+    return $values;
+}
