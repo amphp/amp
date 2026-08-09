@@ -11,7 +11,8 @@ use Revolt\EventLoop\UnsupportedFeatureException;
  *
  * @template T
  *
- * @param \Closure(...):T $closure
+ * @psalm-param \Closure(...): T $closure
+ * @phpstan-param \Closure(never, never, never, never, never): T $closure
  * @param mixed ...$args Arguments forwarded to the closure when starting the fiber.
  *
  * @return Future<T>
