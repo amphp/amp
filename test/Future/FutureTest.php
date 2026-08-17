@@ -275,6 +275,56 @@ class FutureTest extends TestCase
         delay(0); // tick event loop
     }
 
+    public function testSubscribeWithCompletedFuture(): void
+    {
+        Future::complete(1)->subscribe(function (?\Throwable $error, mixed $value): void {
+            self::assertNull($error);
+            self::assertSame(1, $value);
+        });
+
+        delay(0); // tick event loop
+    }
+
+    public function testSubscribeWithErroredFuture(): void
+    {
+        $exception = new \Exception();
+
+        Future::error($exception)->subscribe(function (?\Throwable $error, mixed $value) use ($exception): void {
+            self::assertSame($exception, $error);
+            self::assertNull($value);
+        });
+
+        delay(0); // tick event loop
+    }
+
+    public function testSubscribeWithPendingFuture(): void
+    {
+        $deferred = new DeferredFuture;
+        $future = $deferred->getFuture();
+        $future->subscribe(function (?\Throwable $error, mixed $value): void {
+            self::assertNull($error);
+            self::assertSame(1, $value);
+        });
+
+        $deferred->complete(1);
+
+        delay(0); // tick event loop
+    }
+
+    public function testUnsubscribe(): void
+    {
+        $deferred = new DeferredFuture;
+        $future = $deferred->getFuture();
+        $id = $future->subscribe(function (): void {
+            self::fail('Callback has been called');
+        });
+
+        $future->unsubscribe($id);
+        $deferred->complete(1);
+
+        delay(0); // tick event loop
+    }
+
     public function testMapWithCompleteFuture(): void
     {
         $future = Future::complete(1);
