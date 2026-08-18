@@ -140,8 +140,8 @@ final class Future
     /**
      * Subscribes a callback to be invoked when this Future completes or errors.
      *
-     * The callback might be invoked immediately if this Future has already completed. The callback must not suspend.
-     * Any unhandled exceptions will be thrown into the event loop.
+     * The callback is always queued for execution on the event loop, even if this Future has already completed.
+     * The callback must not suspend. Any unhandled exceptions will be thrown into the event loop.
      *
      * @param \Closure(?\Throwable, mixed): void $callback Callback to be invoked on error or successful completion.
      *
