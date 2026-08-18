@@ -138,6 +138,31 @@ final class Future
     }
 
     /**
+     * Subscribes a callback to be invoked when this Future completes or errors.
+     *
+     * The callback is always queued for execution on the event loop, even if this Future has already completed.
+     * The callback must not suspend. Any unhandled exceptions will be thrown into the event loop.
+     *
+     * @param \Closure(?\Throwable, mixed): void $callback Callback to be invoked on error or successful completion.
+     *
+     * @return string Identifier that can be used to cancel the subscription.
+     */
+    public function subscribe(\Closure $callback): string
+    {
+        return $this->state->subscribe($callback);
+    }
+
+    /**
+     * Unsubscribes a previously registered callback.
+     *
+     * The callback might still be invoked if the Future has already completed.
+     */
+    public function unsubscribe(string $id): void
+    {
+        $this->state->unsubscribe($id);
+    }
+
+    /**
      * Attaches a callback that is invoked if this future completes. The returned future is completed with the return
      * value of the callback, or errors with an exception thrown from the callback.
      *

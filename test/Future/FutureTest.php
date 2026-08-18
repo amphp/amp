@@ -275,6 +275,90 @@ class FutureTest extends TestCase
         delay(0); // tick event loop
     }
 
+    public function testSubscribeWithCompletedFuture(): void
+    {
+        Future::complete(1)->subscribe(function (?\Throwable $error, mixed $value): void {
+            self::assertNull($error);
+            self::assertSame(1, $value);
+        });
+
+        delay(0); // tick event loop
+    }
+
+    public function testSubscribeWithErroredFuture(): void
+    {
+        $exception = new \Exception();
+
+        Future::error($exception)->subscribe(function (?\Throwable $error, mixed $value) use ($exception): void {
+            self::assertSame($exception, $error);
+            self::assertNull($value);
+        });
+
+        delay(0); // tick event loop
+    }
+
+    public function testSubscribeWithPendingFuture(): void
+    {
+        $deferred = new DeferredFuture;
+        $future = $deferred->getFuture();
+        $future->subscribe(function (?\Throwable $error, mixed $value): void {
+            self::assertNull($error);
+            self::assertSame(1, $value);
+        });
+
+        $deferred->complete(1);
+
+        delay(0); // tick event loop
+    }
+
+    public function testUnsubscribe(): void
+    {
+        $deferred = new DeferredFuture;
+        $future = $deferred->getFuture();
+        $id = $future->subscribe(function (): void {
+            self::fail('Callback has been called');
+        });
+
+        $future->unsubscribe($id);
+        $deferred->complete(1);
+
+        delay(0); // tick event loop
+
+        self::assertSame(1, $future->await());
+    }
+
+    public function testUnsubscribeAfterCompletionDoesNotCancelQueuedCallback(): void
+    {
+        $called = false;
+        $future = Future::complete(1);
+        $id = $future->subscribe(static function () use (&$called): void {
+            $called = true;
+        });
+
+        $future->unsubscribe($id);
+        self::assertFalse($called);
+
+        delay(0); // tick event loop
+
+        self::assertTrue($called);
+    }
+
+    public function testThrowingSubscriptionCallbackEndsUpInEventLoop(): void
+    {
+        EventLoop::setErrorHandler(static function (\Throwable $exception) use (&$reason): void {
+            $reason = $exception;
+        });
+
+        Future::complete()->subscribe(static function (): void {
+            throw new \Exception('subscription callback failed');
+        });
+
+        delay(0); // tick event loop
+
+        self::assertInstanceOf(\Exception::class, $reason);
+        self::assertSame('subscription callback failed', $reason->getMessage());
+    }
+
     public function testMapWithCompleteFuture(): void
     {
         $future = Future::complete(1);
