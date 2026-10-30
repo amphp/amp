@@ -19,6 +19,8 @@ namespace Amp\Internal;
  *
  * @codeCoverageIgnore
  * @internal
+ *
+ * @psalm-pure
  */
 function formatStacktrace(array $trace): string
 {
@@ -44,8 +46,12 @@ function formatStacktrace(array $trace): string
  */
 function isDebugEnabled(): bool
 {
-    /** @psalm-suppress RiskyTruthyFalsyComparison */
-    return match (\getenv("AMP_DEBUG") ?: "0") {
+    $value = \getenv("AMP_DEBUG");
+    if ($value === false || $value === "") {
+        $value = "0";
+    }
+
+    return match ($value) {
         "0", "false", "off" => false,
         default => true,
     } || (\defined("AMP_DEBUG") && \AMP_DEBUG);

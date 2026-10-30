@@ -7,9 +7,12 @@ namespace Amp;
  *
  * @see Cancellation
  * @see DeferredCancellation
+ *
+ * @api
  */
 class CancelledException extends \Exception
 {
+    /** @psalm-capabilities read-props */
     public function __construct(?\Throwable $previous = null)
     {
         parent::__construct("The operation was cancelled", 0, $previous);

@@ -7,7 +7,11 @@ use Amp\Internal\FutureState;
 use Revolt\EventLoop;
 
 /**
+ * The result of an asynchronous operation.
+ *
  * @template-covariant T
+ *
+ * @api
  */
 final class Future
 {
@@ -32,7 +36,9 @@ final class Future
         // Directly iterate in case of an array, because there can't be suspensions during iteration
         if (\is_array($futures)) {
             foreach ($futures as $key => $future) {
-                if (!$future instanceof self) {
+                /** @var object $unchecked */
+                $unchecked = $future;
+                if (!$unchecked instanceof self) {
                     throw new \TypeError('Array must only contain instances of ' . self::class);
                 }
                 $iterator->enqueue($future->state, $key, $future);
@@ -55,7 +61,9 @@ final class Future
 
                 try {
                     foreach ($futures as $key => $future) {
-                        if (!$future instanceof self) {
+                        /** @var object $unchecked */
+                        $unchecked = $future;
+                        if (!$unchecked instanceof self) {
                             throw new \TypeError('Iterable must only provide instances of ' . self::class);
                         }
 
@@ -119,6 +127,8 @@ final class Future
 
     /**
      * @return bool True if the operation has completed.
+     *
+     * @psalm-capabilities read-props
      */
     public function isComplete(): bool
     {
@@ -129,6 +139,8 @@ final class Future
      * Do not forward unhandled errors to the event loop handler.
      *
      * @return Future<T>
+     *
+     * @psalm-capabilities read-props|write-props|write-refs
      */
     public function ignore(): self
     {
@@ -140,8 +152,6 @@ final class Future
     /**
      * Attaches a callback that is invoked if this future completes. The returned future is completed with the return
      * value of the callback, or errors with an exception thrown from the callback.
-     *
-     * @psalm-suppress InvalidTemplateParam
      *
      * @template Tr
      *
@@ -236,6 +246,11 @@ final class Future
      * Throws an exception if the operation fails.
      *
      * @return T
+     *
+     * @psalm-capabilities read-props|write-props|read-globals|write-globals|io
+     * @psalm-purity-template P <= read-props|write-this-props|write-props|write-refs|io
+     * @psalm-param null|Cancellation[P] $cancellation
+     * @psalm-purity-from-template P
      */
     public function await(?Cancellation $cancellation = null): mixed
     {
@@ -266,8 +281,9 @@ final class Future
         try {
             return $suspension->suspend();
         } finally {
-            /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $cancellation is not null. */
-            $cancellation?->unsubscribe($cancellationId);
+            if ($cancellation !== null && $cancellationId !== null) {
+                $cancellation->unsubscribe($cancellationId);
+            }
         }
     }
 }

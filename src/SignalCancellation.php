@@ -6,6 +6,10 @@ use Revolt\EventLoop;
 
 /**
  * A SignalCancellation automatically requests cancellation when a given signal is received.
+ *
+ * @implements Cancellation[read-props|write-props|write-refs|io]
+ *
+ * @api
  */
 final class SignalCancellation implements Cancellation
 {
@@ -15,7 +19,7 @@ final class SignalCancellation implements Cancellation
     /** @var list<string> */
     private readonly array $callbackIds;
 
-    private readonly Cancellation $cancellation;
+    private readonly Internal\Cancellable $cancellation;
 
     /**
      * @param int|int[] $signals Signal number or array of signal numbers.
@@ -29,16 +33,16 @@ final class SignalCancellation implements Cancellation
 
         $this->cancellation = $source = new Internal\Cancellable();
 
-        \assert((bool) ($trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS)));
+        $trace = \ini_get('zend.assertions') === '1' ? \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS) : null;
 
         $callbackIds = [];
 
-        $callback = static function () use (&$callbackIds, &$trace, $source, $message): void {
+        $callback = static function () use (&$callbackIds, $trace, $source, $message): void {
             foreach ($callbackIds as $callbackId) {
                 EventLoop::cancel($callbackId);
             }
 
-            if ($trace ?? false) {
+            if ($trace !== null) {
                 $message .= \sprintf("\r\n%s was created here: %s", self::class, Internal\formatStacktrace($trace));
             } else {
                 $message .= \sprintf(" (Enable assertions for a backtrace of the %s creation)", self::class);
@@ -64,24 +68,34 @@ final class SignalCancellation implements Cancellation
         }
     }
 
+    /**
+     * @psalm-capabilities read-props|write-props|write-refs|io
+     */
     #[\Override]
     public function subscribe(\Closure $callback): string
     {
         return $this->cancellation->subscribe($callback);
     }
 
+    /**
+     * @psalm-capabilities read-props|write-props|write-refs
+     */
     #[\Override]
     public function unsubscribe(string $id): void
     {
         $this->cancellation->unsubscribe($id);
     }
 
+    /** @psalm-capabilities read-props */
     #[\Override]
     public function isRequested(): bool
     {
         return $this->cancellation->isRequested();
     }
 
+    /**
+     * @psalm-capabilities read-props|write-props|write-refs
+     */
     #[\Override]
     public function throwIfRequested(): void
     {

@@ -58,7 +58,7 @@ function awaitAny(iterable $futures, ?Cancellation $cancellation = null): mixed
  * @template Tk of array-key
  * @template Tv
  *
- * @param positive-int $count
+ * @param positive-int $count Number of successful results required. Must be greater than 0.
  * @param iterable<Tk, Future<Tv>> $futures
  * @param Cancellation|null $cancellation Optional cancellation.
  *
@@ -69,6 +69,8 @@ function awaitAny(iterable $futures, ?Cancellation $cancellation = null): mixed
  */
 function awaitAnyN(int $count, iterable $futures, ?Cancellation $cancellation = null): array
 {
+    // positive-int is a docblock. PHP still accepts 0 and negative values.
+    /** @var int $count */
     if ($count <= 0) {
         throw new \ValueError('Argument #1 ($count) must be greater than 0, got ' . $count);
     }

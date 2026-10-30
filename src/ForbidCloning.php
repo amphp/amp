@@ -4,6 +4,7 @@ namespace Amp;
 
 trait ForbidCloning
 {
+    /** @psalm-pure */
     final protected function __clone()
     {
         throw new \Error(__CLASS__ . ' does not support cloning');

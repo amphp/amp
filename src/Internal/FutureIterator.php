@@ -141,6 +141,11 @@ final class FutureIterator
         return $item;
     }
 
+    /**
+     * Unsubscribes outstanding callbacks. The engine calls this.
+     *
+     * @api
+     */
     public function __destruct()
     {
         $this->cancellation->unsubscribe($this->cancellationId);

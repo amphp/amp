@@ -11,6 +11,8 @@ use Revolt\EventLoop;
 /**
  * Cancellation with public cancellation method.
  *
+ * @implements \Amp\Cancellation[read-props|write-this-props|write-refs|io]
+ *
  * @internal
  */
 final class Cancellable implements Cancellation
@@ -18,7 +20,7 @@ final class Cancellable implements Cancellation
     use ForbidCloning;
     use ForbidSerialization;
 
-    private string $nextId = "a";
+    private string $nextId = 'a';
 
     /** @var \Closure[] */
     private array $callbacks = [];
@@ -29,6 +31,7 @@ final class Cancellable implements Cancellation
 
     private bool $requested = false;
 
+    /** @psalm-capabilities read-props|write-this-props|write-refs|io */
     public function cancel(?\Throwable $previous = null): void
     {
         if ($this->requested) {
@@ -52,16 +55,20 @@ final class Cancellable implements Cancellation
         }
     }
 
+    /** @psalm-capabilities read-props|write-this-props|write-refs */
     private function getException(): CancelledException
     {
         return $this->exception ??= new CancelledException($this->previous);
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs|io
+     */
     #[\Override]
     public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
+        $this->nextId = \str_increment($this->nextId);
 
         if ($this->requested) {
             $exception = $this->getException();
@@ -73,18 +80,25 @@ final class Cancellable implements Cancellation
         return $id;
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs
+     */
     #[\Override]
     public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
 
+    /** @psalm-capabilities read-props */
     #[\Override]
     public function isRequested(): bool
     {
         return $this->requested;
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs
+     */
     #[\Override]
     public function throwIfRequested(): void
     {

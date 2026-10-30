@@ -24,30 +24,38 @@ namespace Amp;
  * ```
  *
  * instead.
+ *
+ * @implements Cancellation[read-props]
+ *
+ * @api
  */
 final class NullCancellation implements Cancellation
 {
     use ForbidCloning;
     use ForbidSerialization;
 
+    /** @psalm-pure */
     #[\Override]
     public function subscribe(\Closure $callback): string
     {
         return "null-cancellation";
     }
 
+    /** @psalm-capabilities read-props */
     #[\Override]
     public function unsubscribe(string $id): void
     {
         // nothing to do
     }
 
+    /** @psalm-pure */
     #[\Override]
     public function isRequested(): bool
     {
         return false;
     }
 
+    /** @psalm-pure */
     #[\Override]
     public function throwIfRequested(): void
     {

@@ -4,6 +4,8 @@ namespace Amp;
 
 /**
  * @template T
+ *
+ * @api
  */
 final class DeferredFuture
 {
@@ -44,6 +46,8 @@ final class DeferredFuture
 
     /**
      * @return bool True if the operation has completed.
+     *
+     * @psalm-capabilities read-props
      */
     public function isComplete(): bool
     {

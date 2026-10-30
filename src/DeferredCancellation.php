@@ -34,6 +34,8 @@ namespace Amp;
  *
  * @see Cancellation
  * @see CancelledException
+ *
+ * @api
  */
 final class DeferredCancellation
 {
@@ -44,6 +46,7 @@ final class DeferredCancellation
 
     private readonly Cancellation $cancellation;
 
+    /** @psalm-capabilities read-props */
     public function __construct()
     {
         $this->source = new Internal\Cancellable();
@@ -60,6 +63,7 @@ final class DeferredCancellation
         return $this->cancellation;
     }
 
+    /** @psalm-capabilities read-props */
     public function isCancelled(): bool
     {
         return $this->source->isRequested();

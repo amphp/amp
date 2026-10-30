@@ -24,13 +24,14 @@ function async(\Closure $closure, mixed ...$args): Future
         $s = $state;
         $c = $closure;
 
-        /* Null function arguments so an exception thrown from the closure does not contain the FutureState object
+        /* Drop the parameters so an exception thrown from the closure does not contain the FutureState object
          * in the stack trace, which would create a circular reference, preventing immediate garbage collection */
-        $state = $closure = null;
+        unset($state, $closure);
 
         try {
-            // Clear $args to allow garbage collection of arguments during fiber execution
-            $s->complete($c(...$args, ...($args = [])));
+            // array_splice() reads and empties $args before the closure runs, so a trace or a
+            // suspended fiber does not keep the arguments alive on this frame.
+            $s->complete($c(...\array_splice($args, 0)));
         } catch (\Throwable $exception) {
             $s->error($exception);
         }
@@ -50,8 +51,7 @@ function async(\Closure $closure, mixed ...$args): Future
  */
 function now(): float
 {
-    /** @psalm-suppress InvalidOperand */
-    return (float) \hrtime(true) / 1_000_000_000;
+    return (float) \hrtime(true) / 1_000_000_000.0;
 }
 
 /**
@@ -60,6 +60,11 @@ function now(): float
  * @param float $timeout Number of seconds to wait.
  * @param bool $reference If false, unreference the underlying watcher.
  * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
+ *
+ * @psalm-capabilities io
+ * @psalm-purity-template P <= read-props|write-this-props|write-props|write-refs|io
+ * @psalm-param null|Cancellation[P] $cancellation
+ * @psalm-purity-from-template P
  */
 function delay(float $timeout, bool $reference = true, ?Cancellation $cancellation = null): void
 {
@@ -78,8 +83,9 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
     } finally {
         EventLoop::cancel($callbackId);
 
-        /** @psalm-suppress PossiblyNullArgument $cancellationId will not be null if $cancellation is not null. */
-        $cancellation?->unsubscribe($cancellationId);
+        if ($cancellation !== null && $cancellationId !== null) {
+            $cancellation->unsubscribe($cancellationId);
+        }
     }
 }
 
@@ -91,12 +97,21 @@ function delay(float $timeout, bool $reference = true, ?Cancellation $cancellati
  * @param Cancellation|null $cancellation Cancel waiting if cancellation is requested.
  *
  * @return int Caught signal number.
+ *
  * @throws UnsupportedFeatureException
+ *
+ * @psalm-capabilities io
+ * @psalm-purity-template P <= read-props|write-this-props|write-props|write-refs|io
+ * @psalm-param null|Cancellation[P] $cancellation
+ * @psalm-purity-from-template P
  */
 function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $cancellation = null): int
 {
     $suspension = EventLoop::getSuspension();
-    $callback = static fn (string $watcher, int $signal) => $suspension->resume($signal);
+    $callback = static function (string $watcher, int $signal) use ($suspension): void {
+        $suspension->resume($signal);
+    };
+
     $id = $cancellation?->subscribe(static fn (CancelledException $exception) => $suspension->throw($exception));
 
     $callbackIds = [];
@@ -119,8 +134,9 @@ function trapSignal(int|array $signals, bool $reference = true, ?Cancellation $c
             EventLoop::cancel($callbackId);
         }
 
-        /** @psalm-suppress PossiblyNullArgument $id will not be null if $cancellation is not null. */
-        $cancellation?->unsubscribe($id);
+        if ($cancellation !== null && $id !== null) {
+            $cancellation->unsubscribe($id);
+        }
     }
 }
 

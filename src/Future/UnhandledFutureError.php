@@ -4,9 +4,12 @@ namespace Amp\Future;
 
 /**
  * Will be thrown to the event loop error handler in case a future exception is not handled.
+ *
+ * @api
  */
 final class UnhandledFutureError extends \Error
 {
+    /** @psalm-capabilities read-props */
     public function __construct(\Throwable $previous, ?string $origin = null)
     {
         $message = 'Unhandled future: ' . $previous::class . ': "' . $previous->getMessage()

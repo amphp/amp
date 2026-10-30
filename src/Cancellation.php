@@ -4,6 +4,13 @@ namespace Amp;
 
 /**
  * Cancellations are simple objects that allow registering handlers to subscribe to cancellation requests.
+ *
+ * What {@see subscribe()} and {@see unsubscribe()} may do depends on the implementation. Callers that accept any
+ * cancellation inherit that implementation's capabilities.
+ *
+ * @psalm-purity-template read-props <= C(read-props|write-this-props|write-props|write-refs|io) <= read-props|write-this-props|write-props|write-refs|io
+ *
+ * @api
  */
 interface Cancellation
 {
@@ -17,6 +24,9 @@ interface Cancellation
      * `CancelledException` as first argument that may be used to fail the operation.
      *
      * @return string Identifier that can be used to cancel the subscription.
+     *
+     * @psalm-pure
+     * @psalm-purity-from-template C
      */
     public function subscribe(\Closure $callback): string;
 
@@ -24,11 +34,16 @@ interface Cancellation
      * Unsubscribes a previously registered handler.
      *
      * The handler will no longer be called as long as this method isn't invoked from a subscribed callback.
+     *
+     * @psalm-pure
+     * @psalm-purity-from-template C
      */
     public function unsubscribe(string $id): void;
 
     /**
      * Returns whether cancellation has been requested yet.
+     *
+     * @psalm-capabilities read-props
      */
     public function isRequested(): bool;
 
@@ -36,6 +51,8 @@ interface Cancellation
      * Throws the `CancelledException` if cancellation has been requested, otherwise does nothing.
      *
      * @throws CancelledException
+     *
+     * @psalm-capabilities read-props|write-this-props|write-props|write-refs
      */
     public function throwIfRequested(): void;
 }

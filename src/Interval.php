@@ -7,6 +7,8 @@ use Revolt\EventLoop;
 /**
  * This object invokes the given callback within a new coroutine every $interval seconds until either the
  * {@see self::disable()} method is called or the object is destroyed.
+ *
+ * @api
  */
 final class Interval
 {

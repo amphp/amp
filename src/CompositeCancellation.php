@@ -4,6 +4,13 @@ namespace Amp;
 
 use Revolt\EventLoop;
 
+/**
+ * A cancellation that is requested when any of the given cancellations is requested.
+ *
+ * @implements Cancellation[read-props|write-this-props|write-refs|io]
+ *
+ * @api
+ */
 final class CompositeCancellation implements Cancellation
 {
     use ForbidCloning;
@@ -12,7 +19,7 @@ final class CompositeCancellation implements Cancellation
     /** @var array<int, array{Cancellation, string}> */
     private array $cancellations = [];
 
-    private string $nextId = "a";
+    private string $nextId = 'a';
 
     /** @var array<string, \Closure(CancelledException): void> */
     private array $callbacks = [];
@@ -21,31 +28,38 @@ final class CompositeCancellation implements Cancellation
 
     public function __construct(Cancellation ...$cancellations)
     {
-        $thatException = &$this->exception;
-        $thatCallbacks = &$this->callbacks;
-        $thatCancellations = &$this->cancellations;
+        // The callback shares these properties by reference and does not retain this object, so
+        // destroying the cancellation unsubscribes while a child still holds the callback.
+        $subscribed = [];
+        $callbacks = [];
+        $currentException = null;
+
+        $this->cancellations = &$subscribed;
+        $this->callbacks = &$callbacks;
+        $this->exception = &$currentException;
+
         $onCancel = static function (CancelledException $exception) use (
-            &$thatException,
-            &$thatCallbacks,
-            &$thatCancellations,
+            &$subscribed,
+            &$callbacks,
+            &$currentException,
         ): void {
-            if ($thatException) {
+            if ($currentException) {
                 return;
             }
 
-            $thatException = $exception;
+            $currentException = $exception;
 
-            foreach ($thatCancellations as [$cancellation, $id]) {
+            foreach ($subscribed as [$cancellation, $id]) {
                 $cancellation->unsubscribe($id);
             }
 
-            $thatCancellations = [];
+            $subscribed = [];
 
-            foreach ($thatCallbacks as $callback) {
+            foreach ($callbacks as $callback) {
                 EventLoop::queue($callback, $exception);
             }
 
-            $thatCallbacks = [];
+            $callbacks = [];
         };
 
         foreach ($cancellations as $cancellation) {
@@ -65,11 +79,14 @@ final class CompositeCancellation implements Cancellation
         $this->cancellations = [];
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs|io
+     */
     #[\Override]
     public function subscribe(\Closure $callback): string
     {
         $id = $this->nextId;
-        \PHP_VERSION_ID >= 80300 ? $this->nextId = \str_increment($this->nextId) : ++$this->nextId;
+        $this->nextId = \str_increment($this->nextId);
 
         if ($this->exception) {
             EventLoop::queue($callback, $this->exception);
@@ -80,12 +97,16 @@ final class CompositeCancellation implements Cancellation
         return $id;
     }
 
+    /**
+     * @psalm-capabilities read-props|write-this-props|write-refs
+     */
     #[\Override]
     public function unsubscribe(string $id): void
     {
         unset($this->callbacks[$id]);
     }
 
+    /** @psalm-capabilities read-props */
     #[\Override]
     public function isRequested(): bool
     {
@@ -93,7 +114,7 @@ final class CompositeCancellation implements Cancellation
             return true;
         }
 
-        // Check each cancellation directly, as the callback setting $this->exception is invoked asynchronously.
+        // Check each cancellation directly, as the callback setting the exception is invoked asynchronously.
         foreach ($this->cancellations as [$cancellation]) {
             if ($cancellation->isRequested()) {
                 return true;
@@ -103,6 +124,7 @@ final class CompositeCancellation implements Cancellation
         return false;
     }
 
+    /** @psalm-capabilities read-props|write-props|write-refs */
     #[\Override]
     public function throwIfRequested(): void
     {
@@ -110,7 +132,7 @@ final class CompositeCancellation implements Cancellation
             throw $this->exception;
         }
 
-        // Check each cancellation directly, as the callback setting $this->exception is invoked asynchronously.
+        // Check each cancellation directly, as the callback setting the exception is invoked asynchronously.
         foreach ($this->cancellations as [$cancellation]) {
             $cancellation->throwIfRequested();
         }

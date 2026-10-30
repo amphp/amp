@@ -2,6 +2,11 @@
 
 namespace Amp;
 
+/**
+ * Thrown when multiple operations fail and each failure should be retained.
+ *
+ * @api
+ */
 final class CompositeException extends \Exception
 {
     /**
@@ -14,6 +19,8 @@ final class CompositeException extends \Exception
      * @param string|null $message Exception message, defaults to message generated from passed exceptions.
      *
      * @psalm-assert non-empty-array<array-key, \Throwable> $reasons
+     *
+     * @psalm-capabilities read-props
      */
     public function __construct(array $reasons, ?string $message = null)
     {
@@ -32,6 +39,8 @@ final class CompositeException extends \Exception
 
     /**
      * @param non-empty-array<array-key, \Throwable> $reasons
+     *
+     * @psalm-pure
      */
     private function generateMessage(array $reasons): string
     {
